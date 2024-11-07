@@ -1,6 +1,10 @@
 # Change log for Microsoft365DSC
 
 # UNRELEASED
+* AADServicePrincipal
+  * Resolve Invalid Argument Exception when pulling custom security attributes
+    FIXES [#5354](https://github.com/microsoft/Microsoft365DSC/issues/5354)
+
 
 # 1.24.1106.1
 

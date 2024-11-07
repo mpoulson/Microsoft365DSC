@@ -1223,7 +1223,7 @@ function Get-CustomSecurityAttributes {
         [String]$ServicePrincipalId
     )
 
-    $customSecurityAttributes = Invoke-MgGraphRequest -Uri $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + "beta/servicePrincipals/$($ServicePrincipalId)`?`$select=customSecurityAttributes" -Method Get
+    $customSecurityAttributes = Invoke-MgGraphRequest -Uri "$($Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl)beta/servicePrincipals/$($ServicePrincipalId)`?`$select=customSecurityAttributes" -Method Get
     $customSecurityAttributes = $customSecurityAttributes.customSecurityAttributes
     $newCustomSecurityAttributes = @()
 
