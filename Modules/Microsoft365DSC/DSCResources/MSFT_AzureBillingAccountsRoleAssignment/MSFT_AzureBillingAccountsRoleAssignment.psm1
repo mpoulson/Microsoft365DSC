@@ -405,8 +405,22 @@ function Export-TargetResource
                     $Global:M365DSCExportResourceInstancesCount++
                 }
 
+                if ([string]::IsNullorEmpty($assignment.properties.principalId))
+                {
+                    continue
+                }
+
+                $PrincipalType = if ([string]::IsNullorEmpty($assignment.properties.principalType))
+                    {
+                        "User"
+                    }
+                    else
+                    {
+                        $assignment.properties.principalType
+                    }
+
                 $PrincipalNameValue = Get-M365DSCPrincipalNameFromId -PrincipalId $assignment.properties.principalId `
-                    -PrincipalType $assignment.properties.principalType
+                    -PrincipalType $PrincipalType
                 $roleDefinitionId = $assignment.properties.roleDefinitionId.Split('/')
                 $roleDefinitionId = $roleDefinitionId[$roleDefinitionId.Length - 1]
 
@@ -414,7 +428,7 @@ function Export-TargetResource
                 $params = @{
                     BillingAccount        = $config.properties.displayName
                     PrincipalName         = $PrincipalNameValue
-                    PrincipalType         = $assignment.properties.principalType
+                    PrincipalType         = $PrincipalType
                     PrincipalTenantId     = $assignment.properties.principalTenantId
                     RoleDefinition        = 'AnyRole'
                     Credential            = $Credential
