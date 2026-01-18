@@ -105,7 +105,7 @@ function Get-TargetResource
                 Model                = $device.model
                 Description          = $device.description
                 EnrollmentState      = $device.enrollmentState
-                Platform             = $device.platform
+                Platform             = if ($device.platform) { $device.platform.ToLower() } else { $null }
                 LastModifiedDateTime = $device.lastModifiedDateTime
                 CreatedDateTime      = $device.createdDateTime
             }
@@ -439,7 +439,7 @@ function Test-TargetResource
     )
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -648,42 +648,39 @@ function Export-TargetResource
             $results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
                 -Results $results
 
-            # Build the devices array for export
-            $devicesContent = "@(`r`n"
-            $deviceCount = 0
+            # Build the devices array content
+            $devicesArray = @()
             foreach ($device in $allDevices)
             {
-                $deviceCount++
-                $devicesContent += "                MSFT_IntuneCorporateDeviceIdentifier {`r`n"
+                $deviceEntry = @{}
                 if (-not [System.String]::IsNullOrEmpty($device.serialNumber))
                 {
-                    $devicesContent += "                    SerialNumber = '$($device.serialNumber)'`r`n"
+                    $deviceEntry.SerialNumber = $device.serialNumber
                 }
                 if (-not [System.String]::IsNullOrEmpty($device.imei))
                 {
-                    $devicesContent += "                    IMEI         = '$($device.imei)'`r`n"
+                    $deviceEntry.IMEI = $device.imei
                 }
                 if (-not [System.String]::IsNullOrEmpty($device.manufacturer))
                 {
-                    $devicesContent += "                    Manufacturer = '$($device.manufacturer)'`r`n"
+                    $deviceEntry.Manufacturer = $device.manufacturer
                 }
                 if (-not [System.String]::IsNullOrEmpty($device.model))
                 {
-                    $devicesContent += "                    Model        = '$($device.model)'`r`n"
+                    $deviceEntry.Model = $device.model
                 }
                 if (-not [System.String]::IsNullOrEmpty($device.description))
                 {
-                    $devicesContent += "                    Description  = '$($device.description)'`r`n"
+                    $deviceEntry.Description = $device.description
                 }
                 if (-not [System.String]::IsNullOrEmpty($device.platform))
                 {
-                    $devicesContent += "                    Platform     = '$($device.platform)'`r`n"
+                    $deviceEntry.Platform = $device.platform
                 }
-                $devicesContent += "                }`r`n"
+                $devicesArray += $deviceEntry
             }
-            $devicesContent += "            )"
 
-            $results.Devices = $devicesContent
+            $results.Devices = $devicesArray
             
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
@@ -691,17 +688,11 @@ function Export-TargetResource
                 -Results $results `
                 -Credential $Credential
             
-            # Replace the Devices array placeholder with actual content
-            if ($currentDSCBlock -like '*Devices*=*$null*')
-            {
-                $currentDSCBlock = $currentDSCBlock -replace "Devices\s*=\s*\`$null", "Devices              = $devicesContent"
-            }
-            
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
             
-            Write-M365DSCHost -Message "    Exported $deviceCount device identifier(s)" -CommitWrite
+            Write-M365DSCHost -Message "    Exported $($allDevices.Count) device identifier(s)" -CommitWrite
         }
 
         return $dscContent
