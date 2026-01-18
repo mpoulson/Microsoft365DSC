@@ -14,3 +14,13 @@ This ensures the Intune corporate identifiers exactly match your configuration a
 
 - GET/POST: `/beta/deviceManagement/importedDeviceIdentities`
 - DELETE: `/beta/deviceManagement/importedDeviceIdentities/{id}`
+
+## Cloud Support
+
+This resource is cloud-agnostic and works with:
+- Microsoft 365 Global (Commercial)
+- Microsoft 365 GCC
+- Microsoft 365 GCC High
+- Microsoft 365 DoD
+
+The resource automatically uses the correct Graph API endpoint based on your cloud environment.

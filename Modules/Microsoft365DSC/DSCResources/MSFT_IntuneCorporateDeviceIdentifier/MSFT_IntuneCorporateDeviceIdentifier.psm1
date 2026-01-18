@@ -72,7 +72,7 @@ function Get-TargetResource
         $nullResult.Devices = @()
 
         # Get all imported device identities from Intune
-        $uri = 'https://graph.microsoft.com/beta/deviceManagement/importedDeviceIdentities'
+        $uri = '/beta/deviceManagement/importedDeviceIdentities'
         $allDevices = @()
         
         do
@@ -318,7 +318,7 @@ function Set-TargetResource
                 $importList += $deviceToImport
             }
 
-            $uri = 'https://graph.microsoft.com/beta/deviceManagement/importedDeviceIdentities/importDeviceIdentityList'
+            $uri = '/beta/deviceManagement/importedDeviceIdentities/importDeviceIdentityList'
             $body = @{
                 importedDeviceIdentities = $importList
             }
@@ -342,7 +342,7 @@ function Set-TargetResource
             
             foreach ($device in $devicesToRemove)
             {
-                $uri = "https://graph.microsoft.com/beta/deviceManagement/importedDeviceIdentities/$($device.Id)"
+                $uri = "/beta/deviceManagement/importedDeviceIdentities/$($device.Id)"
                 try
                 {
                     Invoke-MgGraphRequest -Method DELETE -Uri $uri
@@ -370,7 +370,7 @@ function Set-TargetResource
             
             foreach ($device in $currentInstance.Devices)
             {
-                $uri = "https://graph.microsoft.com/beta/deviceManagement/importedDeviceIdentities/$($device.Id)"
+                $uri = "/beta/deviceManagement/importedDeviceIdentities/$($device.Id)"
                 try
                 {
                     Invoke-MgGraphRequest -Method DELETE -Uri $uri
@@ -611,7 +611,7 @@ function Export-TargetResource
         $dscContent = ''
         
         # Get all imported device identities
-        $uri = 'https://graph.microsoft.com/beta/deviceManagement/importedDeviceIdentities'
+        $uri = '/beta/deviceManagement/importedDeviceIdentities'
         $allDevices = @()
         
         do
