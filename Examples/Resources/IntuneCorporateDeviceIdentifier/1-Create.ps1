@@ -1,0 +1,47 @@
+<#
+This example creates corporate device identifiers in Intune.
+#>
+
+Configuration Example
+{
+    param(
+        [Parameter()]
+        [System.String]
+        $ApplicationId,
+
+        [Parameter()]
+        [System.String]
+        $TenantId,
+
+        [Parameter()]
+        [System.String]
+        $CertificateThumbprint
+    )
+    Import-DscResource -ModuleName Microsoft365DSC
+
+    node localhost
+    {
+        IntuneCorporateDeviceIdentifier 'CorporateDevices'
+        {
+            Identity              = 'CorporateDevices'
+            Devices               = @(
+                MSFT_IntuneCorporateDeviceIdentifier {
+                    SerialNumber = 'ABC123456'
+                    Manufacturer = 'Dell Inc.'
+                    Model        = 'Latitude 7490'
+                    Description  = 'Corporate laptop'
+                    Platform     = 'windows'
+                }
+                MSFT_IntuneCorporateDeviceIdentifier {
+                    IMEI         = '353456789012345'
+                    Description  = 'Corporate phone'
+                    Platform     = 'android'
+                }
+            )
+            Ensure                = 'Present'
+            ApplicationId         = $ApplicationId
+            TenantId              = $TenantId
+            CertificateThumbprint = $CertificateThumbprint
+        }
+    }
+}
