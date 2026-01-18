@@ -15,17 +15,11 @@
         "read": [
           {
             "name": "Policy.Read.All"
-          },
-          {
-            "name": "Directory.Read.All"
           }
         ],
         "update": [
           {
             "name": "Policy.ReadWrite.ApplicationConfiguration"
-          },
-          {
-            "name": "Directory.ReadWrite.All"
           }
         ]
       },
@@ -33,17 +27,11 @@
         "read": [
           {
             "name": "Policy.Read.All"
-          },
-          {
-            "name": "Directory.Read.All"
           }
         ],
         "update": [
           {
             "name": "Policy.ReadWrite.ApplicationConfiguration"
-          },
-          {
-            "name": "Directory.ReadWrite.All"
           }
         ]
       }
@@ -51,8 +39,7 @@
   },
   "requiredModules": [
     "Microsoft.Graph.Authentication",
-    "Microsoft.Graph.Beta.Identity.SignIns",
-    "Microsoft.Graph.Beta.Identity.DirectoryManagement"
+    "Microsoft.Graph.Beta.Identity.SignIns"
   ],
   "supportedEnvironments": [
     "Global",
@@ -67,17 +54,6 @@
         "New-MgBetaPolicyAppManagementPolicy",
         "Remove-MgBetaPolicyAppManagementPolicy",
         "Update-MgBetaPolicyAppManagementPolicy"
-      ]
-    },
-    {
-      "module": "Microsoft.Graph.Beta.Identity.DirectoryManagement",
-      "cmdlets": [
-        "Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration",
-        "New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration",
-        "Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration",
-        "Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration",
-        "New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority",
-        "Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority"
       ]
     }
   ]

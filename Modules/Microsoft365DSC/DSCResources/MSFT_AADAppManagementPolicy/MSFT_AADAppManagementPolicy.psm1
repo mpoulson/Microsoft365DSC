@@ -27,10 +27,6 @@ function Get-TargetResource
         $Restrictions,
 
         [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
-        $CertificateBasedApplicationConfigurations,
-
-        [Parameter()]
         [ValidateSet('Present', 'Absent')]
         [System.String]
         $Ensure = 'Present',
@@ -138,52 +134,19 @@ function Get-TargetResource
             $restrictionsValue.keyCredentials += $newItem
         }
 
-        # Get certificate-based application configurations
-        $certificateBasedApplicationConfigurationsValue = @()
-        try
-        {
-            $certConfigs = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -All -ErrorAction SilentlyContinue
-            
-            foreach ($certConfig in $certConfigs)
-            {
-                $trustedCAs = @()
-                foreach ($ca in $certConfig.TrustedCertificateAuthorities)
-                {
-                    $trustedCAs += @{
-                        Certificate                 = $ca.Certificate
-                        IsRootAuthority             = $ca.IsRootAuthority
-                        Issuer                      = $ca.Issuer
-                        IssuerSubjectKeyIdentifier  = $ca.IssuerSubjectKeyIdentifier
-                    }
-                }
-                
-                $certificateBasedApplicationConfigurationsValue += @{
-                    Id                            = $certConfig.Id
-                    DisplayName                   = $certConfig.DisplayName
-                    Description                   = $certConfig.Description
-                    TrustedCertificateAuthorities = $trustedCAs
-                }
-            }
-        }
-        catch
-        {
-            Write-Verbose -Message "Could not retrieve certificate-based application configurations: $_"
-        }
-
         $results = @{
-            DisplayName                              = $instance.DisplayName
-            Id                                       = $instance.Id
-            Description                              = $instance.Description
-            IsEnabled                                = $instance.IsEnabled
-            Restrictions                             = $restrictionsValue
-            CertificateBasedApplicationConfigurations = $certificateBasedApplicationConfigurationsValue
-            Ensure                                   = 'Present'
-            Credential                               = $Credential
-            ApplicationId                            = $ApplicationId
-            TenantId                                 = $TenantId
-            CertificateThumbprint                    = $CertificateThumbprint
-            ManagedIdentity                          = $ManagedIdentity.IsPresent
-            AccessTokens                             = $AccessTokens
+            DisplayName           = $instance.DisplayName
+            Id                    = $instance.Id
+            Description           = $instance.Description
+            IsEnabled             = $instance.IsEnabled
+            Restrictions          = $restrictionsValue
+            Ensure                = 'Present'
+            Credential            = $Credential
+            ApplicationId         = $ApplicationId
+            TenantId              = $TenantId
+            CertificateThumbprint = $CertificateThumbprint
+            ManagedIdentity       = $ManagedIdentity.IsPresent
+            AccessTokens          = $AccessTokens
         }
         return $results
     }
@@ -223,10 +186,6 @@ function Set-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $Restrictions,
-
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
-        $CertificateBasedApplicationConfigurations,
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
@@ -329,156 +288,6 @@ function Set-TargetResource
         Write-Verbose -Message "Removing App Management Policy {$DisplayName}"
         Remove-MgBetaPolicyAppManagementPolicy -AppManagementPolicyId $currentInstance.Id
     }
-
-    # Handle Certificate-Based Application Configurations
-    if ($Ensure -eq 'Present' -and $null -ne $CertificateBasedApplicationConfigurations)
-    {
-        Write-Verbose -Message "Processing Certificate-Based Application Configurations"
-        
-        # Get current configurations
-        $currentCertConfigs = @()
-        try
-        {
-            $currentCertConfigs = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -All -ErrorAction SilentlyContinue
-        }
-        catch
-        {
-            Write-Verbose -Message "Could not retrieve current certificate configurations: $_"
-        }
-        
-        # Process desired configurations
-        foreach ($desiredConfig in $CertificateBasedApplicationConfigurations)
-        {
-            $currentConfig = $currentCertConfigs | Where-Object { $_.DisplayName -eq $desiredConfig.DisplayName }
-            
-            if ($null -eq $currentConfig)
-            {
-                # Create new configuration
-                Write-Verbose -Message "Creating new certificate configuration: $($desiredConfig.DisplayName)"
-                $params = @{
-                    DisplayName = $desiredConfig.DisplayName
-                }
-                if (-not [System.String]::IsNullOrEmpty($desiredConfig.Description))
-                {
-                    $params.Description = $desiredConfig.Description
-                }
-                
-                try
-                {
-                    $newConfig = New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -BodyParameter $params
-                    
-                    # Add trusted certificate authorities
-                    if ($null -ne $desiredConfig.TrustedCertificateAuthorities)
-                    {
-                        foreach ($ca in $desiredConfig.TrustedCertificateAuthorities)
-                        {
-                            $caParams = @{
-                                Certificate     = $ca.Certificate
-                                IsRootAuthority = $ca.IsRootAuthority
-                            }
-                            if (-not [System.String]::IsNullOrEmpty($ca.Issuer))
-                            {
-                                $caParams.Issuer = $ca.Issuer
-                            }
-                            if (-not [System.String]::IsNullOrEmpty($ca.IssuerSubjectKeyIdentifier))
-                            {
-                                $caParams.IssuerSubjectKeyIdentifier = $ca.IssuerSubjectKeyIdentifier
-                            }
-                            
-                            New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
-                                -CertificateBasedApplicationConfigurationId $newConfig.Id `
-                                -BodyParameter $caParams
-                        }
-                    }
-                }
-                catch
-                {
-                    Write-Verbose -Message "Error creating certificate configuration: $_"
-                }
-            }
-            else
-            {
-                # Update existing configuration if needed
-                Write-Verbose -Message "Updating certificate configuration: $($desiredConfig.DisplayName)"
-                
-                # Check if update is needed
-                $updateNeeded = $false
-                if ($currentConfig.Description -ne $desiredConfig.Description)
-                {
-                    $updateNeeded = $true
-                }
-                
-                if ($updateNeeded)
-                {
-                    $updateParams = @{
-                        DisplayName = $desiredConfig.DisplayName
-                    }
-                    if (-not [System.String]::IsNullOrEmpty($desiredConfig.Description))
-                    {
-                        $updateParams.Description = $desiredConfig.Description
-                    }
-                    
-                    try
-                    {
-                        Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration `
-                            -CertificateBasedApplicationConfigurationId $currentConfig.Id `
-                            -BodyParameter $updateParams
-                    }
-                    catch
-                    {
-                        Write-Verbose -Message "Error updating certificate configuration: $_"
-                    }
-                }
-                
-                # Handle trusted CAs - for simplicity, we'll compare and update if different
-                # Note: Full CA comparison logic could be more complex
-                $currentCACount = ($currentConfig.TrustedCertificateAuthorities | Measure-Object).Count
-                $desiredCACount = ($desiredConfig.TrustedCertificateAuthorities | Measure-Object).Count
-                
-                if ($currentCACount -ne $desiredCACount)
-                {
-                    Write-Verbose -Message "Certificate authority count differs, update may be needed"
-                }
-            }
-        }
-        
-        # Remove configurations not in desired state
-        foreach ($currentConfig in $currentCertConfigs)
-        {
-            $shouldExist = $CertificateBasedApplicationConfigurations | Where-Object { $_.DisplayName -eq $currentConfig.DisplayName }
-            if ($null -eq $shouldExist)
-            {
-                Write-Verbose -Message "Removing certificate configuration: $($currentConfig.DisplayName)"
-                try
-                {
-                    Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration `
-                        -CertificateBasedApplicationConfigurationId $currentConfig.Id
-                }
-                catch
-                {
-                    Write-Verbose -Message "Error removing certificate configuration: $_"
-                }
-            }
-        }
-    }
-    elseif ($Ensure -eq 'Absent')
-    {
-        # When removing the policy, also remove all certificate configurations
-        try
-        {
-            $currentCertConfigs = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -All -ErrorAction SilentlyContinue
-            foreach ($certConfig in $currentCertConfigs)
-            {
-                Write-Verbose -Message "Removing certificate configuration: $($certConfig.DisplayName)"
-                Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration `
-                    -CertificateBasedApplicationConfigurationId $certConfig.Id
-            }
-        }
-        catch
-        {
-            Write-Verbose -Message "Could not remove certificate configurations: $_"
-        }
-    }
 }
 
 function Test-TargetResource
@@ -506,10 +315,6 @@ function Test-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $Restrictions,
-
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
-        $CertificateBasedApplicationConfigurations,
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
@@ -675,47 +480,12 @@ function Export-TargetResource
                     $Results.Remove('Restrictions') | Out-Null
                 }
             }
-
-            # Export certificate-based application configurations
-            if ($null -ne $Results.CertificateBasedApplicationConfigurations -and $Results.CertificateBasedApplicationConfigurations.Count -gt 0)
-            {
-                $complexMapping = @(
-                    @{
-                        Name            = 'CertificateBasedApplicationConfigurations'
-                        CimInstanceName = 'AADAppManagementPolicyCertificateBasedApplicationConfiguration'
-                        IsRequired      = $False
-                    }
-                    @{
-                        Name            = 'TrustedCertificateAuthorities'
-                        CimInstanceName = 'AADAppManagementPolicyCertificateAuthority'
-                        IsRequired      = $False
-                    }
-                )
-                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
-                    -ComplexObject $Results.CertificateBasedApplicationConfigurations `
-                    -CIMInstanceName 'AADAppManagementPolicyCertificateBasedApplicationConfiguration' `
-                    -ComplexTypeMapping $complexMapping
-
-                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
-                {
-                    $Results.CertificateBasedApplicationConfigurations = $complexTypeStringResult
-                }
-                else
-                {
-                    $Results.Remove('CertificateBasedApplicationConfigurations') | Out-Null
-                }
-            }
-            else
-            {
-                $Results.Remove('CertificateBasedApplicationConfigurations') | Out-Null
-            }
-
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
                 -Results $Results `
                 -Credential $Credential `
-                -NoEscape @('Restrictions', 'KeyCredentials', 'PasswordCredentials', 'CertificateBasedApplicationConfigurations', 'TrustedCertificateAuthorities')
+                -NoEscape @('Restrictions', 'KeyCredentials', 'PasswordCredentials')
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
