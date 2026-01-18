@@ -99,15 +99,27 @@ function Get-TargetResource
             return $nullResult
         }
 
+        # Get trusted certificate authorities using the dedicated cmdlet
         $trustedCAs = @()
-        foreach ($ca in $instance.TrustedCertificateAuthorities)
+        try
         {
-            $trustedCAs += @{
-                Certificate                 = $ca.Certificate
-                IsRootAuthority             = $ca.IsRootAuthority
-                Issuer                      = $ca.Issuer
-                IssuerSubjectKeyIdentifier  = $ca.IssuerSubjectKeyIdentifier
+            $certificateAuthorities = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
+                -CertificateBasedApplicationConfigurationId $instance.Id `
+                -ErrorAction SilentlyContinue
+            
+            foreach ($ca in $certificateAuthorities)
+            {
+                $trustedCAs += @{
+                    Certificate                 = $ca.Certificate
+                    IsRootAuthority             = $ca.IsRootAuthority
+                    Issuer                      = $ca.Issuer
+                    IssuerSubjectKeyIdentifier  = $ca.IssuerSubjectKeyIdentifier
+                }
             }
+        }
+        catch
+        {
+            Write-Verbose -Message "Could not retrieve certificate authorities: $_"
         }
 
         $results = @{

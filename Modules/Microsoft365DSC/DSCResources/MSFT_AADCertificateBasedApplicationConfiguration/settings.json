@@ -52,6 +52,7 @@
       "module": "Microsoft.Graph.Beta.Identity.DirectoryManagement",
       "cmdlets": [
         "Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration",
+        "Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority",
         "New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration",
         "Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration",
         "Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration",

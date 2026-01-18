@@ -40,15 +40,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Id = "12345-67890"
                     DisplayName = "Contoso Root CA"
                     Description = "Trusted CAs from Contoso"
-                    TrustedCertificateAuthorities = @(
-                        @{
-                            Certificate = "MIIC..."
-                            IsRootAuthority = $true
-                            Issuer = "CN=Contoso Root CA"
-                            IssuerSubjectKeyIdentifier = "ABC123"
-                        }
-                    )
                 }
+            }
+
+            Mock -CommandName Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority -MockWith {
+                return @(
+                    @{
+                        Certificate = "MIIC..."
+                        IsRootAuthority = $true
+                        Issuer = "CN=Contoso Root CA"
+                        IssuerSubjectKeyIdentifier = "ABC123"
+                    }
+                )
             }
 
             Mock -Command New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -MockWith {

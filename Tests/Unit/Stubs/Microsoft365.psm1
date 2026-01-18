@@ -4015,6 +4015,39 @@ function Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfi
         $Skip
     )
 }
+function Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [System.String]
+        $CertificateAuthorityAsEntityId,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $All,
+
+        [Parameter()]
+        [System.String]
+        $Filter,
+
+        [Parameter()]
+        [System.String[]]
+        $Property,
+
+        [Parameter()]
+        [System.Int32]
+        $Top,
+
+        [Parameter()]
+        [System.Int32]
+        $Skip
+    )
+}
 function New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration
 {
     [CmdletBinding()]
