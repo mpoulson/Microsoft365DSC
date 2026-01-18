@@ -790,9 +790,6 @@ function Get-AzurePIMPrincipalId
             return $Principal
         }
 
-        # Connect to Microsoft Graph to resolve principal
-        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' -InboundParameters $PSBoundParameters
-
         if ($PrincipalType -eq 'User')
         {
             $user = Get-MgUser -Filter "UserPrincipalName eq '$($Principal -replace "'", "''")'" -ErrorAction SilentlyContinue
@@ -832,9 +829,6 @@ function Get-AzurePIMPrincipalInfo
 
     try
     {
-        # Connect to Microsoft Graph to resolve principal
-        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' -InboundParameters $PSBoundParameters
-
         # Try to get as user
         $user = Get-MgUser -UserId $PrincipalId -ErrorAction SilentlyContinue
         if ($null -ne $user)

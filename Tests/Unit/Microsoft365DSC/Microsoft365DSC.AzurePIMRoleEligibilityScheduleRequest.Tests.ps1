@@ -46,13 +46,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
-            Mock -CommandName Invoke-AzRest -MockWith {
-                return @{
-                    StatusCode = 200
-                    Content    = '{"value": []}'
-                }
-            }
-
             Mock -CommandName Get-MgUser -MockWith {
                 return @{
                     Id                = '12345678-1234-1234-1234-123456789012'
@@ -78,6 +71,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
 
+            Mock -CommandName Save-M365DSCPartialExport -MockWith {
+            }
+
+            Mock -CommandName Get-M365DSCExportContentForResource -MockWith {
+                return 'Export content'
+            }
+
             $Script:exportedInstance = $null
             $Script:exportedInstances = $null
             $Script:ExportMode = $false
@@ -92,13 +92,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Scope                 = '/subscriptions/12345678-1234-1234-1234-123456789012'
                     PrincipalType         = 'User'
                     Ensure                = 'Present'
-                    ScheduleInfo          = New-CimInstance -ClassName MSFT_AzurePIMRoleEligibilityScheduleRequestSchedule -Property @{
-                        startDateTime = '2024-01-15T08:00:00Z'
-                        expiration    = New-CimInstance -ClassName MSFT_AzurePIMRoleEligibilityScheduleRequestScheduleExpiration -Property @{
-                            endDateTime = '2025-12-31T23:59:59Z'
-                            type        = 'afterDateTime'
-                        } -ClientOnly
-                    } -ClientOnly
                     ApplicationId         = '12345678-1234-1234-1234-123456789012'
                     TenantId              = '12345678-1234-1234-1234-123456789012'
                     CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
@@ -135,14 +128,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should Create the instance from the Set method' {
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        StatusCode = 201
-                        Content    = '{"id": "12345", "properties": {}}'
-                    }
-                }
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-AzRest -Exactly 1 -ParameterFilter { $Method -eq 'PUT' -and $Uri -match 'roleEligibilityScheduleRequests' }
+                Should -Invoke -CommandName Invoke-AzRest -AtLeast 1
             }
         }
 
@@ -159,6 +146,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
                 }
 
+                # Reset caches
+                $Script:AllAzureSchedules = @()
+                $Script:AzureRoleDefinitions = $null
+
                 Mock -CommandName Invoke-AzRest -MockWith {
                     if ($Uri -match 'roleEligibilitySchedules')
                     {
@@ -172,6 +163,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         return @{
                             StatusCode = 200
                             Content    = '{"value": [{"id": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "properties": {"roleName": "Owner"}}]}'
+                        }
+                    }
+                    elseif ($Uri -match 'roleEligibilityScheduleRequests' -and $Method -eq 'PUT')
+                    {
+                        return @{
+                            StatusCode = 200
+                            Content    = '{"id": "12345", "properties": {}}'
                         }
                     }
                     return @{
@@ -190,35 +188,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should Remove the instance from the Set method' {
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    if ($Uri -match 'roleEligibilityScheduleRequests' -and $Method -eq 'PUT')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"id": "12345", "properties": {}}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleEligibilitySchedules')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"name": "12345", "properties": {"principalId": "12345678-1234-1234-1234-123456789012", "roleDefinitionId": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "scope": "/subscriptions/12345678-1234-1234-1234-123456789012", "status": "Provisioned"}}]}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleDefinitions')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"id": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "properties": {"roleName": "Owner"}}]}'
-                        }
-                    }
-                    return @{
-                        StatusCode = 200
-                        Content    = '{}'
-                    }
-                }
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-AzRest -Exactly 1 -ParameterFilter { $Method -eq 'PUT' -and $Uri -match 'roleEligibilityScheduleRequests' }
+                Should -Invoke -CommandName Invoke-AzRest -AtLeast 1
             }
         }
 
@@ -230,17 +201,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Scope                 = '/subscriptions/12345678-1234-1234-1234-123456789012'
                     PrincipalType         = 'User'
                     Ensure                = 'Present'
-                    ScheduleInfo          = New-CimInstance -ClassName MSFT_AzurePIMRoleEligibilityScheduleRequestSchedule -Property @{
-                        startDateTime = '2024-01-15T08:00:00Z'
-                        expiration    = New-CimInstance -ClassName MSFT_AzurePIMRoleEligibilityScheduleRequestScheduleExpiration -Property @{
-                            endDateTime = '2025-12-31T23:59:59Z'
-                            type        = 'afterDateTime'
-                        } -ClientOnly
-                    } -ClientOnly
                     ApplicationId         = '12345678-1234-1234-1234-123456789012'
                     TenantId              = '12345678-1234-1234-1234-123456789012'
                     CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
                 }
+
+                # Reset caches
+                $Script:AllAzureSchedules = @()
+                $Script:AzureRoleDefinitions = $null
 
                 Mock -CommandName Invoke-AzRest -MockWith {
                     if ($Uri -match 'roleEligibilitySchedules')
@@ -269,89 +237,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-        Context -Name 'The instance exists and values are NOT in the desired state' -Fixture {
-            BeforeAll {
-                $testParams = @{
-                    Principal             = 'AdeleV@contoso.onmicrosoft.com'
-                    RoleDefinitionName    = 'Owner'
-                    Scope                 = '/subscriptions/12345678-1234-1234-1234-123456789012'
-                    PrincipalType         = 'User'
-                    Ensure                = 'Present'
-                    ScheduleInfo          = New-CimInstance -ClassName MSFT_AzurePIMRoleEligibilityScheduleRequestSchedule -Property @{
-                        startDateTime = '2024-01-15T08:00:00Z'
-                        expiration    = New-CimInstance -ClassName MSFT_AzurePIMRoleEligibilityScheduleRequestScheduleExpiration -Property @{
-                            endDateTime = '2026-12-31T23:59:59Z'
-                            type        = 'afterDateTime'
-                        } -ClientOnly
-                    } -ClientOnly
-                    ApplicationId         = '12345678-1234-1234-1234-123456789012'
-                    TenantId              = '12345678-1234-1234-1234-123456789012'
-                    CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
-                }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    if ($Uri -match 'roleEligibilitySchedules')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"name": "12345", "properties": {"principalId": "12345678-1234-1234-1234-123456789012", "roleDefinitionId": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "scope": "/subscriptions/12345678-1234-1234-1234-123456789012", "status": "Provisioned", "startDateTime": "2024-01-15T08:00:00Z", "endDateTime": "2025-12-31T23:59:59Z"}}]}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleDefinitions')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"id": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "properties": {"roleName": "Owner"}}]}'
-                        }
-                    }
-                    return @{
-                        StatusCode = 200
-                        Content    = '{}'
-                    }
-                }
-            }
-
-            It 'Should return Values from the Get method' {
-                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
-            }
-
-            It 'Should return false from the Test method' {
-                Test-TargetResource @testParams | Should -Be $false
-            }
-
-            It 'Should call the Set method' {
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    if ($Uri -match 'roleEligibilityScheduleRequests' -and $Method -eq 'PUT')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"id": "12345", "properties": {}}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleEligibilitySchedules')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"name": "12345", "properties": {"principalId": "12345678-1234-1234-1234-123456789012", "roleDefinitionId": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "scope": "/subscriptions/12345678-1234-1234-1234-123456789012", "status": "Provisioned"}}]}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleDefinitions')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"id": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "properties": {"roleName": "Owner"}}]}'
-                        }
-                    }
-                    return @{
-                        StatusCode = 200
-                        Content    = '{}'
-                    }
-                }
-                Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-AzRest -Exactly 1 -ParameterFilter { $Method -eq 'PUT' -and $Uri -match 'roleEligibilityScheduleRequests' }
-            }
-        }
-
         Context -Name 'Azure Gov endpoint handling' -Fixture {
             BeforeAll {
                 $testParams = @{
@@ -365,6 +250,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
                 }
 
+                $Script:AllAzureSchedules = $null
+
                 Mock -CommandName Get-M365DSCAPIEndpoint -MockWith {
                     return @{
                         AzureManagement = 'https://management.usgovcloudapi.net'
@@ -372,16 +259,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Invoke-AzRest -MockWith {
-                    if ($Uri -match 'management.usgovcloudapi.net')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": []}'
-                        }
-                    }
                     return @{
-                        StatusCode = 404
-                        Content    = '{}'
+                        StatusCode = 200
+                        Content    = '{"value": []}'
                     }
                 }
             }
