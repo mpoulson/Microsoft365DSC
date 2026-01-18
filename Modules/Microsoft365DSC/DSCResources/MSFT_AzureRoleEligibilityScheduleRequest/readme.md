@@ -1,4 +1,4 @@
-# AzurePIMRoleEligibilityScheduleRequest
+# AzureRoleEligibilityScheduleRequest
 
 ## Description
 
@@ -7,7 +7,7 @@ This resource manages Azure PIM (Privileged Identity Management) role eligibilit
 ## Key Differences from AADRoleEligibilityScheduleRequest
 
 - **AADRoleEligibilityScheduleRequest**: Manages Entra ID (Azure AD) directory roles via Microsoft Graph API
-- **AzurePIMRoleEligibilityScheduleRequest**: Manages Azure RBAC roles via Azure Resource Manager API
+- **AzureRoleEligibilityScheduleRequest**: Manages Azure RBAC roles via Azure Resource Manager API
 
 ## Supported Scope Levels
 

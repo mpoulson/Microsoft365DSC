@@ -15,16 +15,16 @@ Configuration Example
 
     node localhost
     {
-        AzurePIMRoleEligibilityScheduleRequest "ResourceGroupContributorEligibility"
+        AzureRoleEligibilityScheduleRequest "ResourceGroupContributorEligibility"
         {
             Principal             = "SecurityGroup@contoso.onmicrosoft.com"
             RoleDefinitionName    = "Contributor"
             Scope                 = "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/rg-production"
             PrincipalType         = "Group"
             Ensure                = "Present"
-            ScheduleInfo          = MSFT_AzurePIMRoleEligibilityScheduleRequestSchedule {
+            ScheduleInfo          = MSFT_AzureRoleEligibilityScheduleRequestSchedule {
                 startDateTime = '2024-01-01T00:00:00Z'
-                expiration    = MSFT_AzurePIMRoleEligibilityScheduleRequestScheduleExpiration
+                expiration    = MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration
                 {
                     type        = 'noExpiration'
                 }

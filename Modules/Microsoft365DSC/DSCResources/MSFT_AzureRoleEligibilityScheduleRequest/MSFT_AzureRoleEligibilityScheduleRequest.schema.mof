@@ -1,5 +1,5 @@
 [ClassVersion("1.0.0")]
-class MSFT_AzurePIMRoleEligibilityScheduleRequestScheduleExpiration
+class MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration
 {
     [Write, Description("The requestor's desired duration of access represented in ISO 8601 format for durations. For example, PT3H refers to three hours. If specified in a request, endDateTime should not be present and the type property should be set to afterDuration.")] String duration;
     [Write, Description("Timestamp of date and time information using ISO 8601 format and is always in UTC time. For example, midnight UTC on Jan 1, 2014 is 2014-01-01T00:00:00Z.")] String endDateTime;
@@ -7,14 +7,14 @@ class MSFT_AzurePIMRoleEligibilityScheduleRequestScheduleExpiration
 };
 
 [ClassVersion("1.0.0")]
-class MSFT_AzurePIMRoleEligibilityScheduleRequestSchedule
+class MSFT_AzureRoleEligibilityScheduleRequestSchedule
 {
-    [Write, Description("When the eligible assignment expires."), EmbeddedInstance("MSFT_AzurePIMRoleEligibilityScheduleRequestScheduleExpiration")] String expiration;
+    [Write, Description("When the eligible assignment expires."), EmbeddedInstance("MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration")] String expiration;
     [Write, Description("When the eligible assignment becomes active.")] String startDateTime;
 };
 
-[ClassVersion("1.0.0.0"), FriendlyName("AzurePIMRoleEligibilityScheduleRequest")]
-class MSFT_AzurePIMRoleEligibilityScheduleRequest : OMI_BaseResource
+[ClassVersion("1.0.0.0"), FriendlyName("AzureRoleEligibilityScheduleRequest")]
+class MSFT_AzureRoleEligibilityScheduleRequest : OMI_BaseResource
 {
     [Key, Description("User Principal Name or Object ID of the principal.")] String Principal;
     [Key, Description("Display name of the Azure role (e.g., 'Owner', 'Contributor').")] String RoleDefinitionName;
@@ -23,7 +23,7 @@ class MSFT_AzurePIMRoleEligibilityScheduleRequest : OMI_BaseResource
     [Write, Description("Directory scope identifier (if applicable).")] String DirectoryScopeId;
     [Write, Description("Request type: adminAssign, adminUpdate, adminRemove, selfActivate, etc."), ValueMap{"adminAssign","adminUpdate","adminRemove","selfActivate","selfDeactivate","adminExtend","adminRenew","selfExtend","selfRenew"}, Values{"adminAssign","adminUpdate","adminRemove","selfActivate","selfDeactivate","adminExtend","adminRenew","selfExtend","selfRenew"}] String RequestType;
     [Write, Description("Justification for the request.")] String Justification;
-    [Write, Description("The period of the role eligibility."), EmbeddedInstance("MSFT_AzurePIMRoleEligibilityScheduleRequestSchedule")] String ScheduleInfo;
+    [Write, Description("The period of the role eligibility."), EmbeddedInstance("MSFT_AzureRoleEligibilityScheduleRequestSchedule")] String ScheduleInfo;
     [Write, Description("Status of the request.")] String Status;
     [Write, Description("Identifier for the Role Eligibility Schedule Request.")] String Id;
     [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] string Ensure;

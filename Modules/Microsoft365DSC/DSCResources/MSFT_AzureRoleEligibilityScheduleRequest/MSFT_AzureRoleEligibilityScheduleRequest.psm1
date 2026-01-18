@@ -1,4 +1,4 @@
-Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AzurePIMRoleEligibilityScheduleRequest'
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AzureRoleEligibilityScheduleRequest'
 
 function Get-TargetResource
 {
@@ -172,7 +172,7 @@ function Get-TargetResource
 
         # Resolve principal ID
         Write-Verbose -Message "Resolving principal: $Principal of type: $PrincipalType"
-        $principalId = Get-AzurePIMPrincipalId -Principal $Principal -PrincipalType $PrincipalType
+        $principalId = Get-AzurePrincipalId -Principal $Principal -PrincipalType $PrincipalType
         
         if ($null -eq $principalId)
         {
@@ -182,7 +182,7 @@ function Get-TargetResource
 
         # Resolve role definition ID
         Write-Verbose -Message "Resolving role definition: $RoleDefinitionName"
-        $roleDefinitionId = Get-AzurePIMRoleDefinitionId -RoleDefinitionName $RoleDefinitionName -Scope $Scope -TenantId $TenantId
+        $roleDefinitionId = Get-AzureRoleDefinitionId -RoleDefinitionName $RoleDefinitionName -Scope $Scope -TenantId $TenantId
         
         if ($null -eq $roleDefinitionId)
         {
@@ -366,7 +366,7 @@ function Set-TargetResource
 
     # Resolve principal ID
     Write-Verbose -Message "Resolving principal: $Principal"
-    $principalId = Get-AzurePIMPrincipalId -Principal $Principal -PrincipalType $PrincipalType
+    $principalId = Get-AzurePrincipalId -Principal $Principal -PrincipalType $PrincipalType
     
     if ($null -eq $principalId)
     {
@@ -375,7 +375,7 @@ function Set-TargetResource
 
     # Resolve role definition ID
     Write-Verbose -Message "Resolving role definition: $RoleDefinitionName"
-    $roleDefinitionId = Get-AzurePIMRoleDefinitionId -RoleDefinitionName $RoleDefinitionName -Scope $Scope -TenantId $TenantId
+    $roleDefinitionId = Get-AzureRoleDefinitionId -RoleDefinitionName $RoleDefinitionName -Scope $Scope -TenantId $TenantId
     
     if ($null -eq $roleDefinitionId)
     {
@@ -681,7 +681,7 @@ function Export-TargetResource
 
             # Resolve principal
             $principalId = $config.properties.principalId
-            $principalInfo = Get-AzurePIMPrincipalInfo -PrincipalId $principalId
+            $principalInfo = Get-AzurePrincipalInfo -PrincipalId $principalId
             
             if ($null -eq $principalInfo)
             {
@@ -691,7 +691,7 @@ function Export-TargetResource
 
             # Resolve role definition
             $roleDefinitionId = $config.properties.roleDefinitionId
-            $roleDefinitionName = Get-AzurePIMRoleDefinitionName -RoleDefinitionId $roleDefinitionId -TenantId $TenantId
+            $roleDefinitionName = Get-AzureRoleDefinitionName -RoleDefinitionId $roleDefinitionId -TenantId $TenantId
             
             if ($null -eq $roleDefinitionName)
             {
@@ -722,12 +722,12 @@ function Export-TargetResource
                 $complexMapping = @(
                     @{
                         Name            = 'expiration'
-                        CimInstanceName = 'AzurePIMRoleEligibilityScheduleRequestScheduleExpiration'
+                        CimInstanceName = 'AzureRoleEligibilityScheduleRequestScheduleExpiration'
                         IsRequired      = $False
                     }
                 )
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString -ComplexObject $Results.ScheduleInfo `
-                        -CIMInstanceName 'AzurePIMRoleEligibilityScheduleRequestSchedule' `
+                        -CIMInstanceName 'AzureRoleEligibilityScheduleRequestSchedule' `
                         -ComplexTypeMapping $complexMapping
                 if ($complexTypeStringResult)
                 {
@@ -766,7 +766,7 @@ function Export-TargetResource
 }
 
 # Helper function to resolve principal ID
-function Get-AzurePIMPrincipalId
+function Get-AzurePrincipalId
 {
     [CmdletBinding()]
     [OutputType([System.String])]
@@ -816,7 +816,7 @@ function Get-AzurePIMPrincipalId
 }
 
 # Helper function to resolve principal info from ID
-function Get-AzurePIMPrincipalInfo
+function Get-AzurePrincipalInfo
 {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
@@ -869,7 +869,7 @@ function Get-AzurePIMPrincipalInfo
 }
 
 # Helper function to resolve role definition ID
-function Get-AzurePIMRoleDefinitionId
+function Get-AzureRoleDefinitionId
 {
     [CmdletBinding()]
     [OutputType([System.String])]
@@ -920,7 +920,7 @@ function Get-AzurePIMRoleDefinitionId
 }
 
 # Helper function to resolve role definition name from ID
-function Get-AzurePIMRoleDefinitionName
+function Get-AzureRoleDefinitionName
 {
     [CmdletBinding()]
     [OutputType([System.String])]
