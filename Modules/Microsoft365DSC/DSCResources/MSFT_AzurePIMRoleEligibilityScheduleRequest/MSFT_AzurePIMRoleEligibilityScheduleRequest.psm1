@@ -182,7 +182,7 @@ function Get-TargetResource
 
         # Resolve role definition ID
         Write-Verbose -Message "Resolving role definition: $RoleDefinitionName"
-        $roleDefinitionId = Get-AzurePIMRoleDefinitionId -RoleDefinitionName $RoleDefinitionName -Scope $Scope
+        $roleDefinitionId = Get-AzurePIMRoleDefinitionId -RoleDefinitionName $RoleDefinitionName -Scope $Scope -TenantId $TenantId
         
         if ($null -eq $roleDefinitionId)
         {
@@ -375,7 +375,7 @@ function Set-TargetResource
 
     # Resolve role definition ID
     Write-Verbose -Message "Resolving role definition: $RoleDefinitionName"
-    $roleDefinitionId = Get-AzurePIMRoleDefinitionId -RoleDefinitionName $RoleDefinitionName -Scope $Scope
+    $roleDefinitionId = Get-AzurePIMRoleDefinitionId -RoleDefinitionName $RoleDefinitionName -Scope $Scope -TenantId $TenantId
     
     if ($null -eq $roleDefinitionId)
     {
@@ -691,7 +691,7 @@ function Export-TargetResource
 
             # Resolve role definition
             $roleDefinitionId = $config.properties.roleDefinitionId
-            $roleDefinitionName = Get-AzurePIMRoleDefinitionName -RoleDefinitionId $roleDefinitionId
+            $roleDefinitionName = Get-AzurePIMRoleDefinitionName -RoleDefinitionId $roleDefinitionId -TenantId $TenantId
             
             if ($null -eq $roleDefinitionName)
             {
@@ -881,7 +881,11 @@ function Get-AzurePIMRoleDefinitionId
 
         [Parameter(Mandatory = $true)]
         [System.String]
-        $Scope
+        $Scope,
+
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $TenantId
     )
 
     try
@@ -924,7 +928,11 @@ function Get-AzurePIMRoleDefinitionName
     (
         [Parameter(Mandatory = $true)]
         [System.String]
-        $RoleDefinitionId
+        $RoleDefinitionId,
+
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $TenantId
     )
 
     try
