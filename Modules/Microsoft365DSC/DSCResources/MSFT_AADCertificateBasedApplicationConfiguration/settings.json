@@ -57,6 +57,7 @@
         "Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration",
         "Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration",
         "New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority",
+        "Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority",
         "Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority"
       ]
     }

@@ -321,8 +321,147 @@ function Set-TargetResource
             if ($updateCAs)
             {
                 Write-Verbose -Message "Certificate authorities need to be updated"
-                # Note: The Graph API may require removing all CAs and re-adding them
-                # This would need to be implemented based on the actual API behavior
+                
+                # Get current certificate authorities to compare
+                $currentCAs = @()
+                try
+                {
+                    $currentCertAuthorities = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
+                        -CertificateBasedApplicationConfigurationId $currentInstance.Id `
+                        -ErrorAction SilentlyContinue
+                    
+                    if ($null -ne $currentCertAuthorities)
+                    {
+                        $currentCAs = $currentCertAuthorities
+                    }
+                }
+                catch
+                {
+                    Write-Verbose -Message "Could not retrieve current certificate authorities: $_"
+                }
+                
+                # Remove certificate authorities that are no longer needed
+                foreach ($currentCA in $currentCAs)
+                {
+                    $found = $false
+                    if ($null -ne $TrustedCertificateAuthorities)
+                    {
+                        foreach ($desiredCA in $TrustedCertificateAuthorities)
+                        {
+                            if ($currentCA.Certificate -eq $desiredCA.Certificate)
+                            {
+                                $found = $true
+                                break
+                            }
+                        }
+                    }
+                    
+                    if (-not $found)
+                    {
+                        Write-Verbose -Message "Removing certificate authority: $($currentCA.Issuer)"
+                        try
+                        {
+                            Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
+                                -CertificateBasedApplicationConfigurationId $currentInstance.Id `
+                                -CertificateAuthorityAsEntityId $currentCA.Id `
+                                -ErrorAction Stop
+                        }
+                        catch
+                        {
+                            Write-Verbose -Message "Error removing certificate authority: $_"
+                        }
+                    }
+                }
+                
+                # Add or update certificate authorities
+                if ($null -ne $TrustedCertificateAuthorities)
+                {
+                    foreach ($desiredCA in $TrustedCertificateAuthorities)
+                    {
+                        $existingCA = $null
+                        foreach ($currentCA in $currentCAs)
+                        {
+                            if ($currentCA.Certificate -eq $desiredCA.Certificate)
+                            {
+                                $existingCA = $currentCA
+                                break
+                            }
+                        }
+                        
+                        if ($null -eq $existingCA)
+                        {
+                            # Add new certificate authority
+                            Write-Verbose -Message "Adding certificate authority: $($desiredCA.Issuer)"
+                            $caParams = @{
+                                Certificate     = $desiredCA.Certificate
+                                IsRootAuthority = $desiredCA.IsRootAuthority
+                            }
+                            
+                            if (-not [System.String]::IsNullOrEmpty($desiredCA.Issuer))
+                            {
+                                $caParams.Issuer = $desiredCA.Issuer
+                            }
+                            
+                            if (-not [System.String]::IsNullOrEmpty($desiredCA.IssuerSubjectKeyIdentifier))
+                            {
+                                $caParams.IssuerSubjectKeyIdentifier = $desiredCA.IssuerSubjectKeyIdentifier
+                            }
+                            
+                            try
+                            {
+                                New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
+                                    -CertificateBasedApplicationConfigurationId $currentInstance.Id `
+                                    -BodyParameter $caParams
+                            }
+                            catch
+                            {
+                                Write-Verbose -Message "Error adding certificate authority: $_"
+                            }
+                        }
+                        else
+                        {
+                            # Update existing certificate authority if needed
+                            $needsUpdate = $false
+                            if ($existingCA.IsRootAuthority -ne $desiredCA.IsRootAuthority -or
+                                $existingCA.Issuer -ne $desiredCA.Issuer -or
+                                $existingCA.IssuerSubjectKeyIdentifier -ne $desiredCA.IssuerSubjectKeyIdentifier)
+                            {
+                                $needsUpdate = $true
+                            }
+                            
+                            if ($needsUpdate)
+                            {
+                                Write-Verbose -Message "Updating certificate authority: $($desiredCA.Issuer)"
+                                $updateCAParams = @{
+                                    Certificate     = $desiredCA.Certificate
+                                    IsRootAuthority = $desiredCA.IsRootAuthority
+                                }
+                                
+                                if (-not [System.String]::IsNullOrEmpty($desiredCA.Issuer))
+                                {
+                                    $updateCAParams.Issuer = $desiredCA.Issuer
+                                }
+                                
+                                if (-not [System.String]::IsNullOrEmpty($desiredCA.IssuerSubjectKeyIdentifier))
+                                {
+                                    $updateCAParams.IssuerSubjectKeyIdentifier = $desiredCA.IssuerSubjectKeyIdentifier
+                                }
+                                
+                                try
+                                {
+                                    Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
+                                        -CertificateBasedApplicationConfigurationId $currentInstance.Id `
+                                        -CertificateAuthorityAsEntityId $existingCA.Id `
+                                        -BodyParameter $updateCAParams
+                                }
+                                catch
+                                {
+                                    Write-Verbose -Message "Error updating certificate authority: $_"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         catch

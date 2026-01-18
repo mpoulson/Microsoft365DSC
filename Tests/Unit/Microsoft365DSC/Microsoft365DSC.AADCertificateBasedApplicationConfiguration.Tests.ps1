@@ -67,6 +67,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -Command New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority -MockWith {
             }
 
+            Mock -Command Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority -MockWith {
+            }
+
+            Mock -Command Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority -MockWith {
+            }
+
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
             

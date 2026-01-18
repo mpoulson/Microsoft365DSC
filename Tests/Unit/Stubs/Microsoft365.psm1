@@ -4092,6 +4092,23 @@ function New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfi
         $BodyParameter
     )
 }
+function Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [System.String]
+        $CertificateAuthorityAsEntityId,
+
+        [Parameter()]
+        [PSObject]
+        $BodyParameter
+    )
+}
 function Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority
 {
     [CmdletBinding()]
