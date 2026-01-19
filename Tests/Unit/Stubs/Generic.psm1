@@ -1342,3 +1342,17 @@ function Reset-MSCloudLoginConnectionProfileContext
 {
 }
 #endregion
+
+#region M365DSCUtil
+function Resolve-Credentials
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $UserName
+    )
+    
+    return "`$$UserName"
+}
+#endregion

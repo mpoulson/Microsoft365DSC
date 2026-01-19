@@ -87127,3 +87127,57 @@ function Update-MgBetaDeviceManagementReusableSetting
 }
 
 #endregion
+
+#region MgBetaDomainFederationConfiguration
+function Get-MgBetaDomainFederationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $InternalDomainFederationId,
+
+        [Parameter()]
+        [System.String]
+        $DomainId,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $All
+    )
+}
+
+function New-MgBetaDomainFederationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Collections.Hashtable]
+        $BodyParameter
+    )
+}
+
+function Update-MgBetaDomainFederationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $InternalDomainFederationId,
+
+        [Parameter()]
+        [System.Collections.Hashtable]
+        $BodyParameter
+    )
+}
+
+function Remove-MgBetaDomainFederationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $InternalDomainFederationId
+    )
+}
+#endregion
