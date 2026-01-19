@@ -320,14 +320,30 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Save-M365DSCPartialExport -MockWith {
                 }
 
+                $script:expectedExportCert = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("exportpublickey"))
+
                 $testParams = @{
                     Credential = $Credential
                 }
             }
 
             It 'Should Reverse Engineer resource from the Export method' {
-                $result = Export-TargetResource @testParams
-                $result | Should -Not -BeNullOrEmpty
+                $exportErr = $null
+                $result = $null
+                try
+                {
+                    $result = Export-TargetResource @testParams -ErrorAction Stop
+                }
+                catch
+                {
+                    $exportErr = $_
+                }
+
+                $result | Should -Not -BeNullOrEmpty -Because $exportErr
+                Should -Invoke -CommandName Get-M365DSCExportContentForResource -Exactly 1 -ParameterFilter {
+                    ($Results.TrustedCertificateAuthorities -match $script:expectedExportCert) -and
+                    ($Results.TrustedCertificateAuthorities -match 'IsRootAuthority')
+                }
             }
         }
     }
