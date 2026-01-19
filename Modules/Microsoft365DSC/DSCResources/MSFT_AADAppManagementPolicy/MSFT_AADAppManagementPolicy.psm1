@@ -27,6 +27,10 @@ function Get-TargetResource
         $Restrictions,
 
         [Parameter()]
+        [System.String[]]
+        $CertificateBasedApplicationConfigurationIds,
+
+        [Parameter()]
         [ValidateSet('Present', 'Absent')]
         [System.String]
         $Ensure = 'Present',
@@ -134,19 +138,27 @@ function Get-TargetResource
             $restrictionsValue.keyCredentials += $newItem
         }
 
+        # Get certificate-based application configuration IDs
+        $certConfigIds = @()
+        if ($null -ne $instance.AdditionalProperties -and $null -ne $instance.AdditionalProperties['certificateBasedApplicationConfigurationIds'])
+        {
+            $certConfigIds = $instance.AdditionalProperties['certificateBasedApplicationConfigurationIds']
+        }
+
         $results = @{
-            DisplayName           = $instance.DisplayName
-            Id                    = $instance.Id
-            Description           = $instance.Description
-            IsEnabled             = $instance.IsEnabled
-            Restrictions          = $restrictionsValue
-            Ensure                = 'Present'
-            Credential            = $Credential
-            ApplicationId         = $ApplicationId
-            TenantId              = $TenantId
-            CertificateThumbprint = $CertificateThumbprint
-            ManagedIdentity       = $ManagedIdentity.IsPresent
-            AccessTokens          = $AccessTokens
+            DisplayName                                  = $instance.DisplayName
+            Id                                           = $instance.Id
+            Description                                  = $instance.Description
+            IsEnabled                                    = $instance.IsEnabled
+            Restrictions                                 = $restrictionsValue
+            CertificateBasedApplicationConfigurationIds  = $certConfigIds
+            Ensure                                       = 'Present'
+            Credential                                   = $Credential
+            ApplicationId                                = $ApplicationId
+            TenantId                                     = $TenantId
+            CertificateThumbprint                        = $CertificateThumbprint
+            ManagedIdentity                              = $ManagedIdentity.IsPresent
+            AccessTokens                                 = $AccessTokens
         }
         return $results
     }
@@ -186,6 +198,10 @@ function Set-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $Restrictions,
+
+        [Parameter()]
+        [System.String[]]
+        $CertificateBasedApplicationConfigurationIds,
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
@@ -270,6 +286,12 @@ function Set-TargetResource
 
     $setParameters.Restrictions = $restrictionsValue
 
+    # Add certificate-based application configuration IDs if provided
+    if ($null -ne $CertificateBasedApplicationConfigurationIds -and $CertificateBasedApplicationConfigurationIds.Count -gt 0)
+    {
+        $setParameters.Add('certificateBasedApplicationConfigurationIds', $CertificateBasedApplicationConfigurationIds)
+    }
+
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
@@ -315,6 +337,10 @@ function Test-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $Restrictions,
+
+        [Parameter()]
+        [System.String[]]
+        $CertificateBasedApplicationConfigurationIds,
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]

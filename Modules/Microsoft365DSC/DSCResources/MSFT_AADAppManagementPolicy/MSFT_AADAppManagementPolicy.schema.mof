@@ -22,6 +22,7 @@ class MSFT_AADAppManagementPolicy : OMI_BaseResource
     [Required, Description("The description of the policy.")] String Description;
     [Write, Description("Denotes whether the policy is enabled.")] Boolean IsEnabled;
     [Write, Description("Restrictions that apply to an application or service principal object."), EmbeddedInstance("MSFT_AADAppManagementPolicyRestrictions")] string Restrictions;
+    [Write, Description("References to certificate-based application configurations by their DisplayName. These configurations must be managed separately using the AADCertificateBasedApplicationConfiguration resource.")] String CertificateBasedApplicationConfigurationIds[];
 
     [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Absent","Present"}, Values{"Absent","Present"}] string Ensure;
     [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;

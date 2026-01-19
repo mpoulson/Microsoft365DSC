@@ -3986,6 +3986,142 @@ function Get-MgBetaRoleManagementEntitlementManagementRoleDefinition
         $All
     )
 }
+function Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $All,
+
+        [Parameter()]
+        [System.String]
+        $Filter,
+
+        [Parameter()]
+        [System.String[]]
+        $Property,
+
+        [Parameter()]
+        [System.Int32]
+        $Top,
+
+        [Parameter()]
+        [System.Int32]
+        $Skip
+    )
+}
+function Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [System.String]
+        $CertificateAuthorityAsEntityId,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $All,
+
+        [Parameter()]
+        [System.String]
+        $Filter,
+
+        [Parameter()]
+        [System.String[]]
+        $Property,
+
+        [Parameter()]
+        [System.Int32]
+        $Top,
+
+        [Parameter()]
+        [System.Int32]
+        $Skip
+    )
+}
+function New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [PSObject]
+        $BodyParameter
+    )
+}
+function Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [PSObject]
+        $BodyParameter
+    )
+}
+function Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId
+    )
+}
+function New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [PSObject]
+        $BodyParameter
+    )
+}
+function Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [System.String]
+        $CertificateAuthorityAsEntityId,
+
+        [Parameter()]
+        [PSObject]
+        $BodyParameter
+    )
+}
+function Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [System.String]
+        $CertificateAuthorityAsEntityId
+    )
+}
 
 function Get-MgBetaPolicyAuthenticationFlowPolicy
 {
