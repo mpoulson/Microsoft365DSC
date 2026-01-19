@@ -302,6 +302,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential  = $Credential;
                 }
                 
+                # Override the base mock to return ResourceUrl for Export operations
                 Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
                     return @{
                         ResourceUrl = 'https://graph.microsoft.com/'

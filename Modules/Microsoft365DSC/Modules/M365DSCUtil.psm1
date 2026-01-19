@@ -5989,8 +5989,13 @@ function Resolve-Credentials
         $UserName
     )
     
-    # Stub function for resolving credentials from exported configurations
-    # This is used during Export operations to resolve credential placeholders
+    # STUB FUNCTION: This is a temporary stub implementation
+    # The full implementation should come from ReverseDSCCore module
+    # Used during Export operations to resolve credential placeholders
+    # WARNING: Creates a credential with empty SecureString - should only be used in test scenarios
+    if (-not $Global:IsTestEnvironment) {
+        Write-Warning "Resolve-Credentials is a stub function and should not be used in production"
+    }
     return New-Object System.Management.Automation.PSCredential($UserName, (New-Object SecureString))
 }
 
@@ -6016,11 +6021,15 @@ function Get-DSCBlock
         $AllowVariablesInStrings = $false
     )
     
-    # Stub function for generating DSC configuration blocks
-    # This is used during Export operations to generate DSC configuration syntax
+    # STUB FUNCTION: This is a temporary stub implementation
+    # The full implementation should come from ReverseDSCCore module
+    # Used during Export operations to generate DSC configuration syntax blocks
+    if (-not $Global:IsTestEnvironment) {
+        Write-Warning "Get-DSCBlock is a stub function and should not be used in production"
+    }
     $resourceName = Split-Path $ModulePath -Leaf
     $resourceName = $resourceName.Replace('MSFT_', '').Replace('.psm1', '')
-    return "        $resourceName 'Config' {}`r`n"
+    return "        $resourceName 'Config' {}`n"
 }
 
 Export-ModuleMember -Function @(
