@@ -28,6 +28,10 @@ function Get-TargetResource
 
         [Parameter()]
         [System.String]
+        $NextSigningCertificate,
+
+        [Parameter()]
+        [System.String]
         $PassiveSignInUri,
 
         [Parameter()]
@@ -124,6 +128,7 @@ function Get-TargetResource
             PreferredAuthenticationProtocol = $instance.preferredAuthenticationProtocol
             Domains                         = $instance.domains.id
             SigningCertificate              = $instance.signingCertificate
+            NextSigningCertificate          = $instance.nextSigningCertificate
             Ensure                          = 'Present'
             Credential                      = $Credential
             ApplicationId                   = $ApplicationId
@@ -172,6 +177,10 @@ function Set-TargetResource
         [Parameter()]
         [System.String]
         $SigningCertificate,
+
+        [Parameter()]
+        [System.String]
+        $NextSigningCertificate,
 
         [Parameter()]
         [System.String]
@@ -261,6 +270,20 @@ function Set-TargetResource
         $instanceParams.Remove('signingCertificate') | Out-Null
     }
 
+    # Handle NextSigningCertificate: only include if parameter was explicitly provided
+    if ($PSBoundParameters.ContainsKey('NextSigningCertificate'))
+    {
+        if ([System.String]::IsNullOrEmpty($NextSigningCertificate))
+        {
+            # Explicitly set to null to clear the value in the service
+            $instanceParams.nextSigningCertificate = $null
+        }
+        else
+        {
+            $instanceParams.nextSigningCertificate = $NextSigningCertificate
+        }
+    }
+
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
@@ -311,6 +334,10 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $SigningCertificate,
+
+        [Parameter()]
+        [System.String]
+        $NextSigningCertificate,
 
         [Parameter()]
         [System.String]
