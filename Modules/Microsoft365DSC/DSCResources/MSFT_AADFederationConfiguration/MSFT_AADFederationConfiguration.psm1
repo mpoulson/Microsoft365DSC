@@ -28,6 +28,10 @@ function Get-TargetResource
 
         [Parameter()]
         [System.String]
+        $NextSigningCertificate,
+
+        [Parameter()]
+        [System.String]
         $PassiveSignInUri,
 
         [Parameter()]
@@ -94,15 +98,14 @@ function Get-TargetResource
             $nullResult = $PSBoundParameters
             $nullResult.Ensure = 'Absent'
 
-            $uri = '/beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation'
-            $instances = Invoke-MgGraphRequest $uri -Method Get
+            [array]$instances = Get-MgBetaDomainFederationConfiguration -All -ErrorAction SilentlyContinue
             if (-not [System.String]::IsNullOrEmpty($Id))
             {
-                $instance = $instances.value | Where-Object -FilterScript { $_.id -eq $Id }
+                $instance = $instances | Where-Object -FilterScript { $_.Id -eq $Id }
             }
             if ($null -eq $instance)
             {
-                $instance = $instances.value | Where-Object -FilterScript { $_.displayName -eq $DisplayName }
+                $instance = $instances | Where-Object -FilterScript { $_.DisplayName -eq $DisplayName }
             }
         }
         else
@@ -116,14 +119,15 @@ function Get-TargetResource
         }
 
         $results = @{
-            Id                              = $instance.id
-            DisplayName                     = $instance.displayName
-            IssuerUri                       = $instance.issuerUri
-            MetadataExchangeUri             = $instance.metadataExchangeUri
-            PassiveSignInUri                = $instance.passiveSignInUri
-            PreferredAuthenticationProtocol = $instance.preferredAuthenticationProtocol
-            Domains                         = $instance.domains.id
-            SigningCertificate              = $instance.signingCertificate
+            Id                              = $instance.Id
+            DisplayName                     = $instance.DisplayName
+            IssuerUri                       = $instance.IssuerUri
+            MetadataExchangeUri             = $instance.MetadataExchangeUri
+            PassiveSignInUri                = $instance.PassiveSignInUri
+            PreferredAuthenticationProtocol = $instance.PreferredAuthenticationProtocol
+            Domains                         = $instance.Domains.Id
+            SigningCertificate              = $instance.SigningCertificate
+            NextSigningCertificate          = $instance.NextSigningCertificate
             Ensure                          = 'Present'
             Credential                      = $Credential
             ApplicationId                   = $ApplicationId
@@ -172,6 +176,10 @@ function Set-TargetResource
         [Parameter()]
         [System.String]
         $SigningCertificate,
+
+        [Parameter()]
+        [System.String]
+        $NextSigningCertificate,
 
         [Parameter()]
         [System.String]
@@ -234,55 +242,63 @@ function Set-TargetResource
     $currentInstance = Get-TargetResource @PSBoundParameters
 
     $instanceParams = @{
-        '@odata.type'                   = 'microsoft.graph.samlOrWsFedExternalDomainFederation'
-        displayName                     = $DisplayName
-        metadataExchangeUri             = $MetadataExchangeUri
-        issuerUri                       = $IssuerUri
-        preferredAuthenticationProtocol = $PreferredAuthenticationProtocol
-        passiveSignInUri                = $PassiveSignInUri
-        signingCertificate              = $SigningCertificate
-        domains                         = @()
+        DisplayName                     = $DisplayName
+        MetadataExchangeUri             = $MetadataExchangeUri
+        IssuerUri                       = $IssuerUri
+        PreferredAuthenticationProtocol = $PreferredAuthenticationProtocol
+        PassiveSignInUri                = $PassiveSignInUri
+        SigningCertificate              = $SigningCertificate
+        NextSigningCertificate          = $NextSigningCertificate
     }
-    foreach ($domain in $domains)
+
+    # Handle domains
+    if ($null -ne $Domains -and $Domains.Count -gt 0)
     {
-        $instanceParams.domains += @{
-            '@odata.type' = 'microsoft.graph.externalDomainName'
-            id            = $domain
+        $domainObjects = @()
+        foreach ($domain in $Domains)
+        {
+            $domainObjects += @{
+                '@odata.type' = 'microsoft.graph.externalDomainName'
+                id            = $domain
+            }
         }
+        $instanceParams.Add('Domains', $domainObjects)
     }
 
     if ([System.String]::IsNullOrEmpty($MetadataExchangeUri))
     {
-        $instanceParams.Remove('metadataExchangeUri') | Out-Null
+        $instanceParams.Remove('MetadataExchangeUri') | Out-Null
     }
 
     if ([System.String]::IsNullOrEmpty($SigningCertificate))
     {
-        $instanceParams.Remove('signingCertificate') | Out-Null
+        $instanceParams.Remove('SigningCertificate') | Out-Null
+    }
+
+    if ([System.String]::IsNullOrEmpty($NextSigningCertificate))
+    {
+        $instanceParams.Remove('NextSigningCertificate') | Out-Null
     }
 
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
-        $uri = "/beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation"
-        $body = ConvertTo-Json $instanceParams -Depth 10 -Compress
-        Write-Verbose -Message "Creating federation configuration {$DisplayName} with:`r`n$body"
-        Invoke-MgGraphRequest -Uri $uri -Method POST -Body $body
+        Write-Verbose -Message "Creating federation configuration {$DisplayName}"
+        $null = New-MgBetaDomainFederationConfiguration -BodyParameter $instanceParams
     }
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
-        $uri = "/beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation/$($currentInstance.Id)"
-        $body = ConvertTo-Json $instanceParams -Depth 10 -Compress
-        Write-Verbose -Message "Updating federation configuration {$DisplayName} with:`r`n$body"
-        Invoke-MgGraphRequest -Uri $uri -Method PATCH -Body $body
+        Write-Verbose -Message "Updating federation configuration {$DisplayName}"
+        $updateParams = $instanceParams
+        $updateParams.Remove('DisplayName') | Out-Null
+        $null = Update-MgBetaDomainFederationConfiguration -InternalDomainFederationId $currentInstance.Id -BodyParameter $updateParams
     }
     # REMOVE
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
-        $uri = "/beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation/$($currentInstance.Id)"
         Write-Verbose -Message "Removing federation configuration {$DisplayName}"
-        Invoke-MgGraphRequest -Uri $uri -Method DELETE
+        $null = Remove-MgBetaDomainFederationConfiguration -InternalDomainFederationId $currentInstance.Id
     }
 }
 
@@ -311,6 +327,10 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $SigningCertificate,
+
+        [Parameter()]
+        [System.String]
+        $NextSigningCertificate,
 
         [Parameter()]
         [System.String]
@@ -424,8 +444,7 @@ function Export-TargetResource
 
     try
     {
-        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation'
-        [array] $Script:exportedInstances = Invoke-MgGraphRequest $uri -Method Get
+        [array] $Script:exportedInstances = Get-MgBetaDomainFederationConfiguration -All -ErrorAction Stop
 
         $i = 1
         $dscContent = ''
@@ -437,17 +456,17 @@ function Export-TargetResource
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
-        foreach ($config in $Script:exportedInstances.value)
+        foreach ($config in $Script:exportedInstances)
         {
             if ($null -ne $Global:M365DSCExportResourceInstancesCount)
             {
                 $Global:M365DSCExportResourceInstancesCount++
             }
 
-            $displayedKey = $config.displayName
+            $displayedKey = $config.DisplayName
             Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
             $params = @{
-                DisplayName           = $config.displayName
+                DisplayName           = $config.DisplayName
                 Id                    = $config.Id
                 Credential            = $Credential
                 ApplicationId         = $ApplicationId

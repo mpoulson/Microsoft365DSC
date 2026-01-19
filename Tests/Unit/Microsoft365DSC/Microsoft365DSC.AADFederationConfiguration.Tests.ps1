@@ -31,28 +31,34 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
-            Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
+            Mock -CommandName Get-MgBetaDomainFederationConfiguration -MockWith {
+                return @(
+                    @{
+                        Id                              = 'fedconfig123'
+                        IssuerUri                       = 'https://contoso.com/issuerUri'
+                        DisplayName                     = 'contoso display name'
+                        MetadataExchangeUri             = 'https://contoso.com/metadataExchangeUri'
+                        PassiveSignInUri                = 'https://contoso.com/signin'
+                        PreferredAuthenticationProtocol = 'wsFed'
+                        Domains                         = @(
+                            @{
+                                "@odata.type" = "microsoft.graph.externalDomainName"
+                                Id            = "contoso.com"
+                            }
+                        )
+                        SigningCertificate              = 'MIIDADCCAeigAwIBAgIQEX41y8r6'
+                        NextSigningCertificate          = $null
+                    }
+                )
             }
 
-            Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                return @{
-                    value = @(
-                        @{
-                            issuerUri                       = 'https://contoso.com/issuerUri'
-                            displayName                     = 'contoso display name'
-                            metadataExchangeUri             = 'https://contoso.com/metadataExchangeUri'
-                            passiveSignInUri                = 'https://contoso.com/signin'
-                            preferredAuthenticationProtocol = 'wsFed'
-                            domains                         = @(
-                                @{
-                                    "@odata.type" = "microsoft.graph.externalDomainName"
-                                    id            = "contoso.com"
-                                }
-                            )
-                            signingCertificate              = 'MIIDADCCAeigAwIBAgIQEX41y8r6'
-                        }
-                    )
-                }
+            Mock -CommandName New-MgBetaDomainFederationConfiguration -MockWith {
+            }
+
+            Mock -CommandName Update-MgBetaDomainFederationConfiguration -MockWith {
+            }
+
+            Mock -CommandName Remove-MgBetaDomainFederationConfiguration -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -80,8 +86,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential          = $Credential;
                 }
 
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return $null
+                Mock -CommandName Get-MgBetaDomainFederationConfiguration -MockWith {
+                    return @()
                 }
             }
             It 'Should return Values from the Get method' {
@@ -93,7 +99,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create a new instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-MgGraphRequest -Exactly 2
+                Should -Invoke -CommandName New-MgBetaDomainFederationConfiguration -Exactly 1
             }
         }
 
@@ -120,7 +126,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should remove the instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-MgGraphRequest -Exactly 2
+                Should -Invoke -CommandName Remove-MgBetaDomainFederationConfiguration -Exactly 1
             }
         }
 
@@ -169,7 +175,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-MgGraphRequest -Exactly 2
+                Should -Invoke -CommandName Update-MgBetaDomainFederationConfiguration -Exactly 1
             }
         }
 
