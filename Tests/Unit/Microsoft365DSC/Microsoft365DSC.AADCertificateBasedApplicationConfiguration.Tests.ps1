@@ -78,6 +78,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             
             $Script:exportedInstances =$null
             $Script:ExportMode = $false
+
+            function New-TestTrustedCA
+            {
+                param(
+                    [byte[]] $CertificateBytes,
+                    [bool] $IsRoot,
+                    [string] $Issuer = $null,
+                    [string] $IssuerSubjectKeyIdentifier = $null
+                )
+
+                return [pscustomobject]@{
+                    Certificate                = $CertificateBytes
+                    IsRootAuthority            = $IsRoot
+                    Issuer                     = $Issuer
+                    IssuerSubjectKeyIdentifier = $IssuerSubjectKeyIdentifier
+                }
+            }
         }
         
         # Test contexts
@@ -106,6 +123,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should create a new instance from the Set method' {
                 Set-TargetResource @testParams
                 Should -Invoke -CommandName New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -Exactly 1
+            }
+        }
+
+        Context -Name "Creating trusted CA sends public key data" -Fixture {
+            BeforeAll {
+                Mock -CommandName Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -MockWith { return $null }
+
+                $testParams = @{
+                    DisplayName = "Contoso Root CA"
+                    Description = "Trusted CAs from Contoso"
+                    Ensure = 'Present'
+                    Credential = $Credential
+                    TrustedCertificateAuthorities = @(
+                        (New-TestTrustedCA -CertificateBytes ([System.Text.Encoding]::UTF8.GetBytes("publickeydata")) -IsRoot $true)
+                    )
+                }
+
+                $script:expectedCert = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("publickeydata"))
+            }
+
+            It 'Should send certificate data to the trusted CA creation command' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority -Exactly 1 -ParameterFilter {
+                    $BodyParameter.Certificate -eq $script:expectedCert
+                }
             }
         }
 
@@ -198,6 +240,50 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
                 Should -Invoke -CommandName Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -Exactly 1
+            }
+        }
+
+        Context -Name "Trusted CA drift updates certificate payload" -Fixture {
+            BeforeAll {
+                Mock -CommandName Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -MockWith {
+                    return @{
+                        Id = "12345-67890"
+                        DisplayName = "Contoso Root CA"
+                        Description = "Trusted CAs from Contoso"
+                    }
+                }
+
+                Mock -CommandName Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority -MockWith {
+                    return @(
+                        [PSCustomObject]@{
+                            Id = "ca-id"
+                            Certificate = [System.Text.Encoding]::UTF8.GetBytes("publickeydata")
+                            IsRootAuthority = $true
+                            Issuer = "CN=Contoso Root CA"
+                            IssuerSubjectKeyIdentifier = "ABC123"
+                        }
+                    )
+                }
+
+                $testParams = @{
+                    DisplayName = "Contoso Root CA"
+                    Description = "Trusted CAs from Contoso"
+                    Ensure = 'Present'
+                    Credential = $Credential
+                    TrustedCertificateAuthorities = @(
+                        (New-TestTrustedCA -CertificateBytes ([System.Text.Encoding]::UTF8.GetBytes("publickeydata")) -IsRoot $false -Issuer "CN=Contoso Root CA" -IssuerSubjectKeyIdentifier "ABC123")
+                    )
+                }
+
+                $script:expectedCertUpdate = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("publickeydata"))
+            }
+
+            It 'Should call update for trusted CA with certificate payload' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority -Exactly 1 -ParameterFilter {
+                    $BodyParameter.Certificate -eq $script:expectedCertUpdate -and
+                    $BodyParameter.IsRootAuthority -eq $false
+                }
             }
         }
 

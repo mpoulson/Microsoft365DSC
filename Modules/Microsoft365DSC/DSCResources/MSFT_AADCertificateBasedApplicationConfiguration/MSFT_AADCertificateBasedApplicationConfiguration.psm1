@@ -42,7 +42,7 @@ function Get-TargetResource
         $Description,
 
         [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
+        [System.Object[]]
         $TrustedCertificateAuthorities,
 
         [Parameter()]
@@ -192,7 +192,7 @@ function Set-TargetResource
         $Description,
 
         [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
+        [System.Object[]]
         $TrustedCertificateAuthorities,
 
         [Parameter()]
@@ -337,7 +337,10 @@ function Set-TargetResource
                     {
                         $desiredCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $TrustedCertificateAuthorities[$i].Certificate
                         $currentCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $currentInstance.TrustedCertificateAuthorities[$i].Certificate
-                        if ($desiredCertificate -ne $currentCertificate)
+                        if ($desiredCertificate -ne $currentCertificate -or
+                            $TrustedCertificateAuthorities[$i].IsRootAuthority -ne $currentInstance.TrustedCertificateAuthorities[$i].IsRootAuthority -or
+                            $TrustedCertificateAuthorities[$i].Issuer -ne $currentInstance.TrustedCertificateAuthorities[$i].Issuer -or
+                            $TrustedCertificateAuthorities[$i].IssuerSubjectKeyIdentifier -ne $currentInstance.TrustedCertificateAuthorities[$i].IssuerSubjectKeyIdentifier)
                         {
                             $updateCAs = $true
                             break
@@ -541,7 +544,7 @@ function Test-TargetResource
         $Description,
 
         [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
+        [System.Object[]]
         $TrustedCertificateAuthorities,
 
         [Parameter()]
