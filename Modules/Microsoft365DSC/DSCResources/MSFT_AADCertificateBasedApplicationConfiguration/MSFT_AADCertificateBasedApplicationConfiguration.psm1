@@ -1,5 +1,28 @@
 Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADCertificateBasedApplicationConfiguration'
 
+function ConvertTo-M365DSCBase64CertificateValue
+{
+    param(
+        [Parameter()]
+        $CertificateValue
+    )
+
+    if ($CertificateValue -is [System.Security.Cryptography.X509Certificates.X509Certificate2])
+    {
+        return [System.Convert]::ToBase64String($CertificateValue.RawData)
+    }
+    elseif ($CertificateValue -is [System.Byte[]])
+    {
+        return [System.Convert]::ToBase64String($CertificateValue)
+    }
+    elseif ($null -ne $CertificateValue -and -not ($CertificateValue -is [System.String]))
+    {
+        return $CertificateValue.ToString()
+    }
+
+    return $CertificateValue
+}
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -109,9 +132,11 @@ function Get-TargetResource
             
             foreach ($ca in $certificateAuthorities)
             {
+                $certificateValue = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $ca.Certificate
+
                 $trustedCAs += @{
-                    Certificate                 = $ca.Certificate
-                    IsRootAuthority             = $ca.IsRootAuthority
+                    Certificate                 = $certificateValue
+                    IsRootAuthority             = [System.Boolean]$ca.IsRootAuthority
                     Issuer                      = $ca.Issuer
                     IssuerSubjectKeyIdentifier  = $ca.IssuerSubjectKeyIdentifier
                 }
@@ -239,8 +264,9 @@ function Set-TargetResource
             {
                 foreach ($ca in $TrustedCertificateAuthorities)
                 {
+                    $normalizedCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $ca.Certificate
                     $caParams = @{
-                        Certificate     = $ca.Certificate
+                        Certificate     = $normalizedCertificate
                         IsRootAuthority = $ca.IsRootAuthority
                     }
                     
@@ -309,7 +335,9 @@ function Set-TargetResource
                     # Check if any certificate differs
                     for ($i = 0; $i -lt $TrustedCertificateAuthorities.Count; $i++)
                     {
-                        if ($TrustedCertificateAuthorities[$i].Certificate -ne $currentInstance.TrustedCertificateAuthorities[$i].Certificate)
+                        $desiredCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $TrustedCertificateAuthorities[$i].Certificate
+                        $currentCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $currentInstance.TrustedCertificateAuthorities[$i].Certificate
+                        if ($desiredCertificate -ne $currentCertificate)
                         {
                             $updateCAs = $true
                             break
@@ -348,7 +376,9 @@ function Set-TargetResource
                     {
                         foreach ($desiredCA in $TrustedCertificateAuthorities)
                         {
-                            if ($currentCA.Certificate -eq $desiredCA.Certificate)
+                            $desiredCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $desiredCA.Certificate
+                            $currentCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $currentCA.Certificate
+                            if ($currentCertificate -eq $desiredCertificate)
                             {
                                 $found = $true
                                 break
@@ -381,7 +411,9 @@ function Set-TargetResource
                         $existingCA = $null
                         foreach ($currentCA in $currentCAs)
                         {
-                            if ($currentCA.Certificate -eq $desiredCA.Certificate)
+                            $desiredCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $desiredCA.Certificate
+                            $currentCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $currentCA.Certificate
+                            if ($currentCertificate -eq $desiredCertificate)
                             {
                                 $existingCA = $currentCA
                                 break
@@ -392,8 +424,9 @@ function Set-TargetResource
                         {
                             # Add new certificate authority
                             Write-Verbose -Message "Adding certificate authority: $($desiredCA.Issuer)"
+                            $normalizedCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $desiredCA.Certificate
                             $caParams = @{
-                                Certificate     = $desiredCA.Certificate
+                                Certificate     = $normalizedCertificate
                                 IsRootAuthority = $desiredCA.IsRootAuthority
                             }
                             
@@ -432,8 +465,9 @@ function Set-TargetResource
                             if ($needsUpdate)
                             {
                                 Write-Verbose -Message "Updating certificate authority: $($desiredCA.Issuer)"
+                                $normalizedCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $desiredCA.Certificate
                                 $updateCAParams = @{
-                                    Certificate     = $desiredCA.Certificate
+                                    Certificate     = $normalizedCertificate
                                     IsRootAuthority = $desiredCA.IsRootAuthority
                                 }
                                 

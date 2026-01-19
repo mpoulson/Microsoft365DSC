@@ -148,6 +148,35 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name "Trusted certificate authority details include public key and root flag" -Fixture {
+            BeforeAll {
+                Mock -CommandName Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority -MockWith {
+                    return @(
+                        @{
+                            Certificate = [System.Text.Encoding]::UTF8.GetBytes("publickeydata")
+                            IsRootAuthority = $true
+                            Issuer = "CN=Contoso Root CA"
+                            IssuerSubjectKeyIdentifier = "ABC123"
+                        }
+                    )
+                }
+
+                $testParams = @{
+                    DisplayName = "Contoso Root CA"
+                    Description = "Trusted CAs from Contoso"
+                    Ensure = 'Present'
+                    Credential = $Credential
+                }
+            }
+
+            It 'Should return base64 encoded certificate and root flag from Get method' {
+                $result = Get-TargetResource @testParams
+                $result.TrustedCertificateAuthorities | Should -Not -BeNullOrEmpty
+                $result.TrustedCertificateAuthorities[0].Certificate | Should -Be ([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("publickeydata")))
+                $result.TrustedCertificateAuthorities[0].IsRootAuthority | Should -Be $true
+            }
+        }
+
         Context -Name "The instance exists and values are NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
@@ -176,6 +205,35 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
+
+                Mock -CommandName Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -MockWith {
+                    return @(
+                        [PSCustomObject]@{
+                            Id          = "12345-67890"
+                            DisplayName = "Contoso Root CA"
+                            Description = "Trusted CAs from Contoso"
+                        }
+                    )
+                }
+
+                Mock -CommandName Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority -MockWith {
+                    return @(
+                        [PSCustomObject]@{
+                            Certificate = [System.Text.Encoding]::UTF8.GetBytes("exportpublickey")
+                            IsRootAuthority = $true
+                            Issuer = "CN=Contoso Root CA"
+                            IssuerSubjectKeyIdentifier = "ABC123"
+                        }
+                    )
+                }
+
+                Mock -CommandName Get-M365DSCExportContentForResource -MockWith {
+                    return 'ExportBlock'
+                }
+
+                Mock -CommandName Save-M365DSCPartialExport -MockWith {
+                }
+
                 $testParams = @{
                     Credential = $Credential
                 }
