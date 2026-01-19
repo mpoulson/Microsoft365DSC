@@ -257,11 +257,9 @@ function Set-TargetResource
 
         try
         {
-            $newConfig = New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -BodyParameter $params
-            
-            # Add trusted certificate authorities
             if ($null -ne $TrustedCertificateAuthorities)
             {
+                $params.trustedCertificateAuthorities = @()
                 foreach ($ca in $TrustedCertificateAuthorities)
                 {
                     $normalizedCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $ca.Certificate
@@ -279,12 +277,12 @@ function Set-TargetResource
                     {
                         $caParams.IssuerSubjectKeyIdentifier = $ca.IssuerSubjectKeyIdentifier
                     }
-                    
-                    New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
-                        -CertificateBasedApplicationConfigurationId $newConfig.Id `
-                        -BodyParameter $caParams
+
+                    $params.trustedCertificateAuthorities += $caParams
                 }
             }
+
+            $newConfig = New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -BodyParameter $params
         }
         catch
         {

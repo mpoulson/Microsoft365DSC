@@ -145,8 +145,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should send certificate data to the trusted CA creation command' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority -Exactly 1 -ParameterFilter {
-                    $BodyParameter.Certificate -eq $script:expectedCert
+                Should -Invoke -CommandName New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -Exactly 1 -ParameterFilter {
+                    $BodyParameter.trustedCertificateAuthorities.Count -eq 1 -and
+                    $BodyParameter.trustedCertificateAuthorities[0].Certificate -eq $script:expectedCert -and
+                    $BodyParameter.trustedCertificateAuthorities[0].IsRootAuthority -eq $true
                 }
             }
         }
