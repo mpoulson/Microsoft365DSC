@@ -243,7 +243,7 @@ function Set-TargetResource
     $currentInstance = Get-TargetResource @PSBoundParameters
 
     $instanceParams = @{
-        '@odata.type'                   = 'microsoft.graph.samlOrWsFedExternalDomainFederation'
+        '@odata.type'                   = '#microsoft.graph.samlOrWsFedExternalDomainFederation'
         displayName                     = $DisplayName
         metadataExchangeUri             = $MetadataExchangeUri
         issuerUri                       = $IssuerUri
