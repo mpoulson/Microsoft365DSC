@@ -1,0 +1,5 @@
+
+#GET https://graph.microsoft.us/beta/directory/certificateAuthorities/certificateBasedApplicationConfigurations
+
+#Response
+{"@odata.context":"https://graph.microsoft.us/beta/$metadata#directory/certificateAuthorities/certificateBasedApplicationConfigurations","value":[{"id":"16616aaa-51ee-4a3d-aa5b-202c935f92cc","deletedDateTime":null,"displayName":"Boise Root CA","description":"Boise Root CA"},{"id":"234762af-b29d-43c6-8ef1-ffdb8ed55038","deletedDateTime":null,"displayName":"Lowman Root CA - TEST Chain","description":"Lowman Root CA - TEST Chain"},{"id":"2df02f35-eae6-4d49-afed-7d20ec1d581a","deletedDateTime":null,"displayName":"Lowman Root CA","description":"Lowman Root CA"},{"id":"75e34282-dbd7-4662-83ab-04601ae7249c","deletedDateTime":null,"displayName":"Lowman Root CA - TEST Chain","description":"Lowman Root CA - TEST Chain"},{"id":"dfd3d563-6ec3-466b-a1e5-64f4b98e0e48","deletedDateTime":null,"displayName":"Lowman Root CA - TEST Chain","description":"Lowman Root CA - TEST Chain"},{"id":"f03b027b-9d0e-4089-a13e-7672de7caac8","deletedDateTime":null,"displayName":"Lowman Root CA - TEST Chain","description":"Lowman Root CA - TEST Chain"}]}
