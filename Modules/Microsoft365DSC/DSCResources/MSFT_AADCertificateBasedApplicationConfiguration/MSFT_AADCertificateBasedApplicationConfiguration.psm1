@@ -94,7 +94,7 @@ function Get-TargetResource
 
     $nullResult = $PSBoundParameters
     $nullResult.Ensure = 'Absent'
-    
+
     try
     {
         if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
@@ -129,16 +129,20 @@ function Get-TargetResource
             $certificateAuthorities = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
                 -CertificateBasedApplicationConfigurationId $instance.Id `
                 -ErrorAction SilentlyContinue
-            
+
             foreach ($ca in $certificateAuthorities)
             {
+		Write-Verbose -Message "GET"
                 $certificateValue = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $ca.Certificate
+                $certificateByte = $bytes = [System.Convert]::FromBase64String($certificateValue)
+                $certificateObject = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certificateByte)
+                Write-Verbose -Message "Processing Subject $($certificateObject.Subject)"
+                Write-Verbose -Message "Processing Issuer $($certificateObject.Issuer)"
+                Write-Verbose -Message "Processing Thumbprint $($certificateObject.Thumbprint)"
 
                 $trustedCAs += @{
                     Certificate                 = $certificateValue
                     IsRootAuthority             = [System.Boolean]$ca.IsRootAuthority
-                    Issuer                      = $ca.Issuer
-                    IssuerSubjectKeyIdentifier  = $ca.IssuerSubjectKeyIdentifier
                 }
             }
         }
@@ -160,6 +164,8 @@ function Get-TargetResource
             ManagedIdentity               = $ManagedIdentity.IsPresent
             AccessTokens                  = $AccessTokens
         }
+	Write-Verbose "END GET"
+	Write-Verbose "$($results | convertto-json -depth 10)"
         return $results
     }
     catch
@@ -238,50 +244,53 @@ function Set-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-
+	Write-Verbose "================= SET ==================="
     $currentInstance = Get-TargetResource @PSBoundParameters
+	Write-Verbose "Finished getting target"
 
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating new Certificate-Based Application Configuration: $DisplayName"
-        
+
         $params = @{
-            DisplayName = $DisplayName
+            displayName = $DisplayName
         }
-        
+
         if (-not [System.String]::IsNullOrEmpty($Description))
         {
-            $params.Description = $Description
+            $params.description = $Description
         }
 
         try
         {
             if ($null -ne $TrustedCertificateAuthorities)
             {
+                Write-Verbose -Message "Processing $($TrustedCertificateAuthorities.count) TrustedCertificateAuthorities"
+
                 $params.trustedCertificateAuthorities = @()
                 foreach ($ca in $TrustedCertificateAuthorities)
                 {
+                    Write-Verbose "=========================="
                     $normalizedCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $ca.Certificate
+                    $certificateByte = $bytes = [System.Convert]::FromBase64String($normalizedCertificate)
+                    $certificateObject = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certificateByte)
+                    Write-Verbose -Message "Processing Subject $($certificateObject.Subject)"
+                    Write-Verbose -Message "Processing Issuer $($certificateObject.Issuer)"
+                    Write-Verbose -Message "Processing Thumbprint $($certificateObject.Thumbprint)"
+
                     $caParams = @{
-                        Certificate     = $normalizedCertificate
-                        IsRootAuthority = $ca.IsRootAuthority
-                    }
-                    
-                    if (-not [System.String]::IsNullOrEmpty($ca.Issuer))
-                    {
-                        $caParams.Issuer = $ca.Issuer
-                    }
-                    
-                    if (-not [System.String]::IsNullOrEmpty($ca.IssuerSubjectKeyIdentifier))
-                    {
-                        $caParams.IssuerSubjectKeyIdentifier = $ca.IssuerSubjectKeyIdentifier
+			certificate     = $normalizedCertificate
+                        isRootAuthority = $ca.IsRootAuthority
                     }
 
                     $params.trustedCertificateAuthorities += $caParams
                 }
             }
-
+            Write-Verbose "$($params | convertto-json -depth 10)"
+	    $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/directory/certificateAuthorities/certificateBasedApplicationConfigurations"
+	    Write-Verbose "URI = $uri"
+       	    #$newConfig = Invoke-MgGraphRequest -uri $uri -Method POST -Body ($params | convertto-json -depth 10)
             $newConfig = New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -BodyParameter $params
         }
         catch
@@ -294,11 +303,11 @@ function Set-TargetResource
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating Certificate-Based Application Configuration: $DisplayName"
-        
+
         $updateParams = @{
             DisplayName = $DisplayName
         }
-        
+
         if (-not [System.String]::IsNullOrEmpty($Description))
         {
             $updateParams.Description = $Description
@@ -309,11 +318,11 @@ function Set-TargetResource
             Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration `
                 -CertificateBasedApplicationConfigurationId $currentInstance.Id `
                 -BodyParameter $updateParams
-            
+
             # Compare and update trusted certificate authorities
             # Note: For simplicity, we'll check if the count differs or if any certificate data changed
             $updateCAs = $false
-            
+
             if ($null -eq $TrustedCertificateAuthorities -and $null -ne $currentInstance.TrustedCertificateAuthorities)
             {
                 $updateCAs = $true
@@ -336,9 +345,7 @@ function Set-TargetResource
                         $desiredCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $TrustedCertificateAuthorities[$i].Certificate
                         $currentCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $currentInstance.TrustedCertificateAuthorities[$i].Certificate
                         if ($desiredCertificate -ne $currentCertificate -or
-                            $TrustedCertificateAuthorities[$i].IsRootAuthority -ne $currentInstance.TrustedCertificateAuthorities[$i].IsRootAuthority -or
-                            $TrustedCertificateAuthorities[$i].Issuer -ne $currentInstance.TrustedCertificateAuthorities[$i].Issuer -or
-                            $TrustedCertificateAuthorities[$i].IssuerSubjectKeyIdentifier -ne $currentInstance.TrustedCertificateAuthorities[$i].IssuerSubjectKeyIdentifier)
+                            $TrustedCertificateAuthorities[$i].IsRootAuthority -ne $currentInstance.TrustedCertificateAuthorities[$i].IsRootAuthority)
                         {
                             $updateCAs = $true
                             break
@@ -346,11 +353,11 @@ function Set-TargetResource
                     }
                 }
             }
-            
+
             if ($updateCAs)
             {
                 Write-Verbose -Message "Certificate authorities need to be updated"
-                
+
                 # Get current certificate authorities to compare
                 $currentCAs = @()
                 try
@@ -358,7 +365,7 @@ function Set-TargetResource
                     $currentCertAuthorities = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
                         -CertificateBasedApplicationConfigurationId $currentInstance.Id `
                         -ErrorAction SilentlyContinue
-                    
+
                     if ($null -ne $currentCertAuthorities)
                     {
                         $currentCAs = $currentCertAuthorities
@@ -368,17 +375,19 @@ function Set-TargetResource
                 {
                     Write-Verbose -Message "Could not retrieve current certificate authorities: $_"
                 }
-                
+
                 # Remove certificate authorities that are no longer needed
                 foreach ($currentCA in $currentCAs)
                 {
                     $found = $false
+                    $currentCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $currentCA.Certificate
+
                     if ($null -ne $TrustedCertificateAuthorities)
                     {
                         foreach ($desiredCA in $TrustedCertificateAuthorities)
                         {
                             $desiredCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $desiredCA.Certificate
-                            $currentCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $currentCA.Certificate
+
                             if ($currentCertificate -eq $desiredCertificate)
                             {
                                 $found = $true
@@ -386,7 +395,7 @@ function Set-TargetResource
                             }
                         }
                     }
-                    
+
                     if (-not $found)
                     {
                         Write-Verbose -Message "Removing certificate authority: $($currentCA.Issuer)"
@@ -403,16 +412,23 @@ function Set-TargetResource
                         }
                     }
                 }
-                
+
                 # Add or update certificate authorities
                 if ($null -ne $TrustedCertificateAuthorities)
                 {
                     foreach ($desiredCA in $TrustedCertificateAuthorities)
                     {
                         $existingCA = $null
+            			$desiredCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $desiredCA.Certificate
+            			$certificateByte = $bytes = [System.Convert]::FromBase64String($desiredCertificate)
+            			$certificateObject = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certificateByte)
+            			Write-Verbose -Message "Processing Subject $($certificateObject.Subject)"
+            			Write-Verbose -Message "Processing Issuer $($certificateObject.Issuer)"
+            			Write-Verbose -Message "Processing Thumbprint $($certificateObject.Thumbprint)"
+
                         foreach ($currentCA in $currentCAs)
                         {
-                            $desiredCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $desiredCA.Certificate
+
                             $currentCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $currentCA.Certificate
                             if ($currentCertificate -eq $desiredCertificate)
                             {
@@ -420,27 +436,16 @@ function Set-TargetResource
                                 break
                             }
                         }
-                        
+
                         if ($null -eq $existingCA)
                         {
                             # Add new certificate authority
-                            Write-Verbose -Message "Adding certificate authority: $($desiredCA.Issuer)"
-                            $normalizedCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $desiredCA.Certificate
+                            Write-Verbose -Message "Adding certificate authority: $($certificateObject.Issuer)"
                             $caParams = @{
-                                Certificate     = $normalizedCertificate
+                                Certificate     = $desiredCertificate
                                 IsRootAuthority = $desiredCA.IsRootAuthority
                             }
-                            
-                            if (-not [System.String]::IsNullOrEmpty($desiredCA.Issuer))
-                            {
-                                $caParams.Issuer = $desiredCA.Issuer
-                            }
-                            
-                            if (-not [System.String]::IsNullOrEmpty($desiredCA.IssuerSubjectKeyIdentifier))
-                            {
-                                $caParams.IssuerSubjectKeyIdentifier = $desiredCA.IssuerSubjectKeyIdentifier
-                            }
-                            
+
                             try
                             {
                                 New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
@@ -456,32 +461,19 @@ function Set-TargetResource
                         {
                             # Update existing certificate authority if needed
                             $needsUpdate = $false
-                            if ($existingCA.IsRootAuthority -ne $desiredCA.IsRootAuthority -or
-                                $existingCA.Issuer -ne $desiredCA.Issuer -or
-                                $existingCA.IssuerSubjectKeyIdentifier -ne $desiredCA.IssuerSubjectKeyIdentifier)
+                            if ($existingCA.IsRootAuthority -ne $desiredCA.IsRootAuthority)
                             {
                                 $needsUpdate = $true
                             }
-                            
+
                             if ($needsUpdate)
                             {
                                 Write-Verbose -Message "Updating certificate authority: $($desiredCA.Issuer)"
-                                $normalizedCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $desiredCA.Certificate
                                 $updateCAParams = @{
-                                    Certificate     = $normalizedCertificate
+                                    Certificate     = $desiredCertificate
                                     IsRootAuthority = $desiredCA.IsRootAuthority
                                 }
-                                
-                                if (-not [System.String]::IsNullOrEmpty($desiredCA.Issuer))
-                                {
-                                    $updateCAParams.Issuer = $desiredCA.Issuer
-                                }
-                                
-                                if (-not [System.String]::IsNullOrEmpty($desiredCA.IssuerSubjectKeyIdentifier))
-                                {
-                                    $updateCAParams.IssuerSubjectKeyIdentifier = $desiredCA.IssuerSubjectKeyIdentifier
-                                }
-                                
+
                                 try
                                 {
                                     Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
@@ -509,7 +501,7 @@ function Set-TargetResource
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Removing Certificate-Based Application Configuration: $DisplayName"
-        
+
         try
         {
             Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration `
@@ -583,9 +575,11 @@ function Test-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-
+	Write-Verbose "+++++++++++++++++++++++++++ Test +++++++++++++++++++++++++++++"
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
                                          -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+
+	Write-Verbose "Test $($result | convertto-json -depth 10)"
     return $result
 }
 
@@ -646,7 +640,7 @@ function Export-TargetResource
 
         $i = 1
         $dscContent = ''
-        
+
         if ($Script:exportedInstances.Count -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
@@ -655,7 +649,7 @@ function Export-TargetResource
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
-        
+
         foreach ($config in $Script:exportedInstances)
         {
             if ($null -ne $Global:M365DSCExportResourceInstancesCount)
@@ -665,7 +659,7 @@ function Export-TargetResource
 
             $displayedKey = $config.DisplayName
             Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
-            
+
             $params = @{
                 DisplayName           = $config.DisplayName
                 Id                    = $config.Id
@@ -679,7 +673,7 @@ function Export-TargetResource
             }
 
             $Results = Get-TargetResource @Params
-            
+            Write-Verbose "-------------------------------------------"
             if ($null -ne $Results.TrustedCertificateAuthorities -and $Results.TrustedCertificateAuthorities.Count -gt 0)
             {
                 $complexMapping = @(
@@ -689,7 +683,7 @@ function Export-TargetResource
                         IsRequired      = $False
                     }
                 )
-                
+
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.TrustedCertificateAuthorities `
                     -CIMInstanceName 'AADCertificateBasedApplicationConfigurationTrustedCertificateAuthority' `
@@ -715,7 +709,7 @@ function Export-TargetResource
                 -Results $Results `
                 -Credential $Credential `
                 -NoEscape @('TrustedCertificateAuthorities')
-                
+
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
