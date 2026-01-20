@@ -132,17 +132,13 @@ function Get-TargetResource
 
             foreach ($ca in $certificateAuthorities)
             {
-		Write-Verbose -Message "GET"
                 $certificateValue = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $ca.Certificate
-                $certificateByte = $bytes = [System.Convert]::FromBase64String($certificateValue)
-                $certificateObject = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certificateByte)
-                Write-Verbose -Message "Processing Subject $($certificateObject.Subject)"
-                Write-Verbose -Message "Processing Issuer $($certificateObject.Issuer)"
-                Write-Verbose -Message "Processing Thumbprint $($certificateObject.Thumbprint)"
 
                 $trustedCAs += @{
                     Certificate                 = $certificateValue
                     IsRootAuthority             = [System.Boolean]$ca.IsRootAuthority
+                    Issuer                      = $ca.Issuer
+                    IssuerSubjectKeyIdentifier  = $ca.IssuerSubjectKeyIdentifier
                 }
             }
         }
@@ -164,8 +160,6 @@ function Get-TargetResource
             ManagedIdentity               = $ManagedIdentity.IsPresent
             AccessTokens                  = $AccessTokens
         }
-	Write-Verbose "END GET"
-	Write-Verbose "$($results | convertto-json -depth 10)"
         return $results
     }
     catch
@@ -244,9 +238,7 @@ function Set-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-	Write-Verbose "================= SET ==================="
     $currentInstance = Get-TargetResource @PSBoundParameters
-	Write-Verbose "Finished getting target"
 
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
@@ -266,32 +258,55 @@ function Set-TargetResource
         {
             if ($null -ne $TrustedCertificateAuthorities)
             {
-                Write-Verbose -Message "Processing $($TrustedCertificateAuthorities.count) TrustedCertificateAuthorities"
-
                 $params.trustedCertificateAuthorities = @()
                 foreach ($ca in $TrustedCertificateAuthorities)
                 {
-                    Write-Verbose "=========================="
                     $normalizedCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $ca.Certificate
-                    $certificateByte = $bytes = [System.Convert]::FromBase64String($normalizedCertificate)
-                    $certificateObject = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certificateByte)
-                    Write-Verbose -Message "Processing Subject $($certificateObject.Subject)"
-                    Write-Verbose -Message "Processing Issuer $($certificateObject.Issuer)"
-                    Write-Verbose -Message "Processing Thumbprint $($certificateObject.Thumbprint)"
-
                     $caParams = @{
-			certificate     = $normalizedCertificate
+                        certificate     = $normalizedCertificate
                         isRootAuthority = $ca.IsRootAuthority
+                    }
+
+                    if (-not [System.String]::IsNullOrEmpty($ca.Issuer))
+                    {
+                        $caParams.issuer = $ca.Issuer
+                    }
+
+                    if (-not [System.String]::IsNullOrEmpty($ca.IssuerSubjectKeyIdentifier))
+                    {
+                        $caParams.issuerSubjectKeyIdentifier = $ca.IssuerSubjectKeyIdentifier
                     }
 
                     $params.trustedCertificateAuthorities += $caParams
                 }
             }
-            Write-Verbose "$($params | convertto-json -depth 10)"
-	    $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/directory/certificateAuthorities/certificateBasedApplicationConfigurations"
-	    Write-Verbose "URI = $uri"
-       	    #$newConfig = Invoke-MgGraphRequest -uri $uri -Method POST -Body ($params | convertto-json -depth 10)
-            $newConfig = New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -BodyParameter $params
+
+            $graphBaseUri = 'https://graph.microsoft.com/'
+            try
+            {
+                $connectionProfile = Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph -ErrorAction Stop
+                if ($null -ne $connectionProfile -and -not [System.String]::IsNullOrEmpty($connectionProfile.ResourceUrl))
+                {
+                    $graphBaseUri = $connectionProfile.ResourceUrl.TrimEnd('/')
+                }
+            }
+            catch
+            {
+                Write-Verbose -Message "Unable to read Microsoft Graph connection profile, using default Graph endpoint: $($_.Exception.Message)"
+            }
+
+            $uri = "$graphBaseUri/beta/directory/certificateAuthorities/certificateBasedApplicationConfigurations"
+            $bodyJson = $params | ConvertTo-Json -Depth 10
+
+            try
+            {
+                $newConfig = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $bodyJson -ContentType 'application/json'
+            }
+            catch
+            {
+                Write-Verbose -Message ("Invoke-MgGraphRequest failed with {0}: {1}. Falling back to New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration" -f $_.Exception.GetType().Name, $_.Exception.Message)
+                $newConfig = New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -BodyParameter $params
+            }
         }
         catch
         {
@@ -419,12 +434,7 @@ function Set-TargetResource
                     foreach ($desiredCA in $TrustedCertificateAuthorities)
                     {
                         $existingCA = $null
-            			$desiredCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $desiredCA.Certificate
-            			$certificateByte = $bytes = [System.Convert]::FromBase64String($desiredCertificate)
-            			$certificateObject = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certificateByte)
-            			Write-Verbose -Message "Processing Subject $($certificateObject.Subject)"
-            			Write-Verbose -Message "Processing Issuer $($certificateObject.Issuer)"
-            			Write-Verbose -Message "Processing Thumbprint $($certificateObject.Thumbprint)"
+                        $desiredCertificate = ConvertTo-M365DSCBase64CertificateValue -CertificateValue $desiredCA.Certificate
 
                         foreach ($currentCA in $currentCAs)
                         {
@@ -440,7 +450,7 @@ function Set-TargetResource
                         if ($null -eq $existingCA)
                         {
                             # Add new certificate authority
-                            Write-Verbose -Message "Adding certificate authority: $($certificateObject.Issuer)"
+                            Write-Verbose -Message "Adding certificate authority: $($desiredCA.Issuer)"
                             $caParams = @{
                                 Certificate     = $desiredCertificate
                                 IsRootAuthority = $desiredCA.IsRootAuthority

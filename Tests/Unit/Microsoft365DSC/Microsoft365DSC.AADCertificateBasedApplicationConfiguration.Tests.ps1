@@ -58,6 +58,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return @{ Id = "new-12345" }
             }
 
+            Mock -Command Invoke-MgGraphRequest -MockWith {
+                return @{ Id = "new-12345" }
+            }
+
             Mock -Command Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -MockWith {
             }
 
@@ -122,7 +126,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create a new instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -Exactly 1
+                Should -Invoke -CommandName Invoke-MgGraphRequest -Exactly 1 -ParameterFilter { $Method -eq 'POST' }
             }
         }
 
@@ -145,10 +149,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should send certificate data to the trusted CA creation command' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -Exactly 1 -ParameterFilter {
-                    $BodyParameter.trustedCertificateAuthorities.Count -eq 1 -and
-                    $BodyParameter.trustedCertificateAuthorities[0].Certificate -eq $script:expectedCert -and
-                    $BodyParameter.trustedCertificateAuthorities[0].IsRootAuthority -eq $true
+                Should -Invoke -CommandName Invoke-MgGraphRequest -Exactly 1 -ParameterFilter {
+                    $bodyObj = ($Body | ConvertFrom-Json)
+                    $Method -eq 'POST' -and
+                    $bodyObj.trustedCertificateAuthorities.Count -eq 1 -and
+                    $bodyObj.trustedCertificateAuthorities[0].certificate -eq $script:expectedCert -and
+                    $bodyObj.trustedCertificateAuthorities[0].isRootAuthority -eq $true
                 }
             }
         }
