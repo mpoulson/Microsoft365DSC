@@ -170,6 +170,10 @@ function Get-TargetResource
                 }
                 $newItem.Add('trustedCertificateAuthority', $trustedValue)
             }
+            if ($null -ne $keyCred.CertificateBasedApplicationConfigurationIds)
+            {
+                $newItem.Add('certificateBasedApplicationConfigurationIds', $keyCred.CertificateBasedApplicationConfigurationIds)
+            }
             $restrictionsValue.keyCredentials += $newItem
         }
 
