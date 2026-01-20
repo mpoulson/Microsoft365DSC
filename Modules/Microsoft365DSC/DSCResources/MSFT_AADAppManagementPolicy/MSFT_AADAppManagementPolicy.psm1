@@ -95,6 +95,14 @@ function Get-TargetResource
             else
             {
                 $instance = Get-MgBetaPolicyAppManagementPolicy | Where-Object -FilterScript {$_.DisplayName -eq $DisplayName}
+                if ($null -eq $instance)
+                {
+                    $defaultPolicy = Get-MgBetaPolicyDefaultAppManagementPolicy -ErrorAction SilentlyContinue
+                    if ($null -ne $defaultPolicy -and $defaultPolicy.DisplayName -eq $DisplayName)
+                    {
+                        $instance = $defaultPolicy
+                    }
+                }
             }
 
         }
@@ -465,7 +473,17 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        [array] $Script:exportedInstances = Get-MgBetaPolicyAppManagementPolicy -ErrorAction Stop
+        $customPolicies = Get-MgBetaPolicyAppManagementPolicy -ErrorAction SilentlyContinue
+        $defaultPolicy = Get-MgBetaPolicyDefaultAppManagementPolicy -ErrorAction SilentlyContinue
+        [array] $Script:exportedInstances = @()
+        if ($null -ne $customPolicies)
+        {
+            $Script:exportedInstances += $customPolicies
+        }
+        if ($null -ne $defaultPolicy)
+        {
+            $Script:exportedInstances += $defaultPolicy
+        }
 
         $i = 1
         $dscContent = ''

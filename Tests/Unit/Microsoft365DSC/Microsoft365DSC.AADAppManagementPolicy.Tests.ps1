@@ -108,6 +108,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Get-MgBetaPolicyDefaultAppManagementPolicy -MockWith {
+                return @{
+                    DisplayName = "DefaultAppPolicy"
+                    Description = "Default policy"
+                    Id          = "default-policy-id"
+                    IsEnabled   = $true
+                    Restrictions = @{
+                        passwordCredentials = @()
+                        keyCredentials      = @()
+                    }
+                }
+            }
+
             Mock -CommandName Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -MockWith {
                 return @(
                     [pscustomobject]@{
@@ -183,6 +196,27 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should create a new instance from the Set method' {
                 Set-TargetResource @testParams
                 Should -Invoke -CommandName New-MgBetaPolicyAppManagementPolicy -Exactly 1
+            }
+        }
+
+        Context -Name "Default policy is returned when matching display name" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DisplayName         = "DefaultAppPolicy"
+                    Description         = "Default policy"
+                    IsEnabled           = $true
+                    Restrictions        = (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictions -Property @{
+                        passwordCredentials = @()
+                    } -ClientOnly);
+                    Ensure              = 'Present'
+                    Credential          = $Credential;
+                }
+
+                Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith { return $null }
+            }
+
+            It 'Should return default policy from Get method' {
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
             }
         }
 
