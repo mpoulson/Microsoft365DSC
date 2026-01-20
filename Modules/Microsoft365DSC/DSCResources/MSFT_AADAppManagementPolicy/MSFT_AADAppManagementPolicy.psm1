@@ -149,7 +149,26 @@ function Get-TargetResource
             }
             if ($null -ne $keyCred.TrustedCertificateAuthority)
             {
-                $newItem.Add('trustedCertificateAuthority', $keyCred.TrustedCertificateAuthority)
+                $trustedValue = $keyCred.TrustedCertificateAuthority
+                # Convert GUID to display name for export
+                $guidValue = [System.Guid]::Empty
+                if ([System.Guid]::TryParse($trustedValue, [ref] $guidValue))
+                {
+                    try
+                    {
+                        $allConfigs = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -All -ErrorAction SilentlyContinue
+                        $match = $allConfigs | Where-Object -FilterScript { $_.Id -eq $trustedValue }
+                        if ($null -ne $match)
+                        {
+                            $trustedValue = $match.DisplayName
+                        }
+                    }
+                    catch
+                    {
+                        Write-Verbose -Message "Unable to resolve trusted certificate authority Id '$trustedValue' to name: $_"
+                    }
+                }
+                $newItem.Add('trustedCertificateAuthority', $trustedValue)
             }
             $restrictionsValue.keyCredentials += $newItem
         }
