@@ -1,28 +1,5 @@
 Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADCertificateBasedApplicationConfiguration'
 
-function ConvertTo-M365DSCBase64CertificateValue
-{
-    param(
-        [Parameter()]
-        $CertificateValue
-    )
-
-    if ($CertificateValue -is [System.Security.Cryptography.X509Certificates.X509Certificate2])
-    {
-        return [System.Convert]::ToBase64String($CertificateValue.RawData)
-    }
-    elseif ($CertificateValue -is [System.Byte[]])
-    {
-        return [System.Convert]::ToBase64String($CertificateValue)
-    }
-    elseif ($null -ne $CertificateValue -and -not ($CertificateValue -is [System.String]))
-    {
-        return $CertificateValue.ToString()
-    }
-
-    return $CertificateValue
-}
-
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -140,8 +117,6 @@ function Get-TargetResource
                 $trustedCAs += @{
                     Certificate                 = $certificateValue
                     IsRootAuthority             = [System.Boolean]$ca.IsRootAuthority
-                    Issuer                      = $ca.Issuer
-                    IssuerSubjectKeyIdentifier  = $ca.IssuerSubjectKeyIdentifier
                 }
             }
         }
@@ -286,33 +261,15 @@ function Set-TargetResource
                     $params.trustedCertificateAuthorities += $caParams
                 }
             }
-
-            $graphBaseUri = 'https://graph.microsoft.com/'
-            try
-            {
-                $connectionProfile = Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph -ErrorAction Stop
-                if ($null -ne $connectionProfile -and -not [System.String]::IsNullOrEmpty($connectionProfile.ResourceUrl))
-                {
-                    $graphBaseUri = $connectionProfile.ResourceUrl.TrimEnd('/')
-                }
-            }
-            catch
-            {
-                Write-Verbose -Message "Unable to read Microsoft Graph connection profile, using default Graph endpoint: $($_.Exception.Message)"
-            }
-
+            ### Using Invoke-MgGraphRequest because Powershell fails to pass trustedCertificateAuthorities on POST
+            ### New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -BodyParameter $params
+            $graphBaseUri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl
             $uri = "$graphBaseUri/beta/directory/certificateAuthorities/certificateBasedApplicationConfigurations"
+
+            Write-Verbose -Message "URI: $uri"
             $bodyJson = $params | ConvertTo-Json -Depth 10
 
-            try
-            {
-                $newConfig = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $bodyJson -ContentType 'application/json'
-            }
-            catch
-            {
-                Write-Verbose -Message ("Invoke-MgGraphRequest failed with {0}: {1}. Falling back to New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration" -f $_.Exception.GetType().Name, $_.Exception.Message)
-                $newConfig = New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -BodyParameter $params
-            }
+            $newConfig = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $bodyJson
         }
         catch
         {
@@ -591,11 +548,9 @@ function Test-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-	Write-Verbose "+++++++++++++++++++++++++++ Test +++++++++++++++++++++++++++++"
+
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
                                          -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
-
-	Write-Verbose "Test $($result | convertto-json -depth 10)"
     return $result
 }
 
@@ -689,7 +644,7 @@ function Export-TargetResource
             }
 
             $Results = Get-TargetResource @Params
-            Write-Verbose "-------------------------------------------"
+
             if ($null -ne $Results.TrustedCertificateAuthorities -and $Results.TrustedCertificateAuthorities.Count -gt 0)
             {
                 $complexMapping = @(
@@ -744,6 +699,28 @@ function Export-TargetResource
 
         return ''
     }
+}
+function ConvertTo-M365DSCBase64CertificateValue
+{
+    param(
+        [Parameter()]
+        $CertificateValue
+    )
+
+    if ($CertificateValue -is [System.Security.Cryptography.X509Certificates.X509Certificate2])
+    {
+        return [System.Convert]::ToBase64String($CertificateValue.RawData)
+    }
+    elseif ($CertificateValue -is [System.Byte[]])
+    {
+        return [System.Convert]::ToBase64String($CertificateValue)
+    }
+    elseif ($null -ne $CertificateValue -and -not ($CertificateValue -is [System.String]))
+    {
+        return $CertificateValue.ToString()
+    }
+
+    return $CertificateValue
 }
 
 Export-ModuleMember -Function *-TargetResource
