@@ -69,6 +69,63 @@ function Get-AppPolicyAssignments
     return $assigned
 }
 
+function Resolve-CertificateConfigIds
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String[]] $NamesOrIds
+    )
+    $results = @()
+    $allConfigs = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -All -ErrorAction SilentlyContinue
+    foreach ($item in $NamesOrIds)
+    {
+        $id = $item
+        $guidOut = [System.Guid]::Empty
+        if (-not [System.Guid]::TryParse($item, [ref] $guidOut))
+        {
+            $match = $allConfigs | Where-Object -FilterScript { $_.DisplayName -eq $item }
+            if ($null -ne $match)
+            {
+                $id = $match.Id
+            }
+        }
+        if ($id)
+        {
+            $results += $id
+        }
+    }
+    return $results
+}
+
+function Convert-CertificateConfigIdsToNames
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String[]] $Ids
+    )
+    $results = @()
+    $allConfigs = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -All -ErrorAction SilentlyContinue
+    foreach ($id in $Ids)
+    {
+        $displayValue = $id
+        $guidOut = [System.Guid]::Empty
+        if ([System.Guid]::TryParse($id, [ref] $guidOut))
+        {
+            $match = $allConfigs | Where-Object -FilterScript { $_.Id -eq $id }
+            if ($null -ne $match)
+            {
+                $duplicate = $allConfigs | Where-Object -FilterScript { $_.DisplayName -eq $match.DisplayName }
+                if ($duplicate.Count -eq 1)
+                {
+                    $displayValue = $match.DisplayName
+                }
+            }
+        }
+        $results += $displayValue
+    }
+    return $results
+}
+
 function Sync-AppPolicyAssignments
 {
     param(
@@ -334,6 +391,7 @@ function Sync-AppPolicyAssignments
         $restrictionsValue = @{
             passwordCredentials     = @()
             keyCredentials          = @()
+            applicationRestrictions = @{}
         }
 
         foreach ($passwordCred in $instance.Restrictions.PasswordCredentials)
@@ -388,16 +446,32 @@ function Sync-AppPolicyAssignments
             }
             if ($null -ne $keyCred.CertificateBasedApplicationConfigurationIds)
             {
-                $newItem.Add('certificateBasedApplicationConfigurationIds', $keyCred.CertificateBasedApplicationConfigurationIds)
+                $resolvedNames = Convert-CertificateConfigIdsToNames -Ids $keyCred.CertificateBasedApplicationConfigurationIds
+                $newItem.Add('certificateBasedApplicationConfigurationIds', $resolvedNames)
             }
             $restrictionsValue.keyCredentials += $newItem
+        }
+
+        if ($null -ne $instance.Restrictions.ApplicationRestrictions)
+        {
+            $appRestrict = @{}
+            $appRestrict.audiences = $instance.Restrictions.ApplicationRestrictions.Audiences
+            $appRestrict.trustedSubjectNameAndIssuers = $instance.Restrictions.ApplicationRestrictions.TrustedSubjectNameAndIssuers
+            if ($null -ne $instance.Restrictions.ApplicationRestrictions.IdentifierUris)
+            {
+                $appRestrict.identifierUris = @{
+                    nonDefaultUriAddition = $instance.Restrictions.ApplicationRestrictions.IdentifierUris.NonDefaultUriAddition
+                    uriAdditionWithoutUniqueTenantIdentifier = $instance.Restrictions.ApplicationRestrictions.IdentifierUris.UriAdditionWithoutUniqueTenantIdentifier
+                }
+            }
+            $restrictionsValue.applicationRestrictions = $appRestrict
         }
 
         # Get certificate-based application configuration IDs
         $certConfigIds = @()
         if ($null -ne $instance.AdditionalProperties -and $null -ne $instance.AdditionalProperties['certificateBasedApplicationConfigurationIds'])
         {
-            $certConfigIds = $instance.AdditionalProperties['certificateBasedApplicationConfigurationIds']
+            $certConfigIds = Convert-CertificateConfigIdsToNames -Ids $instance.AdditionalProperties['certificateBasedApplicationConfigurationIds']
         }
 
         # Resolve assigned applications for this policy (names preferred)
@@ -570,6 +644,11 @@ function Set-TargetResource
             }
             $newItem.Add('trustedCertificateAuthority', $trustedValue)
         }
+        if ($null -ne $keyCred.CertificateBasedApplicationConfigurationIds)
+        {
+            $resolvedIds = Resolve-CertificateConfigIds -NamesOrIds $keyCred.CertificateBasedApplicationConfigurationIds
+            $newItem.Add('certificateBasedApplicationConfigurationIds', $resolvedIds)
+        }
         $restrictionsValue.keyCredentials += $newItem
     }
 
@@ -578,7 +657,7 @@ function Set-TargetResource
     # Add certificate-based application configuration IDs if provided
     if ($null -ne $CertificateBasedApplicationConfigurationIds -and $CertificateBasedApplicationConfigurationIds.Count -gt 0)
     {
-        $setParameters.Add('certificateBasedApplicationConfigurationIds', $CertificateBasedApplicationConfigurationIds)
+        $setParameters.Add('certificateBasedApplicationConfigurationIds', (Resolve-CertificateConfigIds -NamesOrIds $CertificateBasedApplicationConfigurationIds))
     }
 
     # CREATE
