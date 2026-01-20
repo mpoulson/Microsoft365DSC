@@ -121,6 +121,30 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Get-MgBetaApplication -MockWith {
+                return @(
+                    [pscustomobject]@{ Id = 'app-1'; DisplayName = 'ContosoApp1' },
+                    [pscustomobject]@{ Id = 'app-2'; DisplayName = 'OtherApp' }
+                )
+            }
+
+            Mock -CommandName Get-MgBetaApplicationAppManagementPolicyByRef -MockWith {
+                param(
+                    [Parameter(Mandatory = $true)]
+                    [System.String]$ApplicationId
+                )
+                if ($ApplicationId -eq 'app-1')
+                {
+                    return @(
+                        [pscustomobject]@{ Id = '12345-12345-12345-12345-12345' }
+                    )
+                }
+                return @()
+            }
+
+            Mock -CommandName New-MgBetaApplicationAppManagementPolicyByRef -MockWith { }
+            Mock -CommandName Remove-MgBetaApplicationAppManagementPolicyByRef -MockWith { }
+
             Mock -CommandName Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -MockWith {
                 return @(
                     [pscustomobject]@{
@@ -217,6 +241,28 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return default policy from Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
+            }
+        }
+
+        Context -Name "Assignments are added for applications" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DisplayName         = "MyPolicy"
+                    Description         = "MyDescription"
+                    IsEnabled           = $true
+                    Restrictions        = (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictions -Property @{
+                        passwordCredentials = @()
+                    } -ClientOnly);
+                    AssignedApplications = @('ContosoApp1')
+                    Ensure              = 'Present'
+                    Credential          = $Credential;
+                }
+                Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith { return $null }
+            }
+
+            It 'Should assign policy to desired applications' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName New-MgBetaApplicationAppManagementPolicyByRef -Exactly 1
             }
         }
 

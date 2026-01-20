@@ -31,6 +31,10 @@ function Get-TargetResource
         $CertificateBasedApplicationConfigurationIds,
 
         [Parameter()]
+        [System.String[]]
+        $AssignedApplications,
+
+        [Parameter()]
         [ValidateSet('Present', 'Absent')]
         [System.String]
         $Ensure = 'Present',
@@ -157,6 +161,25 @@ function Get-TargetResource
             $certConfigIds = $instance.AdditionalProperties['certificateBasedApplicationConfigurationIds']
         }
 
+        # Resolve assigned applications for this policy
+        $assignedApps = @()
+        try
+        {
+            $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
+            foreach ($app in $allApps)
+            {
+                $refs = Get-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $app.Id -ErrorAction SilentlyContinue
+                if ($refs -and ($refs | Where-Object { $_.Id -eq $instance.Id }))
+                {
+                    $assignedApps += $app.Id
+                }
+            }
+        }
+        catch
+        {
+            Write-Verbose -Message "Unable to resolve assigned applications: $_"
+        }
+
         $results = @{
             DisplayName                                  = $instance.DisplayName
             Id                                           = $instance.Id
@@ -164,6 +187,7 @@ function Get-TargetResource
             IsEnabled                                    = $instance.IsEnabled
             Restrictions                                 = $restrictionsValue
             CertificateBasedApplicationConfigurationIds  = $certConfigIds
+            AssignedApplications                         = $assignedApps
             Ensure                                       = 'Present'
             Credential                                   = $Credential
             ApplicationId                                = $ApplicationId
@@ -216,6 +240,10 @@ function Set-TargetResource
         $CertificateBasedApplicationConfigurationIds,
 
         [Parameter()]
+        [System.String[]]
+        $AssignedApplications,
+
+        [Parameter()]
         [ValidateSet('Present', 'Absent')]
         [System.String]
         $Ensure = 'Present',
@@ -262,6 +290,10 @@ function Set-TargetResource
     $currentInstance = Get-TargetResource @PSBoundParameters
 
     $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    if ($setParameters.ContainsKey('AssignedApplications'))
+    {
+        $null = $setParameters.Remove('AssignedApplications')
+    }
 
     $restrictionsValue = @{
         passwordCredentials = @()
@@ -331,12 +363,89 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Creating new App Management Policy {$DisplayName} with:`r`n$(ConvertTo-Json $setParameters -Depth 10)"
         New-MgBetaPolicyAppManagementPolicy @SetParameters
+
+        if ($null -ne $AssignedApplications -and $AssignedApplications.Count -gt 0)
+        {
+            $policyId = (Get-MgBetaPolicyAppManagementPolicy -Filter "displayName eq '$DisplayName'" -ErrorAction SilentlyContinue).Id
+            $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
+            foreach ($desiredApp in $AssignedApplications)
+            {
+                $appId = $desiredApp
+                $guidOut = [System.Guid]::Empty
+                if (-not [System.Guid]::TryParse($desiredApp, [ref] $guidOut))
+                {
+                    $matchApp = $allApps | Where-Object { $_.DisplayName -eq $desiredApp }
+                    if ($matchApp)
+                    {
+                        $appId = $matchApp.Id
+                    }
+                }
+                if ($appId)
+                {
+                    New-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $appId -BodyParameter @{
+                        '@odata.id' = "https://graph.microsoft.com/beta/policies/appManagementPolicies/$policyId"
+                    }
+                }
+            }
+        }
     }
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating App Management Policy {$DisplayName} with:`r`n$(ConvertTo-Json $setParameters -Depth 10)"
         Update-MgBetaPolicyAppManagementPolicy @SetParameters -AppManagementPolicyId $currentInstance.Id
+
+        if ($null -ne $AssignedApplications)
+        {
+            $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
+            $desiredIds = @()
+            foreach ($desiredApp in $AssignedApplications)
+            {
+                $appId = $desiredApp
+                $guidOut = [System.Guid]::Empty
+                if (-not [System.Guid]::TryParse($desiredApp, [ref] $guidOut))
+                {
+                    $matchApp = $allApps | Where-Object { $_.DisplayName -eq $desiredApp }
+                    if ($matchApp)
+                    {
+                        $appId = $matchApp.Id
+                    }
+                }
+                if ($appId)
+                {
+                    $desiredIds += $appId
+                }
+            }
+
+            $currentIds = @()
+            foreach ($app in $allApps)
+            {
+                try
+                {
+                    $appRefs = Get-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $app.Id -ErrorAction SilentlyContinue
+                    if ($appRefs -and ($appRefs | Where-Object { $_.Id -eq $currentInstance.Id }))
+                    {
+                        $currentIds += $app.Id
+                    }
+                }
+                catch {}
+            }
+
+            $toAdd = $desiredIds | Where-Object { $_ -notin $currentIds }
+            $toRemove = $currentIds | Where-Object { $_ -notin $desiredIds }
+
+            foreach ($addId in $toAdd)
+            {
+                New-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $addId -BodyParameter @{
+                    '@odata.id' = "https://graph.microsoft.com/beta/policies/appManagementPolicies/$($currentInstance.Id)"
+                }
+            }
+
+            foreach ($removeId in $toRemove)
+            {
+                Remove-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $removeId -AppManagementPolicyId $currentInstance.Id -ErrorAction SilentlyContinue
+            }
+        }
     }
     # REMOVE
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
@@ -375,6 +484,10 @@ function Test-TargetResource
         [Parameter()]
         [System.String[]]
         $CertificateBasedApplicationConfigurationIds,
+
+        [Parameter()]
+        [System.String[]]
+        $AssignedApplications,
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]

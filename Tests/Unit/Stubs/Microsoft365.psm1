@@ -6,6 +6,37 @@ function Resolve-Credentials
     return $Credential
 }
 
+function Get-MgBetaApplicationAppManagementPolicyByRef
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String] $ApplicationId
+    )
+}
+
+function New-MgBetaApplicationAppManagementPolicyByRef
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String] $ApplicationId,
+        [Parameter(Mandatory = $true)]
+        [System.Collections.Hashtable] $BodyParameter
+    )
+}
+
+function Remove-MgBetaApplicationAppManagementPolicyByRef
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String] $ApplicationId,
+        [Parameter(Mandatory = $true)]
+        [System.String] $AppManagementPolicyId
+    )
+}
+
 function Get-AzSentinelSetting
 {
     [CmdletBinding()]

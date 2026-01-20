@@ -67,6 +67,7 @@ Configuration Example
             };
             # Reference the certificate configuration by ID if known
             CertificateBasedApplicationConfigurationIds = @("config-id-here");
+            AssignedApplications = @("ContosoApp1","11111111-2222-3333-4444-555555555555") # names or GUIDs of applications to assign this policy to
             TenantId              = $TenantId;
             DependsOn             = "[AADCertificateBasedApplicationConfiguration]ContosoRootCA"
         }
