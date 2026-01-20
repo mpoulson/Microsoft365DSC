@@ -1,5 +1,113 @@
 Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADAppManagementPolicy'
 
+function Resolve-AppIds
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String[]] $NamesOrIds
+    )
+    $results = @()
+    $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
+    foreach ($item in $NamesOrIds)
+    {
+        $id = $item
+        $guidOut = [System.Guid]::Empty
+        if (-not [System.Guid]::TryParse($item, [ref] $guidOut))
+        {
+            $matchApp = $allApps | Where-Object { $_.DisplayName -eq $item }
+            if ($matchApp)
+            {
+                $id = $matchApp.Id
+            }
+        }
+        if ($id)
+        {
+            $results += $id
+        }
+    }
+    return $results
+}
+
+function Get-AppPolicyAssignments
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String] $PolicyId,
+        [Parameter()]
+        [Switch] $ResolveNames
+    )
+    $assigned = @()
+    try
+    {
+        $refs = Get-MgPolicyAppManagementPolicyApplyTo -AppManagementPolicyId $PolicyId -ErrorAction SilentlyContinue
+        if ($refs)
+        {
+            if ($ResolveNames.IsPresent)
+            {
+                $appIds = $refs.Id
+                $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
+                foreach ($refId in $appIds)
+                {
+                    $matchApp = $allApps | Where-Object { $_.Id -eq $refId }
+                    if ($matchApp)
+                    {
+                        $assigned += $matchApp.DisplayName
+                    }
+                    else
+                    {
+                        $assigned += $refId
+                    }
+                }
+            }
+            else
+            {
+                $assigned = $refs.Id
+            }
+        }
+    }
+    catch {}
+    return $assigned
+}
+
+function Sync-AppPolicyAssignments
+{
+    param(
+        [Parameter()]
+        [System.String] $PolicyId,
+        [Parameter()]
+        [System.String] $PolicyDisplayName,
+        [Parameter(Mandatory = $true)]
+        [System.String[]] $DesiredAssignments
+    )
+    $targetPolicyId = $PolicyId
+    if (-not $targetPolicyId -and $PolicyDisplayName)
+    {
+        $targetPolicyId = (Get-MgBetaPolicyAppManagementPolicy -Filter "displayName eq '$PolicyDisplayName'" -ErrorAction SilentlyContinue).Id
+    }
+    if (-not $targetPolicyId)
+    {
+        return
+    }
+
+    $desiredIds = Resolve-AppIds -NamesOrIds $DesiredAssignments
+    $currentIds = Get-AppPolicyAssignments -PolicyId $targetPolicyId
+
+    $toAdd = $desiredIds | Where-Object { $_ -notin $currentIds }
+    $toRemove = $currentIds | Where-Object { $_ -notin $desiredIds }
+
+    foreach ($addId in $toAdd)
+    {
+        New-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $addId -BodyParameter @{
+            '@odata.id' = "https://graph.microsoft.com/beta/policies/appManagementPolicies/$($targetPolicyId)"
+        }
+    }
+
+    foreach ($removeId in $toRemove)
+    {
+        Remove-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $removeId -AppManagementPolicyId $targetPolicyId -ErrorAction SilentlyContinue
+    }
+}
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -63,6 +171,114 @@ function Get-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    function Resolve-AppIds
+    {
+        param(
+            [Parameter(Mandatory = $true)]
+            [System.String[]] $NamesOrIds
+        )
+        $results = @()
+        $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
+        foreach ($item in $NamesOrIds)
+        {
+            $id = $item
+            $guidOut = [System.Guid]::Empty
+            if (-not [System.Guid]::TryParse($item, [ref] $guidOut))
+            {
+                $matchApp = $allApps | Where-Object { $_.DisplayName -eq $item }
+                if ($matchApp)
+                {
+                    $id = $matchApp.Id
+                }
+            }
+            if ($id)
+            {
+                $results += $id
+            }
+        }
+        return $results
+    }
+
+    function Get-AppPolicyAssignments
+    {
+        param(
+            [Parameter(Mandatory = $true)]
+            [System.String] $PolicyId,
+            [Parameter()]
+            [Switch] $ResolveNames
+        )
+        $assigned = @()
+        try
+        {
+            $refs = Get-MgPolicyAppManagementPolicyApplyTo -AppManagementPolicyId $PolicyId -ErrorAction SilentlyContinue
+            if ($refs)
+            {
+                if ($ResolveNames.IsPresent)
+                {
+                    $appIds = $refs.Id
+                    $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
+                    foreach ($refId in $appIds)
+                    {
+                        $matchApp = $allApps | Where-Object { $_.Id -eq $refId }
+                        if ($matchApp)
+                        {
+                            $assigned += $matchApp.DisplayName
+                        }
+                        else
+                        {
+                            $assigned += $refId
+                        }
+                    }
+                }
+                else
+                {
+                    $assigned = $refs.Id
+                }
+            }
+        }
+        catch {}
+        return $assigned
+    }
+
+function Sync-AppPolicyAssignments
+{
+    param(
+            [Parameter()]
+            [System.String] $PolicyId,
+            [Parameter()]
+            [System.String] $PolicyDisplayName,
+            [Parameter(Mandatory = $true)]
+            [System.String[]] $DesiredAssignments
+        )
+        $targetPolicyId = $PolicyId
+        if (-not $targetPolicyId -and $PolicyDisplayName)
+        {
+            $targetPolicyId = (Get-MgBetaPolicyAppManagementPolicy -Filter "displayName eq '$PolicyDisplayName'" -ErrorAction SilentlyContinue).Id
+        }
+        if (-not $targetPolicyId)
+        {
+            return
+        }
+
+        $desiredIds = Resolve-AppIds -NamesOrIds $DesiredAssignments
+        $currentIds = Get-AppPolicyAssignments -PolicyId $targetPolicyId
+
+        $toAdd = $desiredIds | Where-Object { $_ -notin $currentIds }
+        $toRemove = $currentIds | Where-Object { $_ -notin $desiredIds }
+
+        foreach ($addId in $toAdd)
+        {
+            New-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $addId -BodyParameter @{
+                '@odata.id' = "https://graph.microsoft.com/beta/policies/appManagementPolicies/$($targetPolicyId)"
+            }
+        }
+
+        foreach ($removeId in $toRemove)
+        {
+            Remove-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $removeId -AppManagementPolicyId $targetPolicyId -ErrorAction SilentlyContinue
+        }
+    }
 
     Write-Verbose -Message "Getting configuration of App Management Policy '$DisplayName'"
 
@@ -184,24 +400,8 @@ function Get-TargetResource
             $certConfigIds = $instance.AdditionalProperties['certificateBasedApplicationConfigurationIds']
         }
 
-        # Resolve assigned applications for this policy
-        $assignedApps = @()
-        try
-        {
-            $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
-            foreach ($app in $allApps)
-            {
-                $refs = Get-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $app.Id -ErrorAction SilentlyContinue
-                if ($refs -and ($refs | Where-Object { $_.Id -eq $instance.Id }))
-                {
-                    $assignedApps += $app.Id
-                }
-            }
-        }
-        catch
-        {
-            Write-Verbose -Message "Unable to resolve assigned applications: $_"
-        }
+        # Resolve assigned applications for this policy (names preferred)
+        $assignedApps = Get-AppPolicyAssignments -PolicyId $instance.Id -ResolveNames
 
         $results = @{
             DisplayName                                  = $instance.DisplayName
@@ -389,27 +589,7 @@ function Set-TargetResource
 
         if ($null -ne $AssignedApplications -and $AssignedApplications.Count -gt 0)
         {
-            $policyId = (Get-MgBetaPolicyAppManagementPolicy -Filter "displayName eq '$DisplayName'" -ErrorAction SilentlyContinue).Id
-            $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
-            foreach ($desiredApp in $AssignedApplications)
-            {
-                $appId = $desiredApp
-                $guidOut = [System.Guid]::Empty
-                if (-not [System.Guid]::TryParse($desiredApp, [ref] $guidOut))
-                {
-                    $matchApp = $allApps | Where-Object { $_.DisplayName -eq $desiredApp }
-                    if ($matchApp)
-                    {
-                        $appId = $matchApp.Id
-                    }
-                }
-                if ($appId)
-                {
-                    New-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $appId -BodyParameter @{
-                        '@odata.id' = "https://graph.microsoft.com/beta/policies/appManagementPolicies/$policyId"
-                    }
-                }
-            }
+            Sync-AppPolicyAssignments -PolicyDisplayName $DisplayName -DesiredAssignments $AssignedApplications
         }
     }
     # UPDATE
@@ -420,54 +600,7 @@ function Set-TargetResource
 
         if ($null -ne $AssignedApplications)
         {
-            $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
-            $desiredIds = @()
-            foreach ($desiredApp in $AssignedApplications)
-            {
-                $appId = $desiredApp
-                $guidOut = [System.Guid]::Empty
-                if (-not [System.Guid]::TryParse($desiredApp, [ref] $guidOut))
-                {
-                    $matchApp = $allApps | Where-Object { $_.DisplayName -eq $desiredApp }
-                    if ($matchApp)
-                    {
-                        $appId = $matchApp.Id
-                    }
-                }
-                if ($appId)
-                {
-                    $desiredIds += $appId
-                }
-            }
-
-            $currentIds = @()
-            foreach ($app in $allApps)
-            {
-                try
-                {
-                    $appRefs = Get-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $app.Id -ErrorAction SilentlyContinue
-                    if ($appRefs -and ($appRefs | Where-Object { $_.Id -eq $currentInstance.Id }))
-                    {
-                        $currentIds += $app.Id
-                    }
-                }
-                catch {}
-            }
-
-            $toAdd = $desiredIds | Where-Object { $_ -notin $currentIds }
-            $toRemove = $currentIds | Where-Object { $_ -notin $desiredIds }
-
-            foreach ($addId in $toAdd)
-            {
-                New-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $addId -BodyParameter @{
-                    '@odata.id' = "https://graph.microsoft.com/beta/policies/appManagementPolicies/$($currentInstance.Id)"
-                }
-            }
-
-            foreach ($removeId in $toRemove)
-            {
-                Remove-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $removeId -AppManagementPolicyId $currentInstance.Id -ErrorAction SilentlyContinue
-            }
+            Sync-AppPolicyAssignments -PolicyId $currentInstance.Id -DesiredAssignments $AssignedApplications
         }
     }
     # REMOVE

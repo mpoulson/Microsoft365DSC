@@ -258,6 +258,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential          = $Credential;
                 }
                 Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith { return $null }
+                Mock -CommandName Get-MgBetaApplication -MockWith {
+                    @(
+                        @{ Id = 'app-guid-1'; DisplayName = 'ContosoApp1' }
+                    )
+                }
+                Mock -CommandName Get-MgPolicyAppManagementPolicyApplyTo -MockWith { @() }
+                Mock -CommandName New-MgBetaApplicationAppManagementPolicyByRef -MockWith { }
+                Mock -CommandName Remove-MgBetaApplicationAppManagementPolicyByRef -MockWith { }
             }
 
             It 'Should assign policy to desired applications' {
