@@ -103,6 +103,7 @@ function Get-TargetResource
         }
         else
         {
+            Write-Verbose -Message "GET: Resolving instance by Id '$Id' or DisplayName '$DisplayName'"
             if (-not [System.String]::IsNullOrEmpty($Id))
             {
                 $instance = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration `
@@ -119,6 +120,7 @@ function Get-TargetResource
 
         if ($null -eq $instance)
         {
+            Write-Verbose -Message "GET: No matching instance found; returning Absent"
             return $nullResult
         }
 
@@ -126,6 +128,7 @@ function Get-TargetResource
         $trustedCAs = @()
         try
         {
+            Write-Verbose -Message "GET: Fetching trusted certificate authorities for $($instance.Id)"
             $certificateAuthorities = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
                 -CertificateBasedApplicationConfigurationId $instance.Id `
                 -ErrorAction SilentlyContinue
@@ -160,6 +163,7 @@ function Get-TargetResource
             ManagedIdentity               = $ManagedIdentity.IsPresent
             AccessTokens                  = $AccessTokens
         }
+        Write-Verbose -Message "GET: Returning results => $($results | ConvertTo-Json -Depth 6)"
         return $results
     }
     catch
@@ -238,7 +242,9 @@ function Set-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
+    Write-Verbose -Message "SET: Resolving current instance state"
     $currentInstance = Get-TargetResource @PSBoundParameters
+    Write-Verbose -Message "SET: Current instance Ensure = $($currentInstance.Ensure)"
 
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
