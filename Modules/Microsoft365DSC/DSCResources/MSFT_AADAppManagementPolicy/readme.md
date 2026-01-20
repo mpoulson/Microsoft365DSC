@@ -15,6 +15,7 @@ App management policies can reference certificate-based application configuratio
   - These IDs reference global tenant configurations managed by the `AADCertificateBasedApplicationConfiguration` resource
   - Multiple policies can reference the same configuration
   - The referenced configurations must exist before being referenced by a policy
+- **Restrictions.KeyCredentials.TrustedCertificateAuthority**: Optional reference (GUID or display name) to the certificate-based application configuration root chain. If a display name is provided, the resource resolves it to the corresponding configuration Id.
 
 ### Example
 

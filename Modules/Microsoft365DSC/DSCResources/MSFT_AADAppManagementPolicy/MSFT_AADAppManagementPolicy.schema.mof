@@ -5,6 +5,7 @@ class MSFT_AADAppManagementPolicyRestrictionsCredential
     [Write, Description("Specifies the date from which the policy restriction applies to newly created applications. For existing applications, the enforcement date can be retroactively applied.")] string RestrictForAppsCreatedAfterDateTime;
     [Write, Description("The type of restriction being applied. The possible values are: passwordAddition, passwordLifetime, symmetricKeyAddition, symmetricKeyLifetime, customPasswordAddition, and unknownFutureValue. Each value of restrictionType can be used only once per policy.")] string RestrictionType;
     [Write, Description("Indicates whether the restriction is evaluated. The possible values are: enabled, disabled, unknownFutureValue. If enabled, the restriction is evaluated. If disabled, the restriction isn't evaluated or enforced.")] string State;
+    [Write, Description("Optional reference to a trusted certificate authority to use for key credentials. Accepts the GUID or the display name of the certificate-based application configuration root chain.")] string TrustedCertificateAuthority;
 };
 
 [ClassVersion("1.0.0.0")]

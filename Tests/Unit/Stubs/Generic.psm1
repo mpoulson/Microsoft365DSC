@@ -52,6 +52,12 @@ function Confirm-M365DSCDependencies
     param()
 }
 
+function Resolve-Credentials
+{
+    param($Credential)
+    return $Credential
+}
+
 function Update-MgServicePrincipal
 {
     [CmdletBinding()]

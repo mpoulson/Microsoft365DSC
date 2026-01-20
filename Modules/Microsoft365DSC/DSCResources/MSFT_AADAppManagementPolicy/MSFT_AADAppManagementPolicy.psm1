@@ -23,7 +23,7 @@ function Get-TargetResource
         $IsEnabled,
 
         [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
+        [System.Object]
         $Restrictions,
 
         [Parameter()]
@@ -135,6 +135,10 @@ function Get-TargetResource
                 $iso8601Duration = "P{0}DT{1}H{2}M{3}S" -f $keyCred.MaxLifetime.Days, $keyCred.MaxLifetime.Hours, $keyCred.MaxLifetime.Minutes, $keyCred.MaxLifetime.Seconds
                 $newItem.Add('maxLifetime', $iso8601Duration)
             }
+            if ($null -ne $keyCred.TrustedCertificateAuthority)
+            {
+                $newItem.Add('trustedCertificateAuthority', $keyCred.TrustedCertificateAuthority)
+            }
             $restrictionsValue.keyCredentials += $newItem
         }
 
@@ -196,7 +200,7 @@ function Set-TargetResource
         $IsEnabled,
 
         [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
+        [System.Object]
         $Restrictions,
 
         [Parameter()]
@@ -281,6 +285,28 @@ function Set-TargetResource
         {
             $newItem.Add('maxLifetime', $keyCred.MaxLifetime.ToString())
         }
+        if ($null -ne $keyCred.TrustedCertificateAuthority -and -not [System.String]::IsNullOrEmpty($keyCred.TrustedCertificateAuthority))
+        {
+            $trustedValue = $keyCred.TrustedCertificateAuthority
+            $guidOut = [System.Guid]::Empty
+            if (-not [System.Guid]::TryParse($trustedValue, [ref] $guidOut))
+            {
+                try
+                {
+                    $allConfigs = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -All -ErrorAction SilentlyContinue
+                    $match = $allConfigs | Where-Object -FilterScript { $_.DisplayName -eq $trustedValue }
+                    if ($null -ne $match)
+                    {
+                        $trustedValue = $match.Id
+                    }
+                }
+                catch
+                {
+                    Write-Verbose -Message "Unable to resolve trusted certificate authority name '$trustedValue' to Id: $_"
+                }
+            }
+            $newItem.Add('trustedCertificateAuthority', $trustedValue)
+        }
         $restrictionsValue.keyCredentials += $newItem
     }
 
@@ -335,7 +361,7 @@ function Test-TargetResource
         $IsEnabled,
 
         [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
+        [System.Object]
         $Restrictions,
 
         [Parameter()]

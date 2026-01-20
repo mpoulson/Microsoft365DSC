@@ -55,10 +55,17 @@ Configuration Example
                         restrictionType = "passwordAddition"
                         state = "enabled"
                     }
+                );
+                keyCredentials = @(
+                    MSFT_AADAppManagementPolicyRestrictionsCredential{
+                        restrictForAppsCreatedAfterDateTime = "01/01/0001 00:00:00"
+                        restrictionType = "symmetricKeyAddition"
+                        state = "enabled"
+                        trustedCertificateAuthority = "Contoso Root CA Configuration" # name or GUID of the certificate-based configuration
+                    }
                 )
             };
-            # Reference the certificate configuration by ID
-            # Note: You would need to get the actual ID from the configuration
+            # Reference the certificate configuration by ID if known
             CertificateBasedApplicationConfigurationIds = @("config-id-here");
             TenantId              = $TenantId;
             DependsOn             = "[AADCertificateBasedApplicationConfiguration]ContosoRootCA"

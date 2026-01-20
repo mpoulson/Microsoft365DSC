@@ -1,5 +1,11 @@
 #region Azure
 
+function Resolve-Credentials
+{
+    param($Credential)
+    return $Credential
+}
+
 function Get-AzSentinelSetting
 {
     [CmdletBinding()]
