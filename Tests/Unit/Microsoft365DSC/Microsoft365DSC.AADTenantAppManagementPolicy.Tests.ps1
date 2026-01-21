@@ -70,6 +70,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 state = "enabled"
                             }
                         )
+                        keyCredentials = @(
+                            @{
+                                restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
+                                restrictionType = "trustedCertificateAuthority"
+                                state = "enabled"
+                                certificateBasedApplicationConfigurationIds = @("12345678-1234-1234-1234-123456789012", "87654321-4321-4321-4321-210987654321")
+                            }
+                        )
+                    }
+                    ServicePrincipalRestrictions = @{
+                        passwordCredentials = @(
+                            @{
+                                restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
+                                restrictionType = "passwordAddition"
+                                state = "enabled"
+                            }
+                        )
+                        keyCredentials = @(
+                            @{
+                                restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
+                                restrictionType = "trustedCertificateAuthority"
+                                state = "enabled"
+                                certificateBasedApplicationConfigurationIds = @("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+                            }
+                        )
                     }
                 }
             }
