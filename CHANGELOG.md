@@ -17,6 +17,8 @@
     with `Install-PSResource` because the filter condition was incorrect.
 * DEPENDENCIES
 * Updated ReverseDSC to version 2.0.0.31.
+* AADPermissionGrantPolicy, AADPermissionGrantPolicyInclude, AADPermissionGrantPolicyExclude
+  * Added new DSC resources to manage permission grant policies and their include/exclude condition sets.
 
 # 1.26.114.1
 

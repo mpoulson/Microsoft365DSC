@@ -1,0 +1,22 @@
+[ClassVersion("1.0.0.0"), FriendlyName("AADPermissionGrantPolicyInclude")]
+class MSFT_AADPermissionGrantPolicyInclude : OMI_BaseResource
+{
+    [Key, Description("Identifier of the permission grant condition set.")] String Id;
+    [Key, Description("Id of the permission grant policy containing this include condition.")] String PermissionGrantPolicyId;
+    [Write, Description("Permission type for the condition set."), ValueMap{"delegated","application"}, Values{"delegated","application"}] String PermissionType;
+    [Write, Description("Identifier of the resource application (API).")] String ResourceApplication;
+    [Write, Description("Permissions included by this condition set.")] String Permissions[];
+    [Write, Description("Permission classification for the condition set."), ValueMap{"low","medium","high","all"}, Values{"low","medium","high","all"}] String PermissionClassification;
+    [Write, Description("Client application identifiers allowed.")] String ClientApplicationIds[];
+    [Write, Description("Client application tenant identifiers allowed.")] String ClientApplicationTenantIds[];
+    [Write, Description("Client application publisher identifiers allowed.")] String ClientApplicationPublisherIds[];
+    [Write, Description("Only allow client applications from verified publishers.")] Boolean ClientApplicationsFromVerifiedPublisherOnly;
+    [Write, Description("Present ensures the include condition exists, Absent ensures it is removed."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] String Ensure;
+    [Write, Description("Credentials for the Microsoft Graph delegated permissions."), EmbeddedInstance("MSFT_Credential")] String Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Secret of the Azure Active Directory application to authenticate with."), EmbeddedInstance("MSFT_Credential")] String ApplicationSecret;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};
