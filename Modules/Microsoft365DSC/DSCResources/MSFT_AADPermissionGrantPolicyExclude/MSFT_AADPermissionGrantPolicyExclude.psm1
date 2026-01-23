@@ -86,56 +86,63 @@ function Get-TargetResource
 
     try
     {
-        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-            -InboundParameters $PSBoundParameters
-
-        #Ensure the proper dependencies are installed in the current environment.
-        Confirm-M365DSCDependencies
-
-        #region Telemetry
-        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-        $CommandName = $MyInvocation.MyCommand
-        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-            -CommandName $CommandName `
-            -Parameters $PSBoundParameters
-        Add-M365DSCTelemetryEvent -Data $data
-        #endregion
-
-        $nullResult = $PSBoundParameters
-        $nullResult.Ensure = 'Absent'
-
-        # Check if parent policy exists
-        $parentPolicy = $null
-        try
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $parentPolicy = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $PermissionGrantPolicyId -ErrorAction SilentlyContinue
-        }
-        catch
-        {
-            Write-Verbose -Message "Parent policy {$PermissionGrantPolicyId} not found"
-            return $nullResult
-        }
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
-        if ($null -eq $parentPolicy)
-        {
-            Write-Verbose -Message "Parent policy {$PermissionGrantPolicyId} not found"
-            return $nullResult
-        }
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
 
-        $getValue = $null
-        try
-        {
-            $getValue = Get-MgBetaPolicyPermissionGrantPolicyExclude `
-                -PermissionGrantPolicyId $PermissionGrantPolicyId `
-                -PermissionGrantConditionSetId $Id `
-                -ErrorAction SilentlyContinue
-        }
-        catch
-        {
-            if ($_.Exception.Message -notlike '*ResourceNotFound*' -and $_.Exception.Message -notlike '*Request_ResourceNotFound*')
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullResult = $PSBoundParameters
+            $nullResult.Ensure = 'Absent'
+
+            # Check if parent policy exists
+            $parentPolicy = $null
+            try
             {
-                throw $_
+                $parentPolicy = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $PermissionGrantPolicyId -ErrorAction SilentlyContinue
             }
+            catch
+            {
+                Write-Verbose -Message "Parent policy {$PermissionGrantPolicyId} not found"
+                return $nullResult
+            }
+
+            if ($null -eq $parentPolicy)
+            {
+                Write-Verbose -Message "Parent policy {$PermissionGrantPolicyId} not found"
+                return $nullResult
+            }
+
+            $getValue = $null
+            try
+            {
+                $getValue = Get-MgBetaPolicyPermissionGrantPolicyExclude `
+                    -PermissionGrantPolicyId $PermissionGrantPolicyId `
+                    -PermissionGrantConditionSetId $Id `
+                    -ErrorAction SilentlyContinue
+            }
+            catch
+            {
+                if ($_.Exception.Message -notlike '*ResourceNotFound*' -and $_.Exception.Message -notlike '*Request_ResourceNotFound*')
+                {
+                    throw $_
+                }
+            }
+        }
+        else
+        {
+            $getValue = $Script:exportedInstance
         }
 
         if ($null -eq $getValue)
@@ -614,7 +621,7 @@ function Export-TargetResource
                             AccessTokens              = $AccessTokens
                         }
 
-                        $Script:exportedInstance = $config
+                        $Script:exportedInstance = $exclude
                         $Results = Get-TargetResource @Params
 
                         $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `

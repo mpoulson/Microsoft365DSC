@@ -233,24 +233,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential                                  = $Credential
                 }
 
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    param($Method, $Uri)
-                    
-                    if ($Method -eq 'GET' -and $Uri -like '*includes/test-include*')
-                    {
-                        return @{
-                            id                                          = 'test-include'
-                            permissionType                              = 'delegated'
-                            resourceApplication                         = 'any'
-                            permissions                                 = @('User.Read.All')
-                            permissionClassification                    = 'low'
-                            clientApplicationIds                        = @('all')
-                            clientApplicationTenantIds                  = @('all')
-                            clientApplicationPublisherIds               = @('all')
-                            clientApplicationsFromVerifiedPublisherOnly = $false
-                        }
+                Mock -CommandName Get-MgBetaPolicyPermissionGrantPolicyInclude -MockWith {
+                    return @{
+                        Id                                          = 'test-include'
+                        PermissionType                              = 'delegated'
+                        ResourceApplication                         = 'any'
+                        Permissions                                 = @('User.Read.All')
+                        PermissionClassification                    = 'low'
+                        ClientApplicationIds                        = @('all')
+                        ClientApplicationTenantIds                  = @('all')
+                        ClientApplicationPublisherIds               = @('all')
+                        ClientApplicationsFromVerifiedPublisherOnly = $false
                     }
-                    return $null
                 }
             }
 
@@ -264,8 +258,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should recreate the Include condition in the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -ParameterFilter { $Method -eq 'DELETE' } -Exactly 1
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -ParameterFilter { $Method -eq 'POST' } -Exactly 1
+                Should -Invoke -CommandName 'Remove-MgBetaPolicyPermissionGrantPolicyInclude' -Exactly 1
+                Should -Invoke -CommandName 'New-MgBetaPolicyPermissionGrantPolicyInclude' -Exactly 1
             }
         }
 
@@ -307,38 +301,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 DisplayName = 'Test Policy 1'
                             }
                         )
-                    }
-                    return $null
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    param($Method, $Uri)
-                    
-                    if ($Method -eq 'GET' -and $Uri -like '*includes' -and $Uri -notlike '*includes/*')
-                    {
-                        return @{
-                            value = @(
-                                @{
-                                    id                 = 'test-include-1'
-                                    permissionType     = 'delegated'
-                                    resourceApplication = 'any'
-                                },
-                                @{
-                                    id                 = 'test-include-2'
-                                    permissionType     = 'application'
-                                    resourceApplication = 'any'
-                                }
-                            )
-                        }
-                    }
-                    elseif ($Method -eq 'GET' -and $Uri -like '*includes/*')
-                    {
-                        $includeId = $Uri.Split('/')[-1]
-                        return @{
-                            id                 = $includeId
-                            permissionType     = 'delegated'
-                            resourceApplication = 'any'
-                        }
                     }
                     return $null
                 }

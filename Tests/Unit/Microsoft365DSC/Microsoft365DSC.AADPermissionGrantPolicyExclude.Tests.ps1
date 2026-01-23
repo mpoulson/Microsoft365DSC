@@ -124,13 +124,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential                                  = $Credential
                 }
 
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    param($Method, $Uri)
-                    
-                    if ($Method -eq 'GET' -and $Uri -like '*excludes/test-exclude*')
-                    {
-                        return $null
-                    }
+                Mock -CommandName Get-MgBetaPolicyPermissionGrantPolicyExclude -MockWith {
                     return $null
                 }
             }
