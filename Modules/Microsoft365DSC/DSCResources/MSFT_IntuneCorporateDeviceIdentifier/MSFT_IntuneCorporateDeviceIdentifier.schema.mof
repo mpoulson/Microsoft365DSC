@@ -1,0 +1,29 @@
+[ClassVersion("1.0.0")]
+class MSFT_IntuneCorporateDeviceIdentifier
+{
+    [Write, Description("Unique identifier for the imported device identity.")] String Id;
+    [Write, Description("Serial number of the device.")] String SerialNumber;
+    [Write, Description("IMEI of the device.")] String IMEI;
+    [Write, Description("Manufacturer of the device.")] String Manufacturer;
+    [Write, Description("Model of the device.")] String Model;
+    [Write, Description("Description for the device identity.")] String Description;
+    [Write, Description("Enrollment state of the device (e.g., notContacted, enrolled).")] String EnrollmentState;
+    [Write, Description("Platform of the device (e.g., Windows, Android, iOS).")] String Platform;
+    [Write, Description("Date and time when the device identity was last modified.")] String LastModifiedDateTime;
+    [Write, Description("Date and time when the device identity was created.")] String CreatedDateTime;
+};
+
+[ClassVersion("1.0.0.0"), FriendlyName("IntuneCorporateDeviceIdentifier")]
+class MSFT_IntuneCorporateDeviceIdentifiers : OMI_BaseResource
+{
+    [Key, Description("Unique identifier for this configuration. Use a descriptive name like 'CorporateDevices'.")] String Identity;
+    [Write, Description("Array of corporate device identifiers."), EmbeddedInstance("MSFT_IntuneCorporateDeviceIdentifier")] String Devices[];
+    [Write, Description("Present ensures the identifiers exist, absent ensures all are removed."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] string Ensure;
+    [Write, Description("Credentials of the Intune Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Secret of the Azure Active Directory tenant used for authentication."), EmbeddedInstance("MSFT_Credential")] String ApplicationSecret;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};
