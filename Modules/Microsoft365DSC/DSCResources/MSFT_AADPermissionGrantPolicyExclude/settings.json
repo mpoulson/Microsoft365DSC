@@ -47,5 +47,15 @@
     "USGov"
   ],
   "mode": "Configuration",
-  "commands": []
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.Identity.SignIns",
+      "cmdlets": [
+        "Get-MgBetaPolicyPermissionGrantPolicyExclude",
+        "New-MgBetaPolicyPermissionGrantPolicyExclude",
+        "Update-MgBetaPolicyPermissionGrantPolicyExclude",
+        "Remove-MgBetaPolicyPermissionGrantPolicyExclude"
+      ]
+    }
+  ]
 }

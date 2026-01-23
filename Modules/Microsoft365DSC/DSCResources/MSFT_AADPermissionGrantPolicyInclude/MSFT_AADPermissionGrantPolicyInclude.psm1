@@ -140,12 +140,13 @@ function Get-TargetResource
             return $nullResult
         }
 
-        $uri = "https://graph.microsoft.com/beta/policies/permissionGrantPolicies/$PermissionGrantPolicyId/includes/$Id"
-        
         $getValue = $null
         try
         {
-            $getValue = Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction SilentlyContinue
+            $getValue = Get-MgBetaPolicyPermissionGrantPolicyInclude `
+                -PermissionGrantPolicyId $PermissionGrantPolicyId `
+                -PermissionGrantConditionSetId $Id `
+                -ErrorAction SilentlyContinue
         }
         catch
         {
@@ -164,16 +165,16 @@ function Get-TargetResource
         Write-Verbose -Message "Found Include condition {$Id} for policy {$PermissionGrantPolicyId}"
 
         $result = @{
-            Id                                              = $getValue.id
+            Id                                              = $getValue.Id
             PermissionGrantPolicyId                         = $PermissionGrantPolicyId
-            PermissionType                                  = $getValue.permissionType
-            ResourceApplication                             = $getValue.resourceApplication
-            Permissions                                     = [string[]]$getValue.permissions
-            PermissionClassification                        = $getValue.permissionClassification
-            ClientApplicationIds                            = [string[]]$getValue.clientApplicationIds
-            ClientApplicationTenantIds                      = [string[]]$getValue.clientApplicationTenantIds
-            ClientApplicationPublisherIds                   = [string[]]$getValue.clientApplicationPublisherIds
-            ClientApplicationsFromVerifiedPublisherOnly     = $getValue.clientApplicationsFromVerifiedPublisherOnly
+            PermissionType                                  = $getValue.PermissionType
+            ResourceApplication                             = $getValue.ResourceApplication
+            Permissions                                     = [string[]]$getValue.Permissions
+            PermissionClassification                        = $getValue.PermissionClassification
+            ClientApplicationIds                            = [string[]]$getValue.ClientApplicationIds
+            ClientApplicationTenantIds                      = [string[]]$getValue.ClientApplicationTenantIds
+            ClientApplicationPublisherIds                   = [string[]]$getValue.ClientApplicationPublisherIds
+            ClientApplicationsFromVerifiedPublisherOnly     = $getValue.ClientApplicationsFromVerifiedPublisherOnly
             Ensure                                          = 'Present'
             Credential                                      = $Credential
             ApplicationId                                   = $ApplicationId
@@ -304,119 +305,117 @@ function Set-TargetResource
         {
             Write-Verbose -Message "Creating new Include condition {$Id} for policy {$PermissionGrantPolicyId}"
             
-            $uri = "https://graph.microsoft.com/beta/policies/permissionGrantPolicies/$PermissionGrantPolicyId/includes"
-            
-            $body = @{
-                id = $Id
+            $createParameters = @{
+                PermissionGrantPolicyId = $PermissionGrantPolicyId
+                Id                      = $Id
             }
 
             if ($PSBoundParameters.ContainsKey('PermissionType'))
             {
-                $body.permissionType = $PermissionType
+                $createParameters.PermissionType = $PermissionType
             }
             
             if ($PSBoundParameters.ContainsKey('ResourceApplication'))
             {
-                $body.resourceApplication = $ResourceApplication
+                $createParameters.ResourceApplication = $ResourceApplication
             }
             
             if ($PSBoundParameters.ContainsKey('Permissions'))
             {
-                $body.permissions = $Permissions
+                $createParameters.Permissions = $Permissions
             }
             
             if ($PSBoundParameters.ContainsKey('PermissionClassification'))
             {
-                $body.permissionClassification = $PermissionClassification
+                $createParameters.PermissionClassification = $PermissionClassification
             }
             
             if ($PSBoundParameters.ContainsKey('ClientApplicationIds'))
             {
-                $body.clientApplicationIds = $ClientApplicationIds
+                $createParameters.ClientApplicationIds = $ClientApplicationIds
             }
             
             if ($PSBoundParameters.ContainsKey('ClientApplicationTenantIds'))
             {
-                $body.clientApplicationTenantIds = $ClientApplicationTenantIds
+                $createParameters.ClientApplicationTenantIds = $ClientApplicationTenantIds
             }
             
             if ($PSBoundParameters.ContainsKey('ClientApplicationPublisherIds'))
             {
-                $body.clientApplicationPublisherIds = $ClientApplicationPublisherIds
+                $createParameters.ClientApplicationPublisherIds = $ClientApplicationPublisherIds
             }
             
             if ($PSBoundParameters.ContainsKey('ClientApplicationsFromVerifiedPublisherOnly'))
             {
-                $body.clientApplicationsFromVerifiedPublisherOnly = $ClientApplicationsFromVerifiedPublisherOnly
+                $createParameters.ClientApplicationsFromVerifiedPublisherOnly = $ClientApplicationsFromVerifiedPublisherOnly
             }
 
-            $bodyJson = $body | ConvertTo-Json -Depth 10
-            Invoke-MgGraphRequest -Method POST -Uri $uri -Body $bodyJson -ContentType 'application/json' | Out-Null
+            New-MgBetaPolicyPermissionGrantPolicyInclude @createParameters | Out-Null
         }
         elseif ($Ensure -eq 'Present' -and $currentCondition.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Include conditions cannot be updated. Recreating Include condition {$Id} for policy {$PermissionGrantPolicyId}"
             
             # Delete existing condition
-            $deleteUri = "https://graph.microsoft.com/beta/policies/permissionGrantPolicies/$PermissionGrantPolicyId/includes/$Id"
-            Invoke-MgGraphRequest -Method DELETE -Uri $deleteUri | Out-Null
+            Remove-MgBetaPolicyPermissionGrantPolicyInclude `
+                -PermissionGrantPolicyId $PermissionGrantPolicyId `
+                -PermissionGrantConditionSetId $Id | Out-Null
 
             # Create new condition
-            $createUri = "https://graph.microsoft.com/beta/policies/permissionGrantPolicies/$PermissionGrantPolicyId/includes"
-            
-            $body = @{
-                id = $Id
+            $createParameters = @{
+                PermissionGrantPolicyId = $PermissionGrantPolicyId
+                Id                      = $Id
             }
 
             if ($PSBoundParameters.ContainsKey('PermissionType'))
             {
-                $body.permissionType = $PermissionType
+                $createParameters.PermissionType = $PermissionType
             }
             
             if ($PSBoundParameters.ContainsKey('ResourceApplication'))
             {
-                $body.resourceApplication = $ResourceApplication
+                $createParameters.ResourceApplication = $ResourceApplication
             }
             
             if ($PSBoundParameters.ContainsKey('Permissions'))
             {
-                $body.permissions = $Permissions
+                $createParameters.Permissions = $Permissions
             }
             
             if ($PSBoundParameters.ContainsKey('PermissionClassification'))
             {
-                $body.permissionClassification = $PermissionClassification
+                $createParameters.PermissionClassification = $PermissionClassification
             }
             
             if ($PSBoundParameters.ContainsKey('ClientApplicationIds'))
             {
-                $body.clientApplicationIds = $ClientApplicationIds
+                $createParameters.ClientApplicationIds = $ClientApplicationIds
             }
             
             if ($PSBoundParameters.ContainsKey('ClientApplicationTenantIds'))
             {
-                $body.clientApplicationTenantIds = $ClientApplicationTenantIds
+                $createParameters.ClientApplicationTenantIds = $ClientApplicationTenantIds
             }
             
             if ($PSBoundParameters.ContainsKey('ClientApplicationPublisherIds'))
             {
-                $body.clientApplicationPublisherIds = $ClientApplicationPublisherIds
+                $createParameters.ClientApplicationPublisherIds = $ClientApplicationPublisherIds
             }
             
             if ($PSBoundParameters.ContainsKey('ClientApplicationsFromVerifiedPublisherOnly'))
             {
-                $body.clientApplicationsFromVerifiedPublisherOnly = $ClientApplicationsFromVerifiedPublisherOnly
+                $createParameters.ClientApplicationsFromVerifiedPublisherOnly = $ClientApplicationsFromVerifiedPublisherOnly
             }
 
-            $bodyJson = $body | ConvertTo-Json -Depth 10
-            Invoke-MgGraphRequest -Method POST -Uri $createUri -Body $bodyJson -ContentType 'application/json' | Out-Null
+            New-MgBetaPolicyPermissionGrantPolicyInclude @createParameters | Out-Null
         }
         elseif ($Ensure -eq 'Absent' -and $currentCondition.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Removing Include condition {$Id} for policy {$PermissionGrantPolicyId}"
             
-            $uri = "https://graph.microsoft.com/beta/policies/permissionGrantPolicies/$PermissionGrantPolicyId/includes/$Id"
-            Invoke-MgGraphRequest -Method DELETE -Uri $uri | Out-Null
+            Remove-MgBetaPolicyPermissionGrantPolicyInclude `
+                -PermissionGrantPolicyId $PermissionGrantPolicyId `
+                -PermissionGrantConditionSetId $Id | Out-Null
         }
     }
     catch
@@ -603,25 +602,26 @@ function Export-TargetResource
 
         foreach ($policy in $policies)
         {
-            $uri = "https://graph.microsoft.com/beta/policies/permissionGrantPolicies/$($policy.Id)/includes"
-            
             try
             {
-                $includes = Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction Stop
+                $includes = Get-MgBetaPolicyPermissionGrantPolicyInclude `
+                    -PermissionGrantPolicyId $policy.Id `
+                    -All `
+                    -ErrorAction Stop
                 
-                if ($null -ne $includes.value -and $includes.value.Count -gt 0)
+                if ($null -ne $includes -and $includes.Count -gt 0)
                 {
-                    foreach ($include in $includes.value)
+                    foreach ($include in $includes)
                     {
                         if ($null -ne $Global:M365DSCExportResourceInstancesCount)
                         {
                             $Global:M365DSCExportResourceInstancesCount++
                         }
 
-                        Write-M365DSCHost -Message "    |---[$i/$($includes.value.Count)] $($include.id) (Policy: $($policy.Id))" -NoNewLine
+                        Write-M365DSCHost -Message "    |---[$i/$($includes.Count)] $($include.Id) (Policy: $($policy.Id))" -NoNewLine
 
                         $Params = @{
-                            Id                        = $include.id
+                            Id                        = $include.Id
                             PermissionGrantPolicyId   = $policy.Id
                             Credential                = $Credential
                             ApplicationId             = $ApplicationId

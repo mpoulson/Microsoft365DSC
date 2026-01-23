@@ -44,41 +44,45 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
-            Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                param($Method, $Uri, $Body, $ContentType)
+            Mock -CommandName Get-MgBetaPolicyPermissionGrantPolicyExclude -MockWith {
+                param($PermissionGrantPolicyId, $PermissionGrantConditionSetId, $All)
                 
-                if ($Method -eq 'GET' -and $Uri -like '*excludes/test-exclude*')
+                if ($PermissionGrantConditionSetId -eq 'test-exclude')
                 {
                     return @{
-                        id                                          = 'test-exclude'
-                        permissionType                              = 'delegated'
-                        resourceApplication                         = 'any'
-                        permissions                                 = @('User.Read.All')
-                        permissionClassification                    = 'low'
-                        clientApplicationIds                        = @('all')
-                        clientApplicationTenantIds                  = @('all')
-                        clientApplicationPublisherIds               = @('all')
-                        clientApplicationsFromVerifiedPublisherOnly = $false
+                        Id                                          = 'test-exclude'
+                        PermissionType                              = 'delegated'
+                        ResourceApplication                         = 'any'
+                        Permissions                                 = @('User.Read.All')
+                        PermissionClassification                    = 'low'
+                        ClientApplicationIds                        = @('all')
+                        ClientApplicationTenantIds                  = @('all')
+                        ClientApplicationPublisherIds               = @('all')
+                        ClientApplicationsFromVerifiedPublisherOnly = $false
                     }
                 }
-                elseif ($Method -eq 'GET' -and $Uri -like '*excludes')
+                elseif ($All)
                 {
-                    return @{
-                        value = @(
-                            @{
-                                id                 = 'test-exclude-1'
-                                permissionType     = 'delegated'
-                                resourceApplication = 'any'
-                            },
-                            @{
-                                id                 = 'test-exclude-2'
-                                permissionType     = 'application'
-                                resourceApplication = 'any'
-                            }
-                        )
-                    }
+                    return @(
+                        @{
+                            Id                 = 'test-exclude-1'
+                            PermissionType     = 'delegated'
+                            ResourceApplication = 'any'
+                        },
+                        @{
+                            Id                 = 'test-exclude-2'
+                            PermissionType     = 'application'
+                            ResourceApplication = 'any'
+                        }
+                    )
                 }
                 return $null
+            }
+
+            Mock -CommandName New-MgBetaPolicyPermissionGrantPolicyExclude -MockWith {
+            }
+
+            Mock -CommandName Remove-MgBetaPolicyPermissionGrantPolicyExclude -MockWith {
             }
 
             Mock -CommandName Write-M365DSCHost -MockWith {
@@ -141,7 +145,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create the Exclude condition from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -ParameterFilter { $Method -eq 'POST' } -Exactly 1
+                Should -Invoke -CommandName 'New-MgBetaPolicyPermissionGrantPolicyExclude' -Exactly 1
             }
         }
 
@@ -179,7 +183,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should remove the Exclude condition from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -ParameterFilter { $Method -eq 'DELETE' } -Exactly 1
+                Should -Invoke -CommandName 'Remove-MgBetaPolicyPermissionGrantPolicyExclude' -Exactly 1
             }
         }
 
@@ -278,8 +282,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should recreate the Exclude condition in the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -ParameterFilter { $Method -eq 'DELETE' } -Exactly 1
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -ParameterFilter { $Method -eq 'POST' } -Exactly 1
+                Should -Invoke -CommandName 'Remove-MgBetaPolicyPermissionGrantPolicyExclude' -Exactly 1
+                Should -Invoke -CommandName 'New-MgBetaPolicyPermissionGrantPolicyExclude' -Exactly 1
             }
         }
 
