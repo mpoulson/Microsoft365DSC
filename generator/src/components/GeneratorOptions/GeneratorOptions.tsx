@@ -15,7 +15,6 @@ export const GenerationOptions: React.FunctionComponent<IGenerationOptionsProps>
   const dropdownStyles: Partial<IDropdownStyles> = { dropdown: { width: 300 } };
   const extractionModesOptions: IDropdownOption[] = [
     { key: ExtractionType.None, text: 'None' },
-    { key: ExtractionType.Lite, text: 'Lite' },
     { key: ExtractionType.Default, text: 'Default' },
     { key: ExtractionType.Full, text: 'Full' },
   ];

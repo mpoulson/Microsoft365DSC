@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -39,6 +39,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaDeviceAppManagementTargetedManagedAppConfiguration -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementTargetedManagedAppConfiguration -MockWith {
+                return @{
+                    DisplayName = 'Test App Configuration Policy Desire State'
+                    Description = 'Test Definition'
+                    Id          = 'A_19dbaff5-9aff-48b0-a60d-d0471ddaf141'
+                    RoleScopeTagIds             = @("0")
+                    TargetedAppManagementLevels = "unspecified"
+                    AppGroupType                = "selectedPublicApps"
+                    CustomSettings              = @(
+                        @{
+                            name  = 'FakeStringValue'
+                            value = '1'
+                        }
+                    )
+                }
             }
 
             Mock -CommandName Get-MgBetaDeviceAppManagementTargetedManagedAppConfigurationAssignment -MockWith {
@@ -95,31 +112,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds             = @("0")
                     TargetedAppManagementLevels = "unspecified"
                     AppGroupType                = "selectedPublicApps"
-                    CustomSettings                              = [CimInstance[]]@(
+                    CustomSettings              = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_IntuneAppConfigurationPolicyCustomSetting `
                         -Property @{
-                            name                               = 'FakeStringValue'
-                            value                              = '1'
+                            name  = 'FakeStringValue'
+                            value = '2' # Updated property
                         } -ClientOnly)
                     )
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementTargetedManagedAppConfiguration -MockWith {
-                    return @{
-                        DisplayName = 'Test App Configuration Policy'
-                        Description = 'Different Value'
-                        Id          = 'A_19dbaff5-9aff-48b0-a60d-d0471ddaf141'
-                        RoleScopeTagIds             = @("0")
-                        TargetedAppManagementLevels = "unspecified"
-                        AppGroupType                = "selectedPublicApps"
-                        CustomSettings              = @(
-                            @{
-                                name  = 'FakeStringValue'
-                                value = '1'
-                            }
-                        )
-                    }
                 }
             }
 
@@ -147,7 +147,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds             = @("0")
                     TargetedAppManagementLevels = "unspecified"
                     AppGroupType                = "selectedPublicApps"
-                     CustomSettings                              = [CimInstance[]]@(
+                     CustomSettings             = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_IntuneAppConfigurationPolicyCustomSetting `
                         -Property @{
@@ -156,27 +156,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         } -ClientOnly)
                     )
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementTargetedManagedAppConfiguration -MockWith {
-                    return @{
-                        DisplayName = 'Test App Configuration Policy Desire State'
-                        Description = 'Test Definition'
-                        Id          = 'A_19dbaff5-9aff-48b0-a60d-d0471ddaf141'
-                        RoleScopeTagIds             = @("0")
-                        TargetedAppManagementLevels = "unspecified"
-                        AppGroupType                = "selectedPublicApps"
-                        CustomSettings              = @(
-                            @{
-                                name  = 'FakeStringValue'
-                                value = '1'
-                            }
-                        )
-                    }
-                }
-                Mock -CommandName Get-MgBetaDeviceAppManagementTargetedManagedAppConfigurationAssignment -MockWith {
-                    return @()
-                }
-
             }
 
             It 'Should return true from the Test method' {
@@ -203,24 +182,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         } -ClientOnly)
                     )
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementTargetedManagedAppConfiguration -MockWith {
-                    return @{
-                        DisplayName = 'Test App Configuration Policy'
-                        Description = 'Test Definition'
-                        Id          = 'A_19dbaff5-9aff-48b0-a60d-d0471ddaf141'
-                        RoleScopeTagIds             = @("0")
-                        TargetedAppManagementLevels = "unspecified"
-                        AppGroupType                = "selectedPublicApps"
-                        Apps                        = @()
-                         CustomSettings              = @(
-                                @{
-                                    name  = 'FakeStringValue'
-                                    value = '1'
-                                }
-                            )
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -243,23 +204,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementTargetedManagedAppConfiguration -MockWith {
-                    return @{
-                        DisplayName = 'Test App Configuration Policy'
-                        Description = 'Test Definition'
-                        Id          = 'A_19dbaff5-9aff-48b0-a60d-d0471ddaf141'
-                        RoleScopeTagIds             = @("0")
-                        TargetedAppManagementLevels = "unspecified"
-                        AppGroupType                = "selectedPublicApps"
-                        CustomSettings              = @(
-                                @{
-                                    name  = 'FakeStringValue'
-                                    value = '1'
-                                }
-                            )
-                    }
                 }
             }
 

@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -43,6 +43,27 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             displayName = "MyBillingAccount"
                         }
                     }
+                }
+            }
+
+            Mock -CommandName Invoke-AzRest -MockWith {
+                return @{
+                    Content = ConvertTo-Json @{
+                        value = @(
+                            @{
+                                name = "default"
+                                id   = "12345-12345-12345-12345-12345"
+                                properties = @{
+                                    enterpriseAgreementPolicies = @{
+                                        authenticationType = "OrganizationalAccountOnly"
+                                    }
+                                    marketplacePurchases = "AllAllowed"
+                                    reservationPurchases = "Allowed"
+                                    savingsPlanPurchases = "NotAllowed"
+                                }
+                            }
+                        )
+                    } -Depth 10 -Compress
                 }
             }
 
@@ -67,27 +88,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure               = 'Present'
                     Credential           = $Credential;
                 }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        Content = ConvertTo-Json @{
-                            value = @(
-                                @{
-                                    name = "default"
-                                    id   = "12345-12345-12345-12345-12345"
-                                    properties = @{
-                                        enterpriseAgreementPolicies = @{
-                                            authenticationType = "OrganizationalAccountOnly"
-                                        }
-                                        marketplacePurchases = "AllAllowed"
-                                        reservationPurchases = "Allowed"
-                                        savingsPlanPurchases = "NotAllowed"
-                                    }
-                                }
-                            )
-                        } -Dept 10 -Compress
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -108,27 +108,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SavingsPlanPurchases = "Allowed" #Drift
                     Ensure               = 'Present'
                     Credential           = $Credential;
-                }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        Content = ConvertTo-Json @{
-                            value = @(
-                                @{
-                                    name = "default"
-                                    id   = "12345-12345-12345-12345-12345"
-                                    properties = @{
-                                        enterpriseAgreementPolicies = @{
-                                            authenticationType = "OrganizationalAccountOnly"
-                                        }
-                                        marketplacePurchases = "AllAllowed"
-                                        reservationPurchases = "Allowed"
-                                        savingsPlanPurchases = "NotAllowed"
-                                    }
-                                }
-                            )
-                        } -Dept 10 -Compress
-                    }
                 }
             }
 
@@ -152,27 +131,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        Content = ConvertTo-Json @{
-                            value = @(
-                                @{
-                                    name = "default"
-                                    id   = "12345-12345-12345-12345-12345"
-                                    properties = @{
-                                        enterpriseAgreementPolicies = @{
-                                            authenticationType = "OrganizationalAccountOnly"
-                                        }
-                                        marketplacePurchases = "AllAllowed"
-                                        reservationPurchases = "Allowed"
-                                        savingsPlanPurchases = "NotAllowed"
-                                    }
-                                }
-                            )
-                        } -Dept 10 -Compress
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

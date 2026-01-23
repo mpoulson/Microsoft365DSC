@@ -1,7 +1,8 @@
-[ClassVersion("1.0.0.0"), FriendlyName("AADUser")]
+[ClassVersion("1.0.0.1"), FriendlyName("AADUser")]
 class MSFT_AADUser : OMI_BaseResource
 {
     [Key, Description("The login name of the user")] String UserPrincipalName;
+    [Write, Description("Specifies whether the user account is enabled or not. Required when a user is created.")] Boolean AccountEnabled;
     [Write, Description("The display name for the user")] String DisplayName;
     [Write, Description("The first name of the user")] String FirstName;
     [Write, Description("The last name of the user")] String LastName;
@@ -16,6 +17,7 @@ class MSFT_AADUser : OMI_BaseResource
     [Write, Description("The Groups that the user is a direct member of")] String MemberOf[];
     [Write, Description("The Mobile Phone Number of the user")] String MobilePhone;
     [Write, Description("The Office Name of the user")] String Office;
+    [Write, Description("The mail address of the user")] String Mail;
     [Write, Description("The other mails assigned to the user")] String OtherMails[];
     [Write, Description("Specifies whether the user password expires periodically. Default value is false")] Boolean PasswordNeverExpires;
     [Write, Description("Specifies password policies for the user.")] String PasswordPolicies;

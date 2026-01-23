@@ -52,7 +52,7 @@ class MSFT_EXOGroupSettings : OMI_BaseResource
     [Write, Description("The RequireSenderAuthenticationEnabled parameter specifies whether to accept messages only from authenticated (internal) senders. ")] boolean RequireSenderAuthenticationEnabled;
     [Write, Description("The SensitivityLabelId parameter specifies the GUID value of the sensitivity label that's assigned to the Microsoft 365 Group.")] string SensitivityLabelId;
     [Write, Description("The SubscriptionEnabled switch specifies whether the group owners can enable subscription to conversations and calendar events on the groups they own. ")] boolean SubscriptionEnabled;
-    [Write, Description("The UnifiedGroupWelcomeMessageEnabled switch specifies whether to enable or disable sending system-generated welcome messages to users who are added as members to the Microsoft 365 Group.")] boolean UnifiedGroupWelcomeMessageEnabled;
+    [Write, Description("The WelcomeMessageEnabled switch specifies whether to enable or disable sending system-generated welcome messages to users who are added as members to the Microsoft 365 Group.")] boolean WelcomeMessageEnabled;
     [Write, Description("Credentials of the Exchange Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
     [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;

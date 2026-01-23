@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaDeviceManagementDeviceConfiguration -MockWith {
@@ -40,6 +40,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
             Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
+            }
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        destinationStore = "computerCertStoreRoot"
+                        certFileName = "FakeStringValue"
+                        '@odata.type' = "#microsoft.graph.windows81TrustedRootCertificate"
+                    }
+                    Description = "FakeStringValue"
+                    DisplayName = "FakeStringValue"
+                    Id = "FakeStringValue"
+
+                }
             }
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
@@ -91,20 +104,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            destinationStore = "computerCertStoreRoot"
-                            certFileName = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.windows81TrustedRootCertificate"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -131,22 +130,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            destinationStore = "computerCertStoreRoot"
-                            certFileName = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.windows81TrustedRootCertificate"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -158,24 +142,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     CertFileName = "FakeStringValue"
                     Description = "FakeStringValue"
-                    DestinationStore = "computerCertStoreRoot"
+                    DestinationStore = "userCertStoreIntermediate" # Updated property
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            destinationStore = "computerCertStoreRoot"
-                            certFileName = "CertFileName Drift"
-                            '@odata.type' = "#microsoft.graph.windows81TrustedRootCertificate"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                    }
                 }
             }
 
@@ -200,21 +171,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            destinationStore = "computerCertStoreRoot"
-                            certFileName = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.windows81TrustedRootCertificate"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

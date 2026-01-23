@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -43,6 +43,27 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-InboundConnector -MockWith {
+            }
+
+            Mock -CommandName Get-InboundConnector -MockWith {
+                return @{
+                    Ensure                       = 'Present'
+                    Credential                   = $Credential
+                    Identity                     = 'TestInboundConnector'
+                    AssociatedAcceptedDomains    = @('contoso.com', 'contoso.org')
+                    CloudServicesMailEnabled     = $false
+                    Comment                      = 'Test Inbound connector'
+                    ConnectorSource              = 'HybridWizard'
+                    ConnectorType                = 'onPremises'
+                    Enabled                      = $true
+                    RequireTls                   = $true
+                    RestrictDomainsToCertificate = $false
+                    RestrictDomainsToIPAddresses = $true
+                    SenderDomains                = @('smtp:fabrikam.com;1', 'smtp:contoso.com;1')
+                    SenderIPAddresses            = @('192.168.2.11')
+                    TlsSenderCertificateName     = '*.contoso.com'
+                    TreatMessagesAsInternal      = $true
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -75,9 +96,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-InboundConnector -MockWith {
-                    return @{
-                        Identity = 'SomeOtherConnector'
-                    }
+                    return $null
                 }
             }
 
@@ -91,6 +110,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-InboundConnector -Exactly 1
             }
 
         }
@@ -114,28 +134,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SenderIPAddresses            = @('192.168.2.11')
                     TlsSenderCertificateName     = '*.contoso.com'
                     TreatMessagesAsInternal      = $true
-                }
-
-
-                Mock -CommandName Get-InboundConnector -MockWith {
-                    return @{
-                        Ensure                       = 'Present'
-                        Credential                   = $Credential
-                        Identity                     = 'TestInboundConnector'
-                        AssociatedAcceptedDomains    = @('contoso.com', 'contoso.org')
-                        CloudServicesMailEnabled     = $false
-                        Comment                      = 'Test Inbound connector'
-                        ConnectorSource              = 'HybridWizard'
-                        ConnectorType                = 'onPremises'
-                        Enabled                      = $true
-                        RequireTls                   = $true
-                        RestrictDomainsToCertificate = $false
-                        RestrictDomainsToIPAddresses = $true
-                        SenderDomains                = @('smtp:fabrikam.com;1', 'smtp:contoso.com;1')
-                        SenderIPAddresses            = @('192.168.2.11')
-                        TlsSenderCertificateName     = '*.contoso.com'
-                        TreatMessagesAsInternal      = $true
-                    }
                 }
             }
 
@@ -164,42 +162,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     TlsSenderCertificateName     = '*.contoso.com'
                     TreatMessagesAsInternal      = $true
                 }
-
-                Mock -CommandName Get-InboundConnector -MockWith {
-                    return @{
-                        Ensure                       = 'Present'
-                        Credential                   = $Credential
-                        Identity                     = 'TestInboundConnector'
-                        AssociatedAcceptedDomains    = @('test@contoso.com', 'contoso.org')
-                        CloudServicesMailEnabled     = $true
-                        Comment                      = 'Test Inbound connector'
-                        ConnectorSource              = 'HybridWizard'
-                        ConnectorType                = 'Partner'
-                        Enabled                      = $true
-                        RequireTls                   = $true
-                        RestrictDomainsToCertificate = $false
-                        RestrictDomainsToIPAddresses = $true
-                        SenderDomains                = @('smtp:fabrikam.com;1', 'smtp:contoso.com;1')
-                        SenderIPAddresses            = '192.168.2.114'
-                        TlsSenderCertificateName     = '*.contoso.org'
-                        TreatMessagesAsInternal      = $false
-
-                    }
-                }
-
-                Mock -CommandName Set-InboundConnector -MockWith {
-                    return @{
-
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
                 Test-TargetResource @testParams | Should -Be $false
             }
 
-            It 'Should Successfully call the Set method' {
+            It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-InboundConnector -Exactly 1
             }
         }
 
@@ -210,18 +181,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential = $Credential
                     Identity   = 'TestInboundConnector'
                 }
-
-                Mock -CommandName Get-InboundConnector -MockWith {
-                    return @{
-                        Identity = 'TestInboundConnector'
-                    }
-                }
-
-                Mock -CommandName Remove-InboundConnector -MockWith {
-                    return @{
-
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -230,6 +189,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the Connector in the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Remove-InboundConnector -Exactly 1
             }
         }
 
@@ -239,26 +199,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-InboundConnector -MockWith {
-                    return @{
-                        Identity                     = 'TestInboundConnector'
-                        AssociatedAcceptedDomains    = @('test@contoso.com', 'contoso.org')
-                        CloudServicesMailEnabled     = $true
-                        Comment                      = 'Test Inbound connector'
-                        ConnectorSource              = 'HybridWizard'
-                        ConnectorType                = 'Partner'
-                        Enabled                      = $true
-                        RequireTls                   = $true
-                        RestrictDomainsToCertificate = $false
-                        RestrictDomainsToIPAddresses = $true
-                        SenderDomains                = @('smtp:fabrikam.com;1', 'smtp:contoso.com;1')
-                        SenderIPAddresses            = '192.168.2.114'
-                        TlsSenderCertificateName     = '*.contoso.org'
-                        TreatMessagesAsInternal      = $false
-
-                    }
                 }
             }
 

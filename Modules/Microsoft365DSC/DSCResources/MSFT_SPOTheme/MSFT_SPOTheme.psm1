@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_SPOTheme'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -64,7 +66,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'PNP' `
+            $null = New-M365DSCConnection -Workload 'PNP' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -121,7 +123,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -197,9 +199,6 @@ function Set-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-
-    $ConnectionMode = New-M365DSCConnection -Workload 'PNP' `
-        -InboundParameters $PSBoundParameters
 
     $CurrentPalette = Get-TargetResource @PSBoundParameters
     if ($Ensure -eq 'Present')
@@ -309,11 +308,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -321,28 +318,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration for SPO Theme $Name"
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-    $ValuesToCheck.Remove('Palette') | Out-Null
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    if ($TestResult)
-    {
-        $TestResult = Compare-SPOTheme -existingThemePalette $currentValues.Palette -configThemePalette $Palette
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -433,7 +411,7 @@ function Export-TargetResource
                 CertificatePassword   = $CertificatePassword
                 CertificatePath       = $CertificatePath
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 Credential            = $Credential
                 AccessTokens          = $AccessTokens
             }
@@ -478,15 +456,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -499,7 +475,7 @@ function Convert-ExistingThemePaletteToHashTable
         [System.Collections.Hashtable]
         $Palette
     )
-    $themeHash = @{ }
+    $themeHash = [ordered]@{}
     foreach ($entry in $Palette.GetEnumerator())
     {
         $themeHash[$entry.Key] = $entry.Value
@@ -523,51 +499,6 @@ function Convert-NewThemePaletteToHashTable
         $results.Add($entry.Property, $entry.Value)
     }
     return $results
-}
-
-function Compare-SPOTheme
-{
-    [CmdletBinding()]
-    [OutputType([System.String])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.Object]
-        $existingThemePalette,
-        [Parameter(Mandatory = $true)]
-        [System.Object]
-        $configThemePalette
-    )
-
-    $existingThemePalette = $existingThemePalette.GetEnumerator() | Sort-Object -Property Name
-    $configThemePalette = $configThemePalette.GetEnumerator() | Sort-Object -Property Name
-
-    $existingThemePaletteCount = 0
-    $configThemePaletteCount = 0
-
-    foreach ($val in $existingThemePalette.Value)
-    {
-        if ($configThemePalette.Value.Contains($val))
-        {
-            $configThemePaletteCount++
-        }
-    }
-
-    foreach ($val in $configThemePalette.Value)
-    {
-        if ($existingThemePalette.value.Contains($val))
-        {
-            $existingThemePaletteCount++
-        }
-    }
-
-    if (($existingThemePalette.Count -eq $configThemePaletteCount) -and ($configThemePalette.Count -eq $existingThemePaletteCount))
-    {
-        return 'Themes are identical'
-    }
-    else
-    {
-        return 'Themes are not identical'
-    }
 }
 
 Export-ModuleMember -Function *-TargetResource

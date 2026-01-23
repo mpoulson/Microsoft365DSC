@@ -28,23 +28,65 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
             }
 
-            Mock -Command New-MgBetaPolicyAppManagementPolicy -MockWith {
+            Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith {
+                return @{
+                    DisplayName = "MyPolicy"
+                    Description = "MyDescription"
+                    Id          = "12345-12345-12345-12345-12345"
+                    IsEnabled   = $true
+                    Restrictions = @{
+                        passwordCredentials = @(
+                            @{
+                                restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
+                                restrictionType = "passwordAddition"
+                                state = "enabled"
+                            },
+                            @{
+                                maxLifetime = @{
+                                    Days = 90
+                                    Hours = 0
+                                    Minutes = 0
+                                    Seconds = 0
+                                }
+                                restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
+                                restrictionType = "passwordLifetime"
+                                state = "enabled"
+                            },
+                            @{
+                                restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
+                                restrictionType = "symmetricKeyAddition"
+                                state = "enabled"
+                            },
+                            @{
+                                maxLifetime = @{
+                                    Days = 90
+                                    Hours = 0
+                                    Minutes = 0
+                                    Seconds = 0
+                                }
+                                restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
+                                restrictionType = "symmetricKeyLifetime"
+                                state = "enabled"
+                            }
+                        )
+                    }
+                }
+            }
 
+            Mock -Command New-MgBetaPolicyAppManagementPolicy -MockWith {
             }
 
             Mock -Command Update-MgBetaPolicyAppManagementPolicy -MockWith {
-
             }
 
             Mock -Command Remove-MgBetaPolicyAppManagementPolicy -MockWith {
-
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -63,24 +105,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Restrictions          = (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictions -Property @{
                         passwordCredentials = [CimInstance[]]@(
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 12:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
                                 restrictionType = "passwordAddition"
                                 state = "enabled"
                             } -ClientOnly);
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
                                 maxLifetime = "P90DT0H0M0S"
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 12:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
                                 restrictionType = "passwordLifetime"
                                 state = "enabled"
                             } -ClientOnly);
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 12:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
                                 restrictionType = "symmetricKeyAddition"
                                 state = "enabled"
                             } -ClientOnly);
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
                                 maxLifetime = "P90DT0H0M0S"
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 12:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
                                 restrictionType = "symmetricKeyLifetime"
                                 state = "enabled"
                             } -ClientOnly);
@@ -116,24 +158,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Restrictions          = (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictions -Property @{
                         passwordCredentials = [CimInstance[]]@(
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 12:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
                                 restrictionType = "passwordAddition"
                                 state = "enabled"
                             } -ClientOnly);
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
                                 maxLifetime = "P90DT0H0M0S"
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 12:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
                                 restrictionType = "passwordLifetime"
                                 state = "enabled"
                             } -ClientOnly);
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 12:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
                                 restrictionType = "symmetricKeyAddition"
                                 state = "enabled"
                             } -ClientOnly);
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
                                 maxLifetime = "P90DT0H0M0S"
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 12:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
                                 restrictionType = "symmetricKeyLifetime"
                                 state = "enabled"
                             } -ClientOnly);
@@ -141,40 +183,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     } -ClientOnly);
                     Ensure              = 'Absent'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith {
-                    return @{
-                        DisplayName = "MyPolicy"
-                        Description = "MyDescription"
-                        Id          = "12345-12345-12345-12345-12345"
-                        Restrictions = @{
-                            passwordCredentials = @(
-                                @{
-                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
-                                    restrictionType = "passwordAddition"
-                                    state = "enabled"
-                                },
-                                @{
-                                    maxLifetime = "P90DT0H0M0S"
-                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
-                                    restrictionType = "passwordLifetime"
-                                    state = "enabled"
-                                },
-                                @{
-                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
-                                    restrictionType = "symmetricKeyAddition"
-                                    state = "enabled"
-                                },
-                                @{
-                                    maxLifetime = "P90DT0H0M0S"
-                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
-                                    restrictionType = "symmetricKeyLifetime"
-                                    state = "enabled"
-                                }
-                            )
-                        }
-                    }
                 }
             }
             It 'Should return Values from the Get method' {
@@ -196,17 +204,34 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName         = "MyPolicy"
                     Description         = "MyDescription"
                     IsEnabled           = $true
+                    Restrictions          = (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictions -Property @{
+                        passwordCredentials = [CimInstance[]]@(
+                            (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
+                                restrictionType = "passwordAddition"
+                                state = "enabled"
+                            } -ClientOnly);
+                            (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
+                                maxLifetime = "P90DT0H0M0S"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
+                                restrictionType = "passwordLifetime"
+                                state = "enabled"
+                            } -ClientOnly);
+                            (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
+                                restrictionType = "symmetricKeyAddition"
+                                state = "enabled"
+                            } -ClientOnly);
+                            (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
+                                maxLifetime = "P90DT0H0M0S"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
+                                restrictionType = "symmetricKeyLifetime"
+                                state = "enabled"
+                            } -ClientOnly);
+                        )
+                    } -ClientOnly);
                     Ensure              = 'Present'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith {
-                    return @{
-                        DisplayName = "MyPolicy"
-                        Description = "MyDescription"
-                        Id          = "12345-12345-12345-12345-12345"
-                        IsEnabled   = $true
-                    }
                 }
             }
 
@@ -224,24 +249,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Restrictions          = (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictions -Property @{
                         passwordCredentials = [CimInstance[]]@(
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 5:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
                                 restrictionType = "passwordAddition"
                                 state = "enabled"
                             } -ClientOnly);
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
                                 maxLifetime = "P90DT0H0M0S"
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 5:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
                                 restrictionType = "passwordLifetime"
                                 state = "enabled"
                             } -ClientOnly);
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 5:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
                                 restrictionType = "symmetricKeyAddition"
                                 state = "enabled"
                             } -ClientOnly);
                             (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
                                 maxLifetime = "P90DT0H0M0S"
-                                restrictForAppsCreatedAfterDateTime = "1/1/0001 5:00:00 AM"
+                                restrictForAppsCreatedAfterDateTime = "1/1/0001 5:00:00 AM" # Drift
                                 restrictionType = "symmetricKeyLifetime"
                                 state = "enabled"
                             } -ClientOnly);
@@ -249,41 +274,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     } -ClientOnly);
                     Ensure              = 'Present'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith {
-                    return @{
-                        DisplayName = "MyPolicy"
-                        Description = "MyDescription"
-                        Id          = "12345-12345-12345-12345-12345"
-                        IsEnabled   = $true
-                        Restrictions = @{
-                            passwordCredentials = @(
-                                @{
-                                    restrictForAppsCreatedAfterDateTime = "1/1/0001 12:00:00 AM"
-                                    restrictionType = "passwordAddition"
-                                    state = "enabled"
-                                },
-                                @{
-                                    maxLifetime = "P90DT0H0M0S"
-                                    restrictForAppsCreatedAfterDateTime = "1/1/0001 12:00:00 AM"
-                                    restrictionType = "passwordLifetime"
-                                    state = "enabled"
-                                },
-                                @{
-                                    restrictForAppsCreatedAfterDateTime = "1/1/2025 12:00:00 AM" # Drift
-                                    restrictionType = "symmetricKeyAddition"
-                                    state = "enabled"
-                                },
-                                @{
-                                    maxLifetime = "P90DT0H0M0S"
-                                    restrictForAppsCreatedAfterDateTime = "1/1/0001 12:00:00 AM"
-                                    restrictionType = "symmetricKeyLifetime"
-                                    state = "enabled"
-                                }
-                            )
-                        }
-                    }
                 }
             }
 
@@ -307,41 +297,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith {
-                    return @{
-                        DisplayName = "MyPolicy"
-                        Description = "MyDescription"
-                        Id          = "12345-12345-12345-12345-12345"
-                        IsEnabled   = $true
-                        Restrictions = @{
-                            passwordCredentials = @(
-                                @{
-                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
-                                    restrictionType = "passwordAddition"
-                                    state = "enabled"
-                                },
-                                @{
-                                    maxLifetime = "P90DT0H0M0S"
-                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
-                                    restrictionType = "passwordLifetime"
-                                    state = "enabled"
-                                },
-                                @{
-                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/2025 12:00:00 AM") # Drift
-                                    restrictionType = "symmetricKeyAddition"
-                                    state = "enabled"
-                                },
-                                @{
-                                    maxLifetime = "P90DT0H0M0S"
-                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
-                                    restrictionType = "symmetricKeyLifetime"
-                                    state = "enabled"
-                                }
-                            )
-                        }
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

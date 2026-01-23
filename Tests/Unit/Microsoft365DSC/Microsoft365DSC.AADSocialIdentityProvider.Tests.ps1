@@ -24,13 +24,26 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaIdentityProvider -MockWith {
             }
 
             Mock -CommandName Remove-MgBetaIdentityProvider -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaIdentityProvider -MockWith {
+                return @{
+                    Id                   = "Google-OAUTH";
+                    AdditionalProperties = @{
+                        ClientId             = "Google-OAUTH";
+                        ClientSecret         = "FakeSecret";
+                        IdentityProviderType = "Google";
+                        '@odata.type'        = "#microsoft.graph.socialIdentityProvider"
+                    }
+                    DisplayName          = "My Google Provider";
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -77,19 +90,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IdentityProviderType = "Google";
                     Credential           = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaIdentityProvider -MockWith {
-                    return @{
-                        Id                   = "Google-OAUTH";
-                        AdditionalProperties = @{
-                            ClientId             = "Google-OAUTH";
-                            ClientSecret         = "FakeSecret";
-                            IdentityProviderType = "Google";
-                            '@odata.type'        = "#microsoft.graph.socialIdentityProvider"
-                        }
-                        DisplayName          = "My Google Provider";
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -115,19 +115,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IdentityProviderType = "Google";
                     Credential           = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaIdentityProvider -MockWith {
-                    return @{
-                        Id                   = "Google-OAUTH";
-                        AdditionalProperties = @{
-                            ClientId             = "Google-OAUTH";
-                            ClientSecret         = "FakeSecret";
-                            IdentityProviderType = "Google";
-                            '@odata.type'        = "#microsoft.graph.socialIdentityProvider"
-                        }
-                        DisplayName          = "My Google Provider";
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -138,25 +125,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The instance exists and values are NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    ClientId             = "Google-OAUTH";
-                    ClientSecret         = "FakeSecret";
-                    DisplayName          = "My Google Provider";
+                    ClientId             = "Google-OAUTH-Drift";
+                    ClientSecret         = "DriftSecret";
+                    DisplayName          = "My Google Provider Drift"; # Drift
                     Ensure               = "Present";
                     IdentityProviderType = "Google";
                     Credential           = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaIdentityProvider -MockWith {
-                    return @{
-                        Id                   = "Google-OAUTH";
-                        AdditionalProperties = @{
-                            ClientId             = "Google-OAUTH";
-                            ClientSecret         = "FakeSecret";
-                            IdentityProviderType = "Google";
-                            '@odata.type'        = "#microsoft.graph.socialIdentityProvider"
-                        }
-                        DisplayName          = "My Drift Provider"; # Drift
-                    }
                 }
             }
 
@@ -180,19 +154,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaIdentityProvider -MockWith {
-                    return @{
-                        Id                   = "Google-OAUTH";
-                        AdditionalProperties = @{
-                            ClientId             = "Google-OAUTH";
-                            ClientSecret         = "FakeSecret";
-                            IdentityProviderType = "Google";
-                            '@odata.type'        = "#microsoft.graph.socialIdentityProvider"
-                        }
-                        DisplayName          = "My Google Provider";
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

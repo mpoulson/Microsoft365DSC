@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -93,7 +93,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     InstallationOptionsAppsForMac              = @('isSkypeForBusinessEnabled', 'isMicrosoft365AppsEnabled')
                     InstallationOptionsAppsForWindows          = @('isVisioEnabled', 'isMicrosoft365AppsEnabled', 'isProjectEnabled')
                     InstallationOptionsUpdateChannel           = 'current'
-                    MicrosoftVivaBriefingEmail                   = $True
                     VivaInsightsWebExperience                    = $true
                     VivaInsightsDigestEmail                      = $true
                     VivaInsightsOutlookAddInAndInlineSuggestions = $true
@@ -128,7 +127,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (Get-TargetResource @testParams).M365WebEnableUsersToOpenFilesFrom3PStorage | Should -Be $False
             }
 
-            It 'Should return false from the Test method' {
+            It 'Should return true from the Test method' {
                 (Test-TargetResource @testParams) | Should -Be $true
             }
         }
@@ -140,12 +139,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsSingleInstance                             = 'Yes'
                     AdminCenterReportDisplayConcealedNames       = $True;
                     M365WebEnableUsersToOpenFilesFrom3PStorage   = $True
-                    MicrosoftVivaBriefingEmail                   = $True
                     VivaInsightsWebExperience                    = $true
                     VivaInsightsDigestEmail                      = $true
                     VivaInsightsOutlookAddInAndInlineSuggestions = $true
                     VivaInsightsScheduleSendSuggestions          = $true
-                    Ensure                                       = 'Present'
                     Credential                                   = $Credential
                 }
 

@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -31,20 +31,36 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName New-AntiPhishRule -MockWith {
-                return @{
-
-                }
+                return @{}
             }
 
             Mock -CommandName Set-AntiPhishRule -MockWith {
-                return @{
-
-                }
+                return @{}
             }
 
             Mock -CommandName Remove-AntiPhishRule -MockWith {
-                return @{
+                return @{}
+            }
 
+            Mock -CommandName Get-AntiPhishRule -MockWith {
+                return @{
+                    Ensure                    = 'Present'
+                    Identity                  = 'TestRule'
+                    AntiPhishPolicy           = 'TestPolicy'
+                    Priority                  = 0
+                    ExceptIfRecipientDomainIs = @('dev.contoso.com')
+                    ExceptIfSentTo            = @('test@contoso.com')
+                    ExceptIfSentToMemberOf    = @('Special Group')
+                    RecipientDomainIs         = @('contoso.com')
+                    SentTo                    = @('someone@contoso.com')
+                    SentToMemberOf            = @('Some Group', 'Some Other Group')
+                    State                     = 'Enabled'
+                }
+            }
+
+            Mock -CommandName Get-AntiPhishPolicy -MockWith {
+                return @{
+                    Identity = 'TestPolicy'
                 }
             }
 
@@ -65,16 +81,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AntiPhishPolicy = 'TestPolicy'
                 }
 
-                Mock -CommandName Get-AntiPhishPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
-                }
-
                 Mock -CommandName Get-AntiPhishRule -MockWith {
-                    return @{
-                        Identity = 'SomeOtherPolicy'
-                    }
+                    return $null
                 }
             }
 
@@ -84,6 +92,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-AntiPhishRule -Exactly 1
             }
         }
 
@@ -103,28 +112,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SentTo                    = @('someone@contoso.com')
                     SentToMemberOf            = @('Some Group', 'Some Other Group')
                 }
-
-                Mock -CommandName Get-AntiPhishRule -MockWith {
-                    return @{
-                        Ensure                    = 'Present'
-                        Identity                  = 'TestRule'
-                        AntiPhishPolicy           = 'TestPolicy'
-                        Priority                  = 0
-                        ExceptIfRecipientDomainIs = @('dev.contoso.com')
-                        ExceptIfSentTo            = @('test@contoso.com')
-                        ExceptIfSentToMemberOf    = @('Special Group')
-                        RecipientDomainIs         = @('contoso.com')
-                        SentTo                    = @('someone@contoso.com')
-                        SentToMemberOf            = @('Some Group', 'Some Other Group')
-                        State                     = 'Enabled'
-                    }
-                }
-
-                Mock -CommandName Get-AntiPhishPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -141,33 +128,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AntiPhishPolicy           = 'TestPolicy'
                     Enabled                   = $true
                     Priority                  = 0
-                    ExceptIfRecipientDomainIs = @('dev.contoso.com')
+                    ExceptIfRecipientDomainIs = @('notdev.contoso.com') # Drift
                     ExceptIfSentTo            = @('test@contoso.com')
                     ExceptIfSentToMemberOf    = @('Special Group')
                     RecipientDomainIs         = @('contoso.com')
                     SentTo                    = @('someone@contoso.com')
                     SentToMemberOf            = @('Some Group', 'Some Other Group')
-                }
-
-                Mock -CommandName Get-AntiPhishRule -MockWith {
-                    return @{
-                        Identity                  = 'TestRule'
-                        AntiPhishPolicy           = 'TestPolicy'
-                        Enabled                   = $true
-                        Priority                  = 0
-                        ExceptIfRecipientDomainIs = @('notdev.contoso.com')
-                        ExceptIfSentTo            = @('nottest@contoso.com')
-                        ExceptIfSentToMemberOf    = @('UnSpecial Group')
-                        RecipientDomainIs         = @('contoso.com')
-                        SentTo                    = @('wrongperson@contoso.com', 'someone@contoso.com')
-                        SentToMemberOf            = @('Some Group', 'Some Other Group', 'DeletedGroup')
-                    }
-                }
-
-                Mock -CommandName Get-AntiPhishPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
                 }
             }
 
@@ -177,6 +143,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-AntiPhishRule -Exactly 1
             }
         }
 
@@ -188,18 +155,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity        = 'TestRule'
                     AntiPhishPolicy = 'TestPolicy'
                 }
-
-                Mock -CommandName Get-AntiPhishPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
-                }
-
-                Mock -CommandName Get-AntiPhishRule -MockWith {
-                    return @{
-                        Identity = 'TestRule'
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -208,6 +163,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Remove-AntiPhishRule -Exactly 1
             }
         }
 
@@ -217,27 +173,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-AntiPhishRule -MockWith {
-                    return @{
-                        Identity                  = 'TestRule'
-                        AntiPhishPolicy           = 'TestPolicy'
-                        Enabled                   = $true
-                        Priority                  = 0
-                        ExceptIfRecipientDomainIs = @('notdev.contoso.com')
-                        ExceptIfSentTo            = @('nottest@contoso.com')
-                        ExceptIfSentToMemberOf    = @('UnSpecial Group')
-                        RecipientDomainIs         = @('contoso.com')
-                        SentTo                    = @('wrongperson@contoso.com', 'someone@contoso.com')
-                        SentToMemberOf            = @('Some Group', 'Some Other Group', 'DeletedGroup')
-                    }
-                }
-
-                Mock -CommandName Get-AntiPhishPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
                 }
             }
 

@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -38,13 +38,46 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
 
-            Mock -CommandName Get-MgBetaNetworkAccessForwardingPolicy -MockWith {
-            }
-
             Mock -CommandName New-MgBetaNetworkAccessForwardingPolicyrule -MockWith {
             }
 
             Mock -CommandName Remove-MgBetaNetworkAccessForwardingPolicyRule -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaNetworkAccessForwardingPolicy -MockWith {
+                return @{
+                    Name = "Custom Bypass"
+                    PolicyRules = @(
+                        @{
+                            Name = "Custom policy internet rule"
+                            AdditionalProperties = @{
+                                ruleType = "fqdn"
+                                action   = "bypass"
+                                ports    = @(80,443)
+                                protocol = "tcp"
+                                destinations = @(
+                                    @{
+                                        value = "www.google.com"
+                                    }
+                                )
+                            }
+                        },
+                        @{
+                            Name = "Custom policy internet rule"
+                            AdditionalProperties = @{
+                                ruleType = "ipSubnet"
+                                action   = "bypass"
+                                ports    = @(80,443)
+                                protocol = "tcp"
+                                destinations = @(
+                                    @{
+                                        value = "192.164.0.0/24"
+                                    }
+                                )
+                            }
+                        }
+                    )
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -79,42 +112,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingPolicy -MockWith {
-                    return @{
-                        Name = "Custom Bypass"
-                        PolicyRules = @(
-                            @{
-                                Name = "Custom policy internet rule"
-                                AdditionalProperties = @{
-                                    ruleType = "fqdn"
-                                    action   = "bypass"
-                                    ports    = @(80,443)
-                                    protocol = "tcp"
-                                    destinations = @(
-                                        @{
-                                            value = "www.google.com"
-                                        }
-                                    )
-                                }
-                            },
-                            @{
-                                Name = "Custom policy internet rule"
-                                AdditionalProperties = @{
-                                    ruleType = "ipSubnet"
-                                    action   = "bypass"
-                                    ports    = @(80,443)
-                                    protocol = "tcp"
-                                    destinations = @(
-                                        @{
-                                            value = "192.164.0.0/24"
-                                        }
-                                    )
-                                }
-                            }
-                        )
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -142,46 +139,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             RuleType       = 'ipSubnet'
                             Protocol       = 'tcp'
                             Ports          = @(80, 443)
-                            Destinations   = @('192.164.0.0/24')
+                            Destinations   = @('192.164.0.0/28') # Drift
                         } -ClientOnly
                     )
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingPolicy -MockWith {
-                    return @{
-                        Name = "Custom Bypass"
-                        PolicyRules = @(
-                            @{
-                                Name = "Custom policy internet rule"
-                                AdditionalProperties = @{
-                                    ruleType = "fqdn"
-                                    action   = "bypass"
-                                    ports    = @(80,443)
-                                    protocol = "tcp"
-                                    destinations = @(
-                                        @{
-                                            value = "www.google.com"
-                                        }
-                                    )
-                                }
-                            },
-                            @{
-                                Name = "Custom policy internet rule"
-                                AdditionalProperties = @{
-                                    ruleType = "ipSubnet"
-                                    action   = "bypass"
-                                    ports    = @(80,443)
-                                    protocol = "tcp"
-                                    destinations = @(
-                                        @{
-                                            value = "192.164.0.0/28"  # created drift here
-                                        }
-                                    )
-                                }
-                            }
-                        )
-                    }
                 }
             }
 
@@ -206,43 +167,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                ##TODO - Mock the Get-MgBetaNetworkAccessForwardingPolicy to return an instance
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingPolicy -MockWith {
-                    return @{
-                        Name = "Custom Bypass"
-                        PolicyRules = @(
-                            @{
-                                Name = "Custom policy internet rule"
-                                AdditionalProperties = @{
-                                    ruleType = "fqdn"
-                                    action   = "bypass"
-                                    ports    = @(80,443)
-                                    protocol = "tcp"
-                                    destinations = @(
-                                        @{
-                                            value = "www.google.com"
-                                        }
-                                    )
-                                }
-                            },
-                            @{
-                                Name = "Custom policy internet rule"
-                                AdditionalProperties = @{
-                                    ruleType = "ipSubnet"
-                                    action   = "bypass"
-                                    ports    = @(80,443)
-                                    protocol = "tcp"
-                                    destinations = @(
-                                        @{
-                                            value = "192.164.0.0/28"  # created drift here
-                                        }
-                                    )
-                                }
-                            }
-                        )
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

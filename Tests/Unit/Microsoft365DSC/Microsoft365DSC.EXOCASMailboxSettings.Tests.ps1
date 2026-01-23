@@ -24,11 +24,25 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Set-CASMailbox -MockWith {
+            }
+
+            Mock -CommandName Get-CASMailbox -MockWith {
+                return @{
+                    Ensure                 = 'Present'
+                    Identity               = 'MeganB'
+                    Credential             = $Credential
+                    ActiveSyncDebugLogging = $False
+                    PopEnabled             = $False
+                    EwsEnabled             = $True
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -48,17 +62,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PopEnabled             = $False
                     EwsEnabled             = $True
                 }
-
-                Mock -CommandName Get-CASMailbox -MockWith {
-                    return @{
-                        Ensure                 = 'Present'
-                        Identity               = 'MeganB'
-                        Credential             = $Credential
-                        ActiveSyncDebugLogging = $False
-                        PopEnabled             = $False
-                        EwsEnabled             = $True
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -74,18 +77,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential             = $Credential
                     ActiveSyncDebugLogging = $False
                     PopEnabled             = $False
-                    EwsEnabled             = $True
-                }
-
-                Mock -CommandName Get-CASMailbox -MockWith {
-                    return @{
-                        Ensure                 = 'Present'
-                        Identity               = 'ExampleCASRule'
-                        Credential             = $Credential
-                        ActiveSyncDebugLogging = $True
-                        PopEnabled             = $True
-                        EwsEnabled             = $False
-                    }
+                    EwsEnabled             = $False # Drift
                 }
             }
 
@@ -95,6 +87,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName 'Set-CASMailbox' -Exactly 1
             }
         }
 
@@ -106,20 +99,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential = $Credential
                 }
 
-                Mock -CommandName Get-CASMailbox -MockWith {
-                    return @{
-                        ActiveSyncDebugLogging = $False
-                        PopEnabled             = $False
-                        Identity               = 'john.smith'
-                        EwsEnabled             = $True
-                    }
-                }
-
                 Mock -CommandName Get-Mailbox -MockWith {
                     return @(
                         @{
-                            Name              = 'John Smith'
-                            UserPrincipalName = 'john.smith@contoso.onmicrosoft.com'
+                            Name              = 'Megan B'
+                            UserPrincipalName = 'megan.b@contoso.onmicrosoft.com'
                         }
                     )
                 }

@@ -27,12 +27,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-CsTeamsEmergencyCallingPolicy -MockWith {
+                return @{
+                    Description               = 'Desc'
+                    Identity                  = 'TestPolicy'
+                    NotificationDialOutNumber = '+1234567890'
+                    NotificationGroup         = 'john.smith@contoso.onmicrosoft.com'
+                    NotificationMode          = 'NotificationOnly'
+                }
             }
 
             Mock -CommandName New-CsTeamsEmergencyCallingPolicy -MockWith {
@@ -94,16 +106,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     NotificationGroup         = 'john.smith@contoso.onmicrosoft.com'
                     NotificationMode          = 'NotificationOnly'
                 }
-
-                Mock -CommandName Get-CsTeamsEmergencyCallingPolicy -MockWith {
-                    return @{
-                        Description               = 'Desc'
-                        Identity                  = 'TestPolicy'
-                        NotificationDialOutNumber = '12312345678'
-                        NotificationGroup         = 'john.smith@contoso.onmicrosoft.com'
-                        NotificationMode          = 'NotificationOnly'
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -132,16 +134,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     NotificationGroup         = 'john.smith@contoso.onmicrosoft.com'
                     NotificationMode          = 'NotificationOnly'
                 }
-
-                Mock -CommandName Get-CsTeamsEmergencyCallingPolicy -MockWith {
-                    return @{
-                        Description               = 'Desc'
-                        Identity                  = 'TestPolicy'
-                        NotificationDialOutNumber = '+1234567890'
-                        NotificationGroup         = 'john.smith@contoso.onmicrosoft.com'
-                        NotificationMode          = 'NotificationOnly'
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -163,16 +155,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     NotificationDialOutNumber = '+1234567890'
                     NotificationGroup         = 'john.smith@contoso.onmicrosoft.com'
                     NotificationMode          = 'NotificationOnly'
-                }
-
-                Mock -CommandName Get-CsTeamsEmergencyCallingPolicy -MockWith {
-                    return @{
-                        Description               = 'Desc'
-                        Identity                  = 'TestPolicy'
-                        NotificationDialOutNumber = '+1234567890'
-                        NotificationGroup         = 'john.smith@contoso.onmicrosoft.com'
-                        NotificationMode          = 'NotificationOnly'
-                    }
                 }
             }
 
@@ -209,16 +191,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsEmergencyCallingPolicy -MockWith {
-                    return @{
-                        Description               = 'Desc'
-                        Identity                  = 'TestPolicy'
-                        NotificationDialOutNumber = '+1234567890'
-                        NotificationGroup         = 'john.smith@contoso.onmicrosoft.com'
-                        NotificationMode          = 'NotificationOnly'
-                    }
                 }
             }
 

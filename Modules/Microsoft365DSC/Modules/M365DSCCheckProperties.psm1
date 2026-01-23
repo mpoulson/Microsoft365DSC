@@ -7,7 +7,6 @@
 .Functionality
     Internal
 #>
-
 function Get-PropertyReport
 {
     param
@@ -89,7 +88,7 @@ function Get-PropertyReport
     foreach ($module in $workloads)
     {
         Write-Verbose "Connecting to {$($Module.Name)}"
-        $ConnectionMode = New-M365DSCConnection -Workload ($Module.Name) -InboundParameters $PSBoundParameters
+        $null = New-M365DSCConnection -Workload ($Module.Name) -InboundParameters $PSBoundParameters
 
         Write-Verbose "Getting list of cmdlets of {$($Module.ModuleName)}..."
         $CurrentModuleName = $Module.ModuleName
@@ -104,7 +103,7 @@ function Get-PropertyReport
         else
         {
             Import-Module $CurrentModuleName -Force -Global -ErrorAction SilentlyContinue
-            $ConnectionMode = New-M365DSCConnection -Workload $Module.Name -InboundParameters $PSBoundParameters
+            $null = New-M365DSCConnection -Workload $Module.Name -InboundParameters $PSBoundParameters
         }
 
         $cmdlets = Get-Command -CommandType 'Function' -Module $CurrentModuleName

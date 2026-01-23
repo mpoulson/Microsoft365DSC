@@ -40,5 +40,34 @@
         ]
       }
     }
-  }
+  },
+  "requiredModules": [
+    "Microsoft.Graph.Authentication",
+    "Microsoft.Graph.Beta.DeviceManagement",
+    "Microsoft.Graph.Groups"
+  ],
+  "supportedEnvironments": [
+    "Global",
+    "USGov"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.DeviceManagement",
+      "cmdlets": [
+        "Get-MgBetaDeviceManagementAssignmentFilter",
+        "Get-MgBetaDeviceManagementDeviceHealthScript",
+        "Get-MgBetaDeviceManagementDeviceHealthScriptAssignment",
+        "New-MgBetaDeviceManagementDeviceHealthScript",
+        "Remove-MgBetaDeviceManagementDeviceHealthScript",
+        "Update-MgBetaDeviceManagementDeviceHealthScript"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Groups",
+      "cmdlets": [
+        "Get-MgGroup"
+      ]
+    }
+  ]
 }

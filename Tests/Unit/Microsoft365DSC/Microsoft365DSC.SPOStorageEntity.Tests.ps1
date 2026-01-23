@@ -33,7 +33,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return 'contoso.com'
             }
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {

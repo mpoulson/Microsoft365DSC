@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -99,6 +99,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 OffsetUri = '/Config/Connectivity/AllowUSBConnection'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        @{
+                                            itemId = 'device_vendor_msft_policy_config_connectivity_allowusbconnection_1'
+                                            name = 'Enabled'
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 1
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         )
@@ -111,7 +121,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance'
                                 choiceSettingValue = @{
                                     children = @()
-                                    value = '1'
+                                    value = 'device_vendor_msft_policy_config_connectivity_allowusbconnection_1'
                                 }
                             }
                         }
@@ -164,6 +174,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'device_vendor_msft_defender_configuration_devicecontrol_policyrules_{ruleid}_ruledata_entry'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 4
+                                            }
                                         }
                                     )
                                 }
@@ -185,6 +199,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'device_vendor_msft_defender_configuration_devicecontrol_policyrules_{ruleid}_ruledata_entry'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
+                                                value = 'Allow'
+                                            }
                                         }
                                     )
                                 }
@@ -346,6 +364,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'device_vendor_msft_defender_configuration_devicecontrol_policyrules_{ruleid}_ruledata_entry'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 1
+                                            }
                                         },
                                         @{
                                             name = 'WDD_WRITE_ACCESS'
@@ -356,6 +378,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'device_vendor_msft_defender_configuration_devicecontrol_policyrules_{ruleid}_ruledata_entry'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 2
+                                            }
                                         }
                                         # No more options for clarity
                                     )
@@ -552,16 +578,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description = "My Test"
                     Id = "12345-12345-12345-12345-12345"
                     DisplayName = "Test"
-                    AllowUSBConnection = "1"
+                    AllowUSBConnection = 1
                     PolicyRule = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogPolicyRule -Property @{
                             Entry = [CimInstance[]]@(
                                 (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogPolicyRuleEntry -Property @{
-                                    AccessMask = @("1", "2")
+                                    AccessMask = @(1, 2)
                                     Sid = "1234"
                                     ComputerSid = "1234"
                                     Type = "allow"
-                                    Options = "4"
+                                    Options = 4
                                 } -ClientOnly)
                             )
                             Name = "asdf"
@@ -602,16 +628,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description = "My Test"
                     Id = "12345-12345-12345-12345-12345"
                     DisplayName = "Test"
-                    AllowUSBConnection = "1"
+                    AllowUSBConnection = 1
                     PolicyRule = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogPolicyRule -Property @{
                             Entry = [CimInstance[]]@(
                                 (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogPolicyRuleEntry -Property @{
-                                    AccessMask = @("1", "2")
+                                    AccessMask = @(1, 2)
                                     Sid = "1234"
                                     ComputerSid = "1234"
                                     Type = "allow"
-                                    Options = "4"
+                                    Options = 4
                                 } -ClientOnly)
                             )
                             Name = "asdf"
@@ -650,16 +676,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description = "My Test"
                     Id = "12345-12345-12345-12345-12345"
                     DisplayName = "Test"
-                    AllowUSBConnection = "1"
+                    AllowUSBConnection = 1
                     PolicyRule = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogPolicyRule -Property @{
                             Entry = [CimInstance[]]@(
                                 (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogPolicyRuleEntry -Property @{
-                                    AccessMask = @("1", "2")
+                                    AccessMask = @(1, 2)
                                     Sid = "1234"
                                     ComputerSid = "1234"
                                     Type = "allow"
-                                    Options = "4"
+                                    Options = 4
                                 } -ClientOnly)
                             )
                             Name = "asdf"
@@ -690,16 +716,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description = "My Test"
                     Id = "12345-12345-12345-12345-12345"
                     DisplayName = "Test"
-                    AllowUSBConnection = "1"
+                    AllowUSBConnection = 1
                     PolicyRule = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogPolicyRule -Property @{
                             Entry = [CimInstance[]]@(
                                 (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogPolicyRuleEntry -Property @{
-                                    AccessMask = @("1", "2")
+                                    AccessMask = @(1, 2)
                                     Sid = "1234"
                                     ComputerSid = "1234"
                                     Type = "deny" # Updated property
-                                    Options = "4"
+                                    Options = 4
                                 } -ClientOnly)
                             )
                             Name = "asdf"

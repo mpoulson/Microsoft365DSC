@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_SCSecurityFilter'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -82,13 +84,13 @@ function Get-TargetResource
 
     if ($Global:CurrentModeIsExport)
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+        $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
             -InboundParameters $PSBoundParameters `
             -SkipModuleReload $true
     }
     else
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+        $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
             -InboundParameters $PSBoundParameters
     }
 
@@ -125,9 +127,8 @@ function Get-TargetResource
         else
         {
             Write-Verbose "Found existing Security Filter $($FilterName)"
-            $result = Get-M365DSCSCMapSecurityFilter $secFilter $Credential $ApplicationId $TenantId $CertificateThumbprint $CertificatePath $CertificatePassword
+            $result = Get-M365DSCSCMapSecurityFilter -Filter $secFilter -Credential $Credential -ApplicationId $ApplicationId -TenantId $TenantId -CertificateThumbprint $CertificateThumbprint -CertificatePath $CertificatePath -CertificatePassword $CertificatePassword
 
-            Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
             return $result
         }
     }
@@ -139,7 +140,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -286,30 +287,13 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-        -InboundParameters $PSBoundParameters
-
     $CurrentFilter = Get-TargetResource @PSBoundParameters
 
     if (('Present' -eq $Ensure) -and ('Absent' -eq $CurrentFilter.Ensure))
     {
         Write-Verbose "Creating new Security Filter '$FilterName'."
 
-        $CreationParams = ([Hashtable]$PSBoundParameters).Clone()
-
-        #Remove parameters not used in New-ComplianceSecurityFilter
-        $CreationParams.Remove('Ensure') | Out-Null
-
-        # Remove authentication parameters
-        $CreationParams.Remove('Credential') | Out-Null
-        $CreationParams.Remove('ApplicationId') | Out-Null
-        $CreationParams.Remove('TenantId') | Out-Null
-        $CreationParams.Remove('CertificatePath') | Out-Null
-        $CreationParams.Remove('CertificatePassword') | Out-Null
-        $CreationParams.Remove('CertificateThumbprint') | Out-Null
-        $CreationParams.Remove('ManagedIdentity') | Out-Null
-        $CreationParams.Remove('ApplicationSecret') | Out-Null
-        $CreationParams.Remove('AccessTokens') | Out-Null
+        $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
         try
         {
@@ -324,21 +308,7 @@ function Set-TargetResource
     {
         Write-Verbose "Updating existing Security Filter '$FilterName'."
 
-        $SetParams = ([Hashtable]$PSBoundParameters).Clone()
-
-        #Remove unused parameters for Set-Label cmdlet
-        $SetParams.Remove('Ensure') | Out-Null
-
-        # Remove authentication parameters
-        $SetParams.Remove('Credential') | Out-Null
-        $SetParams.Remove('ApplicationId') | Out-Null
-        $SetParams.Remove('TenantId') | Out-Null
-        $SetParams.Remove('CertificatePath') | Out-Null
-        $SetParams.Remove('CertificatePassword') | Out-Null
-        $SetParams.Remove('CertificateThumbprint') | Out-Null
-        $SetParams.Remove('ManagedIdentity') | Out-Null
-        $SetParams.Remove('ApplicationSecret') | Out-Null
-        $SetParams.Remove('AccessTokens') | Out-Null
+        $SetParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
         try
         {
@@ -444,11 +414,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -456,21 +424,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Sensitivity label for $FilterName"
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    $ValuesToCheck = $PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -507,6 +463,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
         -InboundParameters $PSBoundParameters
 
@@ -566,15 +523,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
     return $dscContent
 }

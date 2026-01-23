@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaDeviceManagementDeviceConfiguration -MockWith {
@@ -40,6 +40,25 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
             Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
+            }
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        configurationAccountType = "azureADAccount"
+                        '@odata.type' = "#microsoft.graph.windows10SecureAssessmentConfiguration"
+                        allowTextSuggestion = $True
+                        launchUri = "FakeStringValue"
+                        assessmentAppUserModelId = "FakeStringValue"
+                        allowScreenCapture = $True
+                        localGuestAccountName = "FakeStringValue"
+                        configurationAccount = "FakeStringValue"
+                        allowPrinting = $True
+                    }
+                    Description = "FakeStringValue"
+                    DisplayName = "FakeStringValue"
+                    Id = "FakeStringValue"
+
+                }
             }
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
@@ -103,26 +122,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            configurationAccountType = "azureADAccount"
-                            '@odata.type' = "#microsoft.graph.windows10SecureAssessmentConfiguration"
-                            allowTextSuggestion = $True
-                            launchUri = "FakeStringValue"
-                            assessmentAppUserModelId = "FakeStringValue"
-                            allowScreenCapture = $True
-                            localGuestAccountName = "FakeStringValue"
-                            configurationAccount = "FakeStringValue"
-                            allowPrinting = $True
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -155,26 +154,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            configurationAccountType = "azureADAccount"
-                            '@odata.type' = "#microsoft.graph.windows10SecureAssessmentConfiguration"
-                            allowTextSuggestion = $True
-                            launchUri = "FakeStringValue"
-                            assessmentAppUserModelId = "FakeStringValue"
-                            allowScreenCapture = $True
-                            localGuestAccountName = "FakeStringValue"
-                            configurationAccount = "FakeStringValue"
-                            allowPrinting = $True
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-
-                    }
-                }
             }
 
 
@@ -196,25 +175,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     LaunchUri = "FakeStringValue"
-                    LocalGuestAccountName = "FakeStringValue"
+                    LocalGuestAccountName = "AnotherAccount" # Updated property
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            configurationAccountType = "azureADAccount"
-                            '@odata.type' = "#microsoft.graph.windows10SecureAssessmentConfiguration"
-                            launchUri = "FakeStringValue"
-                            localGuestAccountName = "FakeStringValue"
-                            configurationAccount = "FakeStringValue"
-                            assessmentAppUserModelId = "FakeStringValue"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                    }
                 }
             }
 
@@ -239,27 +202,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            configurationAccountType = "azureADAccount"
-                            '@odata.type' = "#microsoft.graph.windows10SecureAssessmentConfiguration"
-                            allowTextSuggestion = $True
-                            launchUri = "FakeStringValue"
-                            assessmentAppUserModelId = "FakeStringValue"
-                            allowScreenCapture = $True
-                            localGuestAccountName = "FakeStringValue"
-                            configurationAccount = "FakeStringValue"
-                            allowPrinting = $True
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

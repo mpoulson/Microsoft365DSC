@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -40,6 +40,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Get-MgBetaDeviceManagementDerivedCredential -MockWith {
+                return @{
+                    Ensure               = 'Present'
+                    DisplayName          = "K5";
+                    HelpUrl              = "http://www.ff.com/";
+                    Id                   = "a409d85f-2a49-440d-884a-80fb52a557ab";
+                    Issuer               = "purebred";
+                    NotificationType     = "email";
+                }
             }
             Mock -CommandName New-MgBetaDeviceManagementDerivedCredential -MockWith {
             }
@@ -91,16 +99,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     NotificationType     = "email";
                     Credential           = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDerivedCredential -MockWith {
-                    return @{
-                        DisplayName          = "K5";
-                        HelpUrl              = "http://www.ff.com/";
-                        Id                   = "a409d85f-2a49-440d-884a-80fb52a557ab";
-                        Issuer               = "purebred";
-                        NotificationType     = "email";
-                    }
-                }
             }
             It ' 2.1 Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -126,17 +124,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     NotificationType     = "email";
                     Credential           = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDerivedCredential -MockWith {
-                    return @{
-                        Ensure               = 'Present'
-                        DisplayName          = "K5";
-                        HelpUrl              = "http://www.ff.com/";
-                        Id                   = "a409d85f-2a49-440d-884a-80fb52a557ab";
-                        Issuer               = "purebred";
-                        NotificationType     = "email";
-                    }
-                }
             }
 
             It ' 3.0 Should return true from the Test method' {
@@ -149,21 +136,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Ensure               = 'Present'
                     DisplayName          = "K5";
-                    HelpUrl              = "http://www.ff.com/";
+                    HelpUrl              = "http://www.ff2.com/"; # Updated property
                     Id                   = "a409d85f-2a49-440d-884a-80fb52a557ab";
                     Issuer               = "purebred";
                     NotificationType     = "email";
                     Credential           = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDerivedCredential -MockWith {
-                    return @{
-                        DisplayName          = "K5 drift"; #drift
-                        HelpUrl              = "http://www.ff.com/";
-                        Id                   = "a409d85f-2a49-440d-884a-80fb52a557ab";
-                        Issuer               = "purebred";
-                        NotificationType     = "email";
-                    }
                 }
             }
 
@@ -184,16 +161,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDerivedCredential -MockWith {
-                    return @{
-                        DisplayName          = "K5";
-                        HelpUrl              = "http://www.ff.com/";
-                        Id                   = "a409d85f-2a49-440d-884a-80fb52a557ab";
-                        Issuer               = "purebred";
-                        NotificationType     = "email";
-                    }
                 }
             }
             It ' 5.0 Should Reverse Engineer resource from the Export method' {

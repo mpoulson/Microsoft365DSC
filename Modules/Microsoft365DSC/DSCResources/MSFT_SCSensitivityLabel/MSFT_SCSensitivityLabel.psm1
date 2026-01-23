@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_SCSensitivityLabel'
+
 $allTrainableClassifiers = @(
     [PSCustomObject]@{ Name = 'Actuary reports'; Id = 'b27df2ee-fd14-4ce9-b02f-4070a5d68132' }
     [PSCustomObject]@{ Name = 'Agreements'; Id = '7f12e403-5335-4da8-a91e-6c2210b7a2b1' }
@@ -301,13 +303,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of Sensitivity Label for $Name"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            Write-Verbose -Message "Getting configuration of Sensitivity Label for $Name"
-
-            $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+            $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -327,8 +329,16 @@ function Get-TargetResource
 
             try
             {
-                $label = Get-Label -Identity $Name -ErrorAction SilentlyContinue `
-                    -IncludeDetailedLabelActions
+                if ($null -eq $Script:AllLabels)
+                {
+                    [array]$Script:AllLabels = Get-Label -IncludeDetailedLabelActions
+                }
+                $label = $Script:AllLabels | Where-Object { $_.Name -eq $Name }
+
+                if ($null -eq $label)
+                {
+                    $label = Get-Label -Identity $Name -IncludeDetailedLabelActions -ErrorAction SilentlyContinue
+                }
             }
             catch
             {
@@ -349,7 +359,12 @@ function Get-TargetResource
         $parentLabelID = $null
         if ($null -ne $label.ParentId)
         {
-            $parentLabel = Get-Label -Identity $label.ParentId -IncludeDetailedLabelActions -ErrorAction 'SilentlyContinue'
+            $parentLabel = $Script:AllLabels | Where-Object { $_.Name -eq $label.ParentId }
+            if ($null -eq $parentLabel)
+            {
+                $parentLabel = Get-Label -Identity $label.ParentId -IncludeDetailedLabelActions -ErrorAction SilentlyContinue
+                $Script:AllLabels += $parentLabel
+            }
             $parentLabelID = $parentLabel.Name
         }
         if ($null -ne $label.LocaleSettings)
@@ -358,7 +373,7 @@ function Get-TargetResource
         }
         if ($null -ne $label.Settings)
         {
-            $advancedSettingsValue = Convert-StringToAdvancedSettings -AdvancedSettings $label.Settings
+            [array]$advancedSettingsValue = Convert-StringToAdvancedSettings -AdvancedSettings $label.Settings
         }
         Write-Verbose "Found existing Sensitivity Label $($Name)"
 
@@ -544,7 +559,7 @@ function Get-TargetResource
         {
             $currConditions = $label.Conditions | ConvertFrom-Json
 
-            $getConditions = @{
+            $getConditions = [ordered]@{
                 Groups   = @()
                 Operator = ''
             }
@@ -556,7 +571,7 @@ function Get-TargetResource
             $policyTip = ''
             [array]$groups = foreach ($group in $currConditions.$($operator))
             {
-                $grpObject = @{
+                $grpObject = [ordered]@{
                     Name     = ''
                     Operator = ''
                 }
@@ -582,7 +597,7 @@ function Get-TargetResource
                         $autoApplyType = ($item.Settings | Where-Object { $_.Key -eq 'autoapplytype' }).Value
                     }
 
-                    $settingsObject = @{
+                    $settingsObject = [ordered]@{
                         name            = ($item.Settings | Where-Object { $_.Key -eq 'name' }).Value
                         confidencelevel = ($item.Settings | Where-Object { $_.Key -eq 'confidencelevel' }).Value
                         mincount        = ($item.Settings | Where-Object { $_.Key -eq 'mincount' }).Value
@@ -605,7 +620,7 @@ function Get-TargetResource
                         $grpName = ($item.Settings | Where-Object { $_.Key -eq 'groupname' }).Value
                     }
 
-                    @{
+                    [ordered]@{
                         name = ($item.Settings | Where-Object { $_.Key -eq 'name' }).Value
                         id   = $item.Value
                     }
@@ -699,7 +714,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -938,9 +953,6 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-        -InboundParameters $PSBoundParameters
-
     $label = Get-TargetResource @PSBoundParameters
 
     if (($SiteAndGroupProtectionAllowFullAccess -and $SiteAndGroupProtectionAllowLimitedAccess) -or `
@@ -1095,7 +1107,7 @@ function Set-TargetResource
     if (('Present' -eq $Ensure) -and ('Absent' -eq $label.Ensure))
     {
         Write-Verbose -Message "Label {$Name} doesn't already exist, creating it from the Set-TargetResource function."
-        $CreationParams = ([Hashtable]$PSBoundParameters).Clone()
+        $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
         if ($PSBoundParameters.ContainsKey('AdvancedSettings'))
         {
@@ -1122,18 +1134,6 @@ function Set-TargetResource
         }
 
         $CreationParams.Remove('Priority') | Out-Null
-
-        # Remove authentication parameters
-        $CreationParams.Remove('Ensure') | Out-Null
-        $CreationParams.Remove('Credential') | Out-Null
-        $CreationParams.Remove('ApplicationId') | Out-Null
-        $CreationParams.Remove('TenantId') | Out-Null
-        $CreationParams.Remove('CertificatePath') | Out-Null
-        $CreationParams.Remove('CertificatePassword') | Out-Null
-        $CreationParams.Remove('CertificateThumbprint') | Out-Null
-        $CreationParams.Remove('ManagedIdentity') | Out-Null
-        $CreationParams.Remove('ApplicationSecret') | Out-Null
-        $CreationParams.Remove('AccessTokens') | Out-Null
 
         try
         {
@@ -1162,7 +1162,7 @@ function Set-TargetResource
     elseif (('Present' -eq $Ensure) -and ('Present' -eq $label.Ensure))
     {
         Write-Verbose -Message "Label {$Name} already exist, updating it from the Set-TargetResource function."
-        $SetParams = $PSBoundParameters
+        $SetParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
         if ($PSBoundParameters.ContainsKey('AdvancedSettings'))
         {
@@ -1190,18 +1190,6 @@ function Set-TargetResource
 
         #Remove unused parameters for Set-Label cmdlet
         $SetParams.Remove('Name') | Out-Null
-
-        # Remove authentication parameters
-        $SetParams.Remove('Ensure') | Out-Null
-        $SetParams.Remove('Credential') | Out-Null
-        $SetParams.Remove('ApplicationId') | Out-Null
-        $SetParams.Remove('TenantId') | Out-Null
-        $SetParams.Remove('CertificatePath') | Out-Null
-        $SetParams.Remove('CertificatePassword') | Out-Null
-        $SetParams.Remove('CertificateThumbprint') | Out-Null
-        $SetParams.Remove('ManagedIdentity') | Out-Null
-        $SetParams.Remove('ApplicationSecret') | Out-Null
-        $SetParams.Remove('AccessTokens') | Out-Null
 
         # Only update the priority if the value is different
         if ($SetParams.Priority -eq $label.Priority)
@@ -1569,6 +1557,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
         -InboundParameters $PSBoundParameters
 
@@ -1586,11 +1575,11 @@ function Export-TargetResource
 
     try
     {
-        [array]$labels = Get-Label -ErrorAction Stop
+        [array]$Script:AllLabels = Get-Label -IncludeDetailedLabelActions -ErrorAction Stop
 
         $dscContent = ''
         $i = 1
-        if ($labels.Length -eq 0)
+        if ($Script:AllLabels.Count -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
@@ -1598,14 +1587,14 @@ function Export-TargetResource
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
-        foreach ($label in $labels)
+        foreach ($label in $Script:AllLabels)
         {
             if ($null -ne $Global:M365DSCExportResourceInstancesCount)
             {
                 $Global:M365DSCExportResourceInstancesCount++
             }
 
-            Write-M365DSCHost -Message "    |---[$i/$($labels.Count)] $($label.Name)" -DeferWrite
+            Write-M365DSCHost -Message "    |---[$i/$($Script:AllLabels.Count)] $($label.Name)" -DeferWrite
 
             $Script:exportedInstance = $label
             $Results = Get-TargetResource @PSBoundParameters -Name $label.Name
@@ -1720,15 +1709,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
     return $dscContent
 }
@@ -1749,12 +1736,12 @@ function Convert-JSONToLocaleSettings
     $settings = @()
     foreach ($localeSetting in $localeSettings)
     {
-        $result = @{
+        $result = [ordered]@{
             localeKey = $localeSetting.LocaleKey
         }
         foreach ($setting in $localeSetting.Settings)
         {
-            $entry = @{
+            $entry = [ordered]@{
                 Key   = $setting.Key
                 Value = $setting.Value -replace "`r"
             }
@@ -1763,7 +1750,7 @@ function Convert-JSONToLocaleSettings
         $result.Add('LabelSettings', $settings)
         $settings = @()
         $entries += $result
-        $result = @{ }
+        $result = [ordered]@{}
     }
     return $entries
 }
@@ -1791,7 +1778,7 @@ function Convert-StringToAdvancedSettings
             $valueString = $settingString.Substring($startPos, $settingString.Length - $startPos).Trim()
             $values = $valueString.Split(',')
 
-            $entry = @{
+            $entry = [ordered]@{
                 Key   = $settingKey
                 Value = $values.Trim()
             }
@@ -1817,7 +1804,7 @@ function Convert-CIMToAdvancedSettings
         $AdvancedSettings
     )
 
-    $entry = @{ }
+    $entry = [ordered]@{}
     foreach ($obj in $AdvancedSettings)
     {
         $settingsValues = ''
@@ -1876,7 +1863,7 @@ function Convert-CIMToLocaleSettings
         $settings = @()
         foreach ($setting in $localset.LabelSettings)
         {
-            $settingEntry = @{
+            $settingEntry = [ordered]@{
                 Key   = $setting.Key
                 Value = $setting.Value
             }
@@ -1884,8 +1871,8 @@ function Convert-CIMToLocaleSettings
         }
         $localeEntries.Add('Settings', $settings)
         [void]$entry.Add(($localeEntries | ConvertTo-Json))
-        $localeEntries = @{ }
-        $settings = @( )
+        $localeEntries = [ordered]@{}
+        $settings = @()
     }
 
     return $entry

@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOPolicyTipConfig'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -51,71 +53,58 @@ function Get-TargetResource
     )
 
     Write-Verbose -Message "Getting Policy Tip configuration for $Name"
-    if ($Global:CurrentModeIsExport)
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $command = Get-Command Get-PolicyTipConfig -ErrorAction SilentlyContinue
-    if ($null -eq $command)
-    {
-        New-M365DSCLogEntry -Message 'Get-PolicyTipConfig is not available in the tenant' `
-            -Exception $_ `
-            -Source $MyInvocation.MyCommand.ModuleName
-        throw 'EXOPolicyTipConfig is not supported in the current tenant.'
-    }
-    $nullReturn = $PSBoundParameters
-    $nullReturn.Ensure = 'Absent'
 
     try
     {
-        $AllPolicyTips = Get-PolicyTipConfig -Erroraction Stop
-
-        $PolicyTipConfig = $AllPolicyTips | Where-Object -FilterScript { $_.Name -eq $Name }
-
-        if ($null -eq $PolicyTipConfig)
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            Write-Verbose -Message "Policy Tip Config $($Name) does not exist."
-            return $nullReturn
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = $PSBoundParameters
+            $nullReturn.Ensure = 'Absent'
+
+            $PolicyTipConfig = Get-PolicyTipConfig -Identity $Name -ErrorAction SilentlyContinue
+            if ($null -eq $PolicyTipConfig)
+            {
+                Write-Verbose -Message "Policy Tip Config $($Name) does not exist."
+                return $nullReturn
+            }
         }
         else
         {
-            $result = @{
-                Name                  = $PolicyTipConfig.Name
-                Value                 = $PolicyTipConfig.Value
-                Ensure                = 'Present'
-                Credential            = $Credential
-                ApplicationId         = $ApplicationId
-                CertificateThumbprint = $CertificateThumbprint
-                CertificatePath       = $CertificatePath
-                CertificatePassword   = $CertificatePassword
-                Managedidentity       = $ManagedIdentity.IsPresent
-                TenantId              = $TenantId
-                AccessTokens          = $AccessTokens
-            }
-
-            Write-Verbose -Message "Found Policy Tip Config $($Name)"
-            return $result
+            $PolicyTipConfig = $Script:exportedInstance
         }
+
+        Write-Verbose -Message "Found Policy Tip Config with Name {$Name}"
+
+        $result = @{
+            Name                  = $PolicyTipConfig.Name
+            Value                 = $PolicyTipConfig.Value
+            Ensure                = 'Present'
+            Credential            = $Credential
+            ApplicationId         = $ApplicationId
+            CertificateThumbprint = $CertificateThumbprint
+            CertificatePath       = $CertificatePath
+            CertificatePassword   = $CertificatePassword
+            ManagedIdentity       = $ManagedIdentity.IsPresent
+            TenantId              = $TenantId
+            AccessTokens          = $AccessTokens
+        }
+
+        return $result
     }
     catch
     {
@@ -125,7 +114,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -196,7 +185,7 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+    $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters
 
     $NewPolicyTipConfigParams = @{
@@ -285,11 +274,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -297,23 +284,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing Policy Tip Config for $Name"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -354,6 +327,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters `
         -SkipModuleReload $true
@@ -402,10 +376,11 @@ function Export-TargetResource
                     TenantId              = $TenantId
                     CertificateThumbprint = $CertificateThumbprint
                     CertificatePassword   = $CertificatePassword
-                    Managedidentity       = $ManagedIdentity.IsPresent
+                    ManagedIdentity       = $ManagedIdentity.IsPresent
                     CertificatePath       = $CertificatePath
                     AccessTokens          = $AccessTokens
                 }
+                $Script:exportedInstance = $PolicyTipConfig
                 $Results = Get-TargetResource @Params
                 $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                     -ConnectionMode $ConnectionMode `
@@ -421,23 +396,20 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message "`r`n    $($Global:M365DSCEmojiYellowCircle) The current tenant is not registered for Policy Tip Configurations."
+            Write-M365DSCHost -Message "`r`n    $($Global:M365DSCEmojiYellowCircle) The current tenant is not registered for Policy Tip Configurations." -CommitWrite
         }
         return $dscContent
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

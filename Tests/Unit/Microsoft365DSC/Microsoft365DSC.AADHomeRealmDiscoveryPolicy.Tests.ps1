@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -40,6 +40,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaPolicyHomeRealmDiscoveryPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyHomeRealmDiscoveryPolicy -MockWith {
+                return @{
+                    id         = "randomguid"
+                    definition  = @(
+                        '{"HomeRealmDiscoveryPolicy":{"PreferredDomain":"federated.example.edu","AlternateIdLogin":{"Enabled":true},"AccelerateToFederatedDomain":false}}'
+                    )
+                    displayName = "FakeStringValue"
+                    description = "FakeStringValue"
+                    isOrganizationDefault = $true
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -104,17 +116,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyHomeRealmDiscoveryPolicy -MockWith {
-                    return @{
-                        id         = "randomguid"
-                        definition  = @(
-                            '{"HomeRealmDiscoveryPolicy":{"PreferredDomain":"federated.example.edu","AlternateIdLogin":{"Enabled":true},"AccelerateToFederatedDomain":false}}'
-                        )
-                        displayName = "FakeStringValue"
-                        description = "FakeStringValue"
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -147,20 +148,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyHomeRealmDiscoveryPolicy -MockWith {
-                    return @{
-                        id         = "randomguid"
-                        definition  = @(
-                            '{"HomeRealmDiscoveryPolicy":{"PreferredDomain":"federated.example.edu","AlternateIdLogin":{"Enabled":true},"AccelerateToFederatedDomain":false}}'
-                        )
-                        displayName = "FakeStringValue"
-                        description = "FakeStringValue"
-                        isOrganizationDefault = $True
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -175,7 +163,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             PreferredDomain       = 'federated.example.edu'
                             AccelerateToFederatedDomain         = $False
                             AlternateIdLogin      = New-CimInstance -ClassName MSFT_AADHomeRealDiscoveryPolicyDefinitionAlternateIdLogin -Property @{
-                                    Enabled = $True
+                                    Enabled = $false # Drift
                                 } -ClientOnly
                         } -ClientOnly )
                     Description = "FakeStringValue"
@@ -183,18 +171,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsOrganizationDefault = $True
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyHomeRealmDiscoveryPolicy -MockWith {
-                    return @{
-                        id         = "randomguid"
-                        definition  = @(
-                            '{"HomeRealmDiscoveryPolicy":{"PreferredDomain":"federated.example.edu","AlternateIdLogin":{"Enabled":true},"AccelerateToFederatedDomain":false}}'
-                        )
-                        displayName = "FakeStringValue"
-                        description = "FakeStringValue New"
-                        isOrganizationDefault = $False
-                    }
                 }
             }
 
@@ -218,17 +194,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyHomeRealmDiscoveryPolicy -MockWith {
-                    return @{
-                        id         = "randomguid"
-                        definition  = @(
-                            '{"HomeRealmDiscoveryPolicy":{"PreferredDomain":"federated.example.edu","AlternateIdLogin":{"Enabled":true},"AccelerateToFederatedDomain":false}}'
-                        )
-                        displayName = "FakeStringValue"
-                        description = "FakeStringValue"
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

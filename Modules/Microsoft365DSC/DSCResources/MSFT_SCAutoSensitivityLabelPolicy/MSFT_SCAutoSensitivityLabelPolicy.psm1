@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_SCAutoSensitivityLabelPolicy'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -135,13 +137,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of Auto sensitivity Label Policy for $Name"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            Write-Verbose -Message "Getting configuration of Auto sensitivity Label Policy for $Name"
-
-            $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+            $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
                 -InboundParameters $PSBoundParameters
 
             #region Telemetry
@@ -187,9 +189,7 @@ function Get-TargetResource
             Credential                        = $Credential
             Ensure                            = 'Present'
             ExchangeSender                    = $policy.ExchangeSender
-            ExchangeSenderException           = $policy.ExchangeSenderException
             ExchangeSenderMemberOf            = $policy.ExchangeSenderMemberOf
-            ExchangeSenderMemberOfException   = $policy.ExchangeSenderMemberOfException
             ExchangeLocation                  = $policy.ExchangeLocation.Name
             AddExchangeLocation               = $policy.AddExchangeLocation
             RemoveExchangeLocation            = $policy.RemoveExchangeLocation
@@ -198,13 +198,13 @@ function Get-TargetResource
             AddOneDriveLocation               = $policy.AddOneDriveLocation
             RemoveOneDriveLocation            = $policy.RemoveOneDriveLocation
             OneDriveLocationException         = $policy.OneDriveLocationException.Name
-            AddOneDriveLocationException      = $policy.AddOneDriveLocationException
-            RemoveOneDriveLocationException   = $policy.RemoveOneDriveLocationException
+            AddOneDriveLocationException      = $policy.AddOneDriveLocationException.Name
+            RemoveOneDriveLocationException   = $policy.RemoveOneDriveLocationException.Name
             Priority                          = $policy.Priority
             SharePointLocation                = $policy.SharePointLocation.Name
-            SharePointLocationException       = $policy.SharePointLocationException
-            AddSharePointLocationException    = $policy.AddSharePointLocationException
-            RemoveSharePointLocationException = $policy.RemoveSharePointLocationException
+            SharePointLocationException       = $policy.SharePointLocationException.Name
+            AddSharePointLocationException    = $policy.AddSharePointLocationException.Name
+            RemoveSharePointLocationException = $policy.RemoveSharePointLocationException.Name
             AddSharePointLocation             = $policy.AddSharePointLocation
             RemoveSharePointLocation          = $policy.RemoveSharePointLocation
             ApplicationId                     = $ApplicationId
@@ -215,7 +215,20 @@ function Get-TargetResource
             AccessTokens                      = $AccessTokens
         }
 
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
+        $ExchangeSenderMemberOfExceptionValue = @()
+        if (-not [System.String]::IsNullOrEmpty($policy.ExchangeSenderMemberOfException))
+        {
+            $ExchangeSenderMemberOfExceptionValue = $policy.ExchangeSenderMemberOfException.Name
+        }
+        $result.Add('ExchangeSenderMemberOfException', $ExchangeSenderMemberOfExceptionValue)
+
+        $ExchangeSenderExceptionValue = @()
+        if (-not [System.String]::IsNullOrEmpty($policy.ExchangeSenderException))
+        {
+            $ExchangeSenderExceptionValue = $policy.ExchangeSenderException.Name
+        }
+        $result.Add('ExchangeSenderException', $ExchangeSenderExceptionValue)
+
         return $result
     }
     catch
@@ -226,7 +239,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -377,9 +390,6 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-        -InboundParameters $PSBoundParameters
-
     $CurrentPolicy = Get-TargetResource @PSBoundParameters
 
     if ($PSBoundParameters.ContainsKey('SharePointLocation') -or $PSBoundParameters.ContainsKey('OneDriveLocation'))
@@ -400,10 +410,9 @@ function Set-TargetResource
     {
         Write-Verbose "Creating new Auto Sensitivity label policy $Name."
 
-        $CreationParams = $PSBoundParameters
+        $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
-        #Remove parameters not used in New-LabelPolicy
-        $CreationParams.Remove('Ensure') | Out-Null
+        # Remove parameters not used in New-LabelPolicy
         $CreationParams.Remove('AddExchangeLocation') | Out-Null
         $CreationParams.Remove('AddOneDriveLocation') | Out-Null
         $CreationParams.Remove('AddOneDriveLocationException') | Out-Null
@@ -414,17 +423,6 @@ function Set-TargetResource
         $CreationParams.Remove('RemoveOneDriveLocationException') | Out-Null
         $CreationParams.Remove('RemoveSharePointLocation') | Out-Null
         $CreationParams.Remove('RemoveSharePointLocationException') | Out-Null
-
-        # Remove authentication parameters
-        $CreationParams.Remove('Credential') | Out-Null
-        $CreationParams.Remove('ApplicationId') | Out-Null
-        $CreationParams.Remove('TenantId') | Out-Null
-        $CreationParams.Remove('CertificatePath') | Out-Null
-        $CreationParams.Remove('CertificatePassword') | Out-Null
-        $CreationParams.Remove('CertificateThumbprint') | Out-Null
-        $CreationParams.Remove('ManagedIdentity') | Out-Null
-        $CreationParams.Remove('ApplicationSecret') | Out-Null
-        $CreationParams.Remove('AccessTokens') | Out-Null
 
         try
         {
@@ -437,10 +435,9 @@ function Set-TargetResource
         try
         {
             Start-Sleep 5
-            $SetParams = $PSBoundParameters
+            $SetParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
             #Remove unused parameters for Set-Label cmdlet
-            $SetParams.Remove('Ensure') | Out-Null
             $SetParams.Remove('Name') | Out-Null
             $SetParams.Remove('ExchangeLocationException') | Out-Null
             $SetParams.Remove('ExchangeLocation') | Out-Null
@@ -448,17 +445,6 @@ function Set-TargetResource
             $SetParams.Remove('OneDriveLocationException') | Out-Null
             $SetParams.Remove('SharePointLocation') | Out-Null
             $SetParams.Remove('SharePointLocationException') | Out-Null
-
-            # Remove authentication parameters
-            $SetParams.Remove('Credential') | Out-Null
-            $SetParams.Remove('ApplicationId') | Out-Null
-            $SetParams.Remove('TenantId') | Out-Null
-            $SetParams.Remove('CertificatePath') | Out-Null
-            $SetParams.Remove('CertificatePassword') | Out-Null
-            $SetParams.Remove('CertificateThumbprint') | Out-Null
-            $SetParams.Remove('ManagedIdentity') | Out-Null
-            $SetParams.Remove('ApplicationSecret') | Out-Null
-            $SetParams.Remove('AccessTokens') | Out-Null
 
             Set-AutoSensitivityLabelPolicy @SetParams -Identity $Name
         }
@@ -469,10 +455,9 @@ function Set-TargetResource
     }
     elseif (('Present' -eq $Ensure) -and ('Present' -eq $CurrentPolicy.Ensure))
     {
-        $SetParams = $PSBoundParameters
+        $SetParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
         #Remove unused parameters for Set-Label cmdlet
-        $SetParams.Remove('Ensure') | Out-Null
         $SetParams.Remove('Name') | Out-Null
         $SetParams.Remove('ExchangeLocationException') | Out-Null
         $SetParams.Remove('ExchangeLocation') | Out-Null
@@ -480,17 +465,6 @@ function Set-TargetResource
         $SetParams.Remove('OneDriveLocationException') | Out-Null
         $SetParams.Remove('SharePointLocation') | Out-Null
         $SetParams.Remove('SharePointLocationException') | Out-Null
-
-        # Remove authentication parameters
-        $SetParams.Remove('Credential') | Out-Null
-        $SetParams.Remove('ApplicationId') | Out-Null
-        $SetParams.Remove('TenantId') | Out-Null
-        $SetParams.Remove('CertificatePath') | Out-Null
-        $SetParams.Remove('CertificatePassword') | Out-Null
-        $SetParams.Remove('CertificateThumbprint') | Out-Null
-        $SetParams.Remove('ManagedIdentity') | Out-Null
-        $SetParams.Remove('ApplicationSecret') | Out-Null
-        $SetParams.Remove('AccessTokens') | Out-Null
 
         try
         {
@@ -655,7 +629,7 @@ function Test-TargetResource
     )
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -663,21 +637,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Sensitivity label for $Name"
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    $ValuesToCheck = $PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -773,16 +735,14 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
     return $dscContent
 }

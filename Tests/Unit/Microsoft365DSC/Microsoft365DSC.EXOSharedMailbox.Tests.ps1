@@ -24,11 +24,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@contoso.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Remove-Mailbox -MockWith {
+            }
+
+            Mock -CommandName New-Mailbox -MockWith {
+            }
+
+            Mock -CommandName Set-Mailbox -MockWith {
+            }
+
+            Mock -CommandName Get-Mailbox -MockWith {
+                return @{
+                    Identity             = 'Test Shared Mailbox'
+                    Name                 = 'Test Shared Mailbox'
+                    RecipientTypeDetails = 'SharedMailbox'
+                    Alias                = 'test'
+                    EmailAddresses       = @('smtp:user@contoso.onmicrosoft.com', 'SMTP:test@contoso.onmicrosoft.com')
+                    PrimarySMTPAddress   = 'test@contoso.onmicrosoft.com'
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -51,14 +71,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-Mailbox -MockWith {
                     return $null
                 }
-
-                Mock -CommandName New-Mailbox -MockWith {
-
-                }
-
-                Mock -CommandName Set-Mailbox -MockWith {
-
-                }
             }
 
             It 'Should return absent from the Get method' {
@@ -67,6 +79,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create the Shared Mailbox in the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-Mailbox -Exactly 1
             }
         }
 
@@ -77,16 +90,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PrimarySMTPAddress = 'Test@contoso.onmicrosoft.com'
                     Ensure             = 'Present'
                     Credential         = $Credential
-                }
-
-                Mock -CommandName Get-Mailbox -MockWith {
-                    return @{
-                        Identity             = 'Test Shared Mailbox'
-                        RecipientTypeDetails = 'SharedMailbox'
-                        Alias                = 'test'
-                        EmailAddresses       = @('smtp:user@contoso.onmicrosoft.com', 'SMTP:test@contoso.onmicrosoft.com')
-                        PrimarySMTPAddress   = 'test@contoso.onmicrosoft.com'
-                    }
                 }
             }
 
@@ -128,20 +131,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure             = 'Absent'
                     Credential         = $Credential
                 }
-
-                Mock -CommandName Get-Mailbox -MockWith {
-                    return @{
-                        Identity             = 'Test Shared Mailbox'
-                        RecipientTypeDetails = 'SharedMailbox'
-                        Alias                = 'test'
-                        EmailAddresses       = @('smtp:user@contoso.onmicrosoft.com', 'SMTP:test@contoso.onmicrosoft.com')
-                        PrimarySMTPAddress   = 'test@contoso.onmicrosoft.com'
-                    }
-                }
-
-                Mock -CommandName Remove-Mailbox -MockWith {
-                    return $null
-                }
             }
 
             It 'Should call the Set method' {
@@ -180,21 +169,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName        = 'Test Shared Mailbox'
-                    PrimarySMTPAddress = 'Test@contoso1.onmicrosoft.com'
+                    PrimarySMTPAddress = 'Test@contoso1.onmicrosoft.com' # Drift
                     Alias                = 'test'
                     EmailAddresses     = @('smtp:user@contoso.onmicrosoft.com', 'SMTP:test@contoso.onmicrosoft.com')
                     Ensure             = 'Present'
                     Credential         = $Credential
-                }
-
-                Mock -CommandName Get-Mailbox -MockWith {
-                    return @{
-                        Identity             = 'Test Shared Mailbox'
-                        RecipientTypeDetails = 'SharedMailbox'
-                        Alias                = 'test'
-                        EmailAddresses       = @('smtp:user@contoso.onmicrosoft.com', 'SMTP:test@contoso.onmicrosoft.com')
-                        PrimarySMTPAddress   = 'test@contoso.onmicrosoft.com'
-                    }
                 }
             }
 
@@ -209,16 +188,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-Mailbox -MockWith {
-                    return @{
-                        Name                 = 'Test Shared Mailbox'
-                        RecipientTypeDetails = 'SharedMailbox'
-                        Alias                = 'test'
-                        DisplayName          = 'Test Shared Mailbox'
-                        PrimarySMTPAddress   = 'Testh@contoso.onmicrosoft.com'
-                    }
                 }
             }
 

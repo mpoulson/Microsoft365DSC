@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-GUID).ToString() -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {}
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {}
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {}
 
@@ -54,6 +54,29 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock Get-MgBetaDeviceManagementDeviceEnrollmentConfigurationAssignment {
                 return @()
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
+                return @{
+                    Id                   = 'FakeStringValue'
+                    DisplayName          = 'FakeStringValue'
+                    Description          = 'FakeStringValue'
+                    AdditionalProperties = @{
+                        trackInstallProgressForAutopilotOnly    = $True
+                        '@odata.type'                           = '#microsoft.graph.windows10EnrollmentCompletionPageConfiguration'
+                        disableUserStatusTrackingAfterFirstUser = $True
+                        installQualityUpdates                   = $True
+                        showInstallationProgress                = $True
+                        selectedMobileAppIds                    = @('FakeGuidValue')
+                        blockDeviceSetupRetryByUser             = $True
+                        allowDeviceUseOnInstallFailure          = $True
+                        customErrorMessage                      = 'FakeStringValue'
+                        allowNonBlockingAppInstallation         = $True
+                        allowLogCollectionOnInstallFailure      = $True
+                        allowDeviceResetOnInstallFailure        = $True
+                        installProgressTimeoutInMinutes         = 25
+                    }
+                }
             }
 
             Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {}
@@ -135,29 +158,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                  = 'Absent'
                     Credential                              = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        Id                   = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Description          = 'FakeStringValue'
-                        AdditionalProperties = @{
-                            trackInstallProgressForAutopilotOnly    = $True
-                            '@odata.type'                           = '#microsoft.graph.windows10EnrollmentCompletionPageConfiguration'
-                            disableUserStatusTrackingAfterFirstUser = $True
-                            installQualityUpdates                   = $True
-                            showInstallationProgress                = $True
-                            selectedMobileAppIds                    = @('FakeGuidValue')
-                            blockDeviceSetupRetryByUser             = $True
-                            allowDeviceUseOnInstallFailure          = $True
-                            customErrorMessage                      = 'FakeStringValue'
-                            allowNonBlockingAppInstallation         = $True
-                            allowLogCollectionOnInstallFailure      = $True
-                            allowDeviceResetOnInstallFailure        = $True
-                            installProgressTimeoutInMinutes         = 25
-                        }
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -195,30 +195,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                  = 'Present'
                     Credential                              = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        Id                   = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Description          = 'FakeStringValue'
-                        AdditionalProperties = @{
-                            trackInstallProgressForAutopilotOnly    = $True
-                            '@odata.type'                           = '#microsoft.graph.windows10EnrollmentCompletionPageConfiguration'
-                            disableUserStatusTrackingAfterFirstUser = $True
-                            installQualityUpdates                   = $True
-                            showInstallationProgress                = $True
-                            selectedMobileAppIds                    = @('FakeGuidValue')
-                            blockDeviceSetupRetryByUser             = $True
-                            allowDeviceUseOnInstallFailure          = $True
-                            customErrorMessage                      = 'FakeStringValue'
-                            allowNonBlockingAppInstallation         = $True
-                            allowLogCollectionOnInstallFailure      = $True
-                            allowDeviceResetOnInstallFailure        = $True
-                            installProgressTimeoutInMinutes         = 25
-                        }
-                        Priority             = 25
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -247,30 +223,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                  = 'Present'
                     Credential                              = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        Id                   = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Description          = 'FakeStringValue'
-                        AdditionalProperties = @{
-                            trackInstallProgressForAutopilotOnly    = $True
-                            '@odata.type'                           = '#microsoft.graph.windows10EnrollmentCompletionPageConfiguration'
-                            disableUserStatusTrackingAfterFirstUser = $True
-                            installQualityUpdates                   = $True
-                            showInstallationProgress                = $True
-                            selectedMobileAppIds                    = @('FakeGuidValue')
-                            blockDeviceSetupRetryByUser             = $True
-                            allowDeviceUseOnInstallFailure          = $True
-                            customErrorMessage                      = 'FakeStringValue'
-                            allowNonBlockingAppInstallation         = $True
-                            allowLogCollectionOnInstallFailure      = $True
-                            allowDeviceResetOnInstallFailure        = $True
-                            installProgressTimeoutInMinutes         = 25
-                        }
-                        Priority             = 25
-                    }
-                }
             }
 
 
@@ -285,7 +237,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Id                                      = 'FakeStringValue'
                     DisplayName                             = 'FakeStringValue'
                     Description                             = 'FakeStringValue'
-                    AllowDeviceResetOnInstallFailure        = $True
+                    AllowDeviceResetOnInstallFailure        = $False # Updated property
                     AllowDeviceUseOnInstallFailure          = $True
                     AllowLogCollectionOnInstallFailure      = $True
                     AllowNonBlockingAppInstallation         = $True
@@ -299,22 +251,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     TrackInstallProgressForAutopilotOnly    = $True
                     Ensure                                  = 'Present'
                     Credential                              = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        Id                   = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Description          = 'FakeStringValue'
-                        AdditionalProperties = @{
-                            installProgressTimeoutInMinutes      = 7
-                            customErrorMessage                   = 'FakeStringValue'
-                            trackInstallProgressForAutopilotOnly = $False
-                            selectedMobileAppIds                 = @('FakeGuidValue')
-                            showInstallationProgress             = $False
-                        }
-                        Priority             = 7
-                    }
                 }
             }
 
@@ -347,27 +283,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisableUserStatusTrackingAfterFirstUser = $True
                     InstallProgressTimeoutInMinutes         = 25
                     InstallQualityUpdates                   = $True
-                    SelectedMobileAppNames                  = @('FakeStringValue')
+                    SelectedMobileAppNames                  = @('NewApp') # Updated property
                     ShowInstallationProgress                = $True
                     TrackInstallProgressForAutopilotOnly    = $True
                     Ensure                                  = 'Present'
                     Credential                              = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        Id                   = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Description          = 'FakeStringValue'
-                        AdditionalProperties = @{
-                            installProgressTimeoutInMinutes      = 7
-                            customErrorMessage                   = 'FakeStringValue'
-                            trackInstallProgressForAutopilotOnly = $False
-                            selectedMobileAppIds                 = @('FakeGuidValue')
-                            showInstallationProgress             = $False
-                        }
-                        Priority             = 7
-                    }
                 }
             }
 
@@ -391,30 +311,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        Id                   = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Description          = 'FakeStringValue'
-                        AdditionalProperties = @{
-                            trackInstallProgressForAutopilotOnly    = $True
-                            '@odata.type'                           = '#microsoft.graph.windows10EnrollmentCompletionPageConfiguration'
-                            disableUserStatusTrackingAfterFirstUser = $True
-                            installQualityUpdates                   = $True
-                            showInstallationProgress                = $True
-                            selectedMobileAppIds                    = @('FakeGuidValue')
-                            blockDeviceSetupRetryByUser             = $True
-                            allowDeviceUseOnInstallFailure          = $True
-                            customErrorMessage                      = 'FakeStringValue'
-                            allowNonBlockingAppInstallation         = $True
-                            allowLogCollectionOnInstallFailure      = $True
-                            allowDeviceResetOnInstallFailure        = $True
-                            installProgressTimeoutInMinutes         = 25
-                        }
-                        Priority             = 25
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

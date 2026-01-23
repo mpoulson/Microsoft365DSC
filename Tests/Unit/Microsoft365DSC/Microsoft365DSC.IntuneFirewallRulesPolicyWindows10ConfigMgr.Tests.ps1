@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -120,6 +120,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'vendor_msft_firewall_mdmstore_firewallrules_{firewallrulename}'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
+                                                value = 'OUT'
+                                            }
                                         }
                                     )
                                 }
@@ -142,6 +146,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'vendor_msft_firewall_mdmstore_firewallrules_{firewallrulename}'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
+                                                value = 'Lan'
+                                            }
                                         }
                                     )
                                 }
@@ -226,7 +234,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
                                     options = @(
                                         @{
-                                            itemId = 'vendor_msft_firewall_mdmstore_firewallrules_{firewallrulename}_enabled_0'
+                                            itemId = 'vendor_msft_firewall_mdmstore_firewallrules_{firewallrulename}_enabled_1'
                                             name = 'Enabled'
                                             dependentOn = @(
                                                 @{
@@ -234,6 +242,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'vendor_msft_firewall_mdmstore_firewallrules_{firewallrulename}'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 1
+                                            }
                                         }
                                     )
                                 }
@@ -254,6 +266,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'vendor_msft_firewall_mdmstore_firewallrules_{firewallrulename}'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 1
+                                            }
                                         }
                                     )
                                 }
@@ -411,8 +427,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             FilePath = 'C:\Temp\bla2'
                             Protocol = 80
                             ServiceName = 'mysvc'
-                            Enabled = '1'
-                            Type = '1'
+                            Enabled = 1
+                            Type = 1
                         } -ClientOnly)
                     )
                     Id = "619bd4a4-3b3b-4441-bd6f-3f4c0c444870"
@@ -458,8 +474,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             FilePath = 'C:\Temp\bla2'
                             Protocol = 80
                             ServiceName = 'mysvc'
-                            Enabled = '1'
-                            Type = '1'
+                            Enabled = 1
+                            Type = 1
                         } -ClientOnly)
                     )
                     Id = "619bd4a4-3b3b-4441-bd6f-3f4c0c444870"
@@ -504,8 +520,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             FilePath = 'C:\Temp\bla2'
                             Protocol = 80
                             ServiceName = 'mysvc'
-                            Enabled = '1'
-                            Type = '1'
+                            Enabled = 1
+                            Type = 1
                         } -ClientOnly)
                     )
                     Id = "619bd4a4-3b3b-4441-bd6f-3f4c0c444870"
@@ -541,8 +557,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             FilePath = 'C:\Temp\bla2'
                             Protocol = 80
                             ServiceName = 'mysvc'
-                            Enabled = '1'
-                            Type = '1'
+                            Enabled = 1
+                            Type = 1
                         } -ClientOnly)
                     )
                     Id = "619bd4a4-3b3b-4441-bd6f-3f4c0c444870"

@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADIdentityB2XUserFlow'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -61,7 +63,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -99,7 +101,8 @@ function Get-TargetResource
         Write-Verbose -Message "An Azure AD Identity B2 X User Flow with Id {$Id} was found"
 
         #region Get ApiConnectorConfiguration
-        $connectorConfiguration = Get-MgBetaIdentityB2XUserFlowApiConnectorConfiguration -B2XIdentityUserFlowId $Id -ExpandProperty 'postFederationSignup,postAttributeCollection'
+        $connectorConfiguration = Get-MgBetaIdentityB2XUserFlowApiConnectorConfiguration -B2XIdentityUserFlowId $Id `
+                                                                                         -ExpandProperty 'postFederationSignup,postAttributeCollection'
 
         $complexApiConnectorConfiguration = @{
             postFederationSignupConnectorName    = Get-ConnectorName($connectorConfiguration.PostFederationSignup.DisplayName)
@@ -153,7 +156,7 @@ function Get-TargetResource
             #endregion
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -163,7 +166,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -270,6 +273,7 @@ function Set-TargetResource
             apiConnectorConfiguration = $newApiConnectorConfiguration
         }
 
+        Write-Verbose -Message "Creating instance with:`r`n$(ConvertTo-Json $params -Depth 5)"
         $newObj = New-MgBetaIdentityB2XUserFlow -BodyParameter $params
 
         #region Add IdentityProvider objects to the newly created object
@@ -280,7 +284,6 @@ function Set-TargetResource
             }
 
             Write-Verbose -Message "Adding the Identity Provider with Id {$provider} to the newly created Azure AD Identity B2X User Flow with Id {$($newObj.Id)}"
-
             New-MgBetaIdentityB2XUserFlowIdentityProviderByRef -B2XIdentityUserFlowId $newObj.Id -BodyParameter $params
         }
         #endregion
@@ -311,7 +314,6 @@ function Set-TargetResource
             }
 
             Write-Verbose -Message "Adding the User Attribute Assignment with Id {$($userAttributeAssignment.Id)} to the newly created Azure AD Identity B2X User Flow with Id {$($newObj.Id)}"
-
             New-MgBetaIdentityB2XUserFlowUserAttributeAssignment -B2XIdentityUserFlowId $newObj.Id -BodyParameter $params
         }
         #endregion
@@ -364,7 +366,7 @@ function Set-TargetResource
         {
             Write-Verbose -Message "Removing the Identity Provider with Id {$provider} from the Azure AD Identity B2X User Flow with Id {$($currentInstance.Id)}"
 
-            Remove-MgBetaIdentityB2XUserFlowIdentityProviderByRef -B2XIdentityUserFlowId $currentInstance.Id -IdentityProviderBaseId $provider
+            Remove-MgBetaIdentityB2XUserFlowIdentityProviderBaseByRef -B2XIdentityUserFlowId $currentInstance.Id -IdentityProviderBaseId $provider
         }
         #endregion
 
@@ -483,9 +485,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -495,50 +494,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Azure AD Identity B2 X User Flow with Id {$Id}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult)
-            {
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($ValuesToCheck.Count -gt 0 -and $testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -616,6 +574,10 @@ function Export-TargetResource
         }
         foreach ($config in $getValue)
         {
+            if ($null -ne $Global:M365DSCExportResourceInstancesCount)
+            {
+                $Global:M365DSCExportResourceInstancesCount++
+            }
             $displayedKey = $config.Id
             Write-M365DSCHost -Message "    |---[$i/$($getValue.Count)] $displayedKey" -DeferWrite
             $params = @{
@@ -688,15 +650,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

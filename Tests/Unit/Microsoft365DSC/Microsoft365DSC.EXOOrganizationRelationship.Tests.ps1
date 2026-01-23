@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -35,6 +35,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Set-OrganizationRelationship -MockWith {
+            }
+
+            Mock -CommandName New-OrganizationRelationship -MockWith {
+            }
+
+            Mock -CommandName Remove-OrganizationRelationship -MockWith {
+            }
+
+            Mock -CommandName Get-OrganizationRelationship -MockWith {
+                return @{
+                    Name                = 'Contoso'
+                    DomainNames         = 'contoso.com'
+                    FreeBusyAccessLevel = 'AvailabilityOnly'
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -56,21 +73,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-OrganizationRelationship -MockWith {
-                    return @{
-                        Name                = 'ContosoDifferent'
-                        DomainNames         = 'different.contoso.com'
-                        FreeBusyAccessLevel = 'AvailabilityOnly'
-                    }
-                }
-
-                Mock -CommandName Set-OrganizationRelationship -MockWith {
-                    return @{
-                        FreeBusyAccessLevel = 'AvailabilityOnly'
-                        Ensure              = 'Present'
-                        Credential          = $Credential
-                        Name                = 'Contoso'
-                        DomainNames         = 'contoso.com'
-                    }
+                    return $null
                 }
             }
 
@@ -80,6 +83,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-OrganizationRelationship -Exactly 1
             }
 
             It 'Should return Absent from the Get method' {
@@ -95,14 +99,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     FreeBusyAccessLevel = 'AvailabilityOnly'
                     Ensure              = 'Present'
                     Credential          = $Credential
-                }
-
-                Mock -CommandName Get-OrganizationRelationship -MockWith {
-                    return @{
-                        Name                = 'Contoso'
-                        DomainNames         = 'contoso.com'
-                        FreeBusyAccessLevel = 'AvailabilityOnly'
-                    }
                 }
             }
 
@@ -120,27 +116,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Name                = 'Contoso'
                     DomainNames         = 'contoso.com'
-                    FreeBusyAccessLevel = 'AvailabilityOnly'
+                    FreeBusyAccessLevel = 'LimitedDetails'
                     Ensure              = 'Present'
                     Credential          = $Credential
-                }
-
-                Mock -CommandName Get-OrganizationRelationship -MockWith {
-                    return @{
-                        Name                = 'Contoso'
-                        DomainNames         = 'contoso.com'
-                        FreeBusyAccessLevel = 'None'
-                    }
-                }
-
-                Mock -CommandName Set-OrganizationRelationship -MockWith {
-                    return @{
-                        Name                = 'Contoso'
-                        DomainNames         = 'contoso.com'
-                        FreeBusyAccessLevel = 'AvailabilityOnly'
-                        Ensure              = 'Present'
-                        Credential          = $Credential
-                    }
                 }
             }
 
@@ -150,6 +128,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-OrganizationRelationship -Exactly 1
             }
         }
 
@@ -159,15 +138,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                $OrgRelationship = @{
-                    Name                = 'ContosoDifferent1'
-                    DomainNames         = @('different1.contoso.com')
-                    FreeBusyAccessLevel = 'AvailabilityOnly'
-                }
-                Mock -CommandName Get-OrganizationRelationship -MockWith {
-                    return $OrgRelationship
                 }
             }
 

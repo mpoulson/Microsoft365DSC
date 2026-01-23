@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -39,6 +39,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Disable-AzSubscription -MockWith {
+            }
+
+            Mock -CommandName Invoke-AzRest -MockWith {
+                return @{
+                    Content = ConvertTo-Json (@{
+                        value = @(
+                            @{
+                                name = (New-Guid).ToString()
+                                properties = @{
+                                    displayName = 'Test'
+                                    status      = 'Active'
+                                    invoiceSectionId = "/providers/Microsoft.Billing/billingAccounts/0b32abd9-f0e6-4fc9-8b2f-404350313179:0b32abd9-f0e6-4fc9-8b2f-404350313179_2019-05-31/billingProfiles/OHZY-JSSA-BG7-M77W-XXX/invoiceSections/E6RO-KYS7-P2D-MAOR-SGB"
+                                }
+                            }
+                        )
+                    }) -Depth 10
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -79,23 +96,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        Content = ConvertTo-Json (@{
-                            value = @(
-                                @{
-                                    name = (New-Guid).ToString()
-                                    properties = @{
-                                        displayName = 'Test'
-                                        status      = 'Active'
-                                        invoiceSectionId = "/providers/Microsoft.Billing/billingAccounts/0b32abd9-f0e6-4fc9-8b2f-404350313179:0b32abd9-f0e6-4fc9-8b2f-404350313179_2019-05-31/billingProfiles/OHZY-JSSA-BG7-M77W-XXX/invoiceSections/E6RO-KYS7-P2D-MAOR-SGB"
-                                    }
-                                }
-                            )
-                        }) -Depth 10 
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -112,27 +112,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName         = "Test"
-                    Status              = "Active"
+                    Status              = "Disabled" # Drift
                     InvoiceSectionId    = "/providers/Microsoft.Billing/billingAccounts/0b32abd9-f0e6-4fc9-8b2f-404350313179:0b32abd9-f0e6-4fc9-8b2f-404350313179_2019-05-31/billingProfiles/OHZY-JSSA-BG7-M77W-XXX/invoiceSections/E6RO-KYS7-P2D-MAOR-SGB"
                     Ensure              = 'Present'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        Content = ConvertTo-Json (@{
-                            value = @(
-                                @{
-                                    name = (New-Guid).ToString()
-                                    properties = @{
-                                        displayName = 'Test'
-                                        status      = 'Disabled' # Drift
-                                        invoiceSectionId = "/providers/Microsoft.Billing/billingAccounts/0b32abd9-f0e6-4fc9-8b2f-404350313179:0b32abd9-f0e6-4fc9-8b2f-404350313179_2019-05-31/billingProfiles/OHZY-JSSA-BG7-M77W-XXX/invoiceSections/E6RO-KYS7-P2D-MAOR-SGB"
-                                    }
-                                }
-                            )
-                        }) -Depth 10 
-                    }
                 }
             }
 
@@ -146,7 +129,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName Enable-AzSubscription -Exactly 1
+                Should -Invoke -CommandName Disable-AzSubscription -Exactly 1
             }
         }
 
@@ -156,23 +139,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        Content = ConvertTo-Json (@{
-                            value = @(
-                                @{
-                                    name = (New-Guid).ToString()
-                                    properties = @{
-                                        displayName = 'Test'
-                                        status      = 'Active'
-                                        invoiceSectionId = "/providers/Microsoft.Billing/billingAccounts/0b32abd9-f0e6-4fc9-8b2f-404350313179:0b32abd9-f0e6-4fc9-8b2f-404350313179_2019-05-31/billingProfiles/OHZY-JSSA-BG7-M77W-XXX/invoiceSections/E6RO-KYS7-P2D-MAOR-SGB"
-                                    }
-                                }
-                            )
-                        }) -Depth 10 
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

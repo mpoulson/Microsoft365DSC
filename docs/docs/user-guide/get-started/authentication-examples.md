@@ -15,6 +15,7 @@ Configuration CredentialsExample
         [PSCredential]
         $Credscredential
     )
+
     Import-DscResource -ModuleName Microsoft365DSC
 
     node localhost
@@ -56,6 +57,7 @@ Configuration ApplicationSecretExample
         [System.String]
         $ApplicationSecret
     )
+
     Import-DscResource -ModuleName Microsoft365DSC
 
     node localhost
@@ -97,6 +99,7 @@ Configuration CertificateThumbprintExample
         [System.String]
         $CertificateThumbprint
     )
+
     Import-DscResource -ModuleName Microsoft365DSC
 
     node localhost
@@ -142,6 +145,7 @@ Configuration CertificatePathExample
         [PSCredential]
         $CertificatePassword
     )
+
     Import-DscResource -ModuleName Microsoft365DSC
 
     node localhost
@@ -158,6 +162,88 @@ Configuration CertificatePathExample
             TenantId            = $TenantId
             CertificatePath     = $CertificatePath
             CertificatePassword = $CertificatePassword
+        }
+    }
+}
+```
+
+### Example 5: Managed Identity
+
+This method is using a Managed Identity instance. To use this method you need to have a Managed Identity set up (e.g. from an Azure Automation Account) and with the appropriate permissions assigned. Next, you need to specify the Tenant ID (<tenantname>.onmicrosoft.com of your tenant) in combination with the `ManagedIdentity` switch parameter.
+
+```PowerShell
+Configuration ManagedIdentityExample
+{
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $TenantId
+    )
+
+    Import-DscResource -ModuleName Microsoft365DSC
+
+    node localhost
+    {
+        AADVerifiedIdAuthority 'VerifiedIdAuthorityWithManagedIdentity'
+        {
+            DidMethod        = "web";
+            KeyVaultMetadata = MSFT_AADVerifiedIdAuthorityKeyVaultMetadata{
+                SubscriptionId = '2ff65b89-ab22-4489-b84d-e60d1dc30a62'
+                ResourceName = 'xtakeyvault'
+                ResourceUrl = 'https://xtakeyvault.vault.azure.net/'
+                ResourceGroup = 'TBD'
+            };
+            LinkedDomainUrl  = "https://nik-charlebois.com/";
+            Name             = "Contoso";
+            Ensure           = "Present"
+            ManagedIdentity  = $true
+            TenantId         = $TenantId
+        }
+    }
+}
+```
+
+### Example 6: Access Tokens
+
+This method is using an Access Token. To use this method you need to first get the access token using e.g. `Get-AzAccessToken -ResourceUrl <resource or url>` for the type of resources you want to manage. For almost all of the AAD and all of the Intune resources, the `https://graph.microsoft.com` resource url is sufficient. However, for resources that require an additional connection (for example the `AADVerifiedIdAuthority` resource, it depends on the `AdminAPI` connection), you might need another scope. In the `AdminAPI` example, the resource url is `6a8b4b39-c021-437c-b060-5a14a3fd65f3` for an application access because it targets the `https://verifiedid.did.msidentity.com` endpoint. Next, you need to specify the Tenant ID (<tenantname>.onmicrosoft.com of your tenant) in combination with the `AccessTokens` parameter.
+
+```PowerShell
+# Fetch access token
+Connect-AzAccount
+$accessToken = (ConvertFrom-SecureString -SecureString (Get-AzAccessToken -ResourceUrl "6a8b4b39-c021-437c-b060-5a14a3fd65f3").Token -AsPlainText)
+
+Configuration AccessTokensExample
+{
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $TenantId,
+
+        [Parameter(Mandatory = $true)]
+        [System.String[]]
+        $AccessTokens
+    )
+
+    Import-DscResource -ModuleName Microsoft365DSC
+
+    node localhost
+    {
+        AADVerifiedIdAuthority 'VerifiedIdAuthorityWithManagedIdentity'
+        {
+            DidMethod        = "web";
+            KeyVaultMetadata = MSFT_AADVerifiedIdAuthorityKeyVaultMetadata{
+                SubscriptionId = '2ff65b89-ab22-4489-b84d-e60d1dc30a62'
+                ResourceName = 'xtakeyvault'
+                ResourceUrl = 'https://xtakeyvault.vault.azure.net/'
+                ResourceGroup = 'TBD'
+            };
+            LinkedDomainUrl  = "https://nik-charlebois.com/";
+            Name             = "Contoso";
+            Ensure           = "Present"
+            AccessTokens     = $AccessTokens
+            TenantId         = $TenantId
         }
     }
 }

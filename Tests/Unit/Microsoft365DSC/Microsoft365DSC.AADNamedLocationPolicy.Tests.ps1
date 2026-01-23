@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -38,10 +38,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MgBetaIdentityConditionalAccessNamedLocation -MockWith {
             }
 
+            Mock -CommandName Get-MgBetaIdentityConditionalAccessNamedLocation -MockWith {
+                return @{
+                    DisplayName          = 'Company Network'
+                    Id                   = '046956df-2367-4dd4-b7fd-c6175ec11cd5'
+                    AdditionalProperties = @{
+                        ipRanges                          = @(@{cidrAddress = '2.1.1.1/32' }, @{cidrAddress = '1.2.2.2/32' })
+                        isTrusted                         = $True
+                        '@odata.type'                     = '#microsoft.graph.ipNamedLocation'
+                        countriesAndRegions               = $null
+                        includeUnknownCountriesAndRegions = $null
+                    }
+                }
+            }
+
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
             }
-
 
             Mock -CommandName Invoke-MgGraphRequest -MockWith {
             }
@@ -91,20 +104,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     OdataType   = '#microsoft.graph.ipNamedLocation'
                     Credential  = $Credscredential
                 }
-
-                Mock -CommandName Get-MgBetaIdentityConditionalAccessNamedLocation -MockWith {
-                    return @{
-                        DisplayName          = 'Company Network'
-                        Id                   = '046956df-2367-4dd4-b7fd-c6175ec11cd5'
-                        AdditionalProperties = @{
-                            ipRanges                          = @(@{cidrAddress = '2.1.1.1/32' }, @{cidrAddress = '1.2.2.2/32' })
-                            isTrusted                         = $True
-                            '@odata.type'                     = '#microsoft.graph.ipNamedLocation'
-                            countriesAndRegions               = $null
-                            includeUnknownCountriesAndRegions = $null
-                        }
-                    }
-                }
             }
 
             It 'Should return values from the get method' {
@@ -132,20 +131,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     OdataType   = '#microsoft.graph.ipNamedLocation'
                     Credential  = $Credscredential
                 }
-
-                Mock -CommandName Get-MgBetaIdentityConditionalAccessNamedLocation -MockWith {
-                    return @{
-                        DisplayName          = 'Company Network'
-                        Id                   = '046956df-2367-4dd4-b7fd-c6175ec11cd5'
-                        AdditionalProperties = @{
-                            ipRanges                          = @(@{cidrAddress = '2.1.1.1/32' }, @{cidrAddress = '1.2.2.2/32' })
-                            isTrusted                         = $True
-                            '@odata.type'                     = '#microsoft.graph.ipNamedLocation'
-                            countriesAndRegions               = $null
-                            includeUnknownCountriesAndRegions = $null
-                        }
-                    }
-                }
             }
 
             It 'Should return Values from the get method' {
@@ -164,21 +149,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = 'Company Network'
                     Ensure      = 'Present'
                     IpRanges    = @('2.1.1.1/32', '1.2.2.2/32')
-                    IsTrusted   = $True
+                    IsTrusted   = $false # Drift
                     OdataType   = '#microsoft.graph.ipNamedLocation'
                     Credential  = $Credscredential
-                }
-
-                Mock -CommandName Get-MgBetaIdentityConditionalAccessNamedLocation -MockWith {
-                    return @{
-                        DisplayName          = 'Company Network'
-                        Id                   = '046956df-2367-4dd4-b7fd-c6175ec11cd5'
-                        AdditionalProperties = @{
-                            ipRanges      = @(@{cidrAddress = '2.1.1.1/32' }, @{cidrAddress = '1.2.2.2/32' })
-                            isTrusted     = $False
-                            '@odata.type' = '#microsoft.graph.ipNamedLocation'
-                        }
-                    }
                 }
             }
 
@@ -248,20 +221,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaIdentityConditionalAccessNamedLocation -MockWith {
-                    return @{
-                        DisplayName          = 'Company Network'
-                        Id                   = '046956df-2367-4dd4-b7fd-c6175ec11cd5'
-                        AdditionalProperties = @{
-                            ipRanges                          = @(@{cidrAddress = '2.1.1.1/32' }, @{cidrAddress = '1.2.2.2/32' })
-                            isTrusted                         = $True
-                            '@odata.type'                     = '#microsoft.graph.ipNamedLocation'
-                            countriesAndRegions               = $null
-                            includeUnknownCountriesAndRegions = $null
-                        }
-                    }
                 }
             }
 

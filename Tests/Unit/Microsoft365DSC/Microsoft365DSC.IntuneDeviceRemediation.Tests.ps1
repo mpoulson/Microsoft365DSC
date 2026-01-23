@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -58,6 +58,43 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $Script:exportedInstances =$null
             $Script:ExportMode = $false
 
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceHealthScript -MockWith {
+                return @{
+                    Description = "FakeStringValue"
+                    DetectionScriptContent = [byte[]] @(84, 101, 115, 116)
+                    DetectionScriptParameters = @(
+                        @{
+                            '@odata.type' = "#microsoft.graph.deviceHealthScriptBooleanParameter"
+                            DefaultValue = $True
+                            IsRequired = $True
+                            Description = "FakeStringValue"
+                            Name = "FakeStringValue"
+                            ApplyDefaultValueWhenNotAssigned = $True
+                        }
+                    )
+                    DeviceHealthScriptType = "deviceHealthScript"
+                    DisplayName = "FakeStringValue"
+                    EnforceSignatureCheck = $True
+                    Id = "FakeStringValue"
+                    IsGlobalScript = $False
+                    Publisher = "FakeStringValue"
+                    RemediationScriptContent = [byte[]] @(84, 101, 115, 116)
+                    RemediationScriptParameters = @(
+                        @{
+                            '@odata.type' = "#microsoft.graph.deviceHealthScriptBooleanParameter"
+                            DefaultValue = $True
+                            IsRequired = $True
+                            Description = "FakeStringValue"
+                            Name = "FakeStringValue"
+                            ApplyDefaultValueWhenNotAssigned = $True
+                        }
+                    )
+                    RoleScopeTagIds = @("FakeStringValue")
+                    RunAs32Bit = $True
+                    RunAsAccount = "system"
+                }
+            }
+
             Mock -CommandName Get-MgBetaDeviceManagementDeviceHealthScriptAssignment -MockWith {
                 return @(
                     @{
@@ -80,9 +117,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             "DeviceAndAppManagementAssignmentFilterId" = "FakeStringValue"
                             "DeviceAndAppManagementAssignmentFilterType" = "none"
                         }
-                        DeviceHealthScriptId = "FakeStringValue"
-                        RoleScopeTagIds = @("FakeStringValue")
-                        Ensure = "Present"
                     }
                 )
             }
@@ -215,61 +249,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceHealthScript -MockWith {
-                    return @{
-                        Assignments = [CimInstance[]]@(
-                            (New-CimInstance -ClassName MSFT_IntuneDeviceRemediationPolicyAssignments -Property @{
-                                RunSchedule = New-CimInstance -ClassName MSFT_IntuneDeviceRemediationRunSchedule -Property @{
-                                    Date = '2024-01-01'
-                                    Time = '01:00:00'
-                                    Interval = 1
-                                    DataType = '#microsoft.graph.deviceHealthScriptRunOnceSchedule'
-                                    UseUtc = $False
-                                } -ClientOnly
-                                RunRemediationScript = $False
-                                Assignment = New-CimInstance -ClassName MSFT_DeviceManagementConfigurationPolicyAssignments -Property @{
-                                    deviceAndAppManagementAssignmentFilterId = 'FakeStringValue'
-                                    deviceAndAppManagementAssignmentFilterType = 'none'
-                                    dataType = '#microsoft.graph.groupAssignmentTarget'
-                                    groupId = 'FakeStringValue'
-                                } -ClientOnly
-                            } -ClientOnly)
-                        )
-                        Description = "FakeStringValue"
-                        DetectionScriptContent = [byte[]] @(84, 101, 115, 116)
-                        DetectionScriptParameters = @(
-                            @{
-                                '@odata.type' = "#microsoft.graph.deviceHealthScriptBooleanParameter"
-                                DefaultValue = $True
-                                IsRequired = $True
-                                Description = "FakeStringValue"
-                                Name = "FakeStringValue"
-                                ApplyDefaultValueWhenNotAssigned = $True
-                            }
-                        )
-                        DeviceHealthScriptType = "deviceHealthScript"
-                        DisplayName = "FakeStringValue"
-                        EnforceSignatureCheck = $True
-                        Id = "FakeStringValue"
-                        IsGlobalScript = $False
-                        Publisher = "FakeStringValue"
-                        RemediationScriptContent = [byte[]] @(84, 101, 115, 116)
-                        RemediationScriptParameters = @(
-                            @{
-                                '@odata.type' = "#microsoft.graph.deviceHealthScriptBooleanParameter"
-                                DefaultValue = $True
-                                IsRequired = $True
-                                Description = "FakeStringValue"
-                                Name = "FakeStringValue"
-                                ApplyDefaultValueWhenNotAssigned = $True
-                            }
-                        )
-                        RoleScopeTagIds = @("FakeStringValue")
-                        RunAs32Bit = $True
-                        RunAsAccount = "system"
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -340,43 +319,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceHealthScript -MockWith {
-                    return @{
-                        Description = "FakeStringValue"
-                        DetectionScriptContent = [byte[]] @(84, 101, 115, 116)
-                        DetectionScriptParameters = @(
-                            @{
-                                '@odata.type' = "#microsoft.graph.deviceHealthScriptBooleanParameter"
-                                DefaultValue = $True
-                                IsRequired = $True
-                                Description = "FakeStringValue"
-                                Name = "FakeStringValue"
-                                ApplyDefaultValueWhenNotAssigned = $True
-                            }
-                        )
-                        DeviceHealthScriptType = "deviceHealthScript"
-                        DisplayName = "FakeStringValue"
-                        EnforceSignatureCheck = $True
-                        Id = "FakeStringValue"
-                        IsGlobalScript = $False
-                        Publisher = "FakeStringValue"
-                        RemediationScriptContent = [byte[]] @(84, 101, 115, 116)
-                        RemediationScriptParameters = @(
-                            @{
-                                '@odata.type' = "#microsoft.graph.deviceHealthScriptBooleanParameter"
-                                DefaultValue = $True
-                                IsRequired = $True
-                                Description = "FakeStringValue"
-                                Name = "FakeStringValue"
-                                ApplyDefaultValueWhenNotAssigned = $True
-                            }
-                        )
-                        RoleScopeTagIds = @("FakeStringValue")
-                        RunAs32Bit = $True
-                        RunAsAccount = "system"
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -419,7 +361,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     DeviceHealthScriptType = "deviceHealthScript"
                     DisplayName = "FakeStringValue"
-                    EnforceSignatureCheck = $True
+                    EnforceSignatureCheck = $False # Drift
                     Id = "FakeStringValue"
                     Publisher = "FakeStringValue"
                     RemediationScriptContent = "VGVzdA==" # "Test"
@@ -438,35 +380,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RunAsAccount = "system"
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceHealthScript -MockWith {
-                    return @{
-                        Description = "FakeStringValue"
-                        DetectionScriptContent = [byte[]] @(84, 101, 115, 116)
-                        DetectionScriptParameters = @(
-                            @{
-                                Name = "FakeStringValue"
-                                '@odata.type' = "#microsoft.graph.deviceHealthScriptBooleanParameter"
-                                Description = "FakeStringValue"
-                            }
-                        )
-                        DeviceHealthScriptType = "deviceHealthScript"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        IsGlobalScript = $False
-                        Publisher = "FakeStringValue"
-                        RemediationScriptContent = [byte[]] @(84, 101, 115, 116)
-                        RemediationScriptParameters = @(
-                            @{
-                                Name = "FakeStringValue"
-                                '@odata.type' = "#microsoft.graph.deviceHealthScriptBooleanParameter"
-                                Description = "FakeStringValue"
-                            }
-                        )
-                        RoleScopeTagIds = @("FakeStringValue")
-                        RunAsAccount = "system"
-                    }
                 }
             }
 
@@ -490,61 +403,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceHealthScript -MockWith {
-                    return @{
-                        Assignments = [CimInstance[]]@(
-                            (New-CimInstance -ClassName MSFT_IntuneDeviceRemediationPolicyAssignments -Property @{
-                                RunSchedule = New-CimInstance -ClassName MSFT_IntuneDeviceRemediationRunSchedule -Property @{
-                                    Date = '2024-01-01'
-                                    Time = '01:00:00'
-                                    Interval = 1
-                                    DataType = '#microsoft.graph.deviceHealthScriptRunOnceSchedule'
-                                    UseUtc = $False
-                                } -ClientOnly
-                                RunRemediationScript = $False
-                                Assignment = New-CimInstance -ClassName MSFT_DeviceManagementConfigurationPolicyAssignments -Property @{
-                                    deviceAndAppManagementAssignmentFilterId = 'FakeStringValue'
-                                    deviceAndAppManagementAssignmentFilterType = 'none'
-                                    dataType = '#microsoft.graph.groupAssignmentTarget'
-                                    groupId = 'FakeStringValue'
-                                } -ClientOnly
-                            } -ClientOnly)
-                        )
-                        Description = "FakeStringValue"
-                        DetectionScriptContent = [byte[]] @(84, 101, 115, 116)
-                        DetectionScriptParameters = @(
-                            @{
-                                '@odata.type' = "#microsoft.graph.deviceHealthScriptBooleanParameter"
-                                DefaultValue = $True
-                                IsRequired = $True
-                                Description = "FakeStringValue"
-                                Name = "FakeStringValue"
-                                ApplyDefaultValueWhenNotAssigned = $True
-                            }
-                        )
-                        DeviceHealthScriptType = "deviceHealthScript"
-                        DisplayName = "FakeStringValue"
-                        EnforceSignatureCheck = $True
-                        Id = "FakeStringValue"
-                        IsGlobalScript = $False
-                        Publisher = "FakeStringValue"
-                        RemediationScriptContent = [byte[]] @(84, 101, 115, 116)
-                        RemediationScriptParameters = @(
-                            @{
-                                '@odata.type' = "#microsoft.graph.deviceHealthScriptBooleanParameter"
-                                DefaultValue = $True
-                                IsRequired = $True
-                                Description = "FakeStringValue"
-                                Name = "FakeStringValue"
-                                ApplyDefaultValueWhenNotAssigned = $True
-                            }
-                        )
-                        RoleScopeTagIds = @("FakeStringValue")
-                        RunAs32Bit = $True
-                        RunAsAccount = "system"
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

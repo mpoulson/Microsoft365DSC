@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -48,6 +48,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Invoke-MgGraphRequest -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyTokenLifetimePolicy -MockWith {
+            }
+
+            Mock -CommandName New-MgApplicationTokenLifetimePolicyByRef -MockWith {
+            }
+
+            Mock -CommandName Remove-MgApplicationTokenLifetimePolicyByRef -MockWith {
             }
 
             Mock -CommandName New-MgApplication -MockWith {
@@ -84,7 +93,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName               = 'App1'
-                    AvailableToOtherTenants   = $false
                     Description               = 'App description'
                     GroupMembershipClaims     = '0'
                     Homepage                  = 'https://app.contoso.com'
@@ -120,7 +128,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     ObjectId                  = '5dcb2237-c61b-4258-9c85-eae2aaeba9d6'
                     DisplayName               = 'App1'
-                    AvailableToOtherTenants   = $false
                     Description               = 'App description'
                     GroupMembershipClaims     = '0'
                     Homepage                  = 'https://app.contoso.com'
@@ -154,7 +161,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return values from the get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
-                Should -Invoke -CommandName 'Get-MgBetaApplication' -Exactly 3
+                Should -Invoke -CommandName 'Get-MgBetaApplication' -Exactly 1
             }
 
             It 'Should return false from the test method' {
@@ -171,7 +178,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName               = 'App1'
-                    AvailableToOtherTenants   = $false
                     Description               = 'App description'
                     GroupMembershipClaims     = '0'
                     Homepage                  = 'https://app.contoso.com'
@@ -246,7 +252,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AuthenticationBehaviors   = New-CimInstance -ClassName MSFT_MicrosoftGraphAuthenticationBehaviors -Property @{
                              blockAzureADGraphAccess       = 'false'
                              removeUnverifiedEmailClaim    = 'true'
-                             requireClientServicePrincipal = 'false'
                      } -ClientOnly
                     Api = New-CimInstance -ClassName MSFT_MicrosoftGraphapiApplication -Property @{
                         PreAuthorizedApplications = [CimInstance[]]@(
@@ -316,14 +321,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             DisplayName = 'Writers'
                         }
                     )
-                    $AADApp | Add-Member -MemberType NoteProperty -Name KeyCredentials -Value @{
-                        Usage = 'Verify'
-                        StartDateTime = '2024-09-25T09:13:11.0000000+00:00'
-                        Type = 'AsymmetricX509Cert'
-                        KeyId = 'Key ID'
-                        EndDateTime = '2025-09-25T09:33:11.0000000+00:00'
-                        DisplayName = 'anexas_test_2'
-                    }
+                    $AADApp | Add-Member -MemberType NoteProperty -Name KeyCredentials -Value @(
+                        @{
+                            Usage = 'Verify'
+                            StartDateTime = '2024-09-25T09:13:11.0000000+00:00'
+                            Type = 'AsymmetricX509Cert'
+                            KeyId = 'Key ID'
+                            EndDateTime = '2025-09-25T09:33:11.0000000+00:00'
+                            DisplayName = 'anexas_test_2'
+                        }
+                    )
                     $AADApp | Add-Member -MemberType NoteProperty -Name PasswordCredentials -Value @{
                         KeyId = 'keyid'
                         EndDateTime = '2025-03-15T19:50:29.0310000+00:00'
@@ -346,7 +353,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     $AADApp | Add-Member -MemberType NoteProperty -Name AuthenticationBehaviors -Value @{
                          blockAzureADGraphAccess       = 'false'
                          removeUnverifiedEmailClaim    = 'true'
-                         requireClientServicePrincipal = 'false'
                     }
                     return $AADApp
                 }
@@ -354,7 +360,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgBetaApplication' -Exactly 3
+                Should -Invoke -CommandName 'Get-MgBetaApplication' -Exactly 1
             }
 
             It 'Should return true from the test method' {
@@ -366,7 +372,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName               = 'App1'
-                    AvailableToOtherTenants   = $false
                     Description               = 'App description'
                     GroupMembershipClaims     = '0'
                     Homepage                  = 'https://app1.contoso.com' #drift
@@ -399,7 +404,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return values from the get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgBetaApplication' -Exactly 3
+                Should -Invoke -CommandName 'Get-MgBetaApplication' -Exactly 1
             }
 
             It 'Should return false from the test method' {
@@ -416,7 +421,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName               = 'App1'
-                    AvailableToOtherTenants   = $false
                     Description               = 'App description'
                     GroupMembershipClaims     = '0'
                     IdentifierUris            = 'https://app.contoso.com'
@@ -427,7 +431,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AuthenticationBehaviors   = New-CimInstance -ClassName MSFT_MicrosoftGraphAuthenticationBehaviors -Property @{
                             blockAzureADGraphAccess       = 'false'
                             removeUnverifiedEmailClaim    = 'true'
-                            requireClientServicePrincipal = 'false'
                     } -ClientOnly
                     Ensure                  = 'Present'
                     Credential              = $Credential
@@ -446,7 +449,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return values from the get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgBetaApplication' -Exactly 3
+                Should -Invoke -CommandName 'Get-MgBetaApplication' -Exactly 1
             }
 
             It 'Should return false from the test method' {
@@ -455,7 +458,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the new method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -Exactly 1
                 Should -Invoke -CommandName 'Update-MgBetaApplication' -Exactly 1
             }
         }
@@ -464,7 +466,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName               = 'App1'
-                    AvailableToOtherTenants   = $false
                     Description               = 'App description'
                     GroupMembershipClaims     = '0'
                     IdentifierUris            = 'https://app.contoso.com'

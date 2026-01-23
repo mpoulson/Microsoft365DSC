@@ -24,8 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -46,6 +45,30 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        NetworkName                    = 'FakeStringValue'
+                        '@odata.type'                  = '#microsoft.graph.androidDeviceOwnerEnterpriseWiFiConfiguration'
+                        PreSharedKey                   = 'FakeStringValue'
+                        WiFiSecurityType               = 'open'
+                        ConnectAutomatically           = $True
+                        Ssid                           = 'FakeStringValue'
+                        ProxyManualAddress             = 'FakeStringValue'
+                        ProxySettings                  = 'none'
+                        ConnectWhenNetworkNameIsHidden = $True
+                        ProxyAutomaticConfigurationUrl = 'FakeStringValue'
+                        PreSharedKeyIsSet              = $True
+                        ProxyExclusionList             = 'FakeStringValue'
+                        ProxyManualPort                = 25
+                    }
+                    Description          = 'FakeStringValue'
+                    DisplayName          = 'FakeStringValue'
+                    Id                   = 'FakeStringValue'
+
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -74,7 +97,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ProxySettings                  = 'none'
                     Ssid                           = 'FakeStringValue'
                     WiFiSecurityType               = 'open'
-
                     Ensure                         = 'Present'
                     Credential                     = $Credential
                 }
@@ -113,34 +135,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ProxySettings                  = 'none'
                     Ssid                           = 'FakeStringValue'
                     WiFiSecurityType               = 'open'
-
                     Ensure                         = 'Absent'
                     Credential                     = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            NetworkName                    = 'FakeStringValue'
-                            '@odata.type'                  = '#microsoft.graph.androidDeviceOwnerEnterpriseWiFiConfiguration'
-                            PreSharedKey                   = 'FakeStringValue'
-                            WiFiSecurityType               = 'open'
-                            ConnectAutomatically           = $True
-                            Ssid                           = 'FakeStringValue'
-                            ProxyManualAddress             = 'FakeStringValue'
-                            ProxySettings                  = 'none'
-                            ConnectWhenNetworkNameIsHidden = $True
-                            ProxyAutomaticConfigurationUrl = 'FakeStringValue'
-                            PreSharedKeyIsSet              = $True
-                            ProxyExclusionList             = 'FakeStringValue'
-                            ProxyManualPort                = 25
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
                 }
             }
 
@@ -175,37 +171,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ProxySettings                  = 'none'
                     Ssid                           = 'FakeStringValue'
                     WiFiSecurityType               = 'open'
-
                     Ensure                         = 'Present'
                     Credential                     = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            NetworkName                    = 'FakeStringValue'
-                            '@odata.type'                  = '#microsoft.graph.androidDeviceOwnerEnterpriseWiFiConfiguration'
-                            PreSharedKey                   = 'FakeStringValue'
-                            WiFiSecurityType               = 'open'
-                            ConnectAutomatically           = $True
-                            Ssid                           = 'FakeStringValue'
-                            ProxyManualAddress             = 'FakeStringValue'
-                            ProxySettings                  = 'none'
-                            ConnectWhenNetworkNameIsHidden = $True
-                            ProxyAutomaticConfigurationUrl = 'FakeStringValue'
-                            PreSharedKeyIsSet              = $True
-                            ProxyExclusionList             = 'FakeStringValue'
-                            ProxyManualPort                = 25
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -226,35 +195,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ProxyAutomaticConfigurationUrl = 'FakeStringValue'
                     ProxyExclusionList             = 'FakeStringValue'
                     ProxyManualAddress             = 'FakeStringValue'
-                    ProxyManualPort                = 25
+                    ProxyManualPort                = 8443 # Updated property
                     ProxySettings                  = 'none'
                     Ssid                           = 'FakeStringValue'
                     WiFiSecurityType               = 'open'
-
                     Ensure                         = 'Present'
                     Credential                     = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type'                  = '#microsoft.graph.androidDeviceOwnerEnterpriseWiFiConfiguration'
-                            NetworkName                    = 'FakeStringValue'
-                            WiFiSecurityType               = 'open'
-                            ProxyExclusionList             = 'FakeStringValue'
-                            ProxyAutomaticConfigurationUrl = 'FakeStringValue'
-                            PreSharedKey                   = 'FakeStringValue'
-                            ProxyManualPort                = 7
-                            ProxySettings                  = 'none'
-                            Ssid                           = 'FakeStringValue'
-                            ProxyManualAddress             = 'FakeStringValue'
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
                 }
             }
 
@@ -279,32 +225,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            NetworkName                    = 'FakeStringValue'
-                            '@odata.type'                  = '#microsoft.graph.androidDeviceOwnerEnterpriseWiFiConfiguration'
-                            PreSharedKey                   = 'FakeStringValue'
-                            WiFiSecurityType               = 'open'
-                            ConnectAutomatically           = $True
-                            Ssid                           = 'FakeStringValue'
-                            ProxyManualAddress             = 'FakeStringValue'
-                            ProxySettings                  = 'none'
-                            ConnectWhenNetworkNameIsHidden = $True
-                            ProxyAutomaticConfigurationUrl = 'FakeStringValue'
-                            PreSharedKeyIsSet              = $True
-                            ProxyExclusionList             = 'FakeStringValue'
-                            ProxyManualPort                = 25
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

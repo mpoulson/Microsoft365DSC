@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOOrganizationRelationship'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -131,114 +133,109 @@ function Get-TargetResource
     )
 
     Write-Verbose -Message "Getting Organization Relationship configuration for $Name"
-    if ($Global:CurrentModeIsExport)
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = $PSBoundParameters
-    $nullReturn.Ensure = 'Absent'
 
     try
     {
-        $AllOrganizationRelationships = Get-OrganizationRelationship -ErrorAction Stop
-
-        $OrganizationRelationship = $AllOrganizationRelationships | Where-Object -FilterScript { $_.Name -eq $Name }
-
-        if ($null -eq $OrganizationRelationship)
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            Write-Verbose -Message "Organization Relationship configuration for $($Name) does not exist."
-            return $nullReturn
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = $PSBoundParameters
+            $nullReturn.Ensure = 'Absent'
+
+            $OrganizationRelationship = Get-OrganizationRelationship -Identity $Name -ErrorAction SilentlyContinue
+            if ($null -eq $OrganizationRelationship)
+            {
+                Write-Verbose -Message "Organization Relationship configuration for $($Name) does not exist."
+                return $nullReturn
+            }
         }
         else
         {
-            $result = @{
-                ArchiveAccessEnabled       = $OrganizationRelationship.ArchiveAccessEnabled
-                DeliveryReportEnabled      = $OrganizationRelationship.DeliveryReportEnabled
-                DomainNames                = $OrganizationRelationship.DomainNames
-                Enabled                    = $OrganizationRelationship.Enabled
-                FreeBusyAccessEnabled      = $OrganizationRelationship.FreeBusyAccessEnabled
-                FreeBusyAccessLevel        = $OrganizationRelationship.FreeBusyAccessLevel
-                FreeBusyAccessScope        = $OrganizationRelationship.FreeBusyAccessScope
-                MailboxMoveEnabled         = $OrganizationRelationship.MailboxMoveEnabled
-                MailboxMoveCapability      = $OrganizationRelationship.MailboxMoveCapability
-                MailboxMovePublishedScopes = $OrganizationRelationship.MailboxMovePublishedScopes
-                MailTipsAccessEnabled      = $OrganizationRelationship.MailTipsAccessEnabled
-                MailTipsAccessLevel        = $OrganizationRelationship.MailTipsAccessLevel
-                MailTipsAccessScope        = $OrganizationRelationship.MailTipsAccessScope
-                Name                       = $OrganizationRelationship.Name
-                OauthApplicationId         = $OrganizationRelationship.OauthApplicationId
-                OrganizationContact        = $OrganizationRelationship.OrganizationContact
-                PhotosEnabled              = $OrganizationRelationship.PhotosEnabled
-                Ensure                     = 'Present'
-                Credential                 = $Credential
-                ApplicationId              = $ApplicationId
-                CertificateThumbprint      = $CertificateThumbprint
-                CertificatePath            = $CertificatePath
-                CertificatePassword        = $CertificatePassword
-                Managedidentity            = $ManagedIdentity.IsPresent
-                TenantId                   = $TenantId
-                AccessTokens               = $AccessTokens
-            }
-
-            if ($OrganizationRelationship.TargetApplicationUri)
-            {
-                $result.Add('TargetApplicationUri', $($OrganizationRelationship.TargetApplicationUri.ToString()))
-            }
-            else
-            {
-                $result.Add('TargetApplicationUri', '')
-            }
-
-            if ($OrganizationRelationship.TargetAutodiscoverEpr)
-            {
-                $result.Add('TargetAutodiscoverEpr', $($OrganizationRelationship.TargetAutodiscoverEpr.ToString()))
-            }
-            else
-            {
-                $result.Add('TargetAutodiscoverEpr', '')
-            }
-
-            if ($OrganizationRelationship.TargetSharingEpr)
-            {
-                $result.Add('TargetSharingEpr', $($OrganizationRelationship.TargetSharingEpr.ToString()))
-            }
-            else
-            {
-                $result.Add('TargetSharingEpr', '')
-            }
-
-            if ($OrganizationRelationship.TargetOwaURL)
-            {
-                $result.Add('TargetOwaURL', $($OrganizationRelationship.TargetOwaURL.ToString()))
-            }
-            else
-            {
-                $result.Add('TargetOwaURL', '')
-            }
-
-            Write-Verbose -Message "Found Organization Relationship configuration for $($Name)"
-            return $result
+            $OrganizationRelationship = $Script:exportedInstance
         }
+
+        Write-Verbose -Message "Organization Relationship with Name $($OrganizationRelationship.Name) found"
+
+        $result = @{
+            ArchiveAccessEnabled       = $OrganizationRelationship.ArchiveAccessEnabled
+            DeliveryReportEnabled      = $OrganizationRelationship.DeliveryReportEnabled
+            DomainNames                = $OrganizationRelationship.DomainNames
+            Enabled                    = $OrganizationRelationship.Enabled
+            FreeBusyAccessEnabled      = $OrganizationRelationship.FreeBusyAccessEnabled
+            FreeBusyAccessLevel        = $OrganizationRelationship.FreeBusyAccessLevel
+            FreeBusyAccessScope        = $OrganizationRelationship.FreeBusyAccessScope
+            MailboxMoveEnabled         = $OrganizationRelationship.MailboxMoveEnabled
+            MailboxMoveCapability      = $OrganizationRelationship.MailboxMoveCapability
+            MailboxMovePublishedScopes = $OrganizationRelationship.MailboxMovePublishedScopes
+            MailTipsAccessEnabled      = $OrganizationRelationship.MailTipsAccessEnabled
+            MailTipsAccessLevel        = $OrganizationRelationship.MailTipsAccessLevel
+            MailTipsAccessScope        = $OrganizationRelationship.MailTipsAccessScope
+            Name                       = $OrganizationRelationship.Name
+            OauthApplicationId         = $OrganizationRelationship.OauthApplicationId
+            OrganizationContact        = $OrganizationRelationship.OrganizationContact
+            PhotosEnabled              = $OrganizationRelationship.PhotosEnabled
+            Ensure                     = 'Present'
+            Credential                 = $Credential
+            ApplicationId              = $ApplicationId
+            CertificateThumbprint      = $CertificateThumbprint
+            CertificatePath            = $CertificatePath
+            CertificatePassword        = $CertificatePassword
+            ManagedIdentity            = $ManagedIdentity.IsPresent
+            TenantId                   = $TenantId
+            AccessTokens               = $AccessTokens
+        }
+
+        if ($OrganizationRelationship.TargetApplicationUri)
+        {
+            $result.Add('TargetApplicationUri', $($OrganizationRelationship.TargetApplicationUri.ToString()))
+        }
+        else
+        {
+            $result.Add('TargetApplicationUri', '')
+        }
+
+        if ($OrganizationRelationship.TargetAutodiscoverEpr)
+        {
+            $result.Add('TargetAutodiscoverEpr', $($OrganizationRelationship.TargetAutodiscoverEpr.ToString()))
+        }
+        else
+        {
+            $result.Add('TargetAutodiscoverEpr', '')
+        }
+
+        if ($OrganizationRelationship.TargetSharingEpr)
+        {
+            $result.Add('TargetSharingEpr', $($OrganizationRelationship.TargetSharingEpr.ToString()))
+        }
+        else
+        {
+            $result.Add('TargetSharingEpr', '')
+        }
+
+        if ($OrganizationRelationship.TargetOwaURL)
+        {
+            $result.Add('TargetOwaURL', $($OrganizationRelationship.TargetOwaURL.ToString()))
+        }
+        else
+        {
+            $result.Add('TargetOwaURL', '')
+        }
+
+        return $result
     }
     catch
     {
@@ -248,7 +245,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -399,7 +396,7 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+    $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters
 
     $NewOrganizationRelationshipParams = @{
@@ -427,7 +424,7 @@ function Set-TargetResource
         Confirm                    = $false
     }
     # Removes empty properties from Splat to prevent function throwing errors if parameter is null or empty
-    Remove-M365DSCEmptyValue -Splat $NewOrganizationRelationshipParams
+    Remove-NullEntriesFromHashtable -Hash $NewOrganizationRelationshipParams
 
     $SetOrganizationRelationshipParams = @{
         ArchiveAccessEnabled       = $ArchiveAccessEnabled
@@ -454,7 +451,7 @@ function Set-TargetResource
         Confirm                    = $false
     }
     # Removes empty properties from Splat to prevent function throwing errors if parameter is null or empty
-    Remove-M365DSCEmptyValue -Splat $SetOrganizationRelationshipParams
+    Remove-NullEntriesFromHashtable -Hash $SetOrganizationRelationshipParams
 
     # CASE: Organization Relationship doesn't exist but should;
     if ($Ensure -eq 'Present' -and $currentOrgRelationshipConfig.Ensure -eq 'Absent')
@@ -609,11 +606,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -621,23 +616,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing Organization Relationship configuration for $Name"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -678,6 +659,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters `
         -SkipModuleReload $true
@@ -697,7 +679,6 @@ function Export-TargetResource
     try
     {
         [array]$AllOrgRelationships = Get-OrganizationRelationship -ErrorAction Stop
-
         $dscContent = ''
 
         if ($AllOrganizationRelationships.Length -eq 0)
@@ -725,10 +706,11 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
                 CertificatePassword   = $CertificatePassword
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 CertificatePath       = $CertificatePath
                 AccessTokens          = $AccessTokens
             }
+            $Script:exportedInstance = $relationship
             $Results = Get-TargetResource @Params
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
@@ -745,17 +727,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

@@ -2,6 +2,7 @@
 [ClassVersion("1.0.0.0"), FriendlyName("AADFeatureRolloutPolicy")]
 class MSFT_AADFeatureRolloutPolicy : OMI_BaseResource
 {
+    [Write, Description("Indicates the DisplayName of the groups the policy is assigned to.")] String AppliesTo[];
     [Write, Description("A description for this feature rollout policy.")] String Description;
     [Key, Description("The display name for this  feature rollout policy.")] String DisplayName;
     [Write, Description("Possible values are: passthroughAuthentication, seamlessSso, passwordHashSync, emailAsAlternateId, unknownFutureValue, certificateBasedAuthentication. You must use the Prefer: include-unknown-enum-members request header to get the following value or values in this evolvable enum: certificateBasedAuthentication. For more information about the prerequisites for the enabled features, see Prerequisites for enabled features."), ValueMap{"passthroughAuthentication","seamlessSso","passwordHashSync","emailAsAlternateId","unknownFutureValue","certificateBasedAuthentication"}, Values{"passthroughAuthentication","seamlessSso","passwordHashSync","emailAsAlternateId","unknownFutureValue","certificateBasedAuthentication"}] String Feature;

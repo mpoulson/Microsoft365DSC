@@ -24,13 +24,25 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-GUID).ToString() -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Get-CsTeamsCallParkPolicy -MockWith {
+                return @{
+                    Description        = 'FakeStringValue'
+                    PickupRangeStart   = 3000
+                    AllowCallPark      = $True
+                    ParkTimeoutSeconds = 3000
+                    PickupRangeEnd     = 3000
+                    Identity           = 'FakeStringValue'
+
+                }
             }
 
             Mock -CommandName Set-CsTeamsCallParkPolicy -MockWith {
@@ -95,18 +107,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure             = 'Absent'
                     Credential         = $Credential
                 }
-
-                Mock -CommandName Get-CsTeamsCallParkPolicy -MockWith {
-                    return @{
-                        Description        = 'FakeStringValue'
-                        PickupRangeStart   = 3000
-                        AllowCallPark      = $True
-                        ParkTimeoutSeconds = 3000
-                        PickupRangeEnd     = 3000
-                        Identity           = 'FakeStringValue'
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -135,18 +135,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure             = 'Present'
                     Credential         = $Credential
                 }
-
-                Mock -CommandName Get-CsTeamsCallParkPolicy -MockWith {
-                    return @{
-                        Description        = 'FakeStringValue'
-                        PickupRangeStart   = 3000
-                        AllowCallPark      = $True
-                        ParkTimeoutSeconds = 3000
-                        PickupRangeEnd     = 3000
-                        Identity           = 'FakeStringValue'
-
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -159,23 +147,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Description        = 'FakeStringValue'
                     PickupRangeStart   = 3000
-                    AllowCallPark      = $True
+                    AllowCallPark      = $False # Drift
                     ParkTimeoutSeconds = 3000
                     PickupRangeEnd     = 3000
                     Identity           = 'FakeStringValue'
                     Ensure             = 'Present'
                     Credential         = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsCallParkPolicy -MockWith {
-                    return @{
-                        Description        = 'FakeStringValueDrift #Drift'
-                        PickupRangeStart   = 3000
-                        AllowCallPark      = $False
-                        ParkTimeoutSeconds = 3000
-                        PickupRangeEnd     = 3000
-                        Identity           = 'FakeStringValue'
-                    }
                 }
             }
 
@@ -199,18 +176,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsCallParkPolicy -MockWith {
-                    return @{
-                        Description        = 'FakeStringValue'
-                        PickupRangeStart   = 3000
-                        AllowCallPark      = $True
-                        ParkTimeoutSeconds = 3000
-                        PickupRangeEnd     = 3000
-                        Identity           = 'FakeStringValue'
-
-                    }
                 }
             }
 

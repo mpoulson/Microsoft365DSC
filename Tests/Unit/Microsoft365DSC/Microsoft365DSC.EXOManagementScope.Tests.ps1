@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -45,6 +45,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Get-ManagementScope -MockWith {
+                return @{
+                    Exclusive                  = $False;
+                    Identity                   = "Nik DGs";
+                    Name                       = "Nik DGs";
+                    RecipientFilter = "Name -like 'Nik*'";
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -92,15 +98,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Name                       = "Nik DGs";
                     RecipientRestrictionFilter = "Name -like 'Nik*'";
                 }
-
-                Mock -CommandName Get-ManagementScope -MockWith {
-                    return @{
-                        Exclusive                  = $False;
-                        Identity                   = "Nik DGs";
-                        Name                       = "Nik DGs";
-                        RecipientFilter = "Name -like 'Nik*'";
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -125,15 +122,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Name                       = "Nik DGs";
                     RecipientRestrictionFilter = "Name -like 'Nik*'";
                 }
-
-                Mock -CommandName Get-ManagementScope -MockWith {
-                    return @{
-                        Exclusive                  = $False;
-                        Identity                   = "Nik DGs";
-                        Name                       = "Nik DGs";
-                        RecipientFilter = "Name -like 'Nik*'";
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -149,16 +137,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Exclusive                  = $False;
                     Identity                   = "Nik DGs";
                     Name                       = "Nik DGs";
-                    RecipientRestrictionFilter = "Name -like 'Nik*'";
-                }
-
-                Mock -CommandName Get-ManagementScope -MockWith {
-                    return @{
-                        Exclusive                  = $False;
-                        Identity                   = "Nik DGs";
-                        Name                       = "Nik DGs Drift";
-                        RecipientFilter = "Name -like 'Nik*'";
-                    }
+                    RecipientRestrictionFilter = "Name -like 'Nik-Drift*'"; # Drift
                 }
             }
 
@@ -182,15 +161,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-ManagementScope -MockWith {
-                    return @{
-                        Exclusive                  = $False;
-                        Identity                   = "Nik DGs";
-                        Name                       = "Nik DGs";
-                        RecipientFilter = "Name -like 'Nik*'";
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOMigration'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -90,34 +92,41 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters | Out-Null
+    Write-Verbose -Message "Getting configuration for Migration Batch with Identity {$Identity}"
 
-    Confirm-M365DSCDependencies
-
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-
-    $nullResult = $PSBoundParameters
-    $nullResult.Ensure = 'Absent'
     try
     {
-        if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.Identity.Name -eq $Identity }
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+
+            $nullResult = $PSBoundParameters
+            $nullResult.Ensure = 'Absent'
+
+            $instance = Get-MigrationBatch -Identity $Identity -ErrorAction SilentlyContinue
+            if ($null -eq $instance)
+            {
+                Write-Verbose -Message "Migration Batch with Identity $Identity not found"
+                return $nullResult
+            }
         }
         else
         {
-            $instance = Get-MigrationBatch -Identity $Identity -ErrorAction SilentlyContinue
+            $instance = $Script:exportedInstance
         }
-        if ($null -eq $instance)
-        {
-            return $nullResult
-        }
+
+        Write-Verbose -Message "Migration Batch with Identity $Identity found"
 
         $Users = Get-MigrationUser -BatchId $Identity
         $UserEmails = $Users | ForEach-Object { $_.Identity }
@@ -144,28 +153,27 @@ function Get-TargetResource
             TargetDeliveryDomain  = $instance.TargetDeliveryDomain
         }
 
-        if ($instance.CompleteAfter -ne $null)
+        if ($null -ne $instance.CompleteAfter)
         {
             $results.Add('CompleteAfter', $instance.CompleteAfter.ToString('MM/dd/yyyy hh:mm tt'))
         }
 
-        if ($instance.StartAfter -ne $null)
+        if ($null -ne $instance.StartAfter)
         {
             $results.Add('StartAfter', $instance.CompleteAfter.ToString('MM/dd/yyyy hh:mm tt'))
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 function Set-TargetResource
@@ -258,6 +266,8 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    Write-Verbose -Message "Setting configuration for Migration Batch with Identity {$Identity}"
 
     Confirm-M365DSCDependencies
 
@@ -462,9 +472,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -474,20 +481,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -541,12 +537,11 @@ function Export-TargetResource
 
     try
     {
-        $Script:ExportMode = $true
-        [array] $Script:exportedInstances = Get-MigrationBatch -ErrorAction Stop
+        [array]$migrationBatches = Get-MigrationBatch -ErrorAction Stop
 
         $i = 1
         $dscContent = ''
-        if ($Script:exportedInstances.Length -eq 0)
+        if ($migrationBatches.Length -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
@@ -554,10 +549,10 @@ function Export-TargetResource
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
-        foreach ($config in $Script:exportedInstances)
+        foreach ($config in $migrationBatches)
         {
             $displayedKey = $config.Identity
-            Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
+            Write-M365DSCHost -Message "    |---[$i/$($migrationBatches.Count)] $displayedKey" -DeferWrite
             $params = @{
                 Identity              = $config.Identity
                 Credential            = $Credential
@@ -567,9 +562,8 @@ function Export-TargetResource
                 ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
-
+            $Script:exportedInstance = $config
             $Results = Get-TargetResource @Params
-
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
@@ -585,15 +579,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

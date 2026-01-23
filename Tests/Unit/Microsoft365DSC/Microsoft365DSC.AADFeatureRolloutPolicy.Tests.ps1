@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -41,8 +41,29 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return $null
             }
 
+            Mock -CommandName New-MgBetaPolicyFeatureRolloutPolicyApplyToByRef -MockWith {
+            }
+
             Mock -CommandName Remove-MgBetaPolicyFeatureRolloutPolicy -MockWith {
                 return $null
+            }
+
+            Mock -CommandName Remove-MgBetaPolicyFeatureRolloutPolicyApplyToByRef -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyFeatureRolloutPolicy -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        '@odata.type' = "#microsoft.graph.FeatureRolloutPolicy"
+                    }
+                    Description = "FakeStringValue"
+                    DisplayName = "FakeStringValue"
+                    Feature = "passthroughAuthentication"
+                    Id = "FakeStringValue"
+                    IsAppliedToOrganization = $True
+                    IsEnabled = $True
+
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -97,21 +118,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyFeatureRolloutPolicy -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.FeatureRolloutPolicy"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Feature = "passthroughAuthentication"
-                        Id = "FakeStringValue"
-                        IsAppliedToOrganization = $True
-                        IsEnabled = $True
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -139,23 +145,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyFeatureRolloutPolicy -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.FeatureRolloutPolicy"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Feature = "passthroughAuthentication"
-                        Id = "FakeStringValue"
-                        IsAppliedToOrganization = $True
-                        IsEnabled = $True
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -169,19 +159,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = "FakeStringValue"
                     Feature = "passthroughAuthentication"
                     Id = "FakeStringValue"
-                    IsAppliedToOrganization = $True
+                    IsAppliedToOrganization = $False # Drift
                     IsEnabled = $True
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyFeatureRolloutPolicy -MockWith {
-                    return @{
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Feature = "passthroughAuthentication"
-                        Id = "FakeStringValue"
-                    }
                 }
             }
 
@@ -205,21 +186,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyFeatureRolloutPolicy -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.FeatureRolloutPolicy"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Feature = "passthroughAuthentication"
-                        Id = "FakeStringValue"
-                        IsAppliedToOrganization = $True
-                        IsEnabled = $True
-
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

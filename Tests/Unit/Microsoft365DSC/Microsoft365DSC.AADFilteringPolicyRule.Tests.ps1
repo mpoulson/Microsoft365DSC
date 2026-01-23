@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -42,6 +42,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return @{
                     Id = '12345-12345-12345-12345-12345'
                     Name = 'MyPolicy'
+                }
+            }
+
+            Mock -CommandName Get-MgBetaNetworkAccessFilteringPolicyRule -MockWith {
+                return @{
+                    Name = 'MyFQDN'
+                    Id   = '12345-12345-12345-12345-12345'
+                    AdditionalProperties = @{
+                        ruleType = 'fqdn'
+                        destinations = @(
+                            @{
+                                value = 'Microsoft365DSC.com'
+                            }
+                        )
+                    }
                 }
             }
 
@@ -98,21 +113,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = 'Absent'
                     Credential            = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaNetworkAccessFilteringPolicyRule -MockWith {
-                    return @{
-                        Name = 'MyFQDN'
-                        Id   = '12345-12345-12345-12345-12345'
-                        AdditionalProperties = @{
-                            ruleType = 'fqdn'
-                            destinations = @(
-                                @{
-                                    value = 'Microsoft365DSC.com'
-                                }
-                            )
-                        }
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -129,33 +129,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name "The instance exists and values are already in the desired state" -Fixture {
             BeforeAll {
-                    $testParams = @{
-                        Destinations          = @(
-                            (New-CimInstance -ClassName MSFT_AADFilteringPolicyRuleDestination -property @{
-                                value = 'Microsoft365DSC.com'
-                            } -ClientOnly)
-                        );
-                        Name                  = "MyFQDN";
-                        Policy                = "MyPolicy";
-                        RuleType              = "fqdn";
-                        Ensure                = 'Present'
-                        Credential            = $Credential;
-                    }
-
-                    Mock -CommandName Get-MgBetaNetworkAccessFilteringPolicyRule -MockWith {
-                        return @{
-                            Name = 'MyFQDN'
-                            Id   = '12345-12345-12345-12345-12345'
-                            AdditionalProperties = @{
-                                ruleType = 'fqdn'
-                                destinations = @(
-                                @{
-                                    value = 'Microsoft365DSC.com'
-                                }
-                                )
-                            }
-                        }
-                    }
+                $testParams = @{
+                    Destinations          = @(
+                        (New-CimInstance -ClassName MSFT_AADFilteringPolicyRuleDestination -property @{
+                            value = 'Microsoft365DSC.com'
+                        } -ClientOnly)
+                    );
+                    Name                  = "MyFQDN";
+                    Policy                = "MyPolicy";
+                    RuleType              = "fqdn";
+                    Ensure                = 'Present'
+                    Credential            = $Credential;
+                }
             }
 
             It 'Should return true from the Test method' {
@@ -176,21 +161,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RuleType              = "fqdn";
                     Ensure                = 'Present'
                     Credential            = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessFilteringPolicyRule -MockWith {
-                    return @{
-                        Name = 'MyFQDN'
-                        Id   = '12345-12345-12345-12345-12345'
-                        AdditionalProperties = @{
-                            ruleType = 'fqdn'
-                            destinations = @(
-                                @{
-                                    value = 'Microsoft365DSC.com'
-                                }
-                            )
-                        }
-                    }
                 }
             }
 
@@ -214,21 +184,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessFilteringPolicyRule -MockWith {
-                    return @{
-                        Name = 'MyFQDN'
-                        Id   = '12345-12345-12345-12345-12345'
-                        AdditionalProperties = @{
-                            ruleType = 'fqdn'
-                            destinations = @(
-                                @{
-                                    value = 'Microsoft365DSC.com'
-                                }
-                            )
-                        }
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

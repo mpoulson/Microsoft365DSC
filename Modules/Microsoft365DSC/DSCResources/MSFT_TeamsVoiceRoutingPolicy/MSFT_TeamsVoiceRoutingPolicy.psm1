@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_TeamsVoiceRoutingPolicy'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -52,7 +54,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftTeams' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -115,7 +117,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -166,21 +168,24 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    # Validate that the selected PSTN usages exist in the environment
-    $existingUsages = Get-CsOnlinePstnUsage | Select-Object -ExpandProperty Usage
-    $notFoundUsageList = @()
-    foreach ($usage in $OnlinePstnUsages)
+    if ($Ensure -eq 'Present')
     {
-        if ( -not ($existingUsages -match $usage))
+        # Validate that the selected PSTN usages exist in the environment
+        $existingUsages = Get-CsOnlinePstnUsage | Select-Object -ExpandProperty Usage
+        $notFoundUsageList = @()
+        foreach ($usage in $OnlinePstnUsages)
         {
-            $notFoundUsageList += $usage
+            if ( -not ($existingUsages -match $usage))
+            {
+                $notFoundUsageList += $usage
+            }
         }
-    }
 
-    if ($notFoundUsageList)
-    {
-        $notFoundUsages = $notFoundUsageList -join ','
-        throw "Please create the PSTN Usage(s) ($notFoundUsages) using `"TeamsPstnUsage`""
+        if ($notFoundUsageList)
+        {
+            $notFoundUsages = $notFoundUsageList -join ','
+            throw "Please create the PSTN Usage(s) ($notFoundUsages) using `"TeamsPstnUsage`""
+        }
     }
 
     Write-Verbose -Message "Setting Voice Routing Policy {$Identity}"
@@ -197,19 +202,8 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
-        -InboundParameters $PSBoundParameters
-
     $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    $SetParameters = $PSBoundParameters
-    $SetParameters.Remove('Ensure') | Out-Null
-    $SetParameters.Remove('Credential') | Out-Null
-    $SetParameters.Remove('ApplicationId') | Out-Null
-    $SetParameters.Remove('TenantId') | Out-Null
-    $SetParameters.Remove('CertificateThumbprint') | Out-Null
-    $SetParameters.Remove('ManagedIdentity') | Out-Null
-    $SetParameters.Remove('AccessTokens') | Out-Null
+    $SetParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present' -and $CurrentValues.Ensure -eq 'Absent')
     {
@@ -218,10 +212,6 @@ function Set-TargetResource
     }
     elseif ($Ensure -eq 'Present' -and $CurrentValues.Ensure -eq 'Present')
     {
-        <#
-            If we get here, it's because the Test-TargetResource detected a drift, therefore we always call
-            into the Set-CsOnlineVoiceRoutingPolicy cmdlet.
-        #>
         Write-Verbose -Message "Updating settings for Voice Routing Policy {$Identity}"
         Set-CsOnlineVoiceRoutingPolicy @SetParameters
     }
@@ -279,11 +269,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -291,23 +279,15 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Voice Routing Policy {$Identity}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $excludedProperties = @()
+    if ($Ensure -eq 'Absent')
+    {
+        $excludedProperties += 'OnlinePstnUsages'
+    }
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+                                         -ExcludedProperties $excludedProperties
+    return $result
 }
 
 function Export-TargetResource
@@ -398,15 +378,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

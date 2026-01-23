@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -74,6 +74,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 OffsetUri = 'enabled'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        @{
+                                            itemId = 'com.apple.managedclient.preferences_enabled_true'
+                                            name = 'Enabled'
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'true'
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         )
@@ -148,13 +158,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     options = @(
                                         @{
                                             itemId = 'com.apple.managedclient.preferences_exclusions_item_$type_1'
-                                            name = 'Path'
+                                            name = 'File extension'
                                             dependentOn = @(
                                                 @{
                                                     dependentOn = 'com.apple.managedclient.preferences_exclusions'
                                                     parentSettingId = 'com.apple.managedclient.preferences_exclusions'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedFileExtension'
+                                            }
+                                        }
+                                        @{
+                                            itemId = 'com.apple.managedclient.preferences_exclusions_item_$type_2'
+                                            name = 'Process name'
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'com.apple.managedclient.preferences_exclusions'
+                                                    parentSettingId = 'com.apple.managedclient.preferences_exclusions'
+                                                }
+                                            )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedFileName'
+                                            }
                                         }
                                     )
                                 }
@@ -250,6 +278,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 Name = 'threatTypeSettings'
                                 OffsetUri = 'threatTypeSettings'
                                 AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSettingGroupCollectionDefinition'
                                     maximumCount = 2147483647
                                     minimumCount = 1
                                     childIds = @(
@@ -263,6 +292,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 Name = 'threatTypeSettings_item_key'
                                 OffsetUri = 'threatTypeSettings/[{0}]/key'
                                 AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
                                     options = @(
                                         @{
                                             itemId = 'com.apple.managedclient.preferences_threattypesettings_item_key_0'
@@ -273,6 +303,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'com.apple.managedclient.preferences_threattypesettings'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'potentially_unwanted_application'
+                                            }
                                         }
                                     )
                                 }
@@ -293,6 +327,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'com.apple.managedclient.preferences_threattypesettings'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'audit'
+                                            }
                                         }
                                     )
                                 }
@@ -395,13 +433,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     options = @(
                                         @{
                                             itemId = 'com.apple.managedclient.preferences_exclusions_item_$type_1'
-                                            name = 'Path'
+                                            name = 'File extension'
                                             dependentOn = @(
                                                 @{
                                                     dependentOn = 'com.apple.managedclient.preferences_exclusions'
                                                     parentSettingId = 'com.apple.managedclient.preferences_exclusions'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedFileExtension'
+                                            }
+                                        }
+                                        @{
+                                            itemId = 'com.apple.managedclient.preferences_exclusions_item_$type_2'
+                                            name = 'Process name'
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'com.apple.managedclient.preferences_exclusions'
+                                                    parentSettingId = 'com.apple.managedclient.preferences_exclusions'
+                                                }
+                                            )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedFileName'
+                                            }
                                         }
                                     )
                                 }
@@ -433,6 +489,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 Name = 'threatTypeSettings'
                                 OffsetUri = 'threatTypeSettings'
                                 AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSettingGroupCollectionDefinition'
                                     maximumCount = 2147483647
                                     minimumCount = 0
                                     childIds = @(
@@ -446,6 +503,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 Name = 'threatTypeSettings_item_key'
                                 OffsetUri = 'threatTypeSettings/[{0}]/key'
                                 AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
                                     options = @(
                                         @{
                                             itemId = 'com.apple.managedclient.preferences_threattypesettings_item_key_0'
@@ -456,6 +514,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'com.apple.managedclient.preferences_threattypesettings'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'potentially_unwanted_application'
+                                            }
                                         }
                                     )
                                 }
@@ -476,6 +538,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'com.apple.managedclient.preferences_threattypesettings'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'audit'
+                                            }
                                         }
                                     )
                                 }
@@ -540,11 +606,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.dmg'
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            Exclusions_item_type = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"
@@ -552,8 +618,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds = @("FakeStringValue")
                     threatTypeSettings = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogThreatTypeSettings -Property @{
-                            ThreatTypeSettings_item_key = '0'
-                            ThreatTypeSettings_item_value = '0'
+                            ThreatTypeSettings_item_key = 'potentially_unwanted_application'
+                            ThreatTypeSettings_item_value = 'audit'
                         } -ClientOnly)
                     );
                     Ensure = "Present"
@@ -592,11 +658,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.dmg'
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            ThreatTypeSettings_item_key = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"
@@ -604,8 +670,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds = @("FakeStringValue")
                     threatTypeSettings = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogThreatTypeSettings -Property @{
-                            ThreatTypeSettings_item_key = '0'
-                            ThreatTypeSettings_item_value = '0'
+                            ThreatTypeSettings_item_key = 'potentially_unwanted_application'
+                            ThreatTypeSettings_item_value = 'audit'
                         } -ClientOnly)
                     );
                     Ensure = "Absent"
@@ -642,11 +708,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.dmg'
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            ThreatTypeSettings_item_key = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"
@@ -654,8 +720,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds = @("FakeStringValue")
                     threatTypeSettings = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogThreatTypeSettings -Property @{
-                            ThreatTypeSettings_item_key = '0'
-                            ThreatTypeSettings_item_value = '0'
+                            ThreatTypeSettings_item_key = 'potentially_unwanted_application'
+                            ThreatTypeSettings_item_value = 'audit'
                         } -ClientOnly)
                     );
                     Ensure = "Present"
@@ -684,11 +750,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.xcode' # Drift
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            ThreatTypeSettings_item_key = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"
@@ -696,8 +762,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds = @("FakeStringValue")
                     threatTypeSettings = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogThreatTypeSettings -Property @{
-                            ThreatTypeSettings_item_key = '0'
-                            ThreatTypeSettings_item_value = '0'
+                            ThreatTypeSettings_item_key = 'potentially_unwanted_application'
+                            ThreatTypeSettings_item_value = 'audit'
                         } -ClientOnly)
                     );
                     Ensure = "Present"

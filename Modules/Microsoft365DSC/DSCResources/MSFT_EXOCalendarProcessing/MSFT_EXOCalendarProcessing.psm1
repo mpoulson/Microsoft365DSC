@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOCalendarProcessing'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -201,15 +203,17 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of Calendar Processing settings for $Identity"
+
     if ($Global:CurrentModeIsExport)
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
             -InboundParameters $PSBoundParameters `
             -SkipModuleReload $true
     }
     else
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
             -InboundParameters $PSBoundParameters
     }
 
@@ -224,7 +228,7 @@ function Get-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-    Write-Verbose -Message "Getting configuration of Calendar Processing settings for $Identity"
+
 
     $nullReturn = $PSBoundParameters
     $nullReturn.Ensure = 'Absent'
@@ -239,23 +243,46 @@ function Get-TargetResource
             return $nullReturn
         }
 
+        if ($null -eq $Script:UsersCache)
+        {
+            $Script:UsersCache = [System.Collections.Generic.Dictionary[System.String, System.String]]::new()
+        }
+
         $RequestInPolicyValue = @()
         if ($null -ne $calendarProc.RequestInPolicy)
         {
             foreach ($user in $calendarProc.RequestInPolicy)
             {
-                $userInfo = Get-User -Identity $user
-                $RequestInPolicyValue += $userInfo.UserPrincipalName
+                $userInfo = $null
+                if ($Script:UsersCache.TryGetValue($user, [ref]$userInfo))
+                {
+                    $RequestInPolicyValue += $userInfo
+                }
+                else
+                {
+                    $userInfo = (Get-User -Identity $user).UserPrincipalName
+                    $Script:UsersCache[$user] = $userInfo
+                    $RequestInPolicyValue += $userInfo
+                }
             }
         }
 
-        $RequestOutPolicyValue = @()
-        if ($null -ne $calendarProc.RequestOutPolicy)
+        $RequestOutOfPolicyValue = @()
+        if ($null -ne $calendarProc.RequestOutOfPolicy)
         {
-            foreach ($user in $calendarProc.RequestOutPolicy)
+            foreach ($user in $calendarProc.RequestOutOfPolicy)
             {
-                $userInfo = Get-User -Identity $user
-                $RequestOutPolicyValue += $userInfo.UserPrincipalName
+                $userInfo = $null
+                if ($Script:UsersCache.TryGetValue($user, [ref]$userInfo))
+                {
+                    $RequestOutOfPolicyValue += $userInfo
+                }
+                else
+                {
+                    $userInfo = (Get-User -Identity $user).UserPrincipalName
+                    $Script:UsersCache[$user] = $userInfo
+                    $RequestOutOfPolicyValue += $userInfo
+                }
             }
         }
 
@@ -264,8 +291,17 @@ function Get-TargetResource
         {
             foreach ($user in $calendarProc.ResourceDelegates)
             {
-                $userInfo = Get-Recipient -Identity $user
-                $ResourceDelegatesValue += $userInfo.PrimarySmtpAddress
+                $userInfo = $null
+                if ($Script:UsersCache.TryGetValue($user, [ref]$userInfo))
+                {
+                    $ResourceDelegatesValue += $userInfo
+                }
+                else
+                {
+                    $userInfo = (Get-Recipient -Identity $user).PrimarySmtpAddress
+                    $Script:UsersCache[$user] = $userInfo
+                    $ResourceDelegatesValue += $userInfo
+                }
             }
         }
 
@@ -315,7 +351,7 @@ function Get-TargetResource
             CertificateThumbprint                = $CertificateThumbprint
             CertificatePath                      = $CertificatePath
             CertificatePassword                  = $CertificatePassword
-            Managedidentity                      = $ManagedIdentity.IsPresent
+            ManagedIdentity                      = $ManagedIdentity.IsPresent
             TenantId                             = $TenantId
             AccessTokens                         = $AccessTokens
         }
@@ -331,7 +367,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -560,20 +596,7 @@ function Set-TargetResource
         return
     }
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters
-
-    $UpdateParameters = ([Hashtable]$PSBoundParameters).Clone()
-    $UpdateParameters.Remove('Ensure') | Out-Null
-    $UpdateParameters.Remove('Credential') | Out-Null
-    $UpdateParameters.Remove('ApplicationId') | Out-Null
-    $UpdateParameters.Remove('TenantId') | Out-Null
-    $UpdateParameters.Remove('CertificateThumbprint') | Out-Null
-    $UpdateParameters.Remove('ApplicationSecret') | Out-Null
-    $UpdateParameters.Remove('CertificatePath') | Out-Null
-    $UpdateParameters.Remove('CertificatePassword') | Out-Null
-    $UpdateParameters.Remove('ManagedIdentity') | Out-Null
-    $UpdateParameters.Remove('AccessTokens') | Out-Null
+    $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     # Some parameters can only be applied to Resource Mailboxes
     if ($UpdateParameters.ContainsKey('AddNewRequestsTentatively'))
@@ -797,11 +820,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -809,25 +830,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Calendar Processing for account $Identity"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $DesiredValues = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $DesiredValues `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -868,6 +873,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters `
         -SkipModuleReload $true
@@ -886,6 +892,7 @@ function Export-TargetResource
 
     try
     {
+        $Script:currentModeIsExport = $true
         $mailboxes = Get-Mailbox -ResultSize 'Unlimited' -ErrorAction Stop
 
         if ($null -eq $mailboxes)
@@ -896,6 +903,16 @@ function Export-TargetResource
         else
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
+        }
+
+        Write-Verbose -Message "Fetching all users for caching purposes"
+        $Script:UsersCache = [System.Collections.Generic.Dictionary[System.String, System.String]]::new()
+        Get-User -ResultSize 'Unlimited' | ForEach-Object {
+            $Script:UsersCache[$_.Identity] = $_.UserPrincipalName
+        }
+        Write-Verbose -Message "Fetching all recipients for caching purposes"
+        Get-Recipient -ResultSize 'Unlimited' | ForEach-Object {
+            $Script:UsersCache[$_.Identity] = $_.PrimarySmtpAddress
         }
 
         $i = 1
@@ -914,7 +931,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
                 CertificatePassword   = $CertificatePassword
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 CertificatePath       = $CertificatePath
                 AccessTokens          = $AccessTokens
             }
@@ -937,15 +954,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

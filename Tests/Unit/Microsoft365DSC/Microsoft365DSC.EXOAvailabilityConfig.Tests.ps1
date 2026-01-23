@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -35,6 +35,33 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Set-AvailabilityConfig -MockWith {
+            }
+
+            Mock -CommandName New-AvailabilityConfig -MockWith {
+            }
+
+            Mock -CommandName Remove-AvailabilityConfig -MockWith {
+            }
+
+            Mock -CommandName Get-AvailabilityConfig -MockWith {
+                return @{
+                    OrgWideAccount = 'johndoe'
+                }
+            }
+
+            Mock -CommandName Get-MgUser -MockWith {
+                return @{
+                    UserPrincipalName = 'johndoe'
+                }
+            }
+
+            Mock -CommandName Get-User -MockWith {
+                return @{
+                    UserPrincipalName = 'john.smith@contoso.com'
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -56,14 +83,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-AvailabilityConfig -MockWith {
                     return $null
                 }
-
-                Mock -CommandName Set-AvailabilityConfig -MockWith {
-                    return @{
-                        OrgWideAccount = 'johndoe'
-                        Ensure         = 'Present'
-                        Credential     = $Credential
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -72,6 +91,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-AvailabilityConfig -Exactly 1
             }
 
             It 'Should return Absent from the Get method' {
@@ -85,12 +105,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     OrgWideAccount = 'johndoe'
                     Ensure         = 'Absent'
                     Credential     = $Credential
-                }
-
-                Mock -CommandName Get-MgUser -MockWith {
-                    return @{
-                        UserPrincipalName = 'johndoe'
-                    }
                 }
 
                 Mock -CommandName Get-AvailabilityConfig -MockWith {
@@ -110,12 +124,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure         = 'Present'
                     Credential     = $Credential
                 }
-
-                Mock -CommandName Get-AvailabilityConfig -MockWith {
-                    return @{
-                        OrgWideAccount = 'johndoe'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -133,19 +141,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                $AvailabilityConfig = @{
-                    OrgWideAccount = 'johndoe'
-
-                }
-                Mock -CommandName Get-User -MockWith {
-                    return @{
-                        UserPrincipalName = 'john.smith@contoso.com'
-                    }
-                }
-                Mock -CommandName Get-AvailabilityConfig -MockWith {
-                    return $AvailabilityConfig
                 }
             }
 

@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_TeamsAppSetupPolicy'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -23,6 +25,10 @@ function Get-TargetResource
         [Parameter()]
         [System.String[]]
         $PinnedAppBarApps,
+
+        [Parameter()]
+        [System.String[]]
+        $PinnedCallingBarApps,
 
         [Parameter()]
         [System.String[]]
@@ -66,12 +72,14 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for TeamsAppSetupPolicy $Identity"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'MicrosoftTeams' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -100,38 +108,45 @@ function Get-TargetResource
             return $nullResult
         }
 
-        $AppPresetListValue = $instance.AppPresetList.Id
+        $appPresetListValue = $instance.AppPresetList.Id
         if ($instance.AppPresetList.Count -eq 0)
         {
-            $AppPresetListValue = @()
+            $appPresetListValue = @()
         }
 
-        $AppPresetMeetingListValue = $instance.AppPresetMeetingList.Id
+        $appPresetMeetingListValue = $instance.AppPresetMeetingList.Id
         if ($instance.AppPresetMeetingList.Count -eq 0)
         {
-            $AppPresetMeetingListValue = @()
+            $appPresetMeetingListValue = @()
         }
 
-        $PinnedAppBarAppsValue = $instance.PinnedAppBarApps.Id
+        $pinnedAppBarAppsValue = $instance.PinnedAppBarApps.Id
         if ($instance.PinnedAppBarApps.Count -eq 0)
         {
-            $PinnedAppBarAppsValue = @()
+            $pinnedAppBarAppsValue = @()
         }
 
-        $PinnedMessageBarAppsValue = $instance.PinnedMessageBarApps.Id
+        $pinnedCallingBarAppsValue = $instance.PinnedCallingBarApps.Id
+        if ($instance.PinnedCallingBarApps.Count -eq 0)
+        {
+            $pinnedCallingBarAppsValue = @()
+        }
+
+        $pinnedMessageBarAppsValue = $instance.PinnedMessageBarApps.Id
         if ($instance.PinnedMessageBarApps.Count -eq 0)
         {
-            $PinnedMessageBarAppsValue = @()
+            $pinnedMessageBarAppsValue = @()
         }
 
         Write-Verbose -Message "Found an instance with Identity {$Identity}"
         $results = @{
             Identity              = $instance.Identity.Replace('Tag:', '')
             Description           = $instance.Description
-            AppPresetList         = [Array]$AppPresetListValue
-            AppPresetMeetingList  = [Array]$AppPresetMeetingListValue
-            PinnedAppBarApps      = [Array]$PinnedAppBarAppsValue
-            PinnedMessageBarApps  = [Array]$PinnedMessageBarAppsValue
+            AppPresetList         = [Array]$appPresetListValue
+            AppPresetMeetingList  = [Array]$appPresetMeetingListValue
+            PinnedAppBarApps      = [Array]$pinnedAppBarAppsValue
+            PinnedCallingBarApps  = [Array]$pinnedCallingBarAppsValue
+            PinnedMessageBarApps  = [Array]$pinnedMessageBarAppsValue
             AllowUserPinning      = $instance.AllowUserPinning
             AllowSideLoading      = $instance.AllowSideLoading
             Ensure                = 'Present'
@@ -142,7 +157,7 @@ function Get-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -152,7 +167,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -183,6 +198,10 @@ function Set-TargetResource
 
         [Parameter()]
         [System.String[]]
+        $PinnedCallingBarApps,
+
+        [Parameter()]
+        [System.String[]]
         $PinnedMessageBarApps,
 
         [Parameter()]
@@ -223,8 +242,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
-        -InboundParameters $PSBoundParameters | Out-Null
+    Write-Verbose -Message "Setting configuration for TeamsAppSetupPolicy $Identity"
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -240,21 +258,12 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    $PSBoundParameters.Remove('Ensure') | Out-Null
-    $PSBoundParameters.Remove('Credential') | Out-Null
-    $PSBoundParameters.Remove('ApplicationId') | Out-Null
-    $PSBoundParameters.Remove('ApplicationSecret') | Out-Null
-    $PSBoundParameters.Remove('TenantId') | Out-Null
-    $PSBoundParameters.Remove('CertificateThumbprint') | Out-Null
-    $PSBoundParameters.Remove('ManagedIdentity') | Out-Null
-    $PSBoundParameters.Remove('AccessTokens') | Out-Null
-
     $appPresetValues = @()
     if ($null -ne $AppPresetList -and ([Array]$AppPresetList).Count -gt 0)
     {
         foreach ($appInstance in $AppPresetList)
         {
-            $appPresetValues += [Microsoft.Teams.Policy.Administration.Cmdlets.Core.AppPreset]::New($appInstance)
+            $appPresetValues += [Microsoft.Teams.Policy.Administration.Cmdlets.Core.AppPreset]::new($appInstance)
         }
     }
 
@@ -263,7 +272,7 @@ function Set-TargetResource
     {
         foreach ($appInstance in $AppPresetMeetingList)
         {
-            $appPresetMeetingValues += [Microsoft.Teams.Policy.Administration.Cmdlets.Core.AppPresetMeeting]::New($appInstance)
+            $appPresetMeetingValues += [Microsoft.Teams.Policy.Administration.Cmdlets.Core.AppPresetMeeting]::new($appInstance)
         }
     }
 
@@ -273,7 +282,18 @@ function Set-TargetResource
         $i = 1
         foreach ($appInstance in $PinnedAppBarApps)
         {
-            $pinnedAppBarAppsValue += [Microsoft.Teams.Policy.Administration.Cmdlets.Core.PinnedApp]::New($appInstance, $i)
+            $pinnedAppBarAppsValue += [Microsoft.Teams.Policy.Administration.Cmdlets.Core.PinnedApp]::new($appInstance, $i)
+            $i++
+        }
+    }
+
+    $pinnedCallingBarAppsValue = @()
+    if ($null -ne $PinnedCallingBarApps -and ([Array]$PinnedCallingBarApps).Count -gt 0)
+    {
+        $i = 1
+        foreach ($appInstance in $PinnedCallingBarApps)
+        {
+            $pinnedCallingBarAppsValue += [Microsoft.Teams.Policy.Administration.Cmdlets.Core.PinnedCallingBarApp]::new($appInstance, $i)
             $i++
         }
     }
@@ -284,40 +304,42 @@ function Set-TargetResource
         $i = 1
         foreach ($appInstance in $PinnedMessageBarApps)
         {
-            $pinnedMessageBarAppsValue += [Microsoft.Teams.Policy.Administration.Cmdlets.Core.PinnedMessageBarApp]::New($appInstance, $i)
+            $pinnedMessageBarAppsValue += [Microsoft.Teams.Policy.Administration.Cmdlets.Core.PinnedMessageBarApp]::new($appInstance, $i)
             $i++
         }
     }
 
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
-        $CreateParameters = ([Hashtable]$PSBoundParameters).Clone()
+        $CreateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $CreateParameters.Remove('Verbose') | Out-Null
-        Write-Verbose -Message "Creating {$Identity} with Parameters:`r`n$(Convert-M365DscHashtableToString -Hashtable $CreateParameters)"
+        Write-Verbose -Message "Creating the Teams App Setup Policy {$Identity} with Parameters:`r`n$(Convert-M365DscHashtableToString -Hashtable $CreateParameters)"
 
         $CreateParameters.AppPresetList = $appPresetValues
         $CreateParameters.AppPresetMeetingList = $appPresetMeetingValues
         $CreateParameters.PinnedAppBarApps = $pinnedAppBarAppsValue
+        $CreateParameters.PinnedCallingBarApps = $pinnedCallingBarAppsValue
         $CreateParameters.PinnedMessageBarApps = $pinnedMessageBarAppsValue
 
         New-CsTeamsAppSetupPolicy @CreateParameters | Out-Null
     }
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
-        $UpdateParameters = ([Hashtable]$PSBoundParameters).Clone()
+        $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $UpdateParameters.Remove('Verbose') | Out-Null
-        Write-Verbose -Message "Updating {$Identity}"
+        Write-Verbose -Message "Updating the Teams App Setup Policy with Identity {$Identity}"
 
         $UpdateParameters.AppPresetList = $appPresetValues
         $UpdateParameters.AppPresetMeetingList = $appPresetMeetingValues
         $UpdateParameters.PinnedAppBarApps = $pinnedAppBarAppsValue
+        $UpdateParameters.PinnedCallingBarApps = $pinnedCallingBarAppsValue
         $UpdateParameters.PinnedMessageBarApps = $pinnedMessageBarAppsValue
 
         Set-CsTeamsAppSetupPolicy @UpdateParameters | Out-Null
     }
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
-        Write-Verbose -Message "Removing {$Identity}"
+        Write-Verbose -Message "Removing the Teams App Setup Policy with Identity {$Identity}"
         Remove-CsTeamsAppSetupPolicy -Identity $currentInstance.Identity
     }
 }
@@ -350,6 +372,10 @@ function Test-TargetResource
 
         [Parameter()]
         [System.String[]]
+        $PinnedCallingBarApps,
+
+        [Parameter()]
+        [System.String[]]
         $PinnedMessageBarApps,
 
         [Parameter()]
@@ -390,9 +416,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -402,22 +425,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of {$Identity}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -522,15 +532,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

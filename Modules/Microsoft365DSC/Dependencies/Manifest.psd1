@@ -2,27 +2,31 @@
     Dependencies = @(
         @{
             ModuleName      = 'Az.Accounts'
-            RequiredVersion = '3.0.2'
+            RequiredVersion = '5.0.1'
         },
         @{
             ModuleName      = 'Az.ResourceGraph'
-            RequiredVersion = '1.0.0'
+            RequiredVersion = '1.2.1'
         },
         @{
             ModuleName      = 'Az.Resources'
-            RequiredVersion = '7.2.0'
+            RequiredVersion = '8.0.0'
+        },
+        @{
+            ModuleName      = 'Az.Security'
+            RequiredVersion = '1.6.2'
         },
         @{
             ModuleName      = 'Az.SecurityInsights'
-            RequiredVersion = '3.1.2'
+            RequiredVersion = '3.2.0'
         },
         @{
             ModuleName      = 'DSCParser'
-            RequiredVersion = '2.0.0.17'
+            RequiredVersion = '2.0.0.21'
         },
         @{
             ModuleName      = 'ExchangeOnlineManagement'
-            RequiredVersion = '3.8.0'
+            RequiredVersion = '3.9.0'
         },
         @{
             ModuleName      = 'Microsoft.Graph.Applications'
@@ -30,7 +34,7 @@
         },
         @{
             ModuleName      = 'Microsoft.Graph.Beta.Applications'
-            Requiredversion = '2.28.0'
+            RequiredVersion = '2.28.0'
         },
         @{
             ModuleName      = 'Microsoft.Graph.Authentication'
@@ -122,16 +126,20 @@
         },
         @{
             ModuleName      = 'MicrosoftTeams'
-            RequiredVersion = '7.0.0'
+            RequiredVersion = '7.3.1'
         },
         @{
             ModuleName      = "MSCloudLoginAssistant"
-            RequiredVersion = "1.1.45"
+            RequiredVersion = "1.1.56"
         },
         @{
             ModuleName      = 'PnP.PowerShell'
             RequiredVersion = '1.12.0'
             InstallLocation = 'WindowsPowerShell'
+            # TODO: Review again once ModuleFast can work with additional properties
+            # https://github.com/microsoft/Microsoft365DSC/pull/6726
+            # https://github.com/ykuijs/M365DSC_CICD/issues/53
+            #DependsOn       = @('Microsoft.Graph.Authentication')
         },
         @{
             ModuleName      = 'PSDesiredStateConfiguration'
@@ -142,7 +150,11 @@
         },
         @{
             ModuleName      = 'ReverseDSC'
-            RequiredVersion = '2.0.0.28'
+            RequiredVersion = '2.0.0.31'
+        },
+        @{
+            ModuleName      = 'PSParallelPipeline'
+            RequiredVersion = '1.2.5'
         }
     )
 }

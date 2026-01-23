@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_PlannerPlan'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -41,30 +43,32 @@ function Get-TargetResource
         [Switch]
         $ManagedIdentity
     )
+
     Write-Verbose -Message "Getting configuration of Planner Plan {$Title}"
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
-
-    $nullReturn = $PSBoundParameters
-    $nullReturn.Ensure = 'Absent'
     try
     {
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            -InboundParameters $PSBoundParameters
+
+        $nullReturn = $PSBoundParameters
+        $nullReturn.Ensure = 'Absent'
+
         $UsedID = $false
         $AllGroups = Get-MgGroup -GroupId $OwnerGroup -ErrorAction 'SilentlyContinue'
-        if ($AllGroups -eq $null)
+        if ($null -eq $AllGroups)
         {
             Write-Verbose -Message "Could not get Azure AD Group {$OwnerGroup} by ID. `
                 Trying by Name."
@@ -76,7 +80,7 @@ function Get-TargetResource
             $UsedID = $true
         }
 
-        if ($AllGroups -eq $null)
+        if ($null -eq $AllGroups)
         {
             Write-Verbose -Message "No Azure AD Group found for {$OwnerGroup}"
         }
@@ -136,7 +140,6 @@ function Get-TargetResource
                 ManagedIdentity       = $ManagedIdentity.IsPresent
             }
         }
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $results)"
         return $results
     }
     catch
@@ -147,7 +150,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -193,6 +196,7 @@ function Set-TargetResource
         [Switch]
         $ManagedIdentity
     )
+
     Write-Verbose -Message "Setting configuration of Planner Plan {$Title}"
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -207,18 +211,11 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
-    $SetParams = $PSBoundParameters
     $currentValues = Get-TargetResource @PSBoundParameters
-    $SetParams.Remove('Credential') | Out-Null
-    $SetParams.Remove('ApplicationId') | Out-Null
-    $SetParams.Remove('TenantId') | Out-Null
-    $SetParams.Remove('CertificateThumbprint') | Out-Null
-    $SetParams.Remove('ApplicationSecret') | Out-Null
-    $SetParams.Remove('ManagedIdentity') | Out-Null
-    $SetParams.Remove('Ensure') | Out-Null
+    $SetParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present' -and $currentValues.Ensure -eq 'Absent')
     {
@@ -290,11 +287,9 @@ function Test-TargetResource
         [Switch]
         $ManagedIdentity
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -302,20 +297,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Planner Plan {$Title}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -434,13 +418,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
+
+        throw
     }
 }
 

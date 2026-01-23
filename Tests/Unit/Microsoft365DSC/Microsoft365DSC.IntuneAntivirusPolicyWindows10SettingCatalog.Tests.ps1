@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -55,6 +55,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             OffsetUri = '/Config/Defender/AllowArchiveScanning'
                             AdditionalProperties = @{
                                 '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                options = @(
+                                    @{
+                                        itemId = 'device_vendor_msft_policy_config_defender_allowarchivescanning_1'
+                                        name = 'Allowed. Scans the archive files.'
+                                        optionValue = @{
+                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                            value = 1
+                                        }
+                                    }
+                                )
                             }
                         }
                     )

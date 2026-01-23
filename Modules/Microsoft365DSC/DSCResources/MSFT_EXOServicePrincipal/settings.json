@@ -1,24 +1,63 @@
 {
-    "resourceName": "EXOServicePrincipal",
-    "description": "Use this resource to to view information about service principals, create service principals, to remove service principals, to change service principals in your cloud-based organization.",
-    "roles": {
+  "resourceName": "EXOServicePrincipal",
+  "description": "Use this resource to to view information about service principals, create service principals, to remove service principals, to change service principals in your cloud-based organization.",
+  "roles": {
+    "read": [
+      "Global Reader"
+    ],
+    "update": [
+      "Exchange Admin"
+    ]
+  },
+  "permissions": {
+    "Office 365 Exchange Online": {
+      "application": {
         "read": [
-            "Exchange Admin"
+          {
+            "name": "Exchange.ManageAsApp"
+          }
         ],
         "update": [
-            "Exchange Admin"
+          {
+            "name": "Exchange.ManageAsApp"
+          }
         ]
+      }
     },
-    "permissions": {
-        "graph": {
-            "delegated": {
-                "read": [],
-                "update": []
-            },
-            "application": {
-                "read": [],
-                "update": []
-            }
-        }
+    "exchange": {
+      "requiredroles": {
+        "read": [
+          "View-Only Configuration"
+        ],
+        "update": [
+          "Role Management"
+        ]
+      },
+      "requiredrolegroups": {
+        "read": [
+          "View-Only Organization Management"
+        ],
+        "update": [
+          "Organization Management"
+        ]
+      }
     }
+  },
+  "requiredModules": [
+    "Microsoft.Graph.Applications",
+    "Microsoft.Graph.Authentication"
+  ],
+  "supportedEnvironments": [
+    "Global",
+    "USGov"
+  ],
+  "mode": "Data",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Applications",
+      "cmdlets": [
+        "Get-MgServicePrincipal"
+      ]
+    }
+  ]
 }

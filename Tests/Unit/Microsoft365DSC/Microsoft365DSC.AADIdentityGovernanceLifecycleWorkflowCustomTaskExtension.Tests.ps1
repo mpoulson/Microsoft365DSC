@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -45,6 +45,45 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return @{
                     id = '12345-12345-12345-12345-12345'
                     DisplayName = 'M365DSC'
+                }
+            }
+
+            Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -MockWith {
+                return @{
+                    id = '12345-12345-12345-12345-12345'
+                    authenticationConfiguration = @{
+                        AdditionalProperties = @{
+                            "@odata.type" = "#microsoft.graph.azureAdPopTokenAuthentication"
+                        }
+                    }
+                    CallbackConfiguration = @{
+                        TimeoutDuration = @{
+                            Minutes = '34'
+                        }
+                        AdditionalProperties = @{
+                            "@odata.type" = "#microsoft.graph.identityGovernance.customTaskExtensionCallbackConfiguration"
+                            authorizedApps = @(
+                                @{
+                                    id = '12345-12345-12345-12345-12345'
+                                }
+                            )
+                        }
+                    }
+                    ClientConfiguration   = @{
+                        MaximumRetries = 1
+                        TimeoutInMilliseconds = 1000
+                    }
+                    Description           = "My Description";
+                    DisplayName           = "My Custom Extension";
+                    EndpointConfiguration = @{
+                        AdditionalProperties = @{
+                            "@odata.type"         = "#microsoft.graph.logicAppTriggerEndpointConfiguration"
+                            subscriptionId =       '63e62ab2-fd92-46ce-a393-2cb338039cc7'
+                            logicAppWorkflowName = 'MyTestApp'
+                            resourceGroupName =    'TestRG'
+                            url = 'https://prod-35.eastus.logic.azure.com:443/workflows/xxxxxxxxxxx/triggers/manual/paths/invoke?api-version=2016-10-01'
+                        }
+                    }
                 }
             }
 
@@ -117,45 +156,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = "Absent";
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -MockWith {
-                    return @{                    
-                        id = '12345-12345-12345-12345-12345'
-                        authenticationConfiguration = @{
-                            AdditionalProperties = @{
-                                "@odata.type" = "#microsoft.graph.azureAdPopTokenAuthentication"
-                            }
-                        }
-                        CallbackConfiguration = @{
-                            TimeoutDuration = @{
-                                Minutes = '34'
-                            }
-                            AdditionalProperties = @{
-                                "@odata.type" = "#microsoft.graph.identityGovernance.customTaskExtensionCallbackConfiguration"
-                                authorizedApps = @(
-                                    @{
-                                        id = '12345-12345-12345-12345-12345'
-                                    }
-                                )
-                            }
-                        }
-                        ClientConfiguration   = @{
-                            MaximumRetries = 1
-                            TimeoutInMilliseconds = 1000
-                        }
-                        Description           = "My Description";
-                        DisplayName           = "My Custom Extension";
-                        EndpointConfiguration = @{
-                            AdditionalProperties = @{
-                                "@odata.type"         = "#microsoft.graph.logicAppTriggerEndpointConfiguration"
-                                subscriptionId =       '63e62ab2-fd92-46ce-a393-2cb338039cc7'
-                                logicAppWorkflowName = 'MyTestApp'
-                                resourceGroupName =    'TestRG'
-                                url = 'https://prod-35.eastus.logic.azure.com:443/workflows/xxxxxxxxxxx/triggers/manual/paths/invoke?api-version=2016-10-01'
-                            }
-                        }
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -194,7 +194,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -MockWith {
-                    return @{                    
+                    return @{
                         id = '12345-12345-12345-12345-12345'
                         authenticationConfiguration = @{
                             AdditionalProperties = @{
@@ -246,7 +246,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         AuthorizedApps = @('M365DSC')
                     } -ClientOnly)
                     ClientConfiguration   = (New-CimInstance -ClassName MSFT_AADIdentityGovernanceLifecycleWorkflowCustomTaskExtensionClientConfiguration -Property @{
-                        MaximumRetries = 1
+                        MaximumRetries = 2 # Drift
                         TimeoutInMilliseconds = 1000
                     } -ClientOnly)
                     Description           = "My Description";
@@ -259,45 +259,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     } -ClientOnly)
                     Ensure                = "Present";
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -MockWith {
-                    return @{                    
-                        id = '12345-12345-12345-12345-12345'
-                        authenticationConfiguration = @{
-                            AdditionalProperties = @{
-                                "@odata.type" = "#microsoft.graph.azureAdPopTokenAuthentication"
-                            }
-                        }
-                        CallbackConfiguration = @{
-                            TimeoutDuration = @{
-                                Minutes = '34'
-                            }
-                            AdditionalProperties = @{
-                                "@odata.type" = "#microsoft.graph.identityGovernance.customTaskExtensionCallbackConfiguration"
-                                authorizedApps = @(
-                                    @{
-                                        id = '12345-12345-12345-12345-12345'
-                                    }
-                                )
-                            }
-                        }
-                        ClientConfiguration   = @{
-                            MaximumRetries = 2 #drift
-                            TimeoutInMilliseconds = 1000
-                        }
-                        Description           = "My Description";
-                        DisplayName           = "My Custom Extension";
-                        EndpointConfiguration = @{
-                            AdditionalProperties = @{
-                                "@odata.type"         = "#microsoft.graph.logicAppTriggerEndpointConfiguration"
-                                subscriptionId =       '63e62ab2-fd92-46ce-a393-2cb338039cc7'
-                                logicAppWorkflowName = 'MyTestApp'
-                                resourceGroupName =    'TestRG'
-                                url = 'https://prod-35.eastus.logic.azure.com:443/workflows/xxxxxxxxxxx/triggers/manual/paths/invoke?api-version=2016-10-01'
-                            }
-                        }
-                    }
                 }
             }
 
@@ -321,45 +282,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -MockWith {
-                    return @{
-                        id = '12345-12345-12345-12345-12345'
-                        authenticationConfiguration = @{
-                            AdditionalProperties = @{
-                                "@odata.type" = "#microsoft.graph.azureAdPopTokenAuthentication"
-                            }
-                        }
-                        CallbackConfiguration = @{
-                            TimeoutDuration = @{
-                                Minutes = '34'
-                            }
-                            AdditionalProperties = @{
-                                "@odata.type" = "#microsoft.graph.identityGovernance.customTaskExtensionCallbackConfiguration"
-                                authorizedApps = @(
-                                    @{
-                                        id = '12345-12345-12345-12345-12345'
-                                    }
-                                )
-                            }
-                        }
-                        ClientConfiguration   = @{
-                            MaximumRetries = 1
-                            TimeoutInMilliseconds = 1000
-                        }
-                        Description           = "My Description";
-                        DisplayName           = "My Custom Extension";
-                        EndpointConfiguration = @{
-                            AdditionalProperties = @{
-                                "@odata.type"         = "#microsoft.graph.logicAppTriggerEndpointConfiguration"
-                                subscriptionId =       '63e62ab2-fd92-46ce-a393-2cb338039cc7'
-                                logicAppWorkflowName = 'MyTestApp'
-                                resourceGroupName =    'TestRG'
-                                url = 'https://prod-35.eastus.logic.azure.com:443/workflows/xxxxxxxxxxx/triggers/manual/paths/invoke?api-version=2016-10-01'
-                            }
-                        }
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

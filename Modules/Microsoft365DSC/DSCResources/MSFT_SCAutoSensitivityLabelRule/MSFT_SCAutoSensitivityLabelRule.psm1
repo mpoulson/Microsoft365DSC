@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_SCAutoSensitivityLabelRule'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -14,7 +16,7 @@ function Get-TargetResource
 
         [Parameter(Mandatory = $true)]
         [System.String]
-        [ValidateSet('Exchange', 'SharePoint', 'OneDriveForBusiness')]
+        [ValidateSet('Exchange', 'SharePoint', 'OneDriveForBusiness', 'Applications', 'Azure', 'AWS', 'PowerBI')]
         $Workload,
 
         [Parameter()]
@@ -225,12 +227,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of DLPCompliancePolicy for $Name"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            Write-Verbose -Message "Getting configuration of DLPCompliancePolicy for $Name"
-            $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+            $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
                 -InboundParameters $PSBoundParameters
 
             #region Telemetry
@@ -259,7 +262,7 @@ function Get-TargetResource
 
         Write-Verbose "Found existing AutoSensitivityLabelRule $($Name)"
 
-        if ($null -ne $PolicyRule.AnyOfRecipientAddressContainsWords -and $PolicyRule.AnyOfRecipientAddressContainsWords.count -gt 0)
+        if ($null -ne $PolicyRule.AnyOfRecipientAddressContainsWords -and $PolicyRule.AnyOfRecipientAddressContainsWords.Count -gt 0)
         {
             $AnyOfRecipientAddressContainsWords = $PolicyRule.AnyOfRecipientAddressContainsWords.Replace(' ', '').Split(',')
         }
@@ -269,18 +272,18 @@ function Get-TargetResource
             $AnyOfRecipientAddressMatchesPatterns = $PolicyRule.AnyOfRecipientAddressMatchesPatterns.Replace(' ', '').Split(',')
         }
 
-        if ($null -ne $PolicyRule.ContentExtensionMatchesWords -and $PolicyRule.ContentExtensionMatchesWords.count -gt 0)
+        if ($null -ne $PolicyRule.ContentExtensionMatchesWords -and $PolicyRule.ContentExtensionMatchesWords.Count -gt 0)
         {
             $ContentExtensionMatchesWords = $PolicyRule.ContentExtensionMatchesWords.Replace(' ', '').Split(',')
         }
 
-        if ($null -ne $PolicyRule.ExceptIfContentExtensionMatchesWords -and $PolicyRule.ExceptIfContentExtensionMatchesWords.count -gt 0)
+        if ($null -ne $PolicyRule.ExceptIfContentExtensionMatchesWords -and $PolicyRule.ExceptIfContentExtensionMatchesWords.Count -gt 0)
         {
             $ExceptIfContentExtensionMatchesWords = $PolicyRule.ExceptIfContentExtensionMatchesWords.Replace(' ', '').Split(',')
         }
         if ($null -ne $HeaderMatchesPatterns -and $null -ne $HeaderMatchesPatterns.Name)
         {
-            $HeaderMatchesPatternsValue = @{}
+            $HeaderMatchesPatternsValue = [ordered]@{}
             foreach ($value in $HeaderMatchesPatterns[($HeaderMatchesPatterns.Name)])
             {
                 if ($HeaderMatchesPatternsValue.ContainsKey($HeaderMatchesPatterns.Name))
@@ -295,7 +298,7 @@ function Get-TargetResource
         }
         foreach ($pattern in $PolicyRule.HeaderMatchesPatterns.Keys)
         {
-            $HeaderMatchesPatternsValue += @{
+            $HeaderMatchesPatternsValue += [ordered]@{
                 Name  = $pattern
                 Value = $PolicyRule.HeaderMatchesPatterns.$pattern
             }
@@ -369,19 +372,17 @@ function Get-TargetResource
             $result.Remove($paramName)
         }
 
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
         return $result
     }
     catch
     {
-        Write-Error $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -400,7 +401,7 @@ function Set-TargetResource
 
         [Parameter(Mandatory = $true)]
         [System.String]
-        [ValidateSet('Exchange', 'SharePoint', 'OneDriveForBusiness')]
+        [ValidateSet('Exchange', 'SharePoint', 'OneDriveForBusiness', 'Applications', 'Azure', 'AWS', 'PowerBI')]
         $Workload,
 
         [Parameter()]
@@ -622,9 +623,6 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-        -InboundParameters $PSBoundParameters
-
     $CurrentRule = Get-TargetResource @PSBoundParameters
 
     if ($null -ne $HeaderMatchesPatterns -and $null -ne $HeaderMatchesPatterns.Name)
@@ -635,7 +633,7 @@ function Set-TargetResource
     if (('Present' -eq $Ensure) -and ('Absent' -eq $CurrentRule.Ensure))
     {
         Write-Verbose "Rule {$($CurrentRule.Name)} doesn't exists but need to. Creating Rule."
-        $CreationParams = $PSBoundParameters
+        $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         if ($null -ne $CreationParams.ContentContainsSensitiveInformation)
         {
             $value = @()
@@ -670,19 +668,6 @@ function Set-TargetResource
             $CreationParams.ExceptIfContentContainsSensitiveInformation = $value
         }
 
-        $CreationParams.Remove('Ensure')
-
-        # Remove authentication parameters
-        $CreationParams.Remove('Credential') | Out-Null
-        $CreationParams.Remove('ApplicationId') | Out-Null
-        $CreationParams.Remove('TenantId') | Out-Null
-        $CreationParams.Remove('CertificatePath') | Out-Null
-        $CreationParams.Remove('CertificatePassword') | Out-Null
-        $CreationParams.Remove('CertificateThumbprint') | Out-Null
-        $CreationParams.Remove('ManagedIdentity') | Out-Null
-        $CreationParams.Remove('ApplicationSecret') | Out-Null
-        $CreationParams.Remove('AccessTokens') | Out-Null
-
         Write-Verbose -Message 'Flipping the parent policy to Mode = TestWithoutNotification while we create the rule'
         $parentPolicy = Get-AutoSensitivityLabelPolicy -Identity $Policy
         $currentMode = $parentPolicy.Mode
@@ -695,13 +680,13 @@ function Set-TargetResource
         }
         New-AutoSensitivityLabelRule @CreationParams
 
-        Write-Verbose -Message "Flipping the parent policy to Mode back to $currentMode while we create the rule"
+        Write-Verbose -Message "Flipping the parent policy back to Mode $currentMode while we create the rule"
         Set-AutoSensitivityLabelPolicy -Identity $Policy -Mode $currentMode
     }
     elseif (('Present' -eq $Ensure) -and ('Present' -eq $CurrentRule.Ensure))
     {
         Write-Verbose "Rule {$($CurrentRule.Name)} already exists and needs to. Updating Rule."
-        $UpdateParams = $PSBoundParameters
+        $UpdateParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
         if ($null -ne $UpdateParams.ContentContainsSensitiveInformation)
         {
@@ -737,21 +722,9 @@ function Set-TargetResource
             $UpdateParams.ExceptIfContentContainsSensitiveInformation = $value
         }
 
-        $UpdateParams.Remove('Ensure') | Out-Null
         $UpdateParams.Remove('Name') | Out-Null
         $UpdateParams.Remove('Policy') | Out-Null
         $UpdateParams.Add('Identity', $Name)
-
-        # Remove authentication parameters
-        $UpdateParams.Remove('Credential') | Out-Null
-        $UpdateParams.Remove('ApplicationId') | Out-Null
-        $UpdateParams.Remove('TenantId') | Out-Null
-        $UpdateParams.Remove('CertificatePath') | Out-Null
-        $UpdateParams.Remove('CertificatePassword') | Out-Null
-        $UpdateParams.Remove('CertificateThumbprint') | Out-Null
-        $UpdateParams.Remove('ManagedIdentity') | Out-Null
-        $UpdateParams.Remove('ApplicationSecret') | Out-Null
-        $UpdateParams.Remove('AccessTokens') | Out-Null
 
         Write-Verbose -Message 'Flipping the parent policy to Mode = TestWithoutNotification while we editing the rule'
         $parentPolicy = Get-AutoSensitivityLabelPolicy -Identity $Policy
@@ -791,7 +764,7 @@ function Test-TargetResource
 
         [Parameter(Mandatory = $true)]
         [System.String]
-        [ValidateSet('Exchange', 'SharePoint', 'OneDriveForBusiness')]
+        [ValidateSet('Exchange', 'SharePoint', 'OneDriveForBusiness', 'Applications', 'Azure', 'AWS', 'PowerBI')]
         $Workload,
 
         [Parameter()]
@@ -1186,6 +1159,10 @@ function Export-TargetResource
                         $group.SensitiveInformation = [array]$group.sensitivetypes
                         $group.Remove('sensitivetypes') | Out-Null
                     }
+                    $Results.ContentContainsSensitiveInformation = @{
+                        Groups = [array]$Results.ContentContainsSensitiveInformation.groups
+                        Operator = $Results.ContentContainsSensitiveInformation.operator
+                    }
                 }
                 else
                 {
@@ -1248,6 +1225,10 @@ function Export-TargetResource
                         }
                         $group.SensitiveInformation = [array]$group.sensitivetypes
                         $group.Remove('sensitivetypes') | Out-Null
+                    }
+                    $Results.ExceptIfContentContainsSensitiveInformation = @{
+                        Groups = [array]$Results.ExceptIfContentContainsSensitiveInformation.groups
+                        Operator = $Results.ExceptIfContentContainsSensitiveInformation.operator
                     }
                 }
                 else
@@ -1317,16 +1298,14 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
@@ -1345,7 +1324,7 @@ function Get-SCDLPSensitiveInformation
 
     foreach ($item in $SensitiveInformationItems.SensitiveInformation)
     {
-        $result = @{
+        $result = [ordered]@{
             name = $item.name
         }
 
@@ -1383,22 +1362,6 @@ function Get-SCDLPSensitiveInformation
     return $returnValue
 }
 
-function Get-SCHeaderPatternsAsObject
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [System.Object[]]
-        $Patterns
-    )
-    $returnValue = @{
-        $Patterns.Name = $Patterns.Value
-    }
-    return $returnValue
-}
-
 function Get-SCDLPSensitiveInformationGroups
 {
     [CmdletBinding()]
@@ -1420,7 +1383,7 @@ function Get-SCDLPSensitiveInformationGroups
 
     foreach ($group in $SensitiveInformationGroups.groups)
     {
-        $myGroup = @{
+        $myGroup = [ordered]@{
             name = $group.name
         }
         if ($null -ne $group.operator)
@@ -1430,7 +1393,7 @@ function Get-SCDLPSensitiveInformationGroups
         $sits = @()
         foreach ($item in $group.SensitiveInformation)
         {
-            $sit = @{
+            $sit = [ordered]@{
                 name = $item.name
             }
 
@@ -1472,7 +1435,7 @@ function Get-SCDLPSensitiveInformationGroups
         $labels = @()
         foreach ($item in $group.labels)
         {
-            $label = @{
+            $label = [ordered]@{
                 name = $item.name
             }
 
@@ -1516,7 +1479,7 @@ function Test-ContainsSensitiveInformation
     foreach ($sit in $targetValues)
     {
         Write-Verbose -Message "Trying to find existing Sensitive Information Action matching name {$($sit.name)}"
-        $matchingExistingRule = $sourceValues | Where-Object -FilterScript { $_.name -eq $sit.name }
+        $matchingExistingRule = $sourceValues | Where-Object -FilterScript { $_.name -eq $sit.name.Replace("''", "'") }
 
         if ($null -ne $matchingExistingRule)
         {

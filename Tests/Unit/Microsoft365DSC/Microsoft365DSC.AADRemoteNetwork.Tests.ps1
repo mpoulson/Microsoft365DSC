@@ -28,16 +28,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
-            }
-
-            Mock -CommandName Get-MgBetaNetworkAccessConnectivityRemoteNetwork -MockWith {
-            }
-
-            Mock -CommandName Get-MgBetaNetworkAccessForwardingProfile -MockWith {
             }
 
             Mock -CommandName Remove-MgBetaNetworkAccessConnectivityRemoteNetwork -MockWith {
@@ -50,6 +44,43 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaNetworkAccessConnectivityRemoteNetworkDeviceLink -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaNetworkAccessConnectivityRemoteNetwork -MockWith {
+                return @{
+                        DeviceLinks           = @(
+                        @{
+                            Name                    = 'PiyushTestadf'
+                            IPAddress               = '1.1.1.1'
+                            BandwidthCapacityInMbps = 'mbps500'
+                            DeviceVendor            = 'ciscoMeraki'
+                            BgpConfiguration        = @{
+                                Asn                 = 123
+                                LocalIPAddress      = '1.1.1.2'
+                                PeerIPAddress       = '1.1.1.3'
+                            }
+                            RedundancyConfiguration = @{
+                                RedundancyTier      = 'zoneRedundancy'
+                                ZoneLocalIPAddress  = '1.1.1.8'
+                            }
+                            TunnelConfiguration     = @{
+                                PreSharedKey               = 'sdf'
+                                ZoneRedundancyPreSharedKey = 'asdf'
+                                AdditionalProperties       = @{
+                                    "@odata.type"              = '#microsoft.graph.networkaccess.tunnelConfigurationIKEv2Default'
+                                }
+                            }
+                        }
+                    );
+                    ForwardingProfiles    = @();
+                    Id                    = "fd5ada38-fb52-4f3d-b8db-ef31f0ba27e5";
+                    Name                  = "jkjk";
+                    Region                = "australiaSouthEast";
+                }
+            }
+
+            Mock -CommandName Get-MgBetaNetworkAccessForwardingProfile -MockWith {
+                return @()
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -99,10 +130,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgBetaNetworkAccessConnectivityRemoteNetwork -MockWith {
                     return $null
                 }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingProfile -MockWith {
-                    return @()
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
@@ -148,43 +175,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Region                = "australiaSouthEast";
                     Ensure              = 'Absent'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessConnectivityRemoteNetwork -MockWith {
-                    return @{
-                            DeviceLinks           = @(
-                            @{
-                                Name                    = 'PiyushTestadf'
-                                IPAddress               = '1.1.1.1'
-                                BandwidthCapacityInMbps = 'mbps500'
-                                DeviceVendor            = 'ciscoMeraki'
-                                BgpConfiguration        = @{
-                                    Asn                 = 123
-                                    LocalIPAddress      = '1.1.1.2'
-                                    PeerIPAddress       = '1.1.1.3'
-                                }
-                                RedundancyConfiguration = @{
-                                    RedundancyTier      = 'zoneRedundancy'
-                                    ZoneLocalIPAddress  = '1.1.1.8'
-                                }
-                                TunnelConfiguration     = @{
-                                    PreSharedKey               = 'sdf'
-                                    ZoneRedundancyPreSharedKey = 'asdf'
-                                    AdditionalProperties       = @{
-                                        "@odata.type"              = '#microsoft.graph.networkaccess.tunnelConfigurationIKEv2Default'
-                                    }
-                                }
-                            }
-                        );
-                        ForwardingProfiles    = @();
-                        Id                    = "fd5ada38-fb52-4f3d-b8db-ef31f0ba27e5";
-                        Name                  = "jkjk";
-                        Region                = "australiaSouthEast";
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingProfile -MockWith {
-                    return @()
                 }
             }
             It 'Should return Values from the Get method' {
@@ -232,43 +222,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaNetworkAccessConnectivityRemoteNetwork -MockWith {
-                    return @{
-                            DeviceLinks           = @(
-                            @{
-                                Name                    = 'PiyushTestadf'
-                                IPAddress               = '1.1.1.1'
-                                BandwidthCapacityInMbps = 'mbps500'
-                                DeviceVendor            = 'ciscoMeraki'
-                                BgpConfiguration        = @{
-                                    Asn                 = 123
-                                    LocalIPAddress      = '1.1.1.2'
-                                    PeerIPAddress       = '1.1.1.3'
-                                }
-                                RedundancyConfiguration = @{
-                                    RedundancyTier      = 'zoneRedundancy'
-                                    ZoneLocalIPAddress  = '1.1.1.8'
-                                }
-                                TunnelConfiguration     = @{
-                                    PreSharedKey               = 'sdf'
-                                    ZoneRedundancyPreSharedKey = 'asdf'
-                                    AdditionalProperties       = @{
-                                        "@odata.type"              = '#microsoft.graph.networkaccess.tunnelConfigurationIKEv2Default'
-                                    }
-                                }
-                            }
-                        );
-                        ForwardingProfiles    = @();
-                        Id                    = "fd5ada38-fb52-4f3d-b8db-ef31f0ba27e5";
-                        Name                  = "jkjk";
-                        Region                = "australiaSouthEast";
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingProfile -MockWith {
-                    return @()
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -295,7 +248,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 ZoneLocalIPAddress  = '1.1.1.8'
                             } -ClientOnly
                             TunnelConfiguration     = New-CimInstance -ClassName MSFT_AADRemoteNetworkDeviceLinkTunnelConfiguration  -Property @{
-                                PreSharedKey               = 'sdf'
+                                PreSharedKey               = 'New Key' # Drift
                                 ZoneRedundancyPreSharedKey = 'asdf'
                                 ODataType                   = '#microsoft.graph.networkaccess.tunnelConfigurationIKEv2Default'
                             } -ClientOnly
@@ -307,43 +260,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Region                = "australiaSouthEast";
                     Ensure              = 'Present'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessConnectivityRemoteNetwork -MockWith {
-                    return @{
-                            DeviceLinks           = @(
-                            @{
-                                Name                    = 'PiyushTestadf'
-                                IPAddress               = '1.1.1.1'
-                                BandwidthCapacityInMbps = 'mbps500'
-                                DeviceVendor            = 'ciscoMeraki'
-                                BgpConfiguration        = @{
-                                    Asn                 = 123
-                                    LocalIPAddress      = '1.1.1.2'
-                                    PeerIPAddress       = '1.1.1.3'
-                                }
-                                RedundancyConfiguration = @{
-                                    RedundancyTier      = 'zoneRedundancy'
-                                    ZoneLocalIPAddress  = '1.1.1.8'
-                                }
-                                TunnelConfiguration     = @{
-                                    PreSharedKey               = 'some new value' #created drift here
-                                    ZoneRedundancyPreSharedKey = 'asdf'
-                                    AdditionalProperties       = @{
-                                        "@odata.type"              = '#microsoft.graph.networkaccess.tunnelConfigurationIKEv2Default'
-                                    }
-                                }
-                            }
-                        );
-                        ForwardingProfiles    = @();
-                        Id                    = "fd5ada38-fb52-4f3d-b8db-ef31f0ba27e5";
-                        Name                  = "jkjk";
-                        Region                = "australiaSouthEast";
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingProfile -MockWith {
-                    return @()
                 }
             }
 
@@ -368,39 +284,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessConnectivityRemoteNetwork -MockWith {
-                    return @{
-                            DeviceLinks           = @(
-                            @{
-                                Name                    = 'PiyushTestadf'
-                                IPAddress               = '1.1.1.1'
-                                BandwidthCapacityInMbps = 'mbps500'
-                                DeviceVendor            = 'ciscoMeraki'
-                                BgpConfiguration        = @{
-                                    Asn                 = 123
-                                    LocalIPAddress      = '1.1.1.2'
-                                    PeerIPAddress       = '1.1.1.3'
-                                }
-                                RedundancyConfiguration = @{
-                                    RedundancyTier      = 'zoneRedundancy'
-                                    ZoneLocalIPAddress  = '1.1.1.8'
-                                }
-                                TunnelConfiguration     = @{
-                                    PreSharedKey               = 'sdf'
-                                    ZoneRedundancyPreSharedKey = 'asdf'
-                                    AdditionalProperties       = @{
-                                        "@odata.type"              = '#microsoft.graph.networkaccess.tunnelConfigurationIKEv2Default'
-                                    }
-                                }
-                            }
-                        );
-                        ForwardingProfiles    = @();
-                        Id                    = "fd5ada38-fb52-4f3d-b8db-ef31f0ba27e5";
-                        Name                  = "jkjk";
-                        Region                = "australiaSouthEast";
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

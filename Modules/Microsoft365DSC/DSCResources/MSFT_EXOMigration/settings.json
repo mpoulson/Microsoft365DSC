@@ -1,36 +1,52 @@
 {
-    "resourceName": "EXOMigration",
-    "description": "",
-    "roles": {
+  "resourceName": "EXOMigration",
+  "description": "",
+  "roles": {
+    "read": [
+      "Global Reader"
+    ],
+    "update": [
+      "Exchange Administrator"
+    ]
+  },
+  "permissions": {
+    "Office 365 Exchange Online": {
+      "application": {
         "read": [
-            "Global Reader"
+          {
+            "name": "Exchange.ManageAsApp"
+          }
         ],
         "update": [
-            "Exchange Administrator"
+          {
+            "name": "Exchange.ManageAsApp"
+          }
         ]
+      }
     },
-    "permissions": {
-        "graph": {
-            "delegated": {
-                "read": [],
-                "update": []
-            },
-            "application": {
-                "read": [],
-                "update": []
-            }
-        },
-        "exchange": {
-            "requiredroles": [
-                "User Options",
-                "Data Loss Prevention",
-                "Transport Rules",
-                "View-Only Configuration",
-                "Mail Recipients"
-            ],
-            "requiredrolegroups": [
-                "Organization Management"
-            ]
-        }
+    "exchange": {
+      "requiredroles": {
+        "read": [
+          "View-Only Configuration"
+        ],
+        "update": [
+          "Migration"
+        ]
+      },
+      "requiredrolegroups": {
+        "read": [
+          "View-Only Organization Management"
+        ],
+        "update": [
+          "Recipient Management"
+        ]
+      }
     }
+  },
+  "requiredModules": [],
+  "supportedEnvironments": [
+    "Global",
+    "USGov"
+  ],
+  "mode": "Configuration"
 }

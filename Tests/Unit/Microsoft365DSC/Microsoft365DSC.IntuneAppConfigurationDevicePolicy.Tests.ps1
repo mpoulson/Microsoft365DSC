@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -49,6 +49,43 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
 
+            Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
+                return @{
+                    Id = "FakeStringValue"
+                    AdditionalProperties = @{
+                        packageId = "FakeStringValue"
+                        '@odata.type' = "#microsoft.graph.androidManagedStoreApp"
+                    }
+                }
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        appSupportsOemConfig = $True
+                        '@odata.type' = "#microsoft.graph.androidManagedStoreAppConfiguration"
+                        payloadJson = "eyJ0ZXN0IjoidmFsdWUifQ=="
+                        profileApplicability = "default"
+                        permissionActions = @(
+                            @{
+                                permission = "FakeStringValue"
+                                action = "prompt"
+                            }
+                        )
+                        packageId = "FakeStringValue"
+                        connectedAppsEnabled = $True
+                    }
+                    createdDateTime = "2023-01-01T00:00:00.0000000+01:00"
+                    description = "FakeStringValue"
+                    displayName = "FakeStringValue"
+                    id = "FakeStringValue"
+                    lastModifiedDateTime = "2023-01-01T00:00:00.0000000+01:00"
+                    roleScopeTagIds = @("FakeStringValue")
+                    targetedMobileApps = @("FakeStringValue")
+                    version = 25
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -57,10 +94,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppConfigurationAssignment -MockWith {
             }
-
-            Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-            }
-
         }
         # Test contexts
         Context -Name "The IntuneAppConfigurationDevicePolicy should exist but it DOES NOT" -Fixture {
@@ -83,16 +116,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     targetedMobileApps = @("FakeStringValue")
                     Ensure = "Present"
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                        AdditionalProperties = @{
-                            packageId = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.androidManagedStoreApp"
-                        }
-                    }
                 }
 
                 Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppConfiguration -MockWith {
@@ -132,43 +155,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                        AdditionalProperties = @{
-                            packageId = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.androidManagedStoreApp"
-                        }
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            appSupportsOemConfig = $True
-                            '@odata.type' = "#microsoft.graph.androidManagedStoreAppConfiguration"
-                            payloadJson = "eyJ0ZXN0IjoidmFsdWUifQ=="
-                            profileApplicability = "default"
-                            permissionActions = @(
-                                @{
-                                    permission = "FakeStringValue"
-                                    action = "prompt"
-                                }
-                            )
-                            packageId = "FakeStringValue"
-                            connectedAppsEnabled = $True
-                        }
-                        createdDateTime = "2023-01-01T00:00:00.0000000+01:00"
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-                        lastModifiedDateTime = "2023-01-01T00:00:00.0000000+01:00"
-                        roleScopeTagIds = @("FakeStringValue")
-                        targetedMobileApps = @("FakeStringValue")
-                        version = 25
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -205,43 +191,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                        AdditionalProperties = @{
-                            packageId = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.androidManagedStoreApp"
-                        }
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            appSupportsOemConfig = $True
-                            '@odata.type' = "#microsoft.graph.androidManagedStoreAppConfiguration"
-                            payloadJson = "eyJ0ZXN0IjoidmFsdWUifQ=="
-                            profileApplicability = "default"
-                            permissionActions = @(
-                                @{
-                                    permission = "FakeStringValue"
-                                    action = "prompt"
-                                }
-                            )
-                            packageId = "FakeStringValue"
-                            connectedAppsEnabled = $True
-                        }
-                        createdDateTime = "2023-01-01T00:00:00.0000000+01:00"
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-                        lastModifiedDateTime = "2023-01-01T00:00:00.0000000+01:00"
-                        roleScopeTagIds = @("FakeStringValue")
-                        targetedMobileApps = @("FakeStringValue")
-                        version = 25
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -261,7 +210,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PayloadJson = "{`"test`":`"value`"}"
                     permissionActions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphandroidPermissionAction -Property @{
-                            permission = "FakeStringValue"
+                            permission = "OtherPermission" # Updated property
                             action = "prompt"
                         } -ClientOnly)
                     )
@@ -270,40 +219,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     targetedMobileApps = @("FakeStringValue")
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                        AdditionalProperties = @{
-                            packageId = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.androidManagedStoreApp"
-                        }
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            profileApplicability = "default"
-                            packageId = "FakeStringValue"
-                            permissionActions = @(
-                                @{
-                                    permission = "FakeStringValue"
-                                    action = "prompt"
-                                }
-                            )
-                            payloadJson = "eyJ0ZXN0IjoidmFsdWUifQ=="
-                        }
-                        createdDateTime = "2023-01-01T00:00:00.0000000+01:00"
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-                        lastModifiedDateTime = "2023-01-01T00:00:00.0000000+01:00"
-                        roleScopeTagIds = @("FakeStringValue")
-                        targetedMobileApps = @("FakeStringValue")
-                        version = 7
-                    }
                 }
             }
 
@@ -327,33 +242,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            appSupportsOemConfig = $True
-                            '@odata.type' = "#microsoft.graph.androidManagedStoreAppConfiguration"
-                            payloadJson = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("{`"test`":`"value`"}"))
-                            profileApplicability = "default"
-                            permissionActions = @(
-                                @{
-                                    permission = "FakeStringValue"
-                                    action = "prompt"
-                                }
-                            )
-                            packageId = "FakeStringValue"
-                            connectedAppsEnabled = $True
-                        }
-                        createdDateTime = "2023-01-01T00:00:00.0000000+01:00"
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-                        lastModifiedDateTime = "2023-01-01T00:00:00.0000000+01:00"
-                        roleScopeTagIds = @("FakeStringValue")
-                        targetedMobileApps = @("FakeStringValue")
-                        version = 25
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

@@ -11,7 +11,7 @@ Currently, each Microsoft 365 workload can support a different combination of au
 
 **Important**: The recommendation is to use Service Principal whenever possible because:
 
-- Service principals offer the most granular levels of security and do not introduce the risk of having to send high privileged credentials across the wire to authenticate.
+- Service Principals offer the most granular levels of security and do not introduce the risk of having to send high privileged credentials across the wire to authenticate.
 - Since Desired State Configuration is an unattended process, the use of Multi-Factor Authentication for user credentials is not supported by Microsoft365DSC.
   - ***Note:*** The only exception here is creating an Export of an existing tenant. Most often this is an interactive process where the ask for a second factor is possible.
 
@@ -22,13 +22,18 @@ The following table provides an overview of what authentication methods are supp
 | Workload | PowerShell Module | Credential | Service Principal | | | Managed Identity | Access Tokens |
 | --       | --                | -- | -- | -- | -- | -- | -- |
 |          |                   |    | **Certificate Thumbprint** | **Certificate Path** | **Application Secret** |
-| *AzureAD** | Microsoft.Graph.Authentication<br /> (Connect-MgGraph) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) |
+| *AzureAD (via Admin API)* | None | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) |
+| *AzureAD* | Microsoft.Graph.Authentication<br /> (Connect-MgGraph) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) |
+| *Azure* | Az.Accounts<br /> (Connect-AzAccount) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/check.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) |
+| *Azure DevOps* | None | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/cross.png) | ![Check](../../Images/cross.png) | ![Check](../../Images/cross.png) |
+| *Defender For Endpoint* | None | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/cross.png) | ![Check](../../Images/cross.png) | ![Check](../../Images/cross.png) |
 | *Exchange Online* | ExchangeOnlineManagement<br /> (Connect-ExchangeOnline) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Cross](../../Images/check.png) | ![Check](../../Images/check.png) |
-| *Intune** | Microsoft.Graph.Authentication<br /> (Connect-MgGraph) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/check.png) | ![Check](../../Images/check.png) |
-| *Office 365** | Microsoft.Graph.Authentication<br /> (Connect-MgGraph) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) |
+| *Fabric* | None | ![Check](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/cross.png) | ![Check](../../Images/cross.png) | ![Check](../../Images/cross.png) |
+| *Intune* | Microsoft.Graph.Authentication<br /> (Connect-MgGraph) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/check.png) | ![Check](../../Images/check.png) |
+| *Office 365* | ExchangeOnlineManagement<br /> (Connect-ExchangeOnline)<br/> Microsoft.Graph.Authentication<br /> (Connect-MgGraph) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) |
 | *OneDrive* | PnP.PowerShell (Connect-PnPOnline) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/check.png) | ![Check](../../Images/check.png) |
-| *Power Apps* | Microsoft.PowerApps.<br />Administration.PowerShell | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Cross](../../Images/cross.png) |
-| *Planner** | Microsoft.Graph.Authentication<br /> (Connect-MgGraph) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/check.png) | ![Cross](../../Images/cross.png) |
+| *Power Apps* | Microsoft.PowerApps.<br />Administration.PowerShell | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/cross.png) | ![Cross](../../Images/cross.png) | ![Cross](../../Images/cross.png) |
+| *Planner** | Microsoft.Graph.Authentication<br /> (Connect-MgGraph) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/check.png) | ![Cross](../../Images/check.png) |
 | *Security & Compliance Center* | ExchangeOnlineManagement<br /> (Connect-IPPSSession) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/check.png) |
 | *SharePoint Online* | PnP.PowerShell<br /> (Connect-PnPOnline) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/check.png) | ![Check](../../Images/check.png) |
 | *Teams* | MicrosoftTeams<br /> (Connect-MicrosoftTeams) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) | ![Cross](../../Images/cross.png) | ![Cross](../../Images/cross.png) | ![Check](../../Images/check.png) | ![Check](../../Images/check.png) |
@@ -48,19 +53,79 @@ It is also important to note that we have added logic inside of the commands tha
   <figcaption>Export only exports resources that support the used authentication method</figcaption>
 </figure>
 
+## Azure DevOps
+
+In order to authenticate to Azure DevOps using a Service Principal (Certificate Thumbprint or Application Secret), you need to add it as a user to the DevOps organization. Go to your DevOps organization, select **Organization Settings** from the bottom left, and then go to **Users**. There, click **Add users** to add your Service Principal to the organization.
+
+![ADOAddServicePrincipalToOrganization](../../Images/ADOAddServicePrincipalToOrganization.png)
+
+## Azure Permissions
+
+Coming soon!
+
+## Defender Permissions
+
+The Defender resources use two different authentication sources: On one side, they use permissions from the `WindowsDefenderATP` API to authenticate against the Microsoft Defender for Cloud REST API. On the other side, they use an Azure RBAC based approach to fetch information about the current security plans.
+
+Assigning the API permissions is done in the App Registration Permission blade. However, for Azure RBAC, you need to assign an Azure Role to the Service Principal:
+
+```powershell
+# Connect to Azure with an owner account
+Connect-AzAccount
+
+# Assign the required role according to the resource definition
+New-AzRoleAssignment -RoleDefinitionName "<Role Name>" -ApplicationId "<Application Id>" -Scope /
+```
+
+Wait for a couple of minutes for RBAC to take effect and then you're ready for managing the Defender workload with a Service Principal.
+
+**Note**: If you receive an error during the export, make sure you have the appropriate license for accessing Defender for Cloud.
+
+## Fabric Permissions
+
+In order to authenticate to Fabric using a Service Principal (Certificate Thumbprint or Application Secret), you need to create a security group, add the Service Principal as a member and assign the **Global Reader** role to the group.
+
+![Permissions For Fabric](../../Images/PermissionsForFabric.png)
+
+After creating the security group with the Service Principal as a member and assigning the role to the group, you have to allow Service Principal access to Read-Only APIs in the [Fabric admin portal > Tenant Settings](https://app.fabric.microsoft.com/admin-portal/tenantSettings). On the page, scroll down to **Admin API settings** and expand the **Service Principals can access read-only admin APIs** option. Toggle the option to **Enabled** and specify the Entra security group which you previously configured with the role and your Service Principal. Click **Apply** to finish the configuration.
+
+![Fabric Admin Tenant Settings - SPN Read-Only Admin APIs](../../Images/FabricSpnReadOnlyAccess.png)
+
+You now can export the Fabric resources.
+
 ## Power Apps Permissions
 
-In order to authenticate to Power Apps using a Service Principal (Certificate Thumbprint or ApplicationSecret), you will first need to define your app as a Power App Management app. For details on how to proceed, please refer to the following link: <a href="https://learn.microsoft.com/en-us/power-platform/admin/powershell-create-service-principal#registering-an-admin-management-application">https://learn.microsoft.com/en-us/power-platform/admin/powershell-create-service-principal#registering-an-admin-management-application</a>
+In order to authenticate to Power Apps using a Service Principal (Certificate Thumbprint or Application Secret), you will first need to define your app as a Power App Management app. For details on how to proceed, please refer to the following link: <a href="https://learn.microsoft.com/en-us/power-platform/admin/powershell-create-service-principal#registering-an-admin-management-application">https://learn.microsoft.com/en-us/power-platform/admin/powershell-create-service-principal#registering-an-admin-management-application</a>
 
-Additionally, to be able to authenticate using a Certificate Thumbprint, the underlying Power Apps PowerShell module used by Microsoft365DSC requires the certificate's private key (.pfx) to be registered under the current user's certificate store at <strong>Cert:\CurrentUser\My\</strong>. Omitting to register the private key will result in Microsoft365DSC throwing the following error when trying to authenticate to the Power Platform:
+Additionally, to be able to authenticate using a Certificate Thumbprint, the underlying Power Apps PowerShell module used by Microsoft365DSC requires the certificate's private key (.pfx) to be registered under the current user's certificate store at **Cert:\CurrentUser\My\\**. Omitting to register the private key will result in Microsoft365DSC throwing the following error when trying to authenticate to the Power Platform:
 
 ```powershell
 Get-Item: Cannot find path 'Cert:\CurrentUser\My\****************************************' because it does not exist.
 ```
 
+Registering it for the Local Configuration Manager (LCM) requires a tool like [PSExec](https://learn.microsoft.com/en-us/sysinternals/downloads/psexec), with which you can start the MMC.exe and add the certificate in the Current User certificate store.
+
+## Sentinel Permissions
+
+In order to authenticate to Sentinel using a Service Principal (Certificate Thumbprint or Application Secret), you need to API permissions and an Azure RBAC role to the Service Principal:
+
+```powershell
+# Connect to Azure with an owner account
+Connect-AzAccount
+
+# Assign the required role according to the resource definition
+New-AzRoleAssignment -RoleDefinitionName "<Role Name>" -ApplicationId "<Application Id>" -Scope /
+```
+
+Wait for a couple of minutes for RBAC to take effect and then you're ready for managing the Sentinel workload with a Service Principal.
+
+## Services Hub Permissions
+
+TODO
+
 ## Microsoft Graph Permissions
 
-Most components of the Microsoft365DSC solution are using the Microsoft Graph PowerShell SDK under the cover to authenticate and interact with Microsoft 365. The Graph API has two different authentication implementations:
+Most components of the Microsoft365DSC solution are using the Microsoft Graph PowerShell SDK under the hood to authenticate and interact with Microsoft 365. The Graph API has two different authentication implementations:
 
 1. **Delegated permissions**: Here a username/password is used to authenticate.
 
@@ -69,7 +134,7 @@ Most components of the Microsoft365DSC solution are using the Microsoft Graph Po
     For example: If your account only has permissions on three SharePoint sites, only these sites can be retrieved. Even when the AzureAD app has Sites.FullControl.All permissions granted.
 
     <figure markdown>
-      ![Using the Graph API with Delegated Permissions and the default App Registration](/Images/PermissionsGraphDelegatedApp.png)
+      ![Using the Graph API with Delegated Permissions and the default App Registration](../../Images/PermissionsGraphDelegatedApp.png)
       <figcaption>Using the Graph API with Delegated Permissions and the default App Registration</figcaption>
     </figure>
 
@@ -84,7 +149,7 @@ Most components of the Microsoft365DSC solution are using the Microsoft Graph Po
     **NOTE:** This is the easiest option to use.
 
     <figure markdown>
-      ![Using the Graph API with a custom application](/Images/PermissionsM365DSCApp.png)
+      ![Using the Graph API with a custom application](../../Images/PermissionsM365DSCApp.png)
       <figcaption>Using the Graph API with a custom application</figcaption>
     </figure>
 
@@ -135,9 +200,9 @@ Executing the cmdlet will prompt you to authenticate using an administrator acco
 
 **NOTE:** If you get the error "Device code terminal timed-out after 120 seconds", check out the <a href="../../get-started/troubleshooting/#error-device-code-terminal-timed-out-after-120-seconds-please-try-again/" target="_blank">Troubleshooting section</a>
 
-### Creating a custom service principal
+### Creating a custom Service Principal
 
-As mentioned earlier in this article, there is also the possibility to use Application permissions or custom service principal to authenticate against Microsoft 365. This custom service principal can be created and configured manually, but Microsoft365DSC also offers the <a href="../../cmdlets/Update-M365DSCAzureAdApplication/" target="_blank">Update-M365DSCAzureAdApplication</a> cmdlet. With this cmdlet, you can create the custom service application, grant the correct permissions, provide admin consent and create credentials (secret or certificate).
+As mentioned earlier in this article, there is also the possibility to use Application permissions or custom Service Principal to authenticate against Microsoft 365. This custom Service Principal can be created and configured manually, but Microsoft365DSC also offers the <a href="../../cmdlets/Update-M365DSCAzureAdApplication/" target="_blank">Update-M365DSCAzureAdApplication</a> cmdlet. With this cmdlet, you can create the custom service application, grant the correct permissions, provide admin consent and create credentials (secret or certificate).
 
 ```PowerShell
 Update-M365DSCAzureAdApplication -ApplicationName 'Microsoft365DSC' -Permissions @(@{Api='SharePoint';PermissionName='Sites.FullControl.All'}) -AdminConsent -Type Secret -Credential (Get-Credential)
@@ -159,11 +224,11 @@ All SharePoint Online resources are using the <a href="https://github.com/pnp/po
 
 Use the "<a href="https://pnp.github.io/powershell/cmdlets/Register-PnPManagementShellAccess.html" target="_blank">Register-PnPManagementShellAccess</a>" cmdlet to register this application in Azure Active Directory and grant the correct permissions.
 
-### Using your own Azure AD app
+### Using your own Entra app registration
 
-<a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app" target="_blank">Create a new app registration</a> in Azure AD yourself and grant the correct permissions to this app. The documentation on this website for each of the SharePoint Online resources list the permissions needed for the resource.
+<a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app" target="_blank">Create a new app registration</a> in Microsoft Entra yourself and grant the correct permissions to this app. The documentation on this website for each of the SharePoint Online resources list the permissions needed for the resource.
 
-> Note: Make sure your app has the "Allow Public Client Flows" setting set to "Yes". This is required for SharePoint. More information can be found <a href="https://pnp.github.io/powershell/articles/authentication.html#silent-authentication-with-credentials-for-running-in-pipelines" target="_blank">here</a>
+> Note: Make sure your app has the "Allow Public Client Flows" setting set to "Yes". This is required for SharePoint (and Device Code Flow). More information can be found <a href="https://pnp.github.io/powershell/articles/authentication.html#silent-authentication-with-credentials-for-running-in-pipelines" target="_blank">here</a>
 
 As an alternative, you can use the "<a href="https://pnp.github.io/powershell/cmdlets/Register-PnPAzureADApp.html" target="_blank">Register-PnPAzureADApp</a>" cmdlet to have PnP PowerShell create the app registration for you and grant the correct permissions.
 
@@ -176,17 +241,15 @@ SharePoint Online uses the legacy ACS model to authenticate using an Application
 3. In the App domain box, type in www.<yourtenant>.com.
 4. Leave the **Redirect URL** box empty.
 5. In the **Permission request XML** box, put in the following XML:
-
 ```powershell
   <AppPermissionRequests AllowAppOnlyPolicy="true">
     <AppPermissionRequest Scope="http://sharepoint/content/tenant" Right="FullControl" />
   </AppPermissionRequests>
 ```
-
-6. Click on the **Create** button.
-<a href="/Images/Step1-SPOACS.png"><img src="/Images/Step1-SPOACS.png" alt="Register a new app for SharePoint Online." /></a>
-7. On the next screen, click on the **Trust It** button to complete the registration process.
-<a href="/Images/Step2-SPOACS.png"><img src="/Images/Step2-SPOACS.png" alt="Register a new app for SharePoint Online." /></a>
+6. Click on the **Create** button. </br>
+![Register a new app for SharePoint Online.](../../Images/Step1-SPOACS.png)
+7. On the next screen, click on the **Trust It** button to complete the registration process. </br>
+![Register a new app for SharePoint Online.](../../Images/Step2-SPOACS.png)
 
 You should now be able to connect to SharePoint Online using an Application Secret.
 
@@ -209,7 +272,7 @@ Then make sure your service account is a member of the specified Role Group or h
 
 > **NOTE:** There are resources, like the <a href="../../../resources/exchange/EXOAddressList/" target="_blank">EXOAddressList</a> which roles by default are not granted to any of the default role groups. Make sure you grant these permissions correctly before using them.
 
-When using service principals to authenticate against Exchange, make sure your service principal is created using <a href="https://learn.microsoft.com/en-us/powershell/exchange/app-only-auth-powershell-v2?view=exchange-ps#select-and-assign-the-api-permissions-from-the-portal" target="_blank">these instructions</a>.
+When using Service Principals to authenticate against Exchange, make sure your Service Principal is created using <a href="https://learn.microsoft.com/en-us/powershell/exchange/app-only-auth-powershell-v2?view=exchange-ps#select-and-assign-the-api-permissions-from-the-portal" target="_blank">these instructions</a>.
 
 ## Security and Compliance Center Permissions
 
@@ -217,11 +280,11 @@ If you want to leverage Service Principal Authentication (using an App Registrat
 
 <ol>
 <li><p><strong>Create a new Service Principal and associate it with your app registration:</strong></p>
-<p>Start by connecting to the Security and Compliance PowerShell module and run the following line to create the service principal. The cmdlets refer below won't be available if you don't connect first (use the Connect-IPPSsession cmdlet). The AppID and ObjectID represent the application id and its object id. You can retrieve these by navigating to your app instance on the Azure Portal or by leveraging the Get-MgApplication cmdlet from the Graph PowerShell SDK. In my case, my custom App Registration in Azure AD is named "MySCApp" and I am giving the name SC-SPN to the new service principal I am creating.</p>
+<p>Start by connecting to the Security and Compliance PowerShell module and run the following line to create the Service Principal. The cmdlets refer below won't be available if you don't connect first (use the Connect-IPPSsession cmdlet). The AppID and ObjectID represent the application id and its object id. You can retrieve these by navigating to your app instance on the Azure Portal or by leveraging the Get-MgApplication cmdlet from the Graph PowerShell SDK. In my case, my custom App Registration in Azure AD is named "MySCApp" and I am giving the name SC-SPN to the new Service Principal I am creating.</p>
 
-<a href="/Images/AppIdRetrieval.png"><img src="/Images/AppIdRetrieval.png" alt="Retrieving an app registration id from the Azure portal." /></a>
+![Retrieving an app registration id from the Azure portal.](../../Images/AppIdRetrieval.png)
 
-<a href="/Images/CreatingNewSPForSC.png"><img src="/Images/CreatingNewSPForSC.png" alt="PowerShell Script to create a service principal" /></a>
+![PowerShell Script to create a Service Principal](../../Images/CreatingNewSPForSC.png)
 
 ```powershell
 $App = Get-MgApplication -Filter "DisplayName eq 'MySCApp'"
@@ -233,7 +296,7 @@ New-ServicePrincipal -AppId $App.AppId -ServiceId $App.Id -DisplayName "SC-SPN"
 <li><p><strong>Grant the eDiscovery Manager role to your new Service Principal:</strong></p>
 <p>Run the following PowerShell command to grant the eDiscovery Manager role to your new Service Principal. The ID passed is the Object ID of the Service Principal you created at the previous step. If you don't have it handy, you can use the Get-ServicePrincipal cmdlet to retrieve it.</p>
 
-<a href="/Images/AddSPNeDiscoveryRole.png"><img src="/Images/AddSPNeDiscoveryRole.png" alt="Grant the eDiscovery Manager role to your service principal" /></a>
+![Grant the eDiscovery Manager role to your Service Principal](../../Images/AddSPNeDiscoveryRole.png)
 
 ``` PowerShell
 $SPN = Get-ServicePrincipal -Identity "SC-SPN"
@@ -247,7 +310,7 @@ Add-RoleGroupMember -Identity eDiscoveryManager -Member $SPN.ObjectId
 
 <p>The Service Principal requires one last permission in order to be able to retrieve values from the Security and Compliance center cmdlets. Run the following PowerShell command to add it as a case admin:</p>
 
-<a href="/Images/Add-eDiscoveryCaseAdmin.png"><img src="/Images/Add-eDiscoveryCaseAdmin.png" alt="Grant the eDiscovery Case Admin role to your service principal" /></a>
+![Grant the eDiscovery Case Admin role to your Service Principal](../../Images/Add-eDiscoveryCaseAdmin.png)
 
 ``` PowerShell
 $SPN = Get-ServicePrincipal -Identity "SC-SPN"
@@ -258,14 +321,15 @@ Add-eDiscoveryCaseAdmin -User $SPN.Name
 </li>
 <li><p><strong>Grant your app registration the Compliance Administrator role:</strong></p>
 <p>The last required step is to add your app registration to the Compliance Administrator role.</p>
-
-<a href="/Images/AddComplianceAdmin.png"><img src="/Images/AddComplianceAdmin.png" alt="Add your app registration to the compliance administrator role." /></a>
+![Add your app registration to the compliance administrator role.](../../Images/AddComplianceAdmin.png)
 </li>
 
 </ol>
 <p>We are now ready to authenticate using our app registration to test and confirm that all is working as expected. To do so, you can use the Connect-M365Tenant cmdlet and pass it the information related to your app registration. Below is an example using our app registration. Replace the appid, tenantid and certificatethumbprint parameters by your own. If you are getting an error connecting, you probably haven't granted the Exchange ManageAsApp permission to your app as described in the following article: <a href="https://learn.microsoft.com/en-us/powershell/exchange/app-only-auth-powershell-v2?view=exchange-ps#step-2-assign-api-permissions-to-the-application">https://learn.microsoft.com/en-us/powershell/exchange/app-only-auth-powershell-v2?view=exchange-ps#step-2-assign-api-permissions-to-the-application</a></p>
 
-<a href="/Images/GetComplianceCase.png"><img src="/Images/GetComplianceCase.png" alt="Connecting using your app registration and retrieving cases." /></a>
+<p><strong>Important</strong>: For GCC High, you will also need to grant the Exchange.ManageAsApp permission from the Microsoft Exchange Online Protection API in addition to the Office 365 Exchange Online API permissions.</p>
+
+![Connecting using your app registration and retrieving cases.](../../Images/GetComplianceCase.png)
 
 ``` PowerShell
 Connect-M365Tenant -ApplicationId '8154ba3e-3e73-450e-8690-53cfc0eb0d66' -TenantId 'xxxx.onmicrosoft.com' -CertificateThumbprint 'xxx-xxx-xxx-xxx-xxx' -Workload 'SecurityComplianceCenter'
@@ -298,13 +362,13 @@ All SharePoint and OneDrive resources work with the SharePoint Admin role assign
 
 When executing the Export-M365DSCConfiguration cmdlet user name and password should be filled in the following fields:
 
-![User name and Password](/Images/userpwdpng.png 'Username and Password')
+![User name and Password](../../Images/userpwdpng.png 'Username and Password')
 
 ### Azure AD app permissions
 
 The best option when using Microsoft365DSC with SharePoint and OneDrive is to use an Azure AD app principal. When using AAD App permission Microsoft365DSC supports 2 different scenarios, certificate path option or installing certificate and using the thumbprint. The permissions required for Azure AD applications are SharePoint Site.FullControl.All scope.
 
-![API Permissions](/Images/APIPermissions.png 'SharePoint Permissions')
+![API Permissions](../../Images/APIPermissions.png 'SharePoint Permissions')
 
 ### Configure AzureAD app for Microsoft365DSC
 
@@ -326,9 +390,9 @@ DSC by default the LCM runs under the system account so easiest option to instal
 After AzureAD app is created and certificate is installed you need some additional properties before you can use with Microsoft365DSC. Login to
 Azure Active Directory and browse to the App registrations page you should see the TestApp2 app created from the script above. We need to copy the following properties:
 
-![Application Id](/Images/AppId.png 'Application ID')
+![Application Id](../../Images/AppId.png 'Application ID')
 
-![Certificate Thumbprint](/Images/CertificateThump.png 'Certificate Thumbprint')
+![Certificate Thumbprint](../../Images/CertificateThump.png 'Certificate Thumbprint')
 
 ### Using Certificate Thumbprint option
 
@@ -341,7 +405,7 @@ when using certificate thumbprint.
 
 From the Export-M365DSCConfiguration GUI the following fields should be used:
 
-![ExportThumprint](/Images/ExportCertThumb.png 'Export using thumbprint')
+![ExportThumprint](../../Images/ExportCertThumb.png 'Export using thumbprint')
 
 ### Using Certificate Path option
 
@@ -355,11 +419,11 @@ would be the best solution. The following parameters are required when using cer
 
 From the Export-M365DSCConfiguration GUI the following fields should be used:
 
-![Export using Certificate Path](/Images/CertPath.png){ align=center width=500 }
+![Export using Certificate Path](../../Images/CertPath.png){ align=center width=500 }
 
 ## Teams Permissions
 
-When using Service Principals to authenticate against Teams, you have to make sure the correct permissions are configured. Besides the permissions specified in the resource documentation, the service principal also needs to get added to the Teams Administrator role in Entra ID. For more information on App-Only authentication with Teams, check <a href="https://learn.microsoft.com/en-us/microsoftteams/teams-powershell-application-authentication" target="_blank">here</a>.
+When using Service Principals to authenticate against Teams, you have to make sure the correct permissions are configured. Besides the permissions specified in the resource documentation, the Service Principal also needs to get added to the Teams Administrator role in Entra ID. For more information on App-Only authentication with Teams, check <a href="https://learn.microsoft.com/en-us/microsoftteams/teams-powershell-application-authentication" target="_blank">here</a>.
 
 ## Using Authentication in DSC configurations
 
@@ -370,6 +434,6 @@ See the next chapter to see how to use the Authentication options in DSC configu
 - <a href="https://docs.microsoft.com/en-us/graph/auth/auth-concepts" target="_blank">Authentication and authorization basics for Microsoft Graph</a>
 - <a href="https://docs.microsoft.com/en-us/graph/permissions-reference" target="_blank">Microsoft Graph permissions reference</a>
 - <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app" target="_blank">Quickstart: Register an application with the Microsoft identity platform</a>
-- <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal#register-an-application-with-azure-ad-and-create-a-service-principal" target="_blank">Register an application with Azure AD and create a service principal</a>
+- <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal#register-an-application-with-azure-ad-and-create-a-service-principal" target="_blank">Register an application with Azure AD and create a Service Principal</a>
 - <a href="https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/grant-admin-consent" target="_blank">Grant tenant-wide admin consent to an application</a>
 - <a href="https://docs.microsoft.com/en-us/graph/notifications-integration-app-registration#api-permissions" target="_blank">API permissions</a>

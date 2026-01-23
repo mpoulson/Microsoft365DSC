@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -40,6 +40,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppCategory -MockWith {
+                return @{
+                    Id                  = '046e0b16-76ce-4b49-bf1b-1cc5bd94fb47'
+                    DisplayName         = 'Data Management'
+                }
             }
             Mock -CommandName New-MgBetaDeviceAppManagementMobileAppCategory -MockWith {
             }
@@ -88,13 +92,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Absent'
                     Credential          = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppCategory -MockWith {
-                    return @{
-                        Id                  = '046e0b16-76ce-4b49-bf1b-1cc5bd94fb47'
-                        DisplayName         = 'Data Management'
-                    }
-                }
             }
 
             It '2.1 Should return values from the Get method' {
@@ -117,13 +114,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppCategory -MockWith {
-                    return @{
-                        Id                  = '046e0b16-76ce-4b49-bf1b-1cc5bd94fb47'
-                        DisplayName         = 'Data Management'
-                    }
-                }
             }
 
             It '3.0 Should return true from the Test method' {
@@ -135,16 +125,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Id                  = "046e0b16-76ce-4b49-bf1b-1cc5bd94fb47"
-                    DisplayName         = "Data Management"
+                    DisplayName         = "Data Management 1" # Updated property
                     Ensure              = 'Present'
                     Credential          = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppCategory -MockWith {
-                    return @{
-                        Id                  = "046e0b16-76ce-4b49-bf1b-1cc5bd94fb47"
-                        DisplayName         = "Data Management 1" #drift
-                    }
                 }
             }
 
@@ -168,13 +151,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppCategory -MockWith {
-                    return @{
-                        Id                  = "046e0b16-76ce-4b49-bf1b-1cc5bd94fb47"
-                        DisplayName         = "Data Management"
-                    }
                 }
             }
 

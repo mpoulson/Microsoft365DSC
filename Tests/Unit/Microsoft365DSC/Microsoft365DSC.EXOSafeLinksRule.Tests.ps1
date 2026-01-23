@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -38,20 +38,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName New-SafeLinksRule -MockWith {
-                return @{
-
-                }
             }
 
             Mock -CommandName Set-SafeLinksRule -MockWith {
-                return @{
-
-                }
             }
 
             Mock -CommandName Remove-SafeLinksRule -MockWith {
-                return @{
+            }
 
+            Mock -CommandName Get-SafeLinksRule -MockWith {
+                return @{
+                    Ensure            = 'Present'
+                    Identity          = 'TestRule'
+                    Credential        = $Credential
+                    SafeLinksPolicy   = 'TestSafeLinksPolicy'
+                    Enabled           = $true
+                    Priority          = 0
+                    RecipientDomainIs = @('contoso.com')
+                    State             = 'Enabled'
                 }
             }
 
@@ -76,9 +80,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-SafeLinksRule -MockWith {
-                    return @{
-                        Identity = 'SomeOtherPolicy'
-                    }
+                    return $null
                 }
             }
 
@@ -88,6 +90,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-SafeLinksRule -Exactly 1
             }
         }
 
@@ -101,19 +104,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Enabled           = $true
                     Priority          = 0
                     RecipientDomainIs = @('contoso.com')
-                }
-
-                Mock -CommandName Get-SafeLinksRule -MockWith {
-                    return @{
-                        Ensure            = 'Present'
-                        Identity          = 'TestRule'
-                        Credential        = $Credential
-                        SafeLinksPolicy   = 'TestSafeLinksPolicy'
-                        Enabled           = $true
-                        Priority          = 0
-                        RecipientDomainIs = @('contoso.com')
-                        State             = 'Enabled'
-                    }
                 }
             }
 
@@ -131,19 +121,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SafeLinksPolicy   = 'TestSafeLinksPolicy'
                     Enabled           = $true
                     Priority          = 0
-                    RecipientDomainIs = @('contoso.com')
-                }
-
-                Mock -CommandName Get-SafeLinksRule -MockWith {
-                    return @{
-                        Ensure            = 'Present'
-                        Identity          = 'TestRule'
-                        Credential        = $Credential
-                        SafeLinksPolicy   = 'TestSafeLinksPolicy'
-                        State             = 'Disabled'
-                        Priority          = 0
-                        RecipientDomainIs = @('fabrikam.com')
-                    }
+                    RecipientDomainIs = @('fabrikam.com') # Drift
                 }
             }
 
@@ -153,6 +131,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-SafeLinksRule -Exactly 1
             }
         }
 
@@ -167,12 +146,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Priority          = 0
                     RecipientDomainIs = @('contoso.com')
                 }
-
-                Mock -CommandName Get-SafeLinksRule -MockWith {
-                    return @{
-                        Identity = 'TestRule'
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -181,6 +154,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Remove-SafeLinksRule -Exactly 1
             }
         }
 
@@ -194,16 +168,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Confirm-ImportedCmdletIsAvailable -MockWith {
                     return $true
-                }
-
-                Mock -CommandName Get-SafeLinksRule -MockWith {
-                    return @{
-                        Identity          = 'TestRule'
-                        SafeLinksPolicy   = 'TestSafeLinksPolicy'
-                        State             = 'Disabled'
-                        Priority          = 0
-                        RecipientDomainIs = @('fabrikam.com')
-                    }
                 }
             }
 

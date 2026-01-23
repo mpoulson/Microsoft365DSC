@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-GUID).ToString() -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaDeviceManagementDeviceConfiguration -MockWith {
@@ -38,6 +38,57 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        postponeRebootUntilAfterDeadline        = $True
+                        featureUpdatesPauseExpiryDateTime       = '2023-01-01T00:00:00.0000000+00:00'
+                        businessReadyUpdatesOnly                = 'userDefined'
+                        updateWeeks                             = 'userDefined'
+                        qualityUpdatesPauseStartDate            = '2023-01-01T00:00:00.0000000'
+                        skipChecksBeforeRestart                 = $True
+                        deadlineForFeatureUpdatesInDays         = 25
+                        featureUpdatesRollbackStartDateTime     = '2023-01-01T00:00:00.0000000+00:00'
+                        qualityUpdatesPauseExpiryDateTime       = '2023-01-01T00:00:00.0000000+00:00'
+                        scheduleImminentRestartWarningInMinutes = 25
+                        featureUpdatesDeferralPeriodInDays      = 25
+                        driversExcluded                         = $True
+                        featureUpdatesPauseStartDate            = '2023-01-01T00:00:00.0000000'
+                        deadlineForQualityUpdatesInDays         = 25
+                        deliveryOptimizationMode                = 'userDefined'
+                        scheduleRestartWarningInHours           = 25
+                        prereleaseFeatures                      = 'userDefined'
+                        featureUpdatesPaused                    = $True
+                        updateNotificationLevel                 = 'notConfigured'
+                        automaticUpdateMode                     = 'userDefined'
+                        allowWindows11Upgrade                   = $True
+                        featureUpdatesRollbackWindowInDays      = 25
+                        engagedRestartTransitionScheduleInDays  = 25
+                        engagedRestartDeadlineInDays            = 25
+                        qualityUpdatesDeferralPeriodInDays      = 25
+                        qualityUpdatesPaused                    = $True
+                        deadlineGracePeriodInDays               = 25
+                        autoRestartNotificationDismissal        = 'notConfigured'
+                        installationSchedule                    = @{
+                            activeHoursStart     = '00:00:00'
+                            scheduledInstallTime = '00:00:00'
+                            scheduledInstallDay  = 'userDefined'
+                            activeHoursEnd       = '00:00:00'
+                            '@odata.type'        = '#microsoft.graph.windowsUpdateActiveHoursInstall'
+                        }
+                        engagedRestartSnoozeScheduleInDays      = 25
+                        '@odata.type'                           = '#microsoft.graph.windowsUpdateForBusinessConfiguration'
+                        qualityUpdatesRollbackStartDateTime     = '2023-01-01T00:00:00.0000000+00:00'
+                        userPauseAccess                         = 'notConfigured'
+                        userWindowsUpdateScanAccess             = 'notConfigured'
+                        microsoftUpdateServiceAllowed           = $True
+                    }
+                    description          = 'FakeStringValue'
+                    displayName          = 'FakeStringValue'
+                    id                   = 'FakeStringValue'
+                }
             }
 
             Mock -CommandName Get-MgBetaDeviceManagementDeviceConfigurationAssignment -MockWith {
@@ -167,57 +218,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                  = 'Absent'
                     Credential                              = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            postponeRebootUntilAfterDeadline        = $True
-                            featureUpdatesPauseExpiryDateTime       = '2023-01-01T00:00:00.0000000+00:00'
-                            businessReadyUpdatesOnly                = 'userDefined'
-                            updateWeeks                             = 'userDefined'
-                            qualityUpdatesPauseStartDate            = '2023-01-01T00:00:00.0000000'
-                            skipChecksBeforeRestart                 = $True
-                            deadlineForFeatureUpdatesInDays         = 25
-                            featureUpdatesRollbackStartDateTime     = '2023-01-01T00:00:00.0000000+00:00'
-                            qualityUpdatesPauseExpiryDateTime       = '2023-01-01T00:00:00.0000000+00:00'
-                            scheduleImminentRestartWarningInMinutes = 25
-                            featureUpdatesDeferralPeriodInDays      = 25
-                            driversExcluded                         = $True
-                            featureUpdatesPauseStartDate            = '2023-01-01T00:00:00.0000000'
-                            deadlineForQualityUpdatesInDays         = 25
-                            deliveryOptimizationMode                = 'userDefined'
-                            scheduleRestartWarningInHours           = 25
-                            prereleaseFeatures                      = 'userDefined'
-                            featureUpdatesPaused                    = $True
-                            updateNotificationLevel                 = 'notConfigured'
-                            automaticUpdateMode                     = 'userDefined'
-                            allowWindows11Upgrade                   = $True
-                            featureUpdatesRollbackWindowInDays      = 25
-                            engagedRestartTransitionScheduleInDays  = 25
-                            engagedRestartDeadlineInDays            = 25
-                            qualityUpdatesDeferralPeriodInDays      = 25
-                            qualityUpdatesPaused                    = $True
-                            deadlineGracePeriodInDays               = 25
-                            autoRestartNotificationDismissal        = 'notConfigured'
-                            installationSchedule                    = @{
-                                activeHoursStart     = '00:00:00'
-                                scheduledInstallTime = '00:00:00'
-                                scheduledInstallDay  = 'userDefined'
-                                activeHoursEnd       = '00:00:00'
-                                '@odata.type'        = '#microsoft.graph.windowsUpdateActiveHoursInstall'
-                            }
-                            engagedRestartSnoozeScheduleInDays      = 25
-                            '@odata.type'                           = '#microsoft.graph.windowsUpdateForBusinessConfiguration'
-                            qualityUpdatesRollbackStartDateTime     = '2023-01-01T00:00:00.0000000+00:00'
-                            userPauseAccess                         = 'notConfigured'
-                            userWindowsUpdateScanAccess             = 'notConfigured'
-                            microsoftUpdateServiceAllowed           = $True
-                        }
-                        description          = 'FakeStringValue'
-                        displayName          = 'FakeStringValue'
-                        id                   = 'FakeStringValue'
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -283,57 +283,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                  = 'Present'
                     Credential                              = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            postponeRebootUntilAfterDeadline        = $True
-                            featureUpdatesPauseExpiryDateTime       = '2023-01-01T00:00:00.0000000+00:00'
-                            businessReadyUpdatesOnly                = 'userDefined'
-                            updateWeeks                             = 'userDefined'
-                            qualityUpdatesPauseStartDate            = '2023-01-01T00:00:00.0000000'
-                            skipChecksBeforeRestart                 = $True
-                            deadlineForFeatureUpdatesInDays         = 25
-                            featureUpdatesRollbackStartDateTime     = '2023-01-01T00:00:00.0000000+00:00'
-                            qualityUpdatesPauseExpiryDateTime       = '2023-01-01T00:00:00.0000000+00:00'
-                            scheduleImminentRestartWarningInMinutes = 25
-                            featureUpdatesDeferralPeriodInDays      = 25
-                            driversExcluded                         = $True
-                            featureUpdatesPauseStartDate            = '2023-01-01T00:00:00.0000000'
-                            deadlineForQualityUpdatesInDays         = 25
-                            deliveryOptimizationMode                = 'userDefined'
-                            scheduleRestartWarningInHours           = 25
-                            prereleaseFeatures                      = 'userDefined'
-                            featureUpdatesPaused                    = $True
-                            updateNotificationLevel                 = 'notConfigured'
-                            automaticUpdateMode                     = 'userDefined'
-                            allowWindows11Upgrade                   = $True
-                            featureUpdatesRollbackWindowInDays      = 25
-                            engagedRestartTransitionScheduleInDays  = 25
-                            engagedRestartDeadlineInDays            = 25
-                            qualityUpdatesDeferralPeriodInDays      = 25
-                            qualityUpdatesPaused                    = $True
-                            deadlineGracePeriodInDays               = 25
-                            autoRestartNotificationDismissal        = 'notConfigured'
-                            installationSchedule                    = @{
-                                activeHoursStart     = '00:00:00'
-                                scheduledInstallTime = '00:00:00'
-                                scheduledInstallDay  = 'userDefined'
-                                activeHoursEnd       = '00:00:00'
-                                '@odata.type'        = '#microsoft.graph.windowsUpdateActiveHoursInstall'
-                            }
-                            engagedRestartSnoozeScheduleInDays      = 25
-                            '@odata.type'                           = '#microsoft.graph.windowsUpdateForBusinessConfiguration'
-                            qualityUpdatesRollbackStartDateTime     = '2023-01-01T00:00:00.0000000+00:00'
-                            userPauseAccess                         = 'notConfigured'
-                            userWindowsUpdateScanAccess             = 'notConfigured'
-                            microsoftUpdateServiceAllowed           = $True
-                        }
-                        description          = 'FakeStringValue'
-                        displayName          = 'FakeStringValue'
-                        id                   = 'FakeStringValue'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -344,7 +293,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The IntuneWindowsUpdateForBusinessRingUpdateProfileWindows10 exists and values are NOT in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    AllowWindows11Upgrade                   = $True
+                    AllowWindows11Upgrade                   = $False # Updated property
                     AutomaticUpdateMode                     = 'userDefined'
                     AutoRestartNotificationDismissal        = 'notConfigured'
                     BusinessReadyUpdatesOnly                = 'userDefined'
@@ -390,50 +339,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                  = 'Present'
                     Credential                              = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            automaticUpdateMode                     = 'userDefined'
-                            deliveryOptimizationMode                = 'userDefined'
-                            deadlineForQualityUpdatesInDays         = 7
-                            featureUpdatesPauseStartDate            = '2023-01-01T00:00:00.0000000'
-                            featureUpdatesDeferralPeriodInDays      = 7
-                            scheduleImminentRestartWarningInMinutes = 7
-                            scheduleRestartWarningInHours           = 7
-                            qualityUpdatesPauseExpiryDateTime       = '2023-01-01T00:00:00.0000000+00:00'
-                            deadlineForFeatureUpdatesInDays         = 7
-                            updateWeeks                             = 'userDefined'
-                            qualityUpdatesPauseStartDate            = '2023-01-01T00:00:00.0000000'
-                            businessReadyUpdatesOnly                = 'userDefined'
-                            featureUpdatesPauseExpiryDateTime       = '2023-01-01T00:00:00.0000000+00:00'
-                            featureUpdatesRollbackStartDateTime     = '2023-01-01T00:00:00.0000000+00:00'
-                            qualityUpdatesDeferralPeriodInDays      = 7
-                            updateNotificationLevel                 = 'notConfigured'
-                            '@odata.type'                           = '#microsoft.graph.WindowsUpdateForBusinessConfiguration'
-                            engagedRestartSnoozeScheduleInDays      = 7
-                            installationSchedule                    = @{
-                                activeHoursStart     = '00:00:00'
-                                scheduledInstallTime = '00:00:00'
-                                scheduledInstallDay  = 'userDefined'
-                                activeHoursEnd       = '00:00:00'
-                                '@odata.type'        = '#microsoft.graph.windowsUpdateActiveHoursInstall'
-                            }
-                            autoRestartNotificationDismissal        = 'notConfigured'
-                            userWindowsUpdateScanAccess             = 'notConfigured'
-                            deadlineGracePeriodInDays               = 7
-                            engagedRestartDeadlineInDays            = 7
-                            userPauseAccess                         = 'notConfigured'
-                            qualityUpdatesRollbackStartDateTime     = '2023-01-01T00:00:00.0000000+00:00'
-                            engagedRestartTransitionScheduleInDays  = 7
-                            prereleaseFeatures                      = 'userDefined'
-                            featureUpdatesRollbackWindowInDays      = 7
-                        }
-                        description          = 'FakeStringValue'
-                        displayName          = 'FakeStringValue'
-                        id                   = 'FakeStringValue'
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -457,60 +362,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            postponeRebootUntilAfterDeadline        = $True
-                            featureUpdatesPauseExpiryDateTime       = '2023-01-01T00:00:00.0000000+00:00'
-                            businessReadyUpdatesOnly                = 'userDefined'
-                            updateWeeks                             = 'userDefined'
-                            qualityUpdatesPauseStartDate            = '2023-01-01T00:00:00.0000000'
-                            skipChecksBeforeRestart                 = $True
-                            deadlineForFeatureUpdatesInDays         = 25
-                            featureUpdatesRollbackStartDateTime     = '2023-01-01T00:00:00.0000000+00:00'
-                            qualityUpdatesPauseExpiryDateTime       = '2023-01-01T00:00:00.0000000+00:00'
-                            scheduleImminentRestartWarningInMinutes = 25
-                            featureUpdatesDeferralPeriodInDays      = 25
-                            driversExcluded                         = $True
-                            featureUpdatesPauseStartDate            = '2023-01-01T00:00:00.0000000'
-                            deadlineForQualityUpdatesInDays         = 25
-                            deliveryOptimizationMode                = 'userDefined'
-                            scheduleRestartWarningInHours           = 25
-                            prereleaseFeatures                      = 'userDefined'
-                            featureUpdatesPaused                    = $True
-                            updateNotificationLevel                 = 'notConfigured'
-                            automaticUpdateMode                     = 'userDefined'
-                            allowWindows11Upgrade                   = $True
-                            featureUpdatesRollbackWindowInDays      = 25
-                            engagedRestartTransitionScheduleInDays  = 25
-                            engagedRestartDeadlineInDays            = 25
-                            qualityUpdatesDeferralPeriodInDays      = 25
-                            qualityUpdatesPaused                    = $True
-                            deadlineGracePeriodInDays               = 25
-                            autoRestartNotificationDismissal        = 'notConfigured'
-                            installationSchedule                    = @{
-                                AdditionalProperties = @{
-                                    activeHoursStart     = '00:00:00'
-                                    scheduledInstallTime = '00:00:00'
-                                    scheduledInstallDay  = 'userDefined'
-                                    activeHoursEnd       = '00:00:00'
-                                    '@odata.type'        = '#microsoft.graph.windowsUpdateActiveHoursInstall'
-                                }
-                            }
-                            engagedRestartSnoozeScheduleInDays      = 25
-                            '@odata.type'                           = '#microsoft.graph.windowsUpdateForBusinessConfiguration'
-                            qualityUpdatesRollbackStartDateTime     = '2023-01-01T00:00:00.0000000+00:00'
-                            userPauseAccess                         = 'notConfigured'
-                            userWindowsUpdateScanAccess             = 'notConfigured'
-                            microsoftUpdateServiceAllowed           = $True
-                        }
-                        description          = 'FakeStringValue'
-                        displayName          = 'FakeStringValue'
-                        id                   = 'FakeStringValue'
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

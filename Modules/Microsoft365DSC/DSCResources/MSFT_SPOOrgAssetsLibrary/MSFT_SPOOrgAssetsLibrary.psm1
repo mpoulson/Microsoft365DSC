@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_SPOOrgAssetsLibrary'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -98,7 +100,7 @@ function Get-TargetResource
             $cdn = $null
             if ($CdnType -eq 'Public')
             {
-                if (Get-PnPTenantCdnEnabled -CdnType $CdnType)
+                if ((Get-PnPTenantCdnEnabled -CdnType $CdnType).Value)
                 {
                     $cdn = 'Public'
                 }
@@ -106,7 +108,7 @@ function Get-TargetResource
 
             if ($CdnType -eq 'Private')
             {
-                if (Get-PnPTenantCdnEnabled -CdnType $CdnType)
+                if ((Get-PnPTenantCdnEnabled -CdnType $CdnType).Value)
                 {
                     $cdn = 'Private'
                 }
@@ -150,7 +152,7 @@ function Get-TargetResource
             CertificatePassword   = $CertificatePassword
             CertificatePath       = $CertificatePath
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
 
@@ -164,7 +166,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -243,17 +245,7 @@ function Set-TargetResource
     #endregion
 
     $currentOrgSiteAsset = Get-TargetResource @PSBoundParameters
-    $currentParameters = $PSBoundParameters
-    $currentParameters.Remove('Ensure') | Out-Null
-    $currentParameters.Remove('Credential') | Out-Null
-    $currentParameters.Remove('ApplicationId') | Out-Null
-    $currentParameters.Remove('TenantId') | Out-Null
-    $currentParameters.Remove('CertificatePath') | Out-Null
-    $currentParameters.Remove('CertificatePassword') | Out-Null
-    $CurrentParameters.Remove('CertificateThumbprint') | Out-Null
-    $CurrentParameters.Remove('ManagedIdentity') | Out-Null
-    $CurrentParameters.Remove('ApplicationSecret') | Out-Null
-    $currentParameters.Remove('AccessTokens') | Out-Null
+    $currentParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     $cdn = $null
     if ($CdnType -eq 'Public')
@@ -372,11 +364,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -384,22 +374,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration of SharePoint Org Site Assets'
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    Write-Verbose -Message 'Starting the test to compare'
-    Write-Verbose -Message "Target Values: `n $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -492,7 +469,7 @@ function Export-TargetResource
                     CertificatePassword   = $CertificatePassword
                     CertificatePath       = $CertificatePath
                     CertificateThumbprint = $CertificateThumbprint
-                    Managedidentity       = $ManagedIdentity.IsPresent
+                    ManagedIdentity       = $ManagedIdentity.IsPresent
                     ApplicationSecret     = $ApplicationSecret
                     AccessTokens          = $AccessTokens
                 }
@@ -515,15 +492,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

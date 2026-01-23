@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -78,6 +78,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             OffsetUri = '/IdentificationField'
                             AdditionalProperties = @{
                                 '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                options = @(
+                                    @{
+                                        itemId = 'device_vendor_msft_bitlocker_identificationfield_1'
+                                        name = 'Enabled'
+                                        optionValue = @{
+                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                            value = 1
+                                        }
+                                    }
+                                )
                             }
                         },
                         @{

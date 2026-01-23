@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -34,6 +34,32 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaOrganizationCertificateBasedAuthConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        '@odata.type' = "#microsoft.graph.CertificateBasedAuthConfiguration"
+                    }
+                    CertificateAuthorities = @(
+                        @{
+                            IssuerSki = "FakeStringValue"
+                            DeltaCertificateRevocationListUrl = "FakeStringValue"
+                            IsRootAuthority = $True
+                            CertificateRevocationListUrl = "FakeStringValue"
+                            Issuer = "FakeStringValue"
+                            Certificate = [byte[]] @(84, 101, 115, 116) # "Test"
+                        }
+                    )
+                    Id = "FakeStringValue"
+                }
+            }
+
+            Mock -CommandName Get-MgBetaOrganization -MockWith {
+                return @{
+                    Id = "00000000-0000-0000-0000-000000000000"
+                    DisplayName = "Fakegroup"
+                }
             }
 
             Mock -CommandName Invoke-MgGraphRequest -MockWith {
@@ -98,26 +124,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = "Absent"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaOrganizationCertificateBasedAuthConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.CertificateBasedAuthConfiguration"
-                        }
-                        CertificateAuthorities = @(
-                            @{
-                                IssuerSki = "FakeStringValue"
-                                DeltaCertificateRevocationListUrl = "FakeStringValue"
-                                IsRootAuthority = $True
-                                CertificateRevocationListUrl = "FakeStringValue"
-                                Issuer = "FakeStringValue"
-                                Certificate = [byte[]] @(84, 101, 115, 116) # "Test"
-                            }
-                        )
-                        Id = "FakeStringValue"
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -148,28 +154,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaOrganizationCertificateBasedAuthConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.CertificateBasedAuthConfiguration"
-                        }
-                        CertificateAuthorities = @(
-                            @{
-                                IssuerSki = "FakeStringValue"
-                                DeltaCertificateRevocationListUrl = "FakeStringValue"
-                                IsRootAuthority = $True
-                                CertificateRevocationListUrl = "FakeStringValue"
-                                Issuer = "FakeStringValue"
-                                Certificate = [byte[]] @(84, 101, 115, 116) # "Test"
-                            }
-                        )
-                        Id = "FakeStringValue"
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -182,7 +167,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     CertificateAuthorities = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphcertificateAuthority -Property @{
                             DeltaCertificateRevocationListUrl = "FakeStringValue"
-                            IsRootAuthority = $True
+                            IsRootAuthority = $false # Drift
                             CertificateRevocationListUrl = "FakeStringValue"
                             Certificate = "VGVzdA==" # "Test"
                         } -ClientOnly)
@@ -190,26 +175,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     OrganizationId = "FakeStringValue"
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaOrganizationCertificateBasedAuthConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.CertificateBasedAuthConfiguration"
-                        }
-                        CertificateAuthorities = @(
-                            @{
-                                IssuerSki = "FakeStringValue"
-                                DeltaCertificateRevocationListUrl = "NewFakeStringValue"
-                                IsRootAuthority = $False
-                                CertificateRevocationListUrl = "FakeStringValue"
-                                Issuer = "FakeStringValue"
-                                Certificate = [byte[]] @(84, 101, 115, 116) # "Test"
-                            }
-                        )
-                        Id = "FakeStringValue"
-
-                    }
                 }
             }
 
@@ -234,33 +199,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaOrganizationCertificateBasedAuthConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.CertificateBasedAuthConfiguration"
-                        }
-                        CertificateAuthorities = @(
-                            @{
-                                IssuerSki = "FakeStringValue"
-                                DeltaCertificateRevocationListUrl = "NewFakeStringValue"
-                                IsRootAuthority = $False
-                                CertificateRevocationListUrl = "FakeStringValue"
-                                Issuer = "FakeStringValue"
-                                Certificate = [byte[]] @(84, 101, 115, 116) # "Test"
-                            }
-                        )
-                        Id = "FakeStringValue"
-
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaOrganization -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup"
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

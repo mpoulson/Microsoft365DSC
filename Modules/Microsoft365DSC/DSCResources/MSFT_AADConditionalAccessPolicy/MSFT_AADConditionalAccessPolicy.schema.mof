@@ -39,6 +39,7 @@ class MSFT_AADConditionalAccessPolicy : OMI_BaseResource
     [Write, Description("Specifies, whether Application Enforced Restrictions are enabled in the Policy.")] Boolean ApplicationEnforcedRestrictionsIsEnabled;
     [Write, Description("Specifies, whether Cloud App Security is enforced by the Policy.")] Boolean CloudAppSecurityIsEnabled;
     [Write, Description("Specifies, what Cloud App Security control is enforced by the Policy.")] String CloudAppSecurityType;
+    [Write, Description("Specifies if token protection for sign-in sessions is to be enforced by the policy.")] Boolean SecureSignInSessionIsEnabled;
     [Write, Description("Sign in frequency time in the given unit to be enforced by the policy.")] UInt32 SignInFrequencyValue;
     [Write, Description("Display name of the terms of use to assign.")] String TermsOfUse;
     [Write, Description("Custom Controls assigned to the grant property of this policy.")] String CustomAuthenticationFactors[];
@@ -52,6 +53,8 @@ class MSFT_AADConditionalAccessPolicy : OMI_BaseResource
     [Write, Description("Names of the associated authentication flow transfer methods. Possible values are '', 'deviceCodeFlow', 'authenticationTransfer', or 'deviceCodeFlow,authenticationTransfer'.")] String TransferMethods;
     [Write, Description("Authentication context class references.")] String AuthenticationContexts[];
     [Write, Description("Insider risk levels conditions."), ValueMap{"minor", "moderate", "elevated", "unknownFutureValue"}, Values{"minor", "moderate", "elevated", "unknownFutureValue"}] String InsiderRiskLevels[];
+    [Write, Description("Service principal risk levels included in the policy."), ValueMap{"low", "medium", "high", "none", "unknownFutureValue"}, Values{"low", "medium", "high", "none", "unknownFutureValue"}] String ServicePrincipalRiskLevels[];
+    [Write, Description("Specifies the protocol flows to block.")] String ProtocolFlows[];
     [Write, Description("Specify if the Azure AD CA Policy should exist or not."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] String Ensure;
     [Write, Description("Credentials for the Microsoft Graph delegated permissions."), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;

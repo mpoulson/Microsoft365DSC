@@ -24,13 +24,22 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-GUID).ToString() -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Get-CsTeamsNetworkRoamingPolicy -MockWith {
+                return @{
+                    AllowIPVideo   = $True
+                    Description    = 'FakeStringValue'
+                    MediaBitRateKb = 5000
+                    Identity       = 'FakeStringValue'
+                }
             }
 
             Mock -CommandName Set-CsTeamsNetworkRoamingPolicy -MockWith {
@@ -94,15 +103,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure         = 'Absent'
                     Credential     = $Credential
                 }
-
-                Mock -CommandName Get-CsTeamsNetworkRoamingPolicy -MockWith {
-                    return @{
-                        AllowIPVideo   = $True
-                        Description    = 'FakeStringValue'
-                        MediaBitRateKb = 5000
-                        Identity       = 'FakeStringValue'
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -129,15 +129,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure         = 'Present'
                     Credential     = $Credential
                 }
-
-                Mock -CommandName Get-CsTeamsNetworkRoamingPolicy -MockWith {
-                    return @{
-                        AllowIPVideo   = $True
-                        Description    = 'FakeStringValue'
-                        MediaBitRateKb = 5000
-                        Identity       = 'FakeStringValue'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -150,19 +141,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     AllowIPVideo   = $True
                     Description    = 'FakeStringValue'
-                    MediaBitRateKb = 5000
+                    MediaBitRateKb = 4000 # Drift
                     Identity       = 'FakeStringValue'
                     Ensure         = 'Present'
                     Credential     = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsNetworkRoamingPolicy -MockWith {
-                    return @{
-                        AllowIPVideo   = $False
-                        Description    = 'FakeStringValueDrift #Drift'
-                        MediaBitRateKb = 5000
-                        Identity       = 'FakeStringValue'
-                    }
                 }
             }
 
@@ -186,16 +168,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsNetworkRoamingPolicy -MockWith {
-                    return @{
-                        AllowIPVideo   = $True
-                        Description    = 'FakeStringValue'
-                        MediaBitRateKb = 5000
-                        Identity       = 'FakeStringValue'
-
-                    }
                 }
             }
 

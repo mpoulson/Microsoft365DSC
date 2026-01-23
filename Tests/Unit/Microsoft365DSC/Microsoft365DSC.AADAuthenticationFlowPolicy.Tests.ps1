@@ -23,10 +23,22 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@contoso.onmicrosoft.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaPolicyAuthenticationFlowPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyAuthenticationFlowPolicy -MockWith {
+                $result = @{
+                    Id          = 'authenticationFlowsPolicy'
+                    DisplayName  = 'Authentication flows policy'
+                    Description = 'Description Text.'
+                    SelfServiceSignUp = @{
+                        IsEnabled = $true
+                    }
+                }
+                return $result
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -51,18 +63,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsSingleInstance         = "Yes";
                     SelfServiceSignUpEnabled = $True;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationFlowPolicy -MockWith {
-                    $result = @{
-                        Id          = 'authenticationFlowsPolicy'
-                        DisplayName  = 'Authentication flows policy'
-                        Description = 'Description Text.'
-                        SelfServiceSignUp = @{
-                            IsEnabled = $true
-                        }
-                    }
-                    return $result
-                }
             }
 
             It 'Should return true from the test method' {
@@ -78,19 +78,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName              = "Authentication flows policy";
                     Id                       = "authenticationFlowsPolicy";
                     IsSingleInstance         = "Yes";
-                    SelfServiceSignUpEnabled = $True;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationFlowPolicy -MockWith {
-                    $result = @{
-                        Id          = 'authenticationFlowsPolicy'
-                        DisplayName  = 'Authentication flows policy'
-                        Description = 'Description Text.'
-                        SelfServiceSignUp = @{
-                            IsEnabled = $false #drift
-                        }
-                    }
-                    return $result
+                    SelfServiceSignUpEnabled = $false; # Drift
                 }
             }
 
@@ -110,18 +98,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationFlowPolicy -MockWith {
-                    $result = @{
-                        Id          = 'authenticationFlowsPolicy'
-                        DisplayName  = 'Authentication flows policy'
-                        Description = 'Description Text.'
-                        SelfServiceSignUp = @{
-                            IsEnabled = $true
-                        }
-                    }
-                    return $result
                 }
             }
 

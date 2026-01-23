@@ -428,6 +428,76 @@ function Get-SPOAdministrationUrl
     )
 }
 
+function Connect-M365Tenant
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $Workload,
+
+        [Parameter()]
+        [System.String]
+        $Url,
+
+        [Parameter()]
+        [Alias('o365Credential')]
+        [System.Management.Automation.PSCredential]
+        $Credential,
+
+        [Parameter()]
+        [System.String]
+        $ApplicationId,
+
+        [Parameter()]
+        [System.String]
+        $TenantId,
+
+        [Parameter()]
+        [System.String]
+        $ApplicationSecret,
+
+        [Parameter()]
+        [System.String]
+        $CertificateThumbprint,
+
+        [Parameter()]
+        [Switch]
+        $UseModernAuth,
+
+        [Parameter()]
+        [SecureString]
+        $CertificatePassword,
+
+        [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Boolean]
+        $SkipModuleReload = $false,
+
+        [Parameter()]
+        [Switch]
+        $Identity,
+
+        [Parameter()]
+        [System.String[]]
+        $AccessTokens,
+
+        [Parameter()]
+        [System.Collections.Hashtable]
+        $Endpoints,
+
+        [Parameter()]
+        [ValidateScript(
+            { $Workload -eq 'ExchangeOnline' }
+        )]
+        [System.String[]]
+        $ExchangeOnlineCmdlets = @()
+    )
+}
+
 function New-M365DSCConnection
 {
     [CmdletBinding()]
@@ -632,97 +702,7 @@ function Get-AllSPOPackages
     )
 }
 
-# EXOAddressBookPolicy cmdlets
-function Get-AddressBookPolicy
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-
-    )
-}
-
 # EXOOfflineAddressBook cmdlets
-function Get-OfflineAddressBook
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-
-    )
-}
-
-function Set-OfflineAddressBook
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        $Identity,
-
-        [Parameter()]
-        [ValidateLength(1, 64)]
-        [System.String]
-        $Name,
-
-        [Parameter()]
-        [System.String[]]
-        $AddressLists = @(),
-
-        [Parameter()]
-        [System.String[]]
-        $ConfiguredAttributes = @(),
-
-        [Parameter()]
-        [System.String]
-        $DiffRetentionPeriod,
-
-        [Parameter()]
-        [System.Boolean]
-        $IsDefault,
-
-        [Parameter()]
-        [System.Boolean]
-        $Confirm
-    )
-}
-
-function New-OfflineAddressBook
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [ValidateLength(1, 64)]
-        [System.String]
-        $Name,
-
-        [Parameter()]
-        [System.String[]]
-        $AddressLists = @(),
-
-        [Parameter()]
-        [System.String[]]
-        $ConfiguredAttributes = @(),
-
-        [Parameter()]
-        [System.String]
-        $DiffRetentionPeriod,
-
-        [Parameter()]
-        [System.Boolean]
-        $IsDefault,
-
-        [Parameter()]
-        [System.Boolean]
-        $Confirm
-    )
-}
 function Set-AddressBookPolicy
 {
     [CmdletBinding()]
@@ -1001,16 +981,6 @@ function New-GlobalAddressList
         [Parameter()]
         [System.Boolean]
         $Confirm
-    )
-}
-# EXOAddressList cmdlets
-function Get-AddressList
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-
     )
 }
 

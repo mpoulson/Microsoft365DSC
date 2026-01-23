@@ -158,19 +158,13 @@ This parameter allows users to specify whether or not comments should be added a
 
 This parameter allows users to specify what set of components they wish to capture as part of their snapshot process. By default, Microsoft365DSC will exclude some components from the capture process either because these are likely to take a very long time to export (e.g. SPOPropertyBag) or that they are more related to data than actual configuration settings (e.g. Planner Tasks, SPOUserProfileProperty, etc.). Available modes are:
 
-- Lite
-- Default
-- Full
+- Default (Only configuration objects)
+- Full (Configuration and data objects)
 
 Omitting this parameter will default to the **Default** mode.
-To keep track of what resources are available in what mode, Microsoft365DSC defines two global variables which contain the list of resources unique to this extraction mode: **$Global:DefaultComponents** and **$Global:FullComponents**
+To keep track of what resources are available in what mode, Microsoft365DSC defines a function `Get-M365DSCResourcesByExportMode`, with which you can determine what resources are in the default or full mode. If you want the diff between the two, run `Get-M365DSCResourcesByExportMode -Mode 'Full' -ExcludeConfigurationResources`. This will return the resources that are in the full but not the default mode.
 
-<figure markdown>
-  ![Example of the default Export modes](../../Images/ExportComponentSets.png)
-  <figcaption>Example of the default Export modes</figcaption>
-</figure>
-
-This means that the **Lite** extraction mode will contain all resources with the exception of those listed in Default and Full. The **Default** mode will include all resources from the Lite mode, plus the SPOApp and SPOSiteDesign components, and **Full** will include every resource available in the project.
+The **Default** mode will include all configuration related resources and **Full** will include every resource available in the project (configuration as well as data).
 
 ### Path
 
@@ -209,3 +203,8 @@ This parameter accepts an array containing the names of various workloads you wi
 </figure>
 
 By default, specifying a workload will only export components that are part of the default component list (see **Mode**). If you want to capture every component available for a given workload, you will need to combine this parameter with **-Mode Full**.
+
+### Parallel
+
+This parameter leads to a parallel export using runspaces. It is not guaranteed that there is a performance improvement over sequential execution (which is the default).
+Parallel execution is more memory and compute intensive than sequential execution. Please make sure that there is enough memory available (recommended: 8GB or more).

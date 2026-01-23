@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_PlannerTask'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -91,26 +93,27 @@ function Get-TargetResource
         [Switch]
         $ManagedIdentity
     )
+
     Write-Verbose -Message "Getting configuration of Planner Task {$Title}"
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = $PSBoundParameters
-    $nullReturn.Ensure = 'Absent'
 
     try
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
+        $nullReturn = $PSBoundParameters
+        $nullReturn.Ensure = 'Absent'
+
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
 
         # If no TaskId were passed, automatically assume that this is a new task;
@@ -128,7 +131,12 @@ function Get-TargetResource
         {
             foreach ($assignmentKey in $taskResponse.Assignments.AdditionalProperties.Keys)
             {
-                $assignedUser = Get-MgUser -UserId $assignmentKey
+                $assignedUser = Get-MgUser -UserId $assignmentKey -ErrorAction SilentlyContinue
+                if ($null -eq $assignedUser)
+                {
+                    Write-Warning -Message "Skipping user with Id [$assignmentKey] because it could not be found."
+                    continue
+                }
                 $assignmentsValue += $assignedUser.UserPrincipalName
             }
         }
@@ -227,7 +235,6 @@ function Get-TargetResource
                 ApplicationSecret     = $ApplicationSecret
                 ManagedIdentity       = $ManagedIdentity.IsPresent
             }
-            Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $results)"
             return $results
         }
     }
@@ -239,7 +246,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -335,6 +342,7 @@ function Set-TargetResource
         [Switch]
         $ManagedIdentity
     )
+
     Write-Verbose -Message "Setting configuration of Planner Task {$Title}"
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -348,9 +356,6 @@ function Set-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
 
     $currentValues = Get-TargetResource @PSBoundParameters
 
@@ -638,11 +643,9 @@ function Test-TargetResource
         [Switch]
         $ManagedIdentity
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -650,38 +653,11 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Planner Task {$Title}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    # If the Task is currently assigned to a bucket and the Bucket property is null,
-    # assume that we are trying to remove the given task from the bucket and therefore
-    # treat this as a drift.
-    if ([System.String]::IsNullOrEmpty($Bucket) -and `
-            -not [System.String]::IsNullOrEmpty($CurrentValues.Bucket))
-    {
-        $TestResult = $false
-    }
-    else
-    {
-        $ValuesToCheck.Remove('Checklist') | Out-Null
-        if (-not (Test-M365DSCPlannerTaskCheckListValues -CurrentValues $CurrentValues `
-                    -DesiredValues $ValuesToCheck))
-        {
-            return $false
-        }
-        $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $compareParameters = Get-CompareParameters
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+                                         @compareParameters
+    return $result
 }
 
 function Export-TargetResource
@@ -854,56 +830,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
-}
-
-function Test-M365DSCPlannerTaskCheckListValues
-{
-    [CmdletBinding()]
-    [OutputType([System.Boolean])]
-    Param(
-        [Parameter(Mandatory = $true)]
-        [System.Collections.HashTable[]]
-        $CurrentValues,
-
-        [Parameter(Mandatory = $true)]
-        [System.Collections.HashTable[]]
-        $DesiredValues
-    )
-
-    # Check in CurrentValues for item that don't exist or are different in
-    # the DesiredValues;
-    foreach ($checklistItem in $CurrentValues)
-    {
-        $equivalentItemInDesired = $DesiredValues | Where-Object -FilterScript { $_.Title -eq $checklistItem.Title }
-        if ($null -eq $equivalentItemInDesired -or `
-                $checklistItem.Completed -ne $equivalentItemInDesired.Completed)
-        {
-            return $false
-        }
-    }
-
-    # Do the opposite, check in DesiredValue for item that don't exist or are different in
-    # the CurrentValues;
-    foreach ($checklistItem in $DesiredValues)
-    {
-        $equivalentItemInCurrent = $CurrentValues | Where-Object -FilterScript { $_.Title -eq $checklistItem.Title }
-        if ($null -eq $equivalentItemInCurrent -or `
-                $checklistItem.Completed -ne $equivalentItemInCurrent.Completed)
-        {
-            return $false
-        }
-    }
-    return $true
 }
 
 function Get-TaskCategoryNameByColor
@@ -1136,4 +1070,27 @@ function Get-TaskColorNameByCategory
     return $null
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return @{
+        PostProcessing = {
+            param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+            if ([System.String]::IsNullOrEmpty($DesiredValues.Bucket) -and
+                    -not [System.String]::IsNullOrEmpty($CurrentValues.Bucket))
+            {
+                if (-not $ValuesToCheck.ContainsKey('Bucket'))
+                {
+                    $DesiredValues.Bucket = $null
+                    $ValuesToCheck.Add('Bucket', $null)
+                }
+            }
+            return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+        }
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

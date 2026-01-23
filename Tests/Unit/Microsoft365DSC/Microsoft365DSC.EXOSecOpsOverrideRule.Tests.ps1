@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -36,15 +36,22 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Set-EXOSecOpsOverrideRule -MockWith {
-                return $null
             }
 
             Mock -CommandName Remove-EXOSecOpsOverrideRule -MockWith {
-                return $null
             }
 
             Mock -CommandName New-EXOSecOpsOverrideRule -MockWith {
-                return $null
+            }
+
+            Mock -CommandName Get-EXOSecOpsOverrideRule -MockWith {
+                return @{
+                    Identity            = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
+                    Comment             = "TestComment";
+                    Policy              = "40528418-717d-4368-a1ae-7912918f8a1f";
+                    Ensure              = 'Present';
+                    Credential          = $Credential;
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -90,16 +97,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Absent';
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-EXOSecOpsOverrideRule -MockWith {
-                    return @{
-                        Identity            = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
-                        Comment             = "TestComment";
-                        Policy              = "40528418-717d-4368-a1ae-7912918f8a1f";
-                        Ensure              = 'Present';
-                        Credential          = $Credential;
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -123,16 +120,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-EXOSecOpsOverrideRule -MockWith {
-                    return @{
-                        Identity            = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
-                        Comment             = "TestComment";
-                        Policy              = "40528418-717d-4368-a1ae-7912918f8a1f";
-                        Ensure              = 'Present';
-                        Credential          = $Credential;
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -145,19 +132,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Identity            = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
                     Comment             = "TestComment";
-                    Policy              = "40528418-717d-4368-a1ae-7912918f8a1g";
+                    Policy              = "40528418-717d-4368-a1ae-7912918f8a1g"; # Drift
                     Ensure              = 'Present'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-EXOSecOpsOverrideRule -MockWith {
-                    return @{
-                        Identity            = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
-                        Comment             = "TestComment";
-                        Policy              = "40528418-717d-4368-a1ae-7912918f8a1f";
-                        Ensure              = 'Present';
-                        Credential          = $Credential;
-                    }
                 }
             }
 
@@ -181,16 +158,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-EXOSecOpsOverrideRule -MockWith {
-                    return @{
-                        Identity            = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
-                        Comment             = "TestComment";
-                        Policy              = "40528418-717d-4368-a1ae-7912918f8a1f";
-                        Ensure              = 'Present';
-                        Credential          = $Credential;
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

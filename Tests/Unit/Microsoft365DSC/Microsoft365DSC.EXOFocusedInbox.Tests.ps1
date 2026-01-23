@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -46,6 +46,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Get-FocusedInbox -MockWith {
+                return @{
+                    FocusedInboxOn               = $true;
+                    FocusedInboxOnLastUpdateTime = "1/1/0001 12:00:00 AM";
+                    Identity                     = "admin@contoso.com";
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -54,21 +62,34 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         }
         # Test contexts
 
-        Context -Name 'Settings are not in the desired state' -Fixture {
+        Context -Name "User doesn't exist" -Fixture {
             BeforeAll {
                 $testParams = @{
                     Ensure                       = "Present";
                     FocusedInboxOn               = $True;
-                    FocusedInboxOnLastUpdateTime = "1/1/0001 12:00:00 AM";
                     Identity                     = "admin@contoso.com";
                 }
 
                 Mock -CommandName Get-FocusedInbox -MockWith {
-                    return @{
-                        FocusedInboxOn               = $False;
-                        FocusedInboxOnLastUpdateTime = "1/1/0001 12:00:00 AM";
-                        Identity                     = "admin@contoso.com";
-                    }
+                    return $null
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                Test-TargetResource @testParams | Should -Be $false
+            }
+
+            It 'Should return Absent from the Get method' {
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
+            }
+        }
+
+        Context -Name 'Settings are not in the desired state' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Ensure                       = "Present";
+                    FocusedInboxOn               = $false; # Drift
+                    Identity                     = "admin@contoso.com";
                 }
             }
 
@@ -91,16 +112,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Ensure                       = "Present";
                     FocusedInboxOn               = $True;
-                    FocusedInboxOnLastUpdateTime = "1/1/0001 12:00:00 AM";
                     Identity                     = "admin@contoso.com";
-                }
-
-                Mock -CommandName Get-FocusedInbox -MockWith {
-                    return @{
-                        FocusedInboxOn               = $True;
-                        FocusedInboxOnLastUpdateTime = "1/1/0001 12:00:00 AM";
-                        Identity                     = "admin@contoso.com";
-                    }
                 }
             }
 
@@ -113,53 +125,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-        Context -Name "User doesn't exist" -Fixture {
-            BeforeAll {
-                $testParams = @{
-                    Ensure                       = "Present";
-                    FocusedInboxOn               = $True;
-                    FocusedInboxOnLastUpdateTime = "1/1/0001 12:00:00 AM";
-                    Identity                     = "admin@contoso.com";
-                }
-
-                Mock -CommandName Get-FocusedInbox -MockWith {
-                    return $null
-                }
-            }
-
-            It 'Should return false from the Test method' {
-                Test-TargetResource @testParams | Should -Be $false
-            }
-
-            It 'Should return Absent from the Get method' {
-                (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
-            }
-        }
-
-
-
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-Mailbox -MockWith {
-                    return @{
-                        Id                = "12345-12345-12345-12345-12345"
-                        UserPrincipalName = "admin@contoso.com"
-                    }
-                }
-                Mock -CommandName Get-FocusedInbox -MockWith {
-                    return @{
-                        Ensure                       = "Present";
-                        FocusedInboxOn               = $True;
-                        FocusedInboxOnLastUpdateTime = "1/1/0001 12:00:00 AM";
-                        Identity                     = "admin@contoso.com";
-
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

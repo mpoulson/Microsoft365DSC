@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
             Mock -CommandName Update-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
             }
@@ -32,8 +32,42 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
             }
 
+            Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        IncludeTargets        = @(
+                            @{
+                                TargetType = 'group'
+                                Id         = 'Fakegroup'
+                            }
+                        )
+                        minimumLifetimeInMinutes = 25
+                        defaultLifetimeInMinutes = 25
+                        isUsableOnce = $True
+                        '@odata.type' = "#microsoft.graph.temporaryAccessPassAuthenticationMethodConfiguration"
+                        maximumLifetimeInMinutes = 25
+                        defaultLength = 25
+                    }
+                    ExcludeTargets = @(
+                        @{
+                            TargetType = "group"
+                            Id = "00000000-0000-0000-0000-000000000000"
+                        }
+                    )
+                    Id = "TemporaryAccessPass"
+                    State = "enabled"
+                }
+            }
+
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Get-MgGroup -MockWith {
+                return @{
+                    Id = "00000000-0000-0000-0000-000000000000"
+                    DisplayName = "Fakegroup"
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -67,13 +101,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     State = "enabled"
                     Ensure = "Present"
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup"
-                    }
                 }
 
                 Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
@@ -117,34 +144,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            minimumLifetimeInMinutes = 25
-                            defaultLifetimeInMinutes = 25
-                            isUsableOnce = $True
-                            '@odata.type' = "#microsoft.graph.temporaryAccessPassAuthenticationMethodConfiguration"
-                            maximumLifetimeInMinutes = 25
-                            defaultLength = 25
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "00000000-0000-0000-0000-000000000000"
-                            }
-                        )
-                        Id = "TemporaryAccessPass"
-                        State = "enabled"
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -185,43 +184,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            minimumLifetimeInMinutes = 25
-                            defaultLifetimeInMinutes = 25
-                            isUsableOnce = $True
-                            '@odata.type' = "#microsoft.graph.temporaryAccessPassAuthenticationMethodConfiguration"
-                            maximumLifetimeInMinutes = 25
-                            defaultLength = 25
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "00000000-0000-0000-0000-000000000000"
-                            }
-                        )
-                        Id = "TemporaryAccessPass"
-                        State = "enabled"
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -247,44 +210,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     Id = "TemporaryAccessPass"
                     IsUsableOnce = $True
-                    MaximumLifetimeInMinutes = 25
+                    MaximumLifetimeInMinutes = 7 # Drift
                     MinimumLifetimeInMinutes = 25
                     State = "enabled"
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup2"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            defaultLifetimeInMinutes = 7
-                            '@odata.type' = "#microsoft.graph.temporaryAccessPassAuthenticationMethodConfiguration"
-                            minimumLifetimeInMinutes = 7
-                            defaultLength = 7
-                            maximumLifetimeInMinutes = 7
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "00000000-0000-0000-0000-000000000000"
-                            }
-                        )
-                        Id = "TemporaryAccessPass"
-                        State = "enabled"
-                    }
                 }
             }
 
@@ -308,34 +238,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            minimumLifetimeInMinutes = 25
-                            defaultLifetimeInMinutes = 25
-                            isUsableOnce = $True
-                            '@odata.type' = "#microsoft.graph.temporaryAccessPassAuthenticationMethodConfiguration"
-                            maximumLifetimeInMinutes = 25
-                            defaultLength = 25
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "FakeStringValue"
-                            }
-                        )
-                        Id = "TemporaryAccessPass"
-                        State = "enabled"
-
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

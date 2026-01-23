@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
@@ -33,8 +33,45 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
             }
 
+            Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        IncludeTargets        = @(
+                            @{
+                                TargetType = 'group'
+                                Id         = 'Fakegroup'
+                            }
+                        )
+                        isAttestationEnforced = $True
+                        '@odata.type' = "#microsoft.graph.fido2AuthenticationMethodConfiguration"
+                        isSelfServiceRegistrationAllowed = $True
+                        keyRestrictions = @{
+                            aaGuids = @("FakeStringValue")
+                            enforcementType = "allow"
+                            isEnforced = $True
+                        }
+                    }
+                    ExcludeTargets = @(
+                        @{
+                            TargetType = "group"
+                            Id = "Fakegroup"
+                        }
+                    )
+                    Id = "Fido2"
+                    State = "enabled"
+
+                }
+            }
+
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Get-MgGroup -MockWith {
+                return @{
+                    Id = "00000000-0000-0000-0000-000000000000"
+                    DisplayName = "Fakegroup"
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -70,13 +107,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     State = "enabled"
                     Ensure = "Present"
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup"
-                    }
                 }
 
                 Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
@@ -122,36 +152,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            isAttestationEnforced = $True
-                            '@odata.type' = "#microsoft.graph.fido2AuthenticationMethodConfiguration"
-                            isSelfServiceRegistrationAllowed = $True
-                            keyRestrictions = @{
-                                aaGuids = @("FakeStringValue")
-                                enforcementType = "allow"
-                                isEnforced = $True
-                            }
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "Fakegroup"
-                            }
-                        )
-                        Id = "Fido2"
-                        State = "enabled"
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -194,43 +194,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            isAttestationEnforced = $True
-                            '@odata.type' = "#microsoft.graph.fido2AuthenticationMethodConfiguration"
-                            isSelfServiceRegistrationAllowed = $True
-                            keyRestrictions = @{
-                                aaGuids = @("FakeStringValue")
-                                enforcementType = "allow"
-                                isEnforced = $True
-                            }
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "Fakegroup"
-                            }
-                        )
-                        Id = "Fido2"
-                        State = "enabled"
-
-                    }
-                }
             }
 
 
@@ -256,7 +219,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     Id = "Fido2"
                     IsAttestationEnforced = $True
-                    IsSelfServiceRegistrationAllowed = $True
+                    IsSelfServiceRegistrationAllowed = $False # Drift
                     keyRestrictions = (New-CimInstance -ClassName MSFT_MicrosoftGraphfido2KeyRestrictions -Property @{
                         aaGuids = @("FakeStringValue")
                         enforcementType = "allow"
@@ -265,39 +228,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     State = "enabled"
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup2"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            '@odata.type' = "#microsoft.graph.fido2AuthenticationMethodConfiguration"
-                            keyRestrictions = @{
-                                enforcementType = "allow"
-                                aaGuids = @("FakeStringValue")
-                            }
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "Fakegroup"
-                            }
-                        )
-                        Id = "Fido2"
-                        State = "enabled"
-                    }
                 }
             }
 
@@ -321,36 +251,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            isAttestationEnforced = $True
-                            '@odata.type' = "#microsoft.graph.fido2AuthenticationMethodConfiguration"
-                            isSelfServiceRegistrationAllowed = $True
-                            keyRestrictions = @{
-                                aaGuids = @("FakeStringValue")
-                                enforcementType = "allow"
-                                isEnforced = $True
-                            }
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "Fakegroup"
-                            }
-                        )
-                        Id = "Fido2"
-                        State = "enabled"
-
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

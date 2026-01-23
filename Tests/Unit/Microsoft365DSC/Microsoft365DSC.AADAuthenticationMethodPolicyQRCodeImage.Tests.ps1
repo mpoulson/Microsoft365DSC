@@ -28,11 +28,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Invoke-MgGraphRequest -MockWith {
+                return @{
+                    Id        = 'QRCodePin'
+                    pinLength = 9
+                    standardQRCodeLifetimeInDays = 365
+                    state = 'disabled'
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -51,15 +60,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     state = 'disabled'
                     Ensure              = 'Absent'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        Id        = 'QRCodePin'
-                        pinLength = 9
-                        standardQRCodeLifetimeInDays = 365
-                        state = 'disabled'
-                    }
                 }
             }
             It 'Should return Values from the Get method' {
@@ -85,15 +85,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        Id        = 'QRCodePin'
-                        pinLength = 9
-                        standardQRCodeLifetimeInDays = 365
-                        state = 'disabled'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -106,19 +97,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Id                  = 'QRCodePin'
                     pinLength = 9
-                    standardQRCodeLifetimeInDays = 365
+                    standardQRCodeLifetimeInDays = 364 # Drift
                     state = 'disabled'
                     Ensure              = 'Present'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        Id        = 'QRCodePin'
-                        pinLength = 9
-                        standardQRCodeLifetimeInDays = 364 # drift
-                        state = 'disabled'
-                    }
                 }
             }
 
@@ -142,15 +124,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        Id        = 'QRCodePin'
-                        pinLength = 9
-                        standardQRCodeLifetimeInDays = 364 # drift
-                        state = 'disabled'
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

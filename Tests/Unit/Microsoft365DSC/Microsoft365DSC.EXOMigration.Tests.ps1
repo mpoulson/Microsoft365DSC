@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -282,7 +282,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should return true from the Test method' {
-                Test-TargetResource @testParams -Verbose | Should -Be $true
+                Test-TargetResource @testParams | Should -Be $true
             }
         }
 
@@ -355,7 +355,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return @{
                         AddUsers             = $False;
                         BadItemLimit         = "Unlimited";
-                        CompleteAfter        = "07/30/2020 21:00:00";
+                        CompleteAfter        = [DateTime]::ParseExact("07/30/2020 9:00:00 PM", "MM/dd/yyyy h:mm:ss tt", $null)
                         Credential           = $Credscredential;
                         Ensure               = "Present";
                         Identity             = "Arpita";
@@ -365,7 +365,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         NotificationEmails   = @("eac_admin@bellred.org","abc@bellred.org");
                         SkipMerging          = @();
                         SourceEndpoint       = "gmailCalendar";
-                        StartAfter           = "07/30/2020 21:00:00";
+                        StartAfter           = [DateTime]::ParseExact("07/30/2020 9:00:00 PM", "MM/dd/yyyy h:mm:ss tt", $null)
                         Status               = @{Value = "Completing"};
                         TargetDeliveryDomain = "O365InsightsView.mail.onmicrosoft.com";
                         Update               = $False;

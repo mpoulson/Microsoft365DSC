@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@contoso.onmicrosoft.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -35,6 +35,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Set-DataEncryptionPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-DataEncryptionPolicy -MockWith {
+                return @{
+                    Identity                  = 'Test'
+                    AzureKeyIDs               = '123456789'
+                    Description               = 'Test Description'
+                    Enabled                   = $true
+                    Name                      = 'Test Policy'
+                    PermanentDataPurgeContact = 'John.Smith@Contoso.com'
+                    PermanentDataPurgeReason  = 'Test'
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -80,24 +92,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                  = 'Test'
                     AzureKeyIDs               = '123456789'
                     Description               = 'Test Description'
-                    Enabled                   = $true
+                    Enabled                   = $false # Drift
                     Name                      = 'Test Policy'
                     PermanentDataPurgeContact = 'John.Smith@Contoso.com'
                     PermanentDataPurgeReason  = 'Test'
                     Credential                = $Credential
                     Ensure                    = 'Present'
-                }
-
-                Mock -CommandName Get-DataEncryptionPolicy -MockWith {
-                    return @{
-                        Identity                  = 'Test'
-                        AzureKeyIDs               = '123456789'
-                        Description               = 'Test Description'
-                        Enabled                   = $false #Drift
-                        Name                      = 'Test Policy'
-                        PermanentDataPurgeContact = 'John.Smith@Contoso.com'
-                        PermanentDataPurgeReason  = 'Test'
-                    }
                 }
             }
 
@@ -118,18 +118,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-DataEncryptionPolicy -MockWith {
-                    return @{
-                        Identity                  = 'Test'
-                        AzureKeyIDs               = '123456789'
-                        Description               = 'Test Description'
-                        Enabled                   = $true
-                        Name                      = 'Test Policy'
-                        PermanentDataPurgeContact = 'John.Smith@Contoso.com'
-                        PermanentDataPurgeReason  = 'Test'
-                    }
                 }
             }
 

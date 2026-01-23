@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -40,6 +40,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaPolicyClaimMappingPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyClaimMappingPolicy -MockWith {
+                return @{
+                    Definition = @("{`"ClaimsMappingPolicy`":{`"Version`":1,`"IncludeBasicClaimSet`":`"true`",`"ClaimsSchema`":[{`"Source`":`"user`",`"ID`":`"userprincipalname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier`"}],`"ClaimsTransformation`":[{`"ID`":`"CreateTermsOfService`",`"TransformationMethod`":`"CreateStringClaim`",`"InputParameters`":[{`"ID`":`"value`",`"DataType`":`"string`", `"Value`":`"sandbox`"}],`"OutputClaims`":[{`"ClaimTypeReferenceId`":`"TOS`",`"TransformationClaimType`":`"createdClaim`"}]}]}}")
+                    Description = "FakeStringValue"
+                    DisplayName = "FakeStringValue"
+                    Id = "FakeStringValue"
+                    IsOrganizationDefault = $True
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -90,7 +100,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             } -ClientOnly
                         } -ClientOnly
                     );
-
                     Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
@@ -152,23 +161,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             } -ClientOnly
                         } -ClientOnly
                     );
-
                     Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     IsOrganizationDefault = $True
                     Ensure = "Absent"
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyClaimMappingPolicy -MockWith {
-                    return @{
-                        Definition = @("{`"ClaimsMappingPolicy`":{`"Version`":1,`"IncludeBasicClaimSet`":`"true`",`"ClaimsSchema`":[{`"Source`":`"user`",`"ID`":`"userprincipalname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier`"},{`"Source`":`"user`",`"ID`":`"givenname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname`"},{`"Source`":`"user`",`"ID`":`"displayname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name`"},{`"Source`":`"user`",`"ID`":`"surname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname`"},{`"Source`":`"user`",`"ID`":`"userprincipalname`",`"SamlClaimType`":`"username`"}],`"ClaimsTransformation`":[{`"ID`":`"CreateTermsOfService`",`"TransformationMethod`":`"CreateStringClaim`",`"InputParameters`":[{`"ID`":`"value`",`"DataType`":`"string`", `"Value`":`"sandbox`"}],`"OutputClaims`":[{`"ClaimTypeReferenceId`":`"TOS`",`"TransformationClaimType`":`"createdClaim`"}]}]}}")
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        IsOrganizationDefault = $True
-                    }
                 }
             }
 
@@ -222,7 +220,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             } -ClientOnly
                         } -ClientOnly
                     );
-
                     Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
@@ -230,18 +227,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = "Present"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyClaimMappingPolicy -MockWith {
-                    return @{
-                        Definition = @("{`"ClaimsMappingPolicy`":{`"Version`":1,`"IncludeBasicClaimSet`":`"true`",`"ClaimsSchema`":[{`"Source`":`"user`",`"ID`":`"userprincipalname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier`"}],`"ClaimsTransformation`":[{`"ID`":`"CreateTermsOfService`",`"TransformationMethod`":`"CreateStringClaim`",`"InputParameters`":[{`"ID`":`"value`",`"DataType`":`"string`", `"Value`":`"sandbox`"}],`"OutputClaims`":[{`"ClaimTypeReferenceId`":`"TOS`",`"TransformationClaimType`":`"createdClaim`"}]}]}}")
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        IsOrganizationDefault = $True
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -256,9 +242,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             ClaimsMappingPolicy = New-CimInstance -ClassName MSFT_AADClaimsMappingPolicyDefinitionMappingPolicy -Property @{
                                 ClaimsSchema = [CimInstance[]]@(
                                     New-CimInstance -ClassName MSFT_AADClaimsMappingPolicyDefinitionMappingPolicyClaimsSchema -Property @{
-                                        SamlClaimType = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'
+                                        SamlClaimType = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname' # Drift
                                         Source = 'user'
-                                        Id = 'userprincipalname'
+                                        Id = 'givenname' # Drift
                                     } -ClientOnly
                                 )
                                 ClaimsTransformation = [CimInstance[]]@(
@@ -293,16 +279,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = "Present"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyClaimMappingPolicy -MockWith {
-                    return @{
-                        Definition = @("{`"ClaimsMappingPolicy`":{`"Version`":1,`"IncludeBasicClaimSet`":`"true`",`"ClaimsSchema`":[{`"Source`":`"user`",`"ID`":`"userprincipalname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier`"},{`"Source`":`"user`",`"ID`":`"givenname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname`"},{`"Source`":`"user`",`"ID`":`"displayname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name`"},{`"Source`":`"user`",`"ID`":`"surname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname`"},{`"Source`":`"user`",`"ID`":`"userprincipalname`",`"SamlClaimType`":`"username`"}],`"ClaimsTransformation`":[{`"ID`":`"CreateTermsOfService`",`"TransformationMethod`":`"CreateStringClaim`",`"InputParameters`":[{`"ID`":`"value`",`"DataType`":`"string`", `"Value`":`"sandbox`"}],`"OutputClaims`":[{`"ClaimTypeReferenceId`":`"TOS`",`"TransformationClaimType`":`"createdClaim`"}]}]}}")
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        IsOrganizationDefault = $True
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -325,16 +301,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyClaimMappingPolicy -MockWith {
-                    return @{
-                        Definition = @("{`"ClaimsMappingPolicy`":{`"Version`":1,`"IncludeBasicClaimSet`":`"true`",`"ClaimsSchema`":[{`"Source`":`"user`",`"ID`":`"userprincipalname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier`"},{`"Source`":`"user`",`"ID`":`"givenname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname`"},{`"Source`":`"user`",`"ID`":`"displayname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name`"},{`"Source`":`"user`",`"ID`":`"surname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname`"},{`"Source`":`"user`",`"ID`":`"userprincipalname`",`"SamlClaimType`":`"username`"}],`"ClaimsTransformation`":[{`"ID`":`"CreateTermsOfService`",`"TransformationMethod`":`"CreateStringClaim`",`"InputParameters`":[{`"ID`":`"value`",`"DataType`":`"string`", `"Value`":`"sandbox`"}],`"OutputClaims`":[{`"ClaimTypeReferenceId`":`"TOS`",`"TransformationClaimType`":`"createdClaim`"}]}]}}")
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        IsOrganizationDefault = $True
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

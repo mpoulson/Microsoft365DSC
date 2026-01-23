@@ -14,17 +14,19 @@ Import-Module -Name (Join-Path -Path $M365DSCTestFolder `
         -ChildPath '\UnitTestHelper.psm1' `
         -Resolve)
 
+$CurrentScriptPath = $PSCommandPath.Split('\')
+$CurrentScriptName = $CurrentScriptPath[$CurrentScriptPath.Length -1]
+$ResourceName      = $CurrentScriptName.Split('.')[1]
 $Global:DscHelper = New-M365DscUnitTestHelper -StubModule $CmdletModule `
-    -DscResource "AADAccessReviewDefinition" -GenericStubModule $GenericStubPath
+    -DscResource $ResourceName -GenericStubModule $GenericStubPath
 Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
     InModuleScope -ModuleName $Global:DscHelper.ModuleName -ScriptBlock {
         Invoke-Command -ScriptBlock $Global:DscHelper.InitializeScript -NoNewScope
         BeforeAll {
-
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -40,6 +42,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaIdentityGovernanceAccessReviewDefinition -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaIdentityGovernanceAccessReviewDefinition -MockWith {
+                return @{
+                    DescriptionForAdmins = "FakeStringValue"
+                    DescriptionForReviewers = "FakeStringValue"
+                    DisplayName = "FakeStringValue"
+                    Id = "FakeStringValue"
+                    Scope = @{
+                        AdditionalProperties = @{
+                            QueryType = "FakeStringValue"
+                            QueryRoot = "FakeStringValue"
+                            '@odata.type' = "#microsoft.graph.accessReviewQueryScope"
+                            Query = "FakeStringValue"
+                        }
+                    }
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -101,23 +120,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaIdentityGovernanceAccessReviewDefinition -MockWith {
-                    return @{
-                        DescriptionForAdmins = "FakeStringValue"
-                        DescriptionForReviewers = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        Scope = @{
-                            AdditionalProperties = @{
-                                QueryType = "FakeStringValue"
-                                QueryRoot = "FakeStringValue"
-                                '@odata.type' = "#microsoft.graph.accessReviewQueryScope"
-                                Query = "FakeStringValue"
-                            }
-                        }
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -149,23 +151,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaIdentityGovernanceAccessReviewDefinition -MockWith {
-                    return @{
-                        DescriptionForAdmins = "FakeStringValue"
-                        DescriptionForReviewers = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        Scope = @{
-                            AdditionalProperties = @{
-                                QueryType = "FakeStringValue"
-                                QueryRoot = "FakeStringValue"
-                                '@odata.type' = "#microsoft.graph.accessReviewQueryScope"
-                                Query = "FakeStringValue"
-                            }
-                        }
-                    }
-                }
             }
 
 
@@ -178,7 +163,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DescriptionForAdmins = "FakeStringValue"
-                    DescriptionForReviewers = "FakeStringValue"
+                    DescriptionForReviewers = "FakeStringValue2" # Drift
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     ScopeValue = (New-CimInstance -ClassName MSFT_MicrosoftGraphaccessReviewScope -Property @{
@@ -189,23 +174,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                      } -ClientOnly)
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaIdentityGovernanceAccessReviewDefinition -MockWith {
-                    return @{
-                        DescriptionForAdmins = "FakeStringValue"
-                        DescriptionForReviewers = "FakeStringValue2" # drift
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        Scope = @{
-                            AdditionalProperties = @{
-                                QueryType = "FakeStringValue"
-                                QueryRoot = "FakeStringValue"
-                                '@odata.type' = "#microsoft.graph.accessReviewQueryScope"
-                                Query = "FakeStringValue"
-                            }
-                        }
-                    }
                 }
             }
 
@@ -229,23 +197,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaIdentityGovernanceAccessReviewDefinition -MockWith {
-                    return @{
-                        DescriptionForAdmins = "FakeStringValue"
-                        DescriptionForReviewers = "FakeStringValue2" # drift
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        Scope = @{
-                            AdditionalProperties = @{
-                                QueryType = "FakeStringValue"
-                                QueryRoot = "FakeStringValue"
-                                '@odata.type' = "#microsoft.graph.accessReviewQueryScope"
-                                Query = "FakeStringValue"
-                            }
-                        }
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

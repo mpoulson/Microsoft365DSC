@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -39,6 +39,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName New-MgBetaPolicyTokenLifetimePolicy -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyTokenLifetimePolicy -MockWith {
+                return @{
+                    DisplayName           = 'PolicyDisplayName'
+                    ID                    = '78a80fa1-8ced-4019-94d8-2e0130644496'
+                    Definition            = @('{"TokenIssuancePolicy":{"Version": 1,"SigningAlgorithm": "http://www.w3.org/2000/09/xmldsig#rsa-sha1","TokenResponseSigningPolicy": "TokenOnly","SamlTokenVersion": "2.0"}}')
+                    Description           = 'My token'
+                    isOrganizationDefault = 'false'
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -91,16 +101,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = 'Absent'
                     Credential            = $Credscredential
                 }
-
-                Mock -CommandName Get-MgBetaPolicyTokenLifetimePolicy -MockWith {
-                    $AADPolicy = New-Object PSCustomObject
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name DisplayName -Value 'PolicyDisplayName'
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name ID -Value '78a80fa1-8ced-4019-94d8-2e0130644496'
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name Definition -Value @('{"TokenIssuancePolicy":{"Version": 1,"SigningAlgorithm": "http://www.w3.org/2000/09/xmldsig#rsa-sha1","TokenResponseSigningPolicy": "TokenOnly","SamlTokenVersion": "2.0"}}')
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name isOrganizationDefault -Value 'false'
-
-                    return $AADPolicy
-                }
             }
 
             It 'Should return values from the get method' {
@@ -128,17 +128,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = 'Present'
                     Credential            = $Credscredential
                 }
-
-                Mock -CommandName Get-MgBetaPolicyTokenLifetimePolicy -MockWith {
-                    $AADPolicy = New-Object PSCustomObject
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name DisplayName -Value 'PolicyDisplayName'
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name ID -Value '78a80fa1-8ced-4019-94d8-2e0130644496'
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name Definition -Value @('{"TokenIssuancePolicy":{"Version": 1,"SigningAlgorithm": "http://www.w3.org/2000/09/xmldsig#rsa-sha1","TokenResponseSigningPolicy": "TokenOnly","SamlTokenVersion": "2.0"}}')
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name isOrganizationDefault -Value 'false'
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name Description -Value 'My token'
-
-                    return $AADPolicy
-                }
             }
 
             It 'Should return Values from the get method' {
@@ -156,20 +145,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     DisplayName           = 'PolicyDisplayName1'
                     Definition            = @('{"TokenIssuancePolicy":{"Version": 1,"SigningAlgorithm": "http://www.w3.org/2000/09/xmldsig#rsa-sha1","TokenResponseSigningPolicy": "TokenOnly","SamlTokenVersion": "2.0"}}')
-                    IsOrganizationDefault = $true
+                    IsOrganizationDefault = $true # Drift
                     Description           = 'My token'
                     Ensure                = 'Present'
                     Credential            = $Credscredential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyTokenLifetimePolicy -MockWith {
-                    $AADPolicy = New-Object PSCustomObject
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name DisplayName -Value 'PolicyDisplayName'
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name ID -Value '78a80fa1-8ced-4019-94d8-2e0130644496'
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name Definition -Value @('{"TokenIssuancePolicy":{"Version": 1,"SigningAlgorithm": "http://www.w3.org/2000/09/xmldsig#rsa-sha1","TokenResponseSigningPolicy": "TokenOnly","SamlTokenVersion": "2.0"}}')
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name isOrganizationDefault -Value 'false'
-
-                    return $AADPolicy
                 }
             }
 
@@ -194,16 +173,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyTokenLifetimePolicy -MockWith {
-                    $AADPolicy = New-Object PSCustomObject
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name DisplayName -Value 'PolicyDisplayName'
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name ID -Value '78a80fa1-8ced-4019-94d8-2e0130644496'
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name Definition -Value '{{"TokenIssuancePolicy": {"Version": 1,"SigningAlgorithm": "http://www.w3.org/2000/09/xmldsig#rsa-sha1","TokenResponseSigningPolicy": "TokenOnly","SamlTokenVersion": "2.0"}}}'
-                    $AADPolicy | Add-Member -MemberType NoteProperty -Name isOrganizationDefault -Value 'false'
-
-                    return $AADPolicy
                 }
             }
 

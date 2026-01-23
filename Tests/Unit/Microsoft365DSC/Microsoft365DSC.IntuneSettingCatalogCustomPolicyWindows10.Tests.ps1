@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-GUID).ToString() -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -46,6 +46,99 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return 'Credentials'
             }
 
+            Mock -CommandName Get-MgBetaDeviceManagementConfigurationPolicy -MockWith {
+                return @{
+                    Description  = 'FakeStringValue'
+                    Id           = 'FakeStringValue'
+                    Name         = 'FakeStringValue'
+                    Platforms    = 'windows10'
+                    Settings     = @(
+                        @{
+                            SettingInstance = @{
+                                AdditionalProperties = @{
+                                    simpleSettingValue = @{
+                                        value   = 'fakeValue'
+                                        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
+                                    }
+                                    '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
+                                }
+                                SettingDefinitionId  = 'stringSettingDefinitionId'
+                            }
+                        }
+                        @{
+                            SettingInstance = @{
+                                AdditionalProperties = @{
+                                    simpleSettingValue = @{
+                                        valueState    = 'invalid'
+                                        value   = 'fakeValue'
+                                        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
+                                    }
+                                    '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
+                                }
+                                SettingDefinitionId  = 'secretSettingDefinitionId'
+                            }
+                        }
+                        @{
+                            SettingInstance = @{
+                                AdditionalProperties = @{
+                                    simpleSettingValue = @{
+                                        value      = 25
+                                        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                    }
+                                    '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
+                                }
+                                SettingDefinitionId  = 'integerSettingDefinitionId'
+                            }
+                        }
+                        @{
+                            SettingInstance = @{
+                                AdditionalProperties = @{
+                                    choiceSettingValue = @{
+                                        value    = 'choiceSettingValue'
+                                        children = @()
+                                    }
+                                    '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance'
+                                }
+                                SettingDefinitionId  = 'choiceSettingDefinitionId'
+                            }
+                        }
+                        @{
+                            SettingInstance = @{
+                                AdditionalProperties = @{
+                                    '@odata.type'     = '#microsoft.graph.deviceManagementConfigurationGroupSettingInstance'
+                                    groupSettingValue = @{
+                                        children = @(
+                                            @{
+                                                simpleSettingValue  = @{
+                                                    value   = 'fakeValue'
+                                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
+                                                }
+                                                SettingDefinitionId = 'stringSettingDefinitionId'
+                                                '@odata.type'       = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
+                                            }
+                                            @{
+                                                simpleSettingValue  = @{
+                                                    valueState    = 'invalid'
+                                                    value   = 'fakeValue'
+                                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
+                                                }
+                                                SettingDefinitionId = 'secretSettingDefinitionId'
+                                                '@odata.type'       = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
+                                            }
+                                        )
+                                    }
+                                }
+                                SettingDefinitionId  = 'groupSettingDefinitionId'
+                            }
+                        }
+                    )
+                    Technologies = 'mdm'
+                    TemplateReference = @{
+                        TemplateFamily = 'none'
+                    }
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -55,6 +148,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Get-MgBetaDeviceManagementConfigurationPolicyAssignment -MockWith {
             }
             Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
+            }
+            Mock -CommandName Update-IntuneDeviceConfigurationPolicy -MockWith {
             }
         }
         # Test contexts
@@ -235,99 +330,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure       = 'Absent'
                     Credential   = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementConfigurationPolicy -MockWith {
-                    return @{
-                        Description  = 'FakeStringValue'
-                        Id           = 'FakeStringValue'
-                        Name         = 'FakeStringValue'
-                        Platforms    = 'windows10'
-                        Settings     = @(
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            StringValue   = 'fakeValue'
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'stringSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            valueState    = 'invalid'
-                                            StringValue   = 'fakeValue'
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'secretSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            IntValue      = 25
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'integerSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        choiceSettingValue = @{
-                                            value    = 'choiceSettingValue'
-                                            children = @()
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'stringSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        '@odata.type'     = '#microsoft.graph.deviceManagementConfigurationGroupSettingValue'
-                                        groupSettingValue = @{
-                                            children = @(
-                                                @{
-                                                    simpleSettingValue  = @{
-                                                        StringValue   = 'fakeValue'
-                                                        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
-                                                    }
-                                                    SettingDefinitionId = 'stringSettingDefinitionId'
-                                                    '@odata.type'       = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                                }
-                                                @{
-                                                    simpleSettingValue  = @{
-                                                        valueState    = 'invalid'
-                                                        StringValue   = 'fakeValue'
-                                                        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
-                                                    }
-                                                    SettingDefinitionId = 'secretSettingDefinitionId'
-                                                    '@odata.type'       = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                                }
-                                            )
-                                        }
-                                    }
-                                    SettingDefinitionId  = 'groupSettingDefinitionId'
-                                }
-                            }
-                        )
-                        Technologies = 'mdm'
-                        TemplateReference = @{
-                            TemplateFamily = 'none'
-                        }
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -343,6 +345,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Should -Invoke -CommandName Remove-MgBetaDeviceManagementConfigurationPolicy -Exactly 1
             }
         }
+
         Context -Name 'The IntuneSettingCatalogCustomPolicyWindows10 Exists and Values are already in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
@@ -397,7 +400,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     odataType = '#microsoft.graph.deviceManagementConfigurationGroupSettingInstance'
                                     SettingDefinitionId = 'groupSettingDefinitionId'
                                     groupSettingValue = (New-CimInstance -ClassName MSFT_MicrosoftGraphdeviceManagementConfigurationGroupSettingValue -Property @{
-                                            odataType = '#microsoft.graph.deviceManagementConfigurationGroupSettingValue'
+                                            #odataType = '#microsoft.graph.deviceManagementConfigurationGroupSettingValue'
                                             children  = [CimInstance[]]@(
                                                 (New-CimInstance -ClassName MSFT_MicrosoftGraphdeviceManagementConfigurationSettingInstance -Property @{
                                                     simpleSettingValue  = (New-CimInstance -ClassName MSFT_MicrosoftGraphdeviceManagementConfigurationSimpleSettingValue -Property @{
@@ -425,102 +428,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure       = 'Present'
                     Credential   = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementConfigurationPolicy -MockWith {
-                    return @{
-                        Description  = 'FakeStringValue'
-                        Id           = 'FakeStringValue'
-                        Name         = 'FakeStringValue'
-                        Platforms    = 'windows10'
-                        Settings     = @(
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            value         = 'fakeValue'
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'stringSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            valueState    = 'invalid'
-                                            value         = 'fakeValue'
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'secretSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            value         = 25
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'integerSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        choiceSettingValue = @{
-                                            value    = 'choiceSettingValue'
-                                            children = @()
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'choiceSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    SettingDefinitionId  = 'groupSettingDefinitionId'
-                                    AdditionalProperties = @{
-                                        '@odata.type'     = '#microsoft.graph.deviceManagementConfigurationGroupSettingInstance'
-                                        groupSettingValue = @{
-                                            '@odata.type'     = '#microsoft.graph.deviceManagementConfigurationGroupSettingValue'
-                                            children = @(
-                                                @{
-                                                    simpleSettingValue  = @{
-                                                        value         = 'fakeValue'
-                                                        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
-                                                    }
-                                                    SettingDefinitionId = 'stringSettingDefinitionId'
-                                                    '@odata.type'       = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                                }
-                                                @{
-                                                    simpleSettingValue  = @{
-                                                        valueState    = 'invalid'
-                                                        value         = 'fakeValue'
-                                                        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
-                                                    }
-                                                    SettingDefinitionId = 'secretSettingDefinitionId'
-                                                    '@odata.type'       = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        )
-                        Technologies = 'mdm'
-                        TemplateReference = @{
-                            TemplateFamily = 'none'
-                        }
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -594,7 +502,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                 (New-CimInstance -ClassName MSFT_MicrosoftGraphdeviceManagementConfigurationSettingInstance -Property @{
                                                     simpleSettingValue  = (New-CimInstance -ClassName MSFT_MicrosoftGraphdeviceManagementConfigurationSimpleSettingValue -Property @{
                                                             valueState  = 'invalid'
-                                                            StringValue = 'fakeValue'
+                                                            StringValue = 'updatedValue' # Updated property
                                                             odataType   = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
                                                         } -ClientOnly)
                                                     SettingDefinitionId = 'secretSettingDefinitionId'
@@ -608,103 +516,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Technologies = 'mdm'
                     Ensure       = 'Present'
                     Credential   = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementConfigurationPolicy -MockWith {
-                    return @{
-                        Description  = 'FakeStringValue'
-                        Id           = 'FakeStringValue'
-                        Name         = 'FakeStringValue'
-                        Platforms    = 'windows10'
-                        Settings     = @(
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            value         = 'fakeValue'
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'stringSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            valueState    = 'invalid'
-                                            value         = 'fakeValue'
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'secretSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            value         = 25
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'integerSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        choiceSettingValue = @{
-                                            value    = 'choiceSettingValue'
-                                            children = @()
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'choiceSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    SettingDefinitionId  = 'groupSettingDefinitionId'
-                                    AdditionalProperties = @{
-                                        '@odata.type'     = '#microsoft.graph.deviceManagementConfigurationGroupSettingInstance'
-                                        groupSettingValue = @{
-                                            '@odata.type'     = '#microsoft.graph.deviceManagementConfigurationGroupSettingValue'
-                                            children = @(
-                                                @{
-                                                    simpleSettingValue  = @{
-                                                        value         = 'fakeValueDrift' #Drift
-                                                        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
-                                                    }
-                                                    SettingDefinitionId = 'stringSettingDefinitionId'
-                                                    '@odata.type'       = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                                }
-                                                @{
-                                                    simpleSettingValue  = @{
-                                                        valueState    = 'invalid'
-                                                        value         = 'fakeValue'
-                                                        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
-                                                    }
-                                                    SettingDefinitionId = 'secretSettingDefinitionId'
-                                                    '@odata.type'       = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        )
-                        Technologies = 'mdm'
-                        TemplateReference = @{
-                            TemplateFamily = 'none'
-                        }
-                    }
-                }
-
-                Mock -CommandName Update-IntuneDeviceConfigurationPolicy -MockWith {
                 }
             }
 
@@ -729,101 +540,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementConfigurationPolicy -MockWith {
-                    return @{
-                        Description  = 'FakeStringValue'
-                        Id           = 'FakeStringValue'
-                        Name         = 'FakeStringValue'
-                        Platforms    = 'windows10'
-                        Settings     = @(
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            value         = 'fakeValue'
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'stringSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            valueState    = 'invalid'
-                                            value         = 'fakeValue'
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'secretSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        simpleSettingValue = @{
-                                            value         = 25
-                                            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'integerSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    AdditionalProperties = @{
-                                        choiceSettingValue = @{
-                                            value    = 'choiceSettingValue'
-                                            children = @()
-                                        }
-                                        '@odata.type'      = '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance'
-                                    }
-                                    SettingDefinitionId  = 'choiceSettingDefinitionId'
-                                }
-                            }
-                            @{
-                                SettingInstance = @{
-                                    SettingDefinitionId  = 'groupSettingDefinitionId'
-                                    AdditionalProperties = @{
-                                        '@odata.type'     = '#microsoft.graph.deviceManagementConfigurationGroupSettingInstance'
-                                        groupSettingValue = @{
-                                            '@odata.type'     = '#microsoft.graph.deviceManagementConfigurationGroupSettingValue'
-                                            children = @(
-                                                @{
-                                                    simpleSettingValue  = @{
-                                                        value         = 'fakeValueDrift' #Drift
-                                                        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
-                                                    }
-                                                    SettingDefinitionId = 'stringSettingDefinitionId'
-                                                    '@odata.type'       = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                                }
-                                                @{
-                                                    simpleSettingValue  = @{
-                                                        valueState    = 'invalid'
-                                                        value         = 'fakeValue'
-                                                        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
-                                                    }
-                                                    SettingDefinitionId = 'secretSettingDefinitionId'
-                                                    '@odata.type'       = '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        )
-                        Technologies = 'mdm'
-                        TemplateReference = @{
-                            TemplateFamily = 'none'
-                        }
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

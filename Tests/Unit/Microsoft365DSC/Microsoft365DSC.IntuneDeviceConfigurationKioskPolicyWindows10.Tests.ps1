@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaDeviceManagementDeviceConfiguration -MockWith {
@@ -38,6 +38,113 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        kioskBrowserBlockedURLs = @("FakeStringValue")
+                        kioskBrowserDefaultUrl = "FakeStringValue"
+                        '@odata.type' = "#microsoft.graph.windowsKioskConfiguration"
+                        kioskBrowserEnableNavigationButtons = $True
+                        edgeKioskEnablePublicBrowsing = $True
+                        kioskBrowserRestartOnIdleTimeInMinutes = 25
+                        kioskBrowserBlockedUrlExceptions = @("FakeStringValue")
+                        kioskBrowserEnableHomeButton = $True
+                        windowsKioskForceUpdateSchedule = @{
+                            runImmediatelyIfAfterStartDateTime = $True
+                            startDateTime = "2023-01-01T00:00:00.0000000+00:00"
+                            dayofMonth = 25
+                            recurrence = "none"
+                            dayofWeek = "sunday"
+                        }
+                        kioskProfiles = @(
+                            @{
+                                profileId = "FakeStringValue"
+                                userAccountsConfiguration = @(
+                                    @{
+                                        groupId = "FakeStringValue"
+                                        '@odata.type' = "#microsoft.graph.windowsKioskActiveDirectoryGroup"
+                                        userName = "FakeStringValue"
+                                        userPrincipalName = "FakeStringValue"
+                                        groupName = "FakeStringValue"
+                                        userId = "FakeStringValue"
+                                        displayName = "FakeStringValue"
+                                    }
+                                )
+                                profileName = "FakeStringValue"
+                                appConfiguration = @{
+                                    uwpApp = @{
+                                        edgeNoFirstRun = $True
+                                        name = "FakeStringValue"
+                                        edgeKiosk = "FakeStringValue"
+                                        classicAppPath = "FakeStringValue"
+                                        appId = "FakeStringValue"
+                                        appUserModelId = "FakeStringValue"
+                                        edgeKioskIdleTimeoutMinutes = 25
+                                        autoLaunch = $True
+                                        startLayoutTileSize = "hidden"
+                                        appType = "unknown"
+                                        '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
+                                        edgeKioskType = "publicBrowsing"
+                                        containedAppId = "FakeStringValue"
+                                        desktopApplicationId = "FakeStringValue"
+                                        desktopApplicationLinkPath = "FakeStringValue"
+                                        path = "FakeStringValue"
+                                    }
+                                    win32App = @{
+                                        edgeNoFirstRun = $True
+                                        name = "FakeStringValue"
+                                        edgeKiosk = "FakeStringValue"
+                                        classicAppPath = "FakeStringValue"
+                                        edgeKioskIdleTimeoutMinutes = 25
+                                        appUserModelId = "FakeStringValue"
+                                        appId = "FakeStringValue"
+                                        autoLaunch = $True
+                                        startLayoutTileSize = "hidden"
+                                        appType = "unknown"
+                                        '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
+                                        edgeKioskType = "publicBrowsing"
+                                        containedAppId = "FakeStringValue"
+                                        desktopApplicationId = "FakeStringValue"
+                                        desktopApplicationLinkPath = "FakeStringValue"
+                                        path = "FakeStringValue"
+                                    }
+                                    '@odata.type' = "#microsoft.graph.windowsKioskMultipleApps"
+                                    apps = @(
+                                        @{
+                                            edgeNoFirstRun = $True
+                                            name = "FakeStringValue"
+                                            edgeKiosk = "FakeStringValue"
+                                            classicAppPath = "FakeStringValue"
+                                            appId = "FakeStringValue"
+                                            appUserModelId = "FakeStringValue"
+                                            edgeKioskIdleTimeoutMinutes = 25
+                                            autoLaunch = $True
+                                            startLayoutTileSize = "hidden"
+                                            appType = "unknown"
+                                            '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
+                                            edgeKioskType = "publicBrowsing"
+                                            containedAppId = "FakeStringValue"
+                                            desktopApplicationId = "FakeStringValue"
+                                            desktopApplicationLinkPath = "FakeStringValue"
+                                            path = "FakeStringValue"
+                                        }
+                                    )
+                                    allowAccessToDownloadsFolder = $True
+                                    showTaskBar = $True
+                                    disallowDesktopApps = $True
+                                    startMenuLayoutXml = $True
+                                }
+                            }
+                        )
+                        kioskBrowserEnableEndSessionButton = $True
+                    }
+                    description = "FakeStringValue"
+                    displayName = "FakeStringValue"
+                    id = "FakeStringValue"
+
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -277,113 +384,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            kioskBrowserBlockedURLs = @("FakeStringValue")
-                            kioskBrowserDefaultUrl = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.windowsKioskConfiguration"
-                            kioskBrowserEnableNavigationButtons = $True
-                            edgeKioskEnablePublicBrowsing = $True
-                            kioskBrowserRestartOnIdleTimeInMinutes = 25
-                            kioskBrowserBlockedUrlExceptions = @("FakeStringValue")
-                            kioskBrowserEnableHomeButton = $True
-                            windowsKioskForceUpdateSchedule = @{
-                                runImmediatelyIfAfterStartDateTime = $True
-                                startDateTime = "2023-01-01T00:00:00.0000000+00:00"
-                                dayofMonth = 25
-                                recurrence = "none"
-                                dayofWeek = "sunday"
-                            }
-                            kioskProfiles = @(
-                                @{
-                                    profileId = "FakeStringValue"
-                                    userAccountsConfiguration = @(
-                                        @{
-                                            groupId = "FakeStringValue"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskActiveDirectoryGroup"
-                                            userName = "FakeStringValue"
-                                            userPrincipalName = "FakeStringValue"
-                                            groupName = "FakeStringValue"
-                                            userId = "FakeStringValue"
-                                            displayName = "FakeStringValue"
-                                        }
-                                    )
-                                    profileName = "FakeStringValue"
-                                    appConfiguration = @{
-                                        uwpApp = @{
-                                            edgeNoFirstRun = $True
-                                            name = "FakeStringValue"
-                                            edgeKiosk = "FakeStringValue"
-                                            classicAppPath = "FakeStringValue"
-                                            appId = "FakeStringValue"
-                                            appUserModelId = "FakeStringValue"
-                                            edgeKioskIdleTimeoutMinutes = 25
-                                            autoLaunch = $True
-                                            startLayoutTileSize = "hidden"
-                                            appType = "unknown"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                            edgeKioskType = "publicBrowsing"
-                                            containedAppId = "FakeStringValue"
-                                            desktopApplicationId = "FakeStringValue"
-                                            desktopApplicationLinkPath = "FakeStringValue"
-                                            path = "FakeStringValue"
-                                        }
-                                        win32App = @{
-                                            edgeNoFirstRun = $True
-                                            name = "FakeStringValue"
-                                            edgeKiosk = "FakeStringValue"
-                                            classicAppPath = "FakeStringValue"
-                                            edgeKioskIdleTimeoutMinutes = 25
-                                            appUserModelId = "FakeStringValue"
-                                            appId = "FakeStringValue"
-                                            autoLaunch = $True
-                                            startLayoutTileSize = "hidden"
-                                            appType = "unknown"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                            edgeKioskType = "publicBrowsing"
-                                            containedAppId = "FakeStringValue"
-                                            desktopApplicationId = "FakeStringValue"
-                                            desktopApplicationLinkPath = "FakeStringValue"
-                                            path = "FakeStringValue"
-                                        }
-                                        '@odata.type' = "#microsoft.graph.windowsKioskMultipleApps"
-                                        apps = @(
-                                            @{
-                                                edgeNoFirstRun = $True
-                                                name = "FakeStringValue"
-                                                edgeKiosk = "FakeStringValue"
-                                                classicAppPath = "FakeStringValue"
-                                                appId = "FakeStringValue"
-                                                appUserModelId = "FakeStringValue"
-                                                edgeKioskIdleTimeoutMinutes = 25
-                                                autoLaunch = $True
-                                                startLayoutTileSize = "hidden"
-                                                appType = "unknown"
-                                                '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                                edgeKioskType = "publicBrowsing"
-                                                containedAppId = "FakeStringValue"
-                                                desktopApplicationId = "FakeStringValue"
-                                                desktopApplicationLinkPath = "FakeStringValue"
-                                                path = "FakeStringValue"
-                                            }
-                                        )
-                                        allowAccessToDownloadsFolder = $True
-                                        showTaskBar = $True
-                                        disallowDesktopApps = $True
-                                        startMenuLayoutXml = $True
-                                    }
-                                }
-                            )
-                            kioskBrowserEnableEndSessionButton = $True
-                        }
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -503,115 +503,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            kioskBrowserBlockedURLs = @("FakeStringValue")
-                            kioskBrowserDefaultUrl = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.windowsKioskConfiguration"
-                            kioskBrowserEnableNavigationButtons = $True
-                            edgeKioskEnablePublicBrowsing = $True
-                            kioskBrowserRestartOnIdleTimeInMinutes = 25
-                            kioskBrowserBlockedUrlExceptions = @("FakeStringValue")
-                            kioskBrowserEnableHomeButton = $True
-                            windowsKioskForceUpdateSchedule = @{
-                                runImmediatelyIfAfterStartDateTime = $True
-                                startDateTime = "2023-01-01T00:00:00.0000000+00:00"
-                                dayofMonth = 25
-                                recurrence = "none"
-                                dayofWeek = "sunday"
-                            }
-                            kioskProfiles = @(
-                                @{
-                                    profileId = "FakeStringValue"
-                                    userAccountsConfiguration = @(
-                                        @{
-                                            groupId = "FakeStringValue"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskActiveDirectoryGroup"
-                                            userName = "FakeStringValue"
-                                            userPrincipalName = "FakeStringValue"
-                                            groupName = "FakeStringValue"
-                                            userId = "FakeStringValue"
-                                            displayName = "FakeStringValue"
-                                        }
-                                    )
-                                    profileName = "FakeStringValue"
-                                    appConfiguration = @{
-                                        uwpApp = @{
-                                            edgeNoFirstRun = $True
-                                            name = "FakeStringValue"
-                                            edgeKiosk = "FakeStringValue"
-                                            classicAppPath = "FakeStringValue"
-                                            appId = "FakeStringValue"
-                                            appUserModelId = "FakeStringValue"
-                                            edgeKioskIdleTimeoutMinutes = 25
-                                            autoLaunch = $True
-                                            startLayoutTileSize = "hidden"
-                                            appType = "unknown"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                            edgeKioskType = "publicBrowsing"
-                                            containedAppId = "FakeStringValue"
-                                            desktopApplicationId = "FakeStringValue"
-                                            desktopApplicationLinkPath = "FakeStringValue"
-                                            path = "FakeStringValue"
-                                        }
-                                        win32App = @{
-                                            edgeNoFirstRun = $True
-                                            name = "FakeStringValue"
-                                            edgeKiosk = "FakeStringValue"
-                                            classicAppPath = "FakeStringValue"
-                                            edgeKioskIdleTimeoutMinutes = 25
-                                            appUserModelId = "FakeStringValue"
-                                            appId = "FakeStringValue"
-                                            autoLaunch = $True
-                                            startLayoutTileSize = "hidden"
-                                            appType = "unknown"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                            edgeKioskType = "publicBrowsing"
-                                            containedAppId = "FakeStringValue"
-                                            desktopApplicationId = "FakeStringValue"
-                                            desktopApplicationLinkPath = "FakeStringValue"
-                                            path = "FakeStringValue"
-                                        }
-                                        '@odata.type' = "#microsoft.graph.windowsKioskMultipleApps"
-                                        apps = @(
-                                            @{
-                                                edgeNoFirstRun = $True
-                                                name = "FakeStringValue"
-                                                edgeKiosk = "FakeStringValue"
-                                                classicAppPath = "FakeStringValue"
-                                                appId = "FakeStringValue"
-                                                appUserModelId = "FakeStringValue"
-                                                edgeKioskIdleTimeoutMinutes = 25
-                                                autoLaunch = $True
-                                                startLayoutTileSize = "hidden"
-                                                appType = "unknown"
-                                                '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                                edgeKioskType = "publicBrowsing"
-                                                containedAppId = "FakeStringValue"
-                                                desktopApplicationId = "FakeStringValue"
-                                                desktopApplicationLinkPath = "FakeStringValue"
-                                                path = "FakeStringValue"
-                                            }
-                                        )
-                                        allowAccessToDownloadsFolder = $True
-                                        showTaskBar = $True
-                                        disallowDesktopApps = $True
-                                        startMenuLayoutXml = $True
-                                    }
-                                }
-                            )
-                            kioskBrowserEnableEndSessionButton = $True
-                        }
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -631,7 +523,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     KioskBrowserEnableEndSessionButton = $True
                     KioskBrowserEnableHomeButton = $True
                     KioskBrowserEnableNavigationButtons = $True
-                    KioskBrowserRestartOnIdleTimeInMinutes = 25
+                    KioskBrowserRestartOnIdleTimeInMinutes = 7 # Updated property
                     kioskProfiles = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphwindowsKioskProfile -Property @{
                             profileId = "FakeStringValue"
@@ -722,97 +614,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            kioskBrowserBlockedURLs = @("FakeStringValue")
-                            kioskBrowserDefaultUrl = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.windowsKioskConfiguration"
-                            kioskBrowserBlockedUrlExceptions = @("FakeStringValue")
-                            kioskBrowserRestartOnIdleTimeInMinutes = 7
-                            windowsKioskForceUpdateSchedule = @{
-                                startDateTime = "2023-01-01T00:00:00.0000000+00:00"
-                                dayofMonth = 7
-                                recurrence = "none"
-                                dayofWeek = "sunday"
-                            }
-                            kioskProfiles = @(
-                                @{
-                                    profileId = "FakeStringValue"
-                                    userAccountsConfiguration = @(
-                                        @{
-                                            groupId = "FakeStringValue"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskActiveDirectoryGroup"
-                                            userName = "FakeStringValue"
-                                            userPrincipalName = "FakeStringValue"
-                                            groupName = "FakeStringValue"
-                                            userId = "FakeStringValue"
-                                            displayName = "FakeStringValue"
-                                        }
-                                    )
-                                    profileName = "FakeStringValue"
-                                    appConfiguration = @{
-                                        apps = @(
-                                            @{
-                                                name = "FakeStringValue"
-                                                edgeKiosk = "FakeStringValue"
-                                                classicAppPath = "FakeStringValue"
-                                                appId = "FakeStringValue"
-                                                appUserModelId = "FakeStringValue"
-                                                edgeKioskIdleTimeoutMinutes = 7
-                                                startLayoutTileSize = "hidden"
-                                                appType = "unknown"
-                                                '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                                edgeKioskType = "publicBrowsing"
-                                                containedAppId = "FakeStringValue"
-                                                desktopApplicationId = "FakeStringValue"
-                                                desktopApplicationLinkPath = "FakeStringValue"
-                                                path = "FakeStringValue"
-                                            }
-                                        )
-                                        uwpApp = @{
-                                            name = "FakeStringValue"
-                                            edgeKiosk = "FakeStringValue"
-                                            classicAppPath = "FakeStringValue"
-                                            appId = "FakeStringValue"
-                                            appUserModelId = "FakeStringValue"
-                                            edgeKioskIdleTimeoutMinutes = 7
-                                            startLayoutTileSize = "hidden"
-                                            appType = "unknown"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                            edgeKioskType = "publicBrowsing"
-                                            containedAppId = "FakeStringValue"
-                                            desktopApplicationId = "FakeStringValue"
-                                            desktopApplicationLinkPath = "FakeStringValue"
-                                            path = "FakeStringValue"
-                                        }
-                                        '@odata.type' = "#microsoft.graph.windowsKioskMultipleApps"
-                                        win32App = @{
-                                            name = "FakeStringValue"
-                                            edgeKiosk = "FakeStringValue"
-                                            classicAppPath = "FakeStringValue"
-                                            appId = "FakeStringValue"
-                                            appUserModelId = "FakeStringValue"
-                                            edgeKioskIdleTimeoutMinutes = 7
-                                            startLayoutTileSize = "hidden"
-                                            appType = "unknown"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                            edgeKioskType = "publicBrowsing"
-                                            containedAppId = "FakeStringValue"
-                                            desktopApplicationId = "FakeStringValue"
-                                            desktopApplicationLinkPath = "FakeStringValue"
-                                            path = "FakeStringValue"
-                                        }
-                                    }
-                                }
-                            )
-                        }
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -835,113 +636,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            kioskBrowserBlockedURLs = @("FakeStringValue")
-                            kioskBrowserDefaultUrl = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.windowsKioskConfiguration"
-                            kioskBrowserEnableNavigationButtons = $True
-                            edgeKioskEnablePublicBrowsing = $True
-                            kioskBrowserRestartOnIdleTimeInMinutes = 25
-                            kioskBrowserBlockedUrlExceptions = @("FakeStringValue")
-                            kioskBrowserEnableHomeButton = $True
-                            windowsKioskForceUpdateSchedule = @{
-                                runImmediatelyIfAfterStartDateTime = $True
-                                startDateTime = "2023-01-01T00:00:00.0000000+00:00"
-                                dayofMonth = 25
-                                recurrence = "none"
-                                dayofWeek = "sunday"
-                            }
-                            kioskProfiles = @(
-                                @{
-                                    profileId = "FakeStringValue"
-                                    userAccountsConfiguration = @(
-                                        @{
-                                            groupId = "FakeStringValue"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskActiveDirectoryGroup"
-                                            userName = "FakeStringValue"
-                                            userPrincipalName = "FakeStringValue"
-                                            groupName = "FakeStringValue"
-                                            userId = "FakeStringValue"
-                                            displayName = "FakeStringValue"
-                                        }
-                                    )
-                                    profileName = "FakeStringValue"
-                                    appConfiguration = @{
-                                        uwpApp = @{
-                                            edgeNoFirstRun = $True
-                                            name = "FakeStringValue"
-                                            edgeKiosk = "FakeStringValue"
-                                            classicAppPath = "FakeStringValue"
-                                            appId = "FakeStringValue"
-                                            appUserModelId = "FakeStringValue"
-                                            edgeKioskIdleTimeoutMinutes = 25
-                                            autoLaunch = $True
-                                            startLayoutTileSize = "hidden"
-                                            appType = "unknown"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                            edgeKioskType = "publicBrowsing"
-                                            containedAppId = "FakeStringValue"
-                                            desktopApplicationId = "FakeStringValue"
-                                            desktopApplicationLinkPath = "FakeStringValue"
-                                            path = "FakeStringValue"
-                                        }
-                                        win32App = @{
-                                            edgeNoFirstRun = $True
-                                            name = "FakeStringValue"
-                                            edgeKiosk = "FakeStringValue"
-                                            classicAppPath = "FakeStringValue"
-                                            edgeKioskIdleTimeoutMinutes = 25
-                                            appUserModelId = "FakeStringValue"
-                                            appId = "FakeStringValue"
-                                            autoLaunch = $True
-                                            startLayoutTileSize = "hidden"
-                                            appType = "unknown"
-                                            '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                            edgeKioskType = "publicBrowsing"
-                                            containedAppId = "FakeStringValue"
-                                            desktopApplicationId = "FakeStringValue"
-                                            desktopApplicationLinkPath = "FakeStringValue"
-                                            path = "FakeStringValue"
-                                        }
-                                        '@odata.type' = "#microsoft.graph.windowsKioskMultipleApps"
-                                        apps = @(
-                                            @{
-                                                edgeNoFirstRun = $True
-                                                name = "FakeStringValue"
-                                                edgeKiosk = "FakeStringValue"
-                                                classicAppPath = "FakeStringValue"
-                                                appId = "FakeStringValue"
-                                                appUserModelId = "FakeStringValue"
-                                                edgeKioskIdleTimeoutMinutes = 25
-                                                autoLaunch = $True
-                                                startLayoutTileSize = "hidden"
-                                                appType = "unknown"
-                                                '@odata.type' = "#microsoft.graph.windowsKioskDesktopApp"
-                                                edgeKioskType = "publicBrowsing"
-                                                containedAppId = "FakeStringValue"
-                                                desktopApplicationId = "FakeStringValue"
-                                                desktopApplicationLinkPath = "FakeStringValue"
-                                                path = "FakeStringValue"
-                                            }
-                                        )
-                                        allowAccessToDownloadsFolder = $True
-                                        showTaskBar = $True
-                                        disallowDesktopApps = $True
-                                        startMenuLayoutXml = $True
-                                    }
-                                }
-                            )
-                            kioskBrowserEnableEndSessionButton = $True
-                        }
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

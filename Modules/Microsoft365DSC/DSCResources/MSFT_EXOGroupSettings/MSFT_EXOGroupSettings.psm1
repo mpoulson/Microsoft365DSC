@@ -1,3 +1,12 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOGroupSettings'
+
+$Script:displayNameProperties = @{
+    IncludeAcceptMessagesOnlyFromSendersOrMembersWithDisplayNames = $true
+    IncludeGrantSendOnBehalfToWithDisplayNames                    = $true
+    IncludeModeratedByWithDisplayNames                            = $true
+    IncludeRejectMessagesFromSendersOrMembersWithDisplayNames     = $true
+}
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -212,7 +221,7 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $UnifiedGroupWelcomeMessageEnabled,
+        $WelcomeMessageEnabled,
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -247,13 +256,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of Office 365 Group Settings for $DisplayName"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            Write-Verbose -Message "Getting configuration of Office 365 Group Settings for $DisplayName"
-
-            $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -273,161 +282,166 @@ function Get-TargetResource
             }
 
             Write-Verbose -Message "Retrieving group by id {$Id}"
-            [Array]$group = Get-UnifiedGroup -Identity $Id -IncludeAllProperties -ErrorAction Stop
 
-            if ($group.Length -eq 0)
-            {
-                Write-Verbose -Message "Couldn't retrieve group by ID. Trying by DisplayName {$DisplayName}"
-                [Array]$group = Get-UnifiedGroup -Identity $DisplayName -IncludeAllProperties -ErrorAction Stop
-            }
-
-            if ($group.Length -gt 1)
-            {
-                Write-Warning -Message "Multiple instances of a group named {$DisplayName} was discovered which could result in inconsistencies retrieving its values."
-            }
-            $group = $group[0]
+            $group = Get-UnifiedGroup -Identity $Id -IncludeAllProperties @Script:displayNameProperties -ErrorAction SilentlyContinue
             if ($null -eq $group)
             {
-                Write-Verbose -Message "The specified group {$DisplayName} doesn't already exist."
+                Write-Verbose -Message "Couldn't retrieve group by ID. Trying by DisplayName {$DisplayName}"
+                $group = Get-UnifiedGroup -Identity $DisplayName -IncludeAllProperties @Script:displayNameProperties -ErrorAction SilentlyContinue
+            }
+
+            if ($null -eq $group)
+            {
+                Write-Verbose -Message "The specified group {$DisplayName} doesn't exist."
                 return $nullReturn
+            }
+
+            if ($group -is [array] -and $group.Count -gt 1)
+            {
+                Write-Warning -Message "Multiple instances of a group named {$DisplayName} was discovered which could result in inconsistencies retrieving its values."
+                $group = $group[0]
             }
         }
         else
         {
             $group = $Script:exportedInstance
         }
+
+        $ExtensionCustomAttribute1Value = $group.ExtensionCustomAttribute1
+        if ($null -eq $group.ExtensionCustomAttribute1)
+        {
+            $ExtensionCustomAttribute1Value = @()
+        }
+
+        $ExtensionCustomAttribute2Value = $group.ExtensionCustomAttribute2
+        if ($null -eq $group.ExtensionCustomAttribute2)
+        {
+            $ExtensionCustomAttribute2Value = @()
+        }
+
+        $ExtensionCustomAttribute3Value = $group.ExtensionCustomAttribute3
+        if ($null -eq $group.ExtensionCustomAttribute3)
+        {
+            $ExtensionCustomAttribute3Value = @()
+        }
+
+        $ExtensionCustomAttribute4Value = $group.ExtensionCustomAttribute4
+        if ($null -eq $group.ExtensionCustomAttribute4)
+        {
+            $ExtensionCustomAttribute4Value = @()
+        }
+
+        $ExtensionCustomAttribute5Value = $group.ExtensionCustomAttribute5
+        if ($null -eq $group.ExtensionCustomAttribute5)
+        {
+            $ExtensionCustomAttribute5Value = @()
+        }
+
+        $GrantSendOnBehalfToValue = Get-DisplayNameSimplified -DisplayName $group.GrantSendOnBehalfToWithDisplayNames
+        if ($null -eq $group.GrantSendOnBehalfToWithDisplayNames)
+        {
+            $GrantSendOnBehalfToValue = @()
+        }
+
+        $ModeratedByValue = Get-DisplayNameSimplified -DisplayName $group.ModeratedByWithDisplayNames
+        if ($null -eq $group.ModeratedByWithDisplayNames)
+        {
+            $ModeratedByValue = @()
+        }
+
+        $AcceptMessagesOnlyFromSendersOrMembersValue = Get-DisplayNameSimplified -DisplayName $group.AcceptMessagesOnlyFromSendersOrMembersWithDisplayNames
+        if ($null -eq $group.AcceptMessagesOnlyFromSendersOrMembersWithDisplayNames)
+        {
+            $AcceptMessagesOnlyFromSendersOrMembersValue = @()
+        }
+
+        $MailTipTranslationsValue = $group.MailTipTranslations
+        if ($null -eq $group.MailTipTranslations)
+        {
+            $MailTipTranslationsValue = @()
+        }
+
+        $RejectMessagesFromSendersOrMembersValue = Get-DisplayNameSimplified -DisplayName $group.RejectMessagesFromSendersOrMembersWithDisplayNames
+        if ($null -eq $group.RejectMessagesFromSendersOrMembersWithDisplayNames)
+        {
+            $RejectMessagesFromSendersOrMembersValue = @()
+        }
+
+        $result = @{
+            DisplayName                            = $DisplayName
+            Id                                     = $group.Id
+            AcceptMessagesOnlyFromSendersOrMembers = $AcceptMessagesOnlyFromSendersOrMembersValue
+            AccessType                             = $group.AccessType
+            AlwaysSubscribeMembersToCalendarEvents = $group.AlwaysSubscribeMembersToCalendarEvents
+            AuditLogAgeLimit                       = $group.AuditLogAgeLimit
+            AutoSubscribeNewMembers                = $group.AutoSubscribeNewMembers
+            CalendarMemberReadOnly                 = $group.CalendarMemberReadOnly
+            Classification                         = $group.Classification
+            ConnectorsEnabled                      = $group.ConnectorsEnabled
+            CustomAttribute1                       = $group.CustomAttribute1
+            CustomAttribute2                       = $group.CustomAttribute2
+            CustomAttribute3                       = $group.CustomAttribute3
+            CustomAttribute4                       = $group.CustomAttribute4
+            CustomAttribute5                       = $group.CustomAttribute5
+            CustomAttribute6                       = $group.CustomAttribute6
+            CustomAttribute7                       = $group.CustomAttribute7
+            CustomAttribute8                       = $group.CustomAttribute8
+            CustomAttribute9                       = $group.CustomAttribute9
+            CustomAttribute10                      = $group.CustomAttribute10
+            CustomAttribute11                      = $group.CustomAttribute11
+            CustomAttribute12                      = $group.CustomAttribute12
+            CustomAttribute13                      = $group.CustomAttribute13
+            CustomAttribute14                      = $group.CustomAttribute14
+            CustomAttribute15                      = $group.CustomAttribute15
+            DataEncryptionPolicy                   = $group.DataEncryptionPolicy
+            EmailAddresses                         = $group.EmailAddresses
+            ExtensionCustomAttribute1              = $ExtensionCustomAttribute1Value
+            ExtensionCustomAttribute2              = $ExtensionCustomAttribute2Value
+            ExtensionCustomAttribute3              = $ExtensionCustomAttribute3Value
+            ExtensionCustomAttribute4              = $ExtensionCustomAttribute4Value
+            ExtensionCustomAttribute5              = $ExtensionCustomAttribute5Value
+            GrantSendOnBehalfTo                    = $GrantSendOnBehalfToValue
+            HiddenFromAddressListsEnabled          = $group.HiddenFromAddressListsEnabled
+            HiddenFromExchangeClientsEnabled       = $group.HiddenFromExchangeClientsEnabled
+            InformationBarrierMode                 = $group.InformationBarrierMode
+            IsMemberAllowedToEditContent           = $group.IsMemberAllowedToEditContent
+            Language                               = $group.Language.Name
+            MailboxRegion                          = $group.MailboxRegion
+            MailTip                                = $group.MailTip
+            MailTipTranslations                    = $MailTipTranslationsValue
+            MaxReceiveSize                         = $group.MaxReceiveSize
+            MaxSendSize                            = $group.MaxSendSize
+            ModeratedBy                            = $ModeratedByValue
+            ModerationEnabled                      = $group.ModerationEnabled
+            Notes                                  = $group.Notes
+            PrimarySmtpAddress                     = $group.PrimarySmtpAddress
+            RejectMessagesFromSendersOrMembers     = $RejectMessagesFromSendersOrMembersValue
+            RequireSenderAuthenticationEnabled     = $group.RequireSenderAuthenticationEnabled
+            SensitivityLabelId                     = $group.SensitivityLabelId
+            SubscriptionEnabled                    = $group.SubscriptionEnabled
+            WelcomeMessageEnabled                  = $group.WelcomeMessageEnabled
+            Credential                             = $Credential
+            ApplicationId                          = $ApplicationId
+            TenantId                               = $TenantId
+            CertificateThumbprint                  = $CertificateThumbprint
+            CertificatePath                        = $CertificatePath
+            CertificatePassword                    = $CertificatePassword
+            ManagedIdentity                        = $ManagedIdentity
+            AccessTokens                           = $AccessTokens
+        }
+
+        return $result
     }
     catch
     {
-        return $nullReturn
+        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw
     }
-
-
-    $ExtensionCustomAttribute1Value = $group.ExtensionCustomAttribute1
-    if ($null -eq $group.ExtensionCustomAttribute1)
-    {
-        $ExtensionCustomAttribute1Value = @()
-    }
-
-    $ExtensionCustomAttribute2Value = $group.ExtensionCustomAttribute2
-    if ($null -eq $group.ExtensionCustomAttribute2)
-    {
-        $ExtensionCustomAttribute2Value = @()
-    }
-
-    $ExtensionCustomAttribute3Value = $group.ExtensionCustomAttribute3
-    if ($null -eq $group.ExtensionCustomAttribute3)
-    {
-        $ExtensionCustomAttribute3Value = @()
-    }
-
-    $ExtensionCustomAttribute4Value = $group.ExtensionCustomAttribute4
-    if ($null -eq $group.ExtensionCustomAttribute4)
-    {
-        $ExtensionCustomAttribute4Value = @()
-    }
-
-    $ExtensionCustomAttribute5Value = $group.ExtensionCustomAttribute5
-    if ($null -eq $group.ExtensionCustomAttribute5)
-    {
-        $ExtensionCustomAttribute5Value = @()
-    }
-
-    $GrantSendOnBehalfToValue = $group.GrantSendOnBehalfTo
-    if ($null -eq $group.GrantSendOnBehalfTo)
-    {
-        $GrantSendOnBehalfToValue = @()
-    }
-
-    $ModeratedByValue = $group.ModeratedBy
-    if ($null -eq $group.ModeratedBy)
-    {
-        $ModeratedByValue = @()
-    }
-
-    $AcceptMessagesOnlyFromSendersOrMembersValue = $group.AcceptMessagesOnlyFromSendersOrMembers
-    if ($null -eq $group.AcceptMessagesOnlyFromSendersOrMembers)
-    {
-        $AcceptMessagesOnlyFromSendersOrMembersValue = @()
-    }
-
-    $MailTipTranslationsValue = $group.MailTipTranslations
-    if ($null -eq $group.MailTipTranslations)
-    {
-        $MailTipTranslationsValue = @()
-    }
-
-    $RejectMessagesFromSendersOrMembersValue = $group.RejectMessagesFromSendersOrMembers
-    if ($null -eq $group.RejectMessagesFromSendersOrMembers)
-    {
-        $RejectMessagesFromSendersOrMembersValue = @()
-    }
-
-    $result = @{
-        DisplayName                            = $DisplayName
-        Id                                     = $group.Id
-        AcceptMessagesOnlyFromSendersOrMembers = $AcceptMessagesOnlyFromSendersOrMembersValue
-        AccessType                             = $group.AccessType
-        AlwaysSubscribeMembersToCalendarEvents = $group.AlwaysSubscribeMembersToCalendarEvents
-        AuditLogAgeLimit                       = $group.AuditLogAgeLimit
-        AutoSubscribeNewMembers                = $group.AutoSubscribeNewMembers
-        CalendarMemberReadOnly                 = $group.CalendarMemberReadOnly
-        Classification                         = $group.Classification
-        ConnectorsEnabled                      = $group.ConnectorsEnabled
-        CustomAttribute1                       = $group.CustomAttribute1
-        CustomAttribute2                       = $group.CustomAttribute2
-        CustomAttribute3                       = $group.CustomAttribute3
-        CustomAttribute4                       = $group.CustomAttribute4
-        CustomAttribute5                       = $group.CustomAttribute5
-        CustomAttribute6                       = $group.CustomAttribute6
-        CustomAttribute7                       = $group.CustomAttribute7
-        CustomAttribute8                       = $group.CustomAttribute8
-        CustomAttribute9                       = $group.CustomAttribute9
-        CustomAttribute10                      = $group.CustomAttribute10
-        CustomAttribute11                      = $group.CustomAttribute11
-        CustomAttribute12                      = $group.CustomAttribute12
-        CustomAttribute13                      = $group.CustomAttribute13
-        CustomAttribute14                      = $group.CustomAttribute14
-        CustomAttribute15                      = $group.CustomAttribute15
-        DataEncryptionPolicy                   = $group.DataEncryptionPolicy
-        EmailAddresses                         = $group.EmailAddresses
-        ExtensionCustomAttribute1              = $ExtensionCustomAttribute1Value
-        ExtensionCustomAttribute2              = $ExtensionCustomAttribute2Value
-        ExtensionCustomAttribute3              = $ExtensionCustomAttribute3Value
-        ExtensionCustomAttribute4              = $ExtensionCustomAttribute4Value
-        ExtensionCustomAttribute5              = $ExtensionCustomAttribute5Value
-        GrantSendOnBehalfTo                    = $GrantSendOnBehalfToValue
-        HiddenFromAddressListsEnabled          = $group.HiddenFromAddressListsEnabled
-        HiddenFromExchangeClientsEnabled       = $group.HiddenFromExchangeClientsEnabled
-        InformationBarrierMode                 = $group.InformationBarrierMode
-        IsMemberAllowedToEditContent           = $group.IsMemberAllowedToEditContent
-        Language                               = $group.Language.Name
-        MailboxRegion                          = $group.MailboxRegion
-        MailTip                                = $group.MailTip
-        MailTipTranslations                    = $MailTipTranslationsValue
-        MaxReceiveSize                         = $group.MaxReceiveSize
-        MaxSendSize                            = $group.MaxSendSize
-        ModeratedBy                            = $ModeratedByValue
-        ModerationEnabled                      = $group.ModerationEnabled
-        Notes                                  = $group.Notes
-        PrimarySmtpAddress                     = $group.PrimarySmtpAddress
-        RejectMessagesFromSendersOrMembers     = $RejectMessagesFromSendersOrMembersValue
-        RequireSenderAuthenticationEnabled     = $group.RequireSenderAuthenticationEnabled
-        SensitivityLabelId                     = $group.SensitivityLabelId
-        SubscriptionEnabled                    = $group.SubscriptionEnabled
-        UnifiedGroupWelcomeMessageEnabled      = $group.UnifiedGroupWelcomeMessageEnabled
-        Credential                             = $Credential
-        ApplicationId                          = $ApplicationId
-        TenantId                               = $TenantId
-        CertificateThumbprint                  = $CertificateThumbprint
-        CertificatePath                        = $CertificatePath
-        CertificatePassword                    = $CertificatePassword
-        ManagedIdentity                        = $ManagedIdentity
-        AccessTokens                           = $AccessTokens
-    }
-
-    Write-Verbose -Message "Found an existing instance of group '$($DisplayName)'"
-    return $result
 }
 
 function Set-TargetResource
@@ -643,7 +657,7 @@ function Set-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $UnifiedGroupWelcomeMessageEnabled,
+        $WelcomeMessageEnabled,
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -691,28 +705,51 @@ function Set-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
 
-    $UpdateParameters = ([Hashtable]$PSBoundParameters).Clone()
+    $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $UpdateParameters.Add('Identity', $CurrentValues.Id)
+    $UpdateParameters.Remove('Id') | Out-Null
     $UpdateParameters.Remove('DisplayName') | Out-Null
-    $UpdateParameters.Remove('Credential') | Out-Null
-    $UpdateParameters.Remove('ApplicationId') | Out-Null
-    $UpdateParameters.Remove('TenantId') | Out-Null
-    $UpdateParameters.Remove('CertificateThumbprint') | Out-Null
-    $UpdateParameters.Remove('CertificatePath') | Out-Null
-    $UpdateParameters.Remove('CertificatePassword') | Out-Null
-    $UpdateParameters.Remove('ManagedIdentity') | Out-Null
-    $UpdateParameters.Remove('AccessTokens') | Out-Null
 
     # Cannot use PrimarySmtpAddress and EmailAddresses at the same time. If both are present, then give priority to PrimarySmtpAddress.
     if ($UpdateParameters.ContainsKey('PrimarySmtpAddress') -and $null -ne $UpdateParameters.PrimarySmtpAddress)
     {
-        $UpdateParameters.Remove('EmailAddresses')
+        $UpdateParameters.Remove('EmailAddresses') | Out-Null
     }
+
+    # Renaming of WelcomeMessageEnabled to UnifiedGroupWelcomeMessageEnabled
+    if ($UpdateParameters.ContainsKey('WelcomeMessageEnabled'))
+    {
+        $UpdateParameters.Add('UnifiedGroupWelcomeMessageEnabled', $UpdateParameters.WelcomeMessageEnabled)
+        $UpdateParameters.Remove('WelcomeMessageEnabled') | Out-Null
+    }
+
+    foreach ($key in $Script:displayNameProperties.Keys)
+    {
+        $key = $key.Replace("Include", "").Replace("WithDisplayNames", "")
+        if ($PSBoundParameters.ContainsKey($key))
+        {
+            $convertedList = [System.Collections.Generic.List[System.String]]::new()
+            foreach ($member in $UpdateParameters.$key)
+            {
+                # If member is a GUID, keep as-is
+                $guid = [System.Guid]::Empty
+                if ([System.Guid]::TryParse($member, [ref]$guid))
+                {
+                    $convertedList.Add($member)
+                    continue
+                }
+
+                $entry = Get-Recipient -Identity $member
+                $convertedList.Add($entry.Name)
+            }
+
+            $UpdateParameters[$key] = $convertedList.ToArray()
+        }
+    }
+
     Set-UnifiedGroup @UpdateParameters
 }
 
@@ -930,7 +967,7 @@ function Test-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $UnifiedGroupWelcomeMessageEnabled,
+        $WelcomeMessageEnabled,
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -964,11 +1001,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -976,22 +1011,11 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Office 365 Group Settings for $DisplayName"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-    $ValuesToCheck = $PSBoundParameters
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $compareParameters = Get-CompareParameters
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                             -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+                                             @compareParameters
+    return $result
 }
 
 function Export-TargetResource
@@ -1032,6 +1056,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters `
         -SkipModuleReload $true
@@ -1051,7 +1076,7 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        [array] $Script:exportedInstances = Get-UnifiedGroup -ResultSize Unlimited -ErrorAction SilentlyContinue
+        [array] $Script:exportedInstances = Get-UnifiedGroup -ResultSize Unlimited @Script:displayNameProperties -ErrorAction SilentlyContinue
 
         $i = 1
         if ($Script:exportedInstances.Length -eq 0)
@@ -1082,7 +1107,7 @@ function Export-TargetResource
                     TenantId              = $TenantId
                     CertificateThumbprint = $CertificateThumbprint
                     CertificatePassword   = $CertificatePassword
-                    Managedidentity       = $ManagedIdentity.IsPresent
+                    ManagedIdentity       = $ManagedIdentity.IsPresent
                     CertificatePath       = $CertificatePath
                     AccessTokens          = $AccessTokens
                 }
@@ -1112,16 +1137,68 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-DisplayNameSimplified
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [AllowNull()]
+        [System.String[]]
+        $DisplayName
+    )
+
+    $simplifiedNames = @()
+    foreach ($name in $DisplayName)
+    {
+        $simplifiedNames += $name.Split(',')[0].Replace('(','')
+    }
+    return $simplifiedNames | Sort-Object
+}
+
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return @{
+        PostProcessing = {
+            param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+            foreach ($key in $Script:displayNameProperties.Keys)
+            {
+                $key = $key.Replace("Include", "").Replace("WithDisplayNames", "")
+                if ($DesiredValues.ContainsKey($key))
+                {
+                    $convertedValues = @()
+                    foreach ($member in $DesiredValues.$key)
+                    {
+                        $guid = [System.Guid]::Empty
+                        if ([System.Guid]::TryParse($member, [ref]$guid))
+                        {
+                            $entry = Get-Recipient -Identity $member
+                            $convertedValues += $entry.PrimarySmtpAddress
+                        }
+                        else
+                        {
+                            $convertedValues += $member
+                        }
+                    }
+                    $DesiredValues.$key = $convertedValues
+                }
+            }
+            return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+        }
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

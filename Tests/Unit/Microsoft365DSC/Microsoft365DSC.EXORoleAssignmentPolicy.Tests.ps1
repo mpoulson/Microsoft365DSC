@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -35,6 +35,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Set-RoleAssignmentPolicy -MockWith {
+            }
+
+            Mock -CommandName New-RoleAssignmentPolicy -MockWith {
+            }
+
+            Mock -CommandName Remove-RoleAssignmentPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-RoleAssignmentPolicy -MockWith {
+                return @{
+                    Name          = 'Contoso Role Assignment Policy'
+                    Description   = 'This is the default Contoso Role Assignment Policy'
+                    IsDefault     = $true
+                    AssignedRoles = 'MyPersonalInformation', 'MyDistributionGroupMembership'
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -57,23 +75,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-RoleAssignmentPolicy -MockWith {
-                    return @{
-                        Name        = 'Contoso Different Role Assignment Policy'
-                        Description = 'This is the default Contoso Role Assignment Policy'
-                        IsDefault   = $true
-                        Roles       = 'MyPersonalInformation', 'MyDistributionGroupMembership'
-                    }
-                }
-
-                Mock -CommandName Set-RoleAssignmentPolicy -MockWith {
-                    return @{
-                        Name        = 'Contoso Role Assignment Policy'
-                        Description = 'This is the default Contoso Role Assignment Policy'
-                        IsDefault   = $true
-                        Roles       = 'MyPersonalInformation', 'MyDistributionGroupMembership'
-                        Ensure      = 'Present'
-                        Credential  = $Credential
-                    }
+                    return $null
                 }
             }
 
@@ -83,6 +85,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-RoleAssignmentPolicy -Exactly 1
             }
 
             It 'Should return Absent from the Get method' {
@@ -100,15 +103,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure      = 'Present'
                     Credential  = $Credential
                 }
-
-                Mock -CommandName Get-RoleAssignmentPolicy -MockWith {
-                    return @{
-                        Name          = 'Contoso Role Assignment Policy'
-                        Description   = 'This is the default Contoso Role Assignment Policy'
-                        IsDefault     = $true
-                        AssignedRoles = 'MyPersonalInformation', 'MyDistributionGroupMembership'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -124,31 +118,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Name        = 'Contoso Role Assignment Policy'
-                    Description = 'This is the default Contoso Role Assignment Policy'
+                    Description = 'This is the updated Contoso Role Assignment Policy' # Drift
                     IsDefault   = $true
                     Roles       = 'MyPersonalInformation', 'MyDistributionGroupMembership'
                     Ensure      = 'Present'
                     Credential  = $Credential
-                }
-
-                Mock -CommandName Get-RoleAssignmentPolicy -MockWith {
-                    return @{
-                        Name          = 'Contoso Role Assignment Policy'
-                        Description   = 'This is the different Contoso Role Assignment Policy'
-                        IsDefault     = $true
-                        AssignedRoles = 'MyPersonalInformation', 'MyDistributionGroupMembership'
-                    }
-                }
-
-                Mock -CommandName Set-RoleAssignmentPolicy -MockWith {
-                    return @{
-                        Name        = 'Contoso Role Assignment Policy'
-                        Description = 'This is the default Contoso Role Assignment Policy'
-                        IsDefault   = $true
-                        Roles       = 'MyPersonalInformation', 'MyDistributionGroupMembership'
-                        Ensure      = 'Present'
-                        Credential  = $Credential
-                    }
                 }
             }
 
@@ -158,6 +132,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-RoleAssignmentPolicy -Exactly 1
             }
         }
 
@@ -167,17 +142,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                $RoleAssignmentPolicy = @{
-                    Name          = 'Contoso Role Assignment Policy'
-                    Description   = 'This is the default Contoso Role Assignment Policy'
-                    IsDefault     = $true
-                    AssignedRoles = 'MyPersonalInformation', 'MyDistributionGroupMembership'
-                }
-
-                Mock -CommandName Get-RoleAssignmentPolicy -MockWith {
-                    return $RoleAssignmentPolicy
                 }
             }
 
@@ -190,4 +154,3 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 }
 
 Invoke-Command -ScriptBlock $Global:DscHelper.CleanupScript -NoNewScope
-

@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_TeamsTeam'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -63,6 +65,10 @@ function Get-TargetResource
         [Parameter()]
         [System.Boolean]
         $AllowOwnerDeleteMessages,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowCreatePrivateChannels,
 
         [Parameter()]
         [System.Boolean]
@@ -192,7 +198,7 @@ function Get-TargetResource
         [array]$Owners = Get-TeamUser -GroupId $team.GroupId | Where-Object { $_.Role -eq 'owner' }
         if ($null -eq $Owners)
         {
-            # Without Users, Get-TeamUser return null instead on empty array
+            # Without Users, Get-TeamUser returns null instead of an empty array
             $Owners = @()
         }
 
@@ -213,6 +219,7 @@ function Get-TargetResource
             AllowUserEditMessages             = $team.AllowUserEditMessages
             AllowUserDeleteMessages           = $team.AllowUserDeleteMessages
             AllowOwnerDeleteMessages          = $team.AllowOwnerDeleteMessages
+            AllowCreatePrivateChannels        = $team.AllowCreatePrivateChannels
             AllowCreateUpdateRemoveConnectors = $team.AllowCreateUpdateRemoveConnectors
             AllowCreateUpdateRemoveTabs       = $team.AllowCreateUpdateRemoveTabs
             AllowTeamMentions                 = $team.AllowTeamMentions
@@ -247,7 +254,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -315,6 +322,10 @@ function Set-TargetResource
         [Parameter()]
         [System.Boolean]
         $AllowOwnerDeleteMessages,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowCreatePrivateChannels,
 
         [Parameter()]
         [System.Boolean]
@@ -399,11 +410,7 @@ function Set-TargetResource
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' -InboundParameters $PSBoundParameters
 
     $team = Get-TargetResource @PSBoundParameters
-
-    $CurrentParameters = $PSBoundParameters
-    $CurrentParameters.Remove('Ensure') | Out-Null
-    $CurrentParameters.Remove('ManagedIdentity') | Out-Null
-    $CurrentParameters.Remove('AccessTokens') | Out-Null
+    $CurrentParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present' -and ($team.Ensure -eq 'Present'))
     {
@@ -415,16 +422,6 @@ function Set-TargetResource
         if (-not $CurrentParameters.ContainsKey('GroupID'))
         {
             $CurrentParameters.Add('GroupID', $team.GroupID)
-        }
-        if ($ConnectionMode -eq 'Credentials')
-        {
-            $CurrentParameters.Remove('Credential') | Out-Null
-        }
-        else
-        {
-            $CurrentParameters.Remove('ApplicationId') | Out-Null
-            $CurrentParameters.Remove('TenantId') | Out-Null
-            $CurrentParameters.Remove('CertificateThumbprint') | Out-Null
         }
         Set-Team @CurrentParameters
         Write-Verbose -Message "Updating team $DisplayName"
@@ -450,7 +447,7 @@ function Set-TargetResource
             $currentOwner = (($CurrentParameters.Owner)[0])
 
             Write-Verbose -Message "Retrieving Group Owner {$currentOwner}"
-            $ownerUser = Get-MgUser -Search $currentOwner -ConsistencyLevel eventual
+            $ownerUser = Get-MgUser -Search "userPrincipalName:$currentOwner" -ConsistencyLevel eventual
             $ownerOdataID = "$((Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl)v1.0/directoryObjects/$($ownerUser.Id)"
 
             Write-Verbose -Message "Adding Owner {$($ownerUser.Id)} to Group {$($group.Id)}"
@@ -488,7 +485,6 @@ function Set-TargetResource
                 $OwnerValue = $Owner[0].ToString()
             }
             $CurrentParameters.Owner = [System.String]$OwnerValue
-            $CurrentParameters.Remove('Credential') | Out-Null
             Write-Verbose -Message "Creating team with Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentParameters)"
             $newTeam = New-Team @CurrentParameters
             Write-Verbose -Message "Team {$DisplayName} was just created."
@@ -574,6 +570,10 @@ function Test-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $AllowCreatePrivateChannels,
+
+        [Parameter()]
+        [System.Boolean]
         $AllowCreateUpdateRemoveConnectors,
 
         [Parameter()]
@@ -637,11 +637,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -649,33 +647,11 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Team $DisplayName"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    If (!$PSBoundParameters.ContainsKey('Ensure'))
-    {
-        $PSBoundParameters.Add('Ensure', $Ensure)
-    }
-    $ValuesToCheck = $PSBoundParameters
-    $ValuesToCheck.Remove('GroupID') | Out-Null
-
-    if ($null -eq $CurrentValues.Owner)
-    {
-        $ValuesToCheck.Remove('Owner') | Out-Null
-    }
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $compareParameters = Get-CompareParameters
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                             -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+                                             @compareParameters
+    return $result
 }
 
 function Export-TargetResource
@@ -725,15 +701,6 @@ function Export-TargetResource
 
     try
     {
-        if ($ConnectionMode.StartsWith('ServicePrincipal'))
-        {
-            $organization = Get-M365DSCTenantDomain -ApplicationId $ApplicationId -TenantId $TenantId -CertificateThumbprint $CertificateThumbprint
-        }
-        else
-        {
-            $organization = $Credential.UserName.Split('@')[1]
-        }
-
         $teams = Get-Team | Sort-Object -Property GroupId
         $i = 1
         $dscContent = ''
@@ -779,16 +746,25 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return @{
+        ExcludedProperties = @('GroupID')
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

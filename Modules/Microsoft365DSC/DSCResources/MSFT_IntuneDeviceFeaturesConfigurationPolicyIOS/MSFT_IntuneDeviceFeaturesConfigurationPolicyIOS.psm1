@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_IntuneDeviceFeaturesConfigurationPolicyIOS'
+
 
 function Get-TargetResource
 {
@@ -124,14 +126,15 @@ function Get-TargetResource
         [Parameter()]
         [System.String[]]
         $AccessTokens
-
     )
+
     Write-Verbose -Message "Getting configuration of the Intune Device Features Configuration Policy for iOS with Id {$Id} and DisplayName {$DisplayName}"
+
     try
     {
         if (-not $Script:exportedInstance)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -197,7 +200,7 @@ function Get-TargetResource
             TenantId                 = $TenantId
             ApplicationSecret        = $ApplicationSecret
             CertificateThumbprint    = $CertificateThumbprint
-            Managedidentity          = $ManagedIdentity.IsPresent
+            ManagedIdentity          = $ManagedIdentity.IsPresent
             AccessTokens             = $AccessTokens
             AirPrintDestinations     = Convert-ComplexObjectToHashtableArray $getValue.AdditionalProperties.airPrintDestinations
             AssetTagTemplate         = $getValue.AdditionalProperties.assetTagTemplate
@@ -224,7 +227,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $assignmentResult)
         Write-Verbose -Message "Returning {$DisplayName}"
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -234,7 +237,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -362,18 +365,9 @@ function Set-TargetResource
         [Parameter()]
         [System.String[]]
         $AccessTokens
-
     )
+
     Write-Verbose -Message "Setting configuration of the Intune Device Features Configuration Policy for iOS with Id {$Id} and DisplayName {$DisplayName}"
-    try
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-            -InboundParameters $PSBoundParameters
-    }
-    catch
-    {
-        Write-Verbose -Message $_
-    }
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -396,13 +390,13 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Creating an Intune Device Features Configuration Policy for iOS with DisplayName {$DisplayName}"
         $BoundParameters.Remove('Assignments') | Out-Null
-        $CreateParameters = ([Hashtable]$BoundParameters).clone()
+        $CreateParameters = ([Hashtable]$BoundParameters).Clone()
         $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters
         $CreateParameters.Remove('Id') | Out-Null
 
-        foreach ($key in ($CreateParameters.clone()).Keys)
+        foreach ($key in ($CreateParameters.Clone()).Keys)
         {
-            if ($CreateParameters[$key].getType().Fullname -like '*CimInstance*')
+            if ($CreateParameters[$key].GetType().Fullname -like '*CimInstance*')
             {
                 $CreateParameters[$key] = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters[$key]
             }
@@ -466,13 +460,13 @@ function Set-TargetResource
         Write-Verbose -Message "Updating {$DisplayName}"
 
         $BoundParameters.Remove('Assignments') | Out-Null
-        $UpdateParameters = ([Hashtable]$BoundParameters).clone()
+        $UpdateParameters = ([Hashtable]$BoundParameters).Clone()
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
         $UpdateParameters.Remove('Id') | Out-Null
 
-        foreach ($key in ($UpdateParameters.clone()).Keys)
+        foreach ($key in ($UpdateParameters.Clone()).Keys)
         {
-            if ($UpdateParameters[$key].getType().Fullname -like '*CimInstance*')
+            if ($UpdateParameters[$key].GetType().Fullname -like '*CimInstance*')
             {
             Write-Verbose -Message "Converting CIM {$UpdateParameters[$key]}"
                 $UpdateParameters[$key] = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters[$key]
@@ -663,11 +657,7 @@ function Test-TargetResource
         [Parameter()]
         [System.String[]]
         $AccessTokens
-
     )
-    Write-Verbose -Message "Testing configuration of the Intune Device Features Configuration Policy for iOS with Id {$Id} and DisplayName {$DisplayName}"
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
@@ -678,63 +668,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of {$Id}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-
-    if ($CurrentValues.Ensure -ne $Ensure)
-    {
-        Write-Verbose -Message "Test-TargetResource returned $false"
-        return $false
-    }
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-
-        if ($source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult) { break }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    #Convert any DateTime to String
-    foreach ($key in $ValuesToCheck.Keys)
-    {
-        if (($null -ne $CurrentValues[$key]) `
-                -and ($CurrentValues[$key].getType().Name -eq 'DateTime'))
-        {
-            $CurrentValues[$key] = $CurrentValues[$key].toString()
-        }
-    }
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -828,7 +764,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -1029,30 +965,28 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
 function Convert-ComplexObjectToHashtableArray {
-    param (
+    param
+    (
         [Parameter()]
         [Object]$InputObject
-
     )
 
     $resultArray = @()
 
     foreach ($item in $InputObject) {
-        $hashTable = @{}
+        $hashtable = [ordered]@{}
 
         foreach ($key in $item.Keys) {
             $keyValue = $item.$key
@@ -1066,13 +1000,13 @@ function Convert-ComplexObjectToHashtableArray {
                         $keyValue = Convert-ComplexObjectToHashtableArray $keyValue #recurse the function
                     }
                 }
-                $hashTable.Add($key, $keyValue)
+                $hashtable.Add($key, $keyValue)
             }
         }
 
         # Add the hash table to the result array only if it contains non-null values
-        if ($hashTable.Values.Where({ $null -ne $_ }).Count -gt 0) {
-            $resultArray += $hashTable
+        if ($hashtable.Values.Where({ $null -ne $_ }).Count -gt 0) {
+            $resultArray += $hashtable
         }
     }
 
@@ -1080,16 +1014,16 @@ function Convert-ComplexObjectToHashtableArray {
 }
 
 function Convert-ComplexObjectToHashtableArray_ExportDataType {
-    param (
+    param
+    (
         [Parameter()]
         [Object]$InputObject
-
     )
 
     $resultArray = @()
 
     foreach ($item in $InputObject) {
-        $hashTable = @{}
+        $hashtable = [ordered]@{}
 
         foreach ($key in $item.Keys) {
             $keyValue = $item.$key
@@ -1103,15 +1037,15 @@ function Convert-ComplexObjectToHashtableArray_ExportDataType {
                         $keyValue = Convert-ComplexObjectToHashtableArray_ExportDataType $keyValue #recurse the function
                     }
                 }
-                $hashTable.Add($key, $keyValue)
+                $hashtable.Add($key, $keyValue)
             }else{
-                $hashTable.Add('dataType', $item.$key)
+                $hashtable.Add('dataType', $item.$key)
             }
         }
 
         # Add the hash table to the result array only if it contains non-null values
-        if ($hashTable.Values.Where({ $null -ne $_ }).Count -gt 0) {
-            $resultArray += $hashTable
+        if ($hashtable.Values.Where({ $null -ne $_ }).Count -gt 0) {
+            $resultArray += $hashtable
         }
     }
 
@@ -1119,7 +1053,8 @@ function Convert-ComplexObjectToHashtableArray_ExportDataType {
 }
 
 function Convert-StringToBooleans {
-    param(
+    param
+    (
         [Parameter(Mandatory = $true)]
         [array]$Configurations
     )
@@ -1136,7 +1071,8 @@ function Convert-StringToBooleans {
 }
 
 function Convert-DataTypeFormat {
-    param (
+    param
+    (
         [Parameter()]
         [Object]$InputObject
     )

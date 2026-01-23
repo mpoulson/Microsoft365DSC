@@ -24,14 +24,27 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@contoso.onmicrosoft.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
             }
 
+            Mock -CommandName Remove-DataClassification -MockWith {
+            }
+
             Mock -CommandName Set-DataClassification -MockWith {
+            }
+
+            Mock -CommandName Get-DataClassification -MockWith {
+                return @{
+                    Description = "Detects Australian driver's license number."
+                    Identity    = '1cbbc8f5-9216-4392-9eb5-5ac2298d1356'
+                    IsDefault   = $True
+                    Locale      = 'en-US'
+                    Name        = "Australia Driver's License Number"
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -62,10 +75,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should return False from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
             }
-
-            It 'Should call the New- cmdlet' {
-                Set-TargetResource @testParams
-            }
         }
 
         Context -Name 'Classification already exists and should be updated' -Fixture {
@@ -75,23 +84,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description = "Detects Australian driver's license number."
                     Ensure      = 'Present'
                     Identity    = '1cbbc8f5-9216-4392-9eb5-5ac2298d1356'
-                    IsDefault   = $True
+                    IsDefault   = $false # Drift
                     Locale      = 'en-US'
                     Name        = "Australia Driver's License Number"
-                }
-
-                Mock -CommandName Get-DataClassification -MockWith {
-                    return @{
-                        Description = "Detects Australian driver's license number."
-                        Identity    = '1cbbc8f5-9216-4392-9eb5-5ac2298d1356'
-                        IsDefault   = $False; #Drift
-                        Locale      = 'en-US'
-                        Name        = "Australia Driver's License Number"
-                    }
-                }
-
-                Mock -CommandName Set-DataClassification -MockWith {
-
                 }
             }
 
@@ -99,8 +94,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
             }
 
-            It 'Should set Call into the Set-DataClassification command exactly once' {
+            It 'Should call into the Set-DataClassification command exactly once' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-DataClassification -Exactly 1
             }
         }
 
@@ -115,20 +111,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Locale      = 'en-US'
                     Name        = "Australia Driver's License Number"
                 }
-
-                Mock -CommandName Get-DataClassification -MockWith {
-                    return @{
-                        Description = "Detects Australian driver's license number."
-                        Identity    = '1cbbc8f5-9216-4392-9eb5-5ac2298d1356'
-                        IsDefault   = $True
-                        Locale      = 'en-US'
-                        Name        = "Australia Driver's License Number"
-                    }
-                }
-
-                Mock -CommandName Remove-DataClassification -MockWith {
-
-                }
             }
 
             It 'Should return present from the Get-TargetResource function' {
@@ -137,6 +119,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call into the Remove-DataClassification cmdlet once' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Remove-DataClassification -Exactly 1
             }
         }
 
@@ -146,16 +129,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-DataClassification -MockWith {
-                    return @{
-                        Description = "Detects Australian driver's license number."
-                        Identity    = '1cbbc8f5-9216-4392-9eb5-5ac2298d1356'
-                        IsDefault   = $True
-                        Locale      = 'en-US'
-                        Name        = "Australia Driver's License Number"
-                    }
                 }
             }
 

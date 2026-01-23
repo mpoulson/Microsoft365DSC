@@ -28,11 +28,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Get-MgBetaPolicyB2CAuthenticationMethodPolicy -MockWith {
+                return @{
+                    IsEmailPasswordAuthenticationEnabled        = $True;
+                    IsPhoneOneTimePasswordAuthenticationEnabled = $True;
+                    IsUserNameAuthenticationEnabled             = $False;
+                }
             }
 
             Mock -CommandName Update-MgBetaPolicyB2CAuthenticationMethodPolicy -MockWith {
@@ -57,14 +65,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                      = 'Present'
                     Credential                                  = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyB2CAuthenticationMethodPolicy -MockWith {
-                    return @{
-                        IsEmailPasswordAuthenticationEnabled        = $True;
-                        IsPhoneOneTimePasswordAuthenticationEnabled = $True;
-                        IsUserNameAuthenticationEnabled             = $False;
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -74,22 +74,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name "The instance exists and values are NOT in the desired state" -Fixture {
             BeforeAll {
-                    $testParams = @{
-                        IsEmailPasswordAuthenticationEnabled        = $True;
-                        IsPhoneOneTimePasswordAuthenticationEnabled = $True;
-                        IsSingleInstance                            = "Yes";
-                        IsUserNameAuthenticationEnabled             = $False;
-                        Ensure                                      = 'Present'
-                        Credential                                  = $Credential;
-                    }
-
-                    Mock -CommandName Get-MgBetaPolicyB2CAuthenticationMethodPolicy -MockWith {
-                        return @{
-                            IsEmailPasswordAuthenticationEnabled        = $True;
-                            IsPhoneOneTimePasswordAuthenticationEnabled = $False; # Drift
-                            IsUserNameAuthenticationEnabled             = $False;
-                        }
-                    }
+                $testParams = @{
+                    IsEmailPasswordAuthenticationEnabled        = $True;
+                    IsPhoneOneTimePasswordAuthenticationEnabled = $False; # Drift
+                    IsSingleInstance                            = "Yes";
+                    IsUserNameAuthenticationEnabled             = $False;
+                    Ensure                                      = 'Present'
+                    Credential                                  = $Credential;
+                }
             }
 
             It 'Should return Values from the Get method' {
@@ -112,14 +104,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyB2CAuthenticationMethodPolicy -MockWith {
-                    return @{
-                        IsEmailPasswordAuthenticationEnabled        = $True;
-                        IsPhoneOneTimePasswordAuthenticationEnabled = $False; # Drift
-                        IsUserNameAuthenticationEnabled             = $False;
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

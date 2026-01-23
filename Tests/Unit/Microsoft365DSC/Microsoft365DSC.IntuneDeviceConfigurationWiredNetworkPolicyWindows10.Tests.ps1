@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-GUID).ToString() -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -47,24 +47,69 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
-            $Script:exportedInstances =$null
+            $Script:exportedInstance = $null
             $Script:ExportMode = $false
 
             Mock -CommandName Get-MgBetaDeviceManagementDeviceConfigurationAssignment -MockWith {
             }
 
-            Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        outerIdentityPrivacyTemporaryValue      = 'FakeStringValue'
+                        eapType                                 = 'eapTls'
+                        forceFIPSCompliance                     = $True
+                        '@odata.type'                           = '#microsoft.graph.windowsWiredNetworkConfiguration'
+                        secondaryAuthenticationMethod           = 'certificate'
+                        cacheCredentials                        = $True
+                        innerAuthenticationProtocolForEAPTTLS   = 'unencryptedPassword'
+                        requireCryptographicBinding             = $True
+                        authenticationType                      = 'none'
+                        trustedServerCertificateNames           = @('FakeStringValue')
+                        enforce8021X                            = $True
+                        authenticationRetryDelayPeriodInSeconds = 25
+                        performServerValidation                 = $True
+                        authenticationBlockPeriodInMinutes      = 25
+                        maximumEAPOLStartMessages               = 25
+                        disableUserPromptForServerValidation    = $True
+                        authenticationPeriodInSeconds           = 25
+                        eapolStartPeriodInSeconds               = 25
+                        authenticationMethod                    = 'certificate'
+                        maximumAuthenticationFailures           = 25
+                    }
+                    Description          = 'FakeStringValue'
+                    DisplayName          = 'FakeStringValue'
+                    Id                   = 'FakeStringValue'
+                }
             }
+
+            Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
+                return @(@{
+                    Id = 'a485d322-13cd-43ef-beda-733f656f48ea'
+                    DisplayName = 'RootCertificate'
+                })
+            } -ParameterFilter { $CertificateName -eq 'rootCertificatesForServerValidation' }
+
+            Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
+                return @{
+                    Id = '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
+                    DisplayName = 'ClientCertificate'
+                }
+            } -ParameterFilter { $CertificateName -eq 'secondaryIdentityCertificateForClientAuthentication' }
+
+            Mock -CommandName Get-IntuneDeviceConfigurationCertificateId -MockWith {
+                return 'a485d322-13cd-43ef-beda-733f656f48ea'
+            } -ParameterFilter { $CertificateDisplayName -eq 'RootCertificate' }
+
+            Mock -CommandName Get-IntuneDeviceConfigurationCertificateId -MockWith {
+                return '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
+            } -ParameterFilter { $CertificateDisplayName -eq 'ClientCertificate' }
 
             Mock -CommandName Update-DeviceConfigurationPolicyCertificateId -MockWith {
             }
 
             Mock -CommandName Remove-DeviceConfigurationPolicyCertificateId -MockWith {
             }
-
-            Mock -CommandName Get-IntuneDeviceConfigurationCertificateId -MockWith {
-            }
-
         }
         # Test contexts
         Context -Name 'The IntuneDeviceConfigurationWiredNetworkPolicyWindows10 should exist but it DOES NOT' -Fixture {
@@ -103,27 +148,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
                     return $null
                 }
-                Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
-                    return @(@{
-                        Id = 'a485d322-13cd-43ef-beda-733f656f48ea'
-                        DisplayName = 'RootCertificate'
-                    })
-                } -ParameterFilter { $CertificateName -eq 'rootCertificatesForServerValidation' }
-
-                Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
-                    return @{
-                        Id = '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
-                        DisplayName = 'ClientCertificate'
-                    }
-                } -ParameterFilter { $CertificateName -eq 'secondaryIdentityCertificateForClientAuthentication' }
-
-                Mock -CommandName Get-IntuneDeviceConfigurationCertificateId -MockWith {
-                    return 'a485d322-13cd-43ef-beda-733f656f48ea'
-                } -ParameterFilter { $DisplayName -eq 'RootCertificate' }
-
-                Mock -CommandName Get-IntuneDeviceConfigurationCertificateId -MockWith {
-                    return '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
-                } -ParameterFilter { $DisplayName -eq 'ClientCertificate' }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
@@ -169,58 +193,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SecondaryIdentityCertificateForClientAuthenticationId          = '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
                     SecondaryIdentityCertificateForClientAuthenticationDisplayName = 'ClientCertificate'
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            outerIdentityPrivacyTemporaryValue      = 'FakeStringValue'
-                            eapType                                 = 'eapTls'
-                            forceFIPSCompliance                     = $True
-                            '@odata.type'                           = '#microsoft.graph.windowsWiredNetworkConfiguration'
-                            secondaryAuthenticationMethod           = 'certificate'
-                            cacheCredentials                        = $True
-                            innerAuthenticationProtocolForEAPTTLS   = 'unencryptedPassword'
-                            requireCryptographicBinding             = $True
-                            authenticationType                      = 'none'
-                            trustedServerCertificateNames           = @('FakeStringValue')
-                            enforce8021X                            = $True
-                            authenticationRetryDelayPeriodInSeconds = 25
-                            performServerValidation                 = $True
-                            authenticationBlockPeriodInMinutes      = 25
-                            maximumEAPOLStartMessages               = 25
-                            disableUserPromptForServerValidation    = $True
-                            authenticationPeriodInSeconds           = 25
-                            eapolStartPeriodInSeconds               = 25
-                            authenticationMethod                    = 'certificate'
-                            maximumAuthenticationFailures           = 25
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                    }
-                }
-
-                Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
-                    return @(@{
-                        Id = 'a485d322-13cd-43ef-beda-733f656f48ea'
-                        DisplayName = 'RootCertificate'
-                    })
-                } -ParameterFilter { $CertificateName -eq 'rootCertificatesForServerValidation' }
-
-                Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
-                    return @{
-                        Id = '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
-                        DisplayName = 'ClientCertificate'
-                    }
-                } -ParameterFilter { $CertificateName -eq 'secondaryIdentityCertificateForClientAuthentication' }
-
-                Mock -CommandName Get-IntuneDeviceConfigurationCertificateId -MockWith {
-                    return 'a485d322-13cd-43ef-beda-733f656f48ea'
-                } -ParameterFilter { $DisplayName -eq 'RootCertificate' }
-
-                Mock -CommandName Get-IntuneDeviceConfigurationCertificateId -MockWith {
-                    return '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
-                } -ParameterFilter { $DisplayName -eq 'ClientCertificate' }
             }
 
             It 'Should return Values from the Get method' {
@@ -266,50 +238,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RootCertificatesForServerValidationIds                = @('a485d322-13cd-43ef-beda-733f656f48ea')
                     SecondaryIdentityCertificateForClientAuthenticationId = '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            outerIdentityPrivacyTemporaryValue      = 'FakeStringValue'
-                            eapType                                 = 'eapTls'
-                            forceFIPSCompliance                     = $True
-                            '@odata.type'                           = '#microsoft.graph.windowsWiredNetworkConfiguration'
-                            secondaryAuthenticationMethod           = 'certificate'
-                            cacheCredentials                        = $True
-                            innerAuthenticationProtocolForEAPTTLS   = 'unencryptedPassword'
-                            requireCryptographicBinding             = $True
-                            authenticationType                      = 'none'
-                            trustedServerCertificateNames           = @('FakeStringValue')
-                            enforce8021X                            = $True
-                            authenticationRetryDelayPeriodInSeconds = 25
-                            performServerValidation                 = $True
-                            authenticationBlockPeriodInMinutes      = 25
-                            maximumEAPOLStartMessages               = 25
-                            disableUserPromptForServerValidation    = $True
-                            authenticationPeriodInSeconds           = 25
-                            eapolStartPeriodInSeconds               = 25
-                            authenticationMethod                    = 'certificate'
-                            maximumAuthenticationFailures           = 25
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                    }
-                }
-
-                Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
-                    return @(@{
-                        Id = 'a485d322-13cd-43ef-beda-733f656f48ea'
-                        DisplayName = 'RootCertificate'
-                    })
-                } -ParameterFilter { $CertificateName -eq 'rootCertificatesForServerValidation' }
-
-                Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
-                    return @{
-                        Id = '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
-                        DisplayName = 'ClientCertificate'
-                    }
-                } -ParameterFilter { $CertificateName -eq 'secondaryIdentityCertificateForClientAuthentication' }
             }
 
             It 'Should return true from the Test method' {
@@ -329,7 +257,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description                                           = 'FakeStringValue'
                     DisableUserPromptForServerValidation                  = $True
                     DisplayName                                           = 'FakeStringValue'
-                    EapolStartPeriodInSeconds                             = 25
+                    EapolStartPeriodInSeconds                             = 7 # Updated property
                     EapType                                               = 'eapTls'
                     Enforce8021X                                          = $True
                     ForceFIPSCompliance                                   = $True
@@ -349,52 +277,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SecondaryIdentityCertificateForClientAuthenticationId = '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
                     SecondaryIdentityCertificateForClientAuthenticationDisplayName = 'ClientCertificate'
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            eapolStartPeriodInSeconds               = 7
-                            authenticationPeriodInSeconds           = 7
-                            trustedServerCertificateNames           = @('FakeStringValue')
-                            authenticationBlockPeriodInMinutes      = 7
-                            authenticationRetryDelayPeriodInSeconds = 7
-                            authenticationMethod                    = 'certificate'
-                            authenticationType                      = 'none'
-                            innerAuthenticationProtocolForEAPTTLS   = 'unencryptedPassword'
-                            outerIdentityPrivacyTemporaryValue      = 'FakeStringValue'
-                            '@odata.type'                           = '#microsoft.graph.windowsWiredNetworkConfiguration'
-                            maximumEAPOLStartMessages               = 7
-                            eapType                                 = 'eapTls'
-                            secondaryAuthenticationMethod           = 'certificate'
-                            maximumAuthenticationFailures           = 7
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                    }
-                }
-
-                Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
-                    return @(@{
-                        Id = 'a485d322-13cd-43ef-beda-733f656f48ea'
-                        DisplayName = 'RootCertificate'
-                    })
-                } -ParameterFilter { $CertificateName -eq 'rootCertificatesForServerValidation' }
-
-                Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
-                    return @{
-                        Id = '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
-                        DisplayName = 'ClientCertificate'
-                    }
-                } -ParameterFilter { $CertificateName -eq 'secondaryIdentityCertificateForClientAuthentication' }
-
-                Mock -CommandName Get-IntuneDeviceConfigurationCertificateId -MockWith {
-                    return 'a485d322-13cd-43ef-beda-733f656f48ea'
-                } -ParameterFilter { $DisplayName -eq 'RootCertificate' }
-
-                Mock -CommandName Get-IntuneDeviceConfigurationCertificateId -MockWith {
-                    return '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
-                } -ParameterFilter { $DisplayName -eq 'ClientCertificate' }
             }
 
             It 'Should return Values from the Get method' {
@@ -418,52 +300,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            outerIdentityPrivacyTemporaryValue      = 'FakeStringValue'
-                            eapType                                 = 'eapTls'
-                            forceFIPSCompliance                     = $True
-                            '@odata.type'                           = '#microsoft.graph.windowsWiredNetworkConfiguration'
-                            secondaryAuthenticationMethod           = 'certificate'
-                            cacheCredentials                        = $True
-                            innerAuthenticationProtocolForEAPTTLS   = 'unencryptedPassword'
-                            requireCryptographicBinding             = $True
-                            authenticationType                      = 'none'
-                            trustedServerCertificateNames           = @('FakeStringValue')
-                            enforce8021X                            = $True
-                            authenticationRetryDelayPeriodInSeconds = 25
-                            performServerValidation                 = $True
-                            authenticationBlockPeriodInMinutes      = 25
-                            maximumEAPOLStartMessages               = 25
-                            disableUserPromptForServerValidation    = $True
-                            authenticationPeriodInSeconds           = 25
-                            eapolStartPeriodInSeconds               = 25
-                            authenticationMethod                    = 'certificate'
-                            maximumAuthenticationFailures           = 25
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
-                }
-
-                Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
-                    return @(@{
-                        Id = 'a485d322-13cd-43ef-beda-733f656f48ea'
-                        DisplayName = 'RootCertificate'
-                    })
-                } -ParameterFilter { $CertificateName -eq 'rootCertificatesForServerValidation' }
-
-                Mock -CommandName Get-DeviceConfigurationPolicyCertificate -MockWith {
-                    return @{
-                        Id = '0b9aef2f-1671-4260-8eb9-3ab3138e176a'
-                        DisplayName = 'ClientCertificate'
-                    }
-                } -ParameterFilter { $CertificateName -eq 'secondaryIdentityCertificateForClientAuthentication' }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

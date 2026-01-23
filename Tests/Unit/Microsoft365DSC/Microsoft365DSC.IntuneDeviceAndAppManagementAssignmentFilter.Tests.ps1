@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -39,6 +39,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaDeviceManagementAssignmentFilter -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementAssignmentFilter -MockWith {
+                return @{
+                    Description                    = 'Test'
+                    DisplayName                    = 'Test Device Filter'
+                    AssignmentFilterManagementType = 'devices'
+                    Platform                       = 'windows10AndLater'
+                    Rule                           = "(device.manufacturer -ne `"bibi`")"
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -86,22 +96,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = 'Test Device Filter'
                     Ensure      = 'Present'
                     Platform    = 'windows10AndLater'
-                    Rule        = "(device.manufacturer -ne `"bibi`")"
+                    Rule        = "(device.manufacturer -ne `"test`")" # Updated property
                     Credential  = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementAssignmentFilter -MockWith {
-                    return @{
-                        Description = 'Test'
-                        DisplayName = 'Test Device Filter'
-                        Platform    = 'windows10AndLater'
-                        Rule        = "(device.manufacturer -ne `"test`")"; #drift
-                    }
                 }
             }
 
             It 'Should return Present from the Get method' {
-                    (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
             }
 
             It 'Should return false from the Test method' {
@@ -124,15 +125,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Rule        = "(device.manufacturer -ne `"bibi`")"
                     Credential  = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementAssignmentFilter -MockWith {
-                    return @{
-                        Description = 'Test'
-                        DisplayName = 'Test Device Filter'
-                        Platform    = 'windows10AndLater'
-                        Rule        = "(device.manufacturer -ne `"bibi`")"
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -149,15 +141,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Platform    = 'windows10AndLater'
                     Rule        = "(device.manufacturer -ne `"bibi`")"
                     Credential  = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementAssignmentFilter -MockWith {
-                    return @{
-                        Description = 'Test'
-                        DisplayName = 'Test Device Filter'
-                        Platform    = 'windows10AndLater'
-                        Rule        = "(device.manufacturer -ne `"bibi`")"
-                    }
                 }
             }
 
@@ -182,15 +165,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementAssignmentFilter -MockWith {
-                    return @{
-                        Description = 'Test'
-                        DisplayName = 'Test Device Filter'
-                        Platform    = 'windows10AndLater'
-                        Rule        = "(device.manufacturer -ne `"bibi`")"
-                    }
-                }
             }
 
             It 'Should Reverse Engineer resource from the Export method' {
@@ -199,7 +173,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
     }
-
 }
 
 Invoke-Command -ScriptBlock $Global:DscHelper.CleanupScript -NoNewScope

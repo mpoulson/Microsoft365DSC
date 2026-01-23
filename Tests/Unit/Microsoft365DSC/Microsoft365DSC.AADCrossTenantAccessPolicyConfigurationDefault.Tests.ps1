@@ -24,10 +24,75 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaPolicyCrossTenantAccessPolicyDefault -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyCrossTenantAccessPolicyDefault -MockWith {
+                return @{
+                    B2BCollaborationInbound = @{
+                        applications = @{
+                            accessType = 'allowed'
+                            targets    = @(
+                                @{
+                                    target     = 'Office365'
+                                    targetType = 'application'
+                                }
+                            )
+                        }
+                        usersAndGroups = @{
+                            accessType = 'allowed'
+                            targets    = @(
+                                @{
+                                    target     = 'John.Smith@contoso.com'
+                                    targetType = 'user'
+                                }
+                            )
+                        }
+                    }
+                    B2BCollaborationOutbound = @{
+                        Applications = @{
+                            accessType = 'allowed'
+                            targets    = @(
+                                @{
+                                    target     = 'AllApplications'
+                                    targetType = 'application'
+                                }
+                            )
+                        }
+                        usersAndGroups = @{
+                            accessType = 'allowed'
+                            targets    = @(
+                                @{
+                                    target     = 'My Test Group'
+                                    targetType = 'group'
+                                }
+                            )
+                        }
+                    }
+                    B2BDirectConnectInbound  = @{
+                        applications = @{
+                            accessType = 'blocked'
+                            targets    = @(
+                                @{
+                                    target     = 'AllApplications'
+                                    targetType = 'application'
+                                }
+                            )
+                        }
+                        usersAndGroups = @{
+                            accessType = 'blocked'
+                            targets    = @(
+                                @{
+                                    target     = 'John.Smith@contoso.com'
+                                    targetType = 'user'
+                                }
+                            )
+                        }
+                    }
+                }
             }
 
             Mock -CommandName Get-MgUser -MockWith {
@@ -41,6 +106,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = 'My Test Group'
                     Id          = "12345-12345-12345-12345-12345"
                 }
+            }
+
+            Mock -CommandName Invoke-MGGraphRequest -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -100,7 +168,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         UsersAndGroups = (New-CimInstance -ClassName MSFT_AADCrossTenantAccessPolicyTargetConfiguration -Property @{
                             AccessType = 'allowed'
                             Targets    = [CimInstance[]]@((New-CimInstance -ClassName MSFT_AADCrossTenantAccessPolicyTarget -Property @{
-                                    Target     = 'AllUsers'
+                                    Target     = 'John.Smith@contoso.com'
                                     TargetType = 'user'
                                 } -ClientOnly))
                         } -ClientOnly)
@@ -108,71 +176,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential               = $Credential;
                     Ensure                   = "Present";
                     IsSingleInstance         = "Yes";
-                }
-
-                Mock -CommandName Get-MgBetaPolicyCrossTenantAccessPolicyDefault -MockWith {
-                    return @{
-                        B2BCollaborationInbound = @{
-                            applications = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'Office365'
-                                        targetType = 'application'
-                                    }
-                                )
-                            }
-                            usersAndGroups = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'AllUsers'
-                                        targetType = 'user'
-                                    }
-                                )
-                            }
-                        }
-                        B2BCollaborationOutbound = @{
-                            Applications = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'AllApplications'
-                                        targetType = 'application'
-                                    }
-                                )
-                            }
-                            usersAndGroups = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'My Test Group'
-                                        targetType = 'group'
-                                    }
-                                )
-                            }
-                        }
-                        B2BDirectConnectInbound  = @{
-                            applications = @{
-                                accessType = 'blocked'
-                                targets    = @(
-                                    @{
-                                        target     = 'AllApplications'
-                                        targetType = 'application'
-                                    }
-                                )
-                            }
-                            usersAndGroups = @{
-                                accessType = 'blocked'
-                                targets    = @(
-                                    @{
-                                        target     = 'John.Smith@contoso.com'
-                                        targetType = 'user'
-                                    }
-                                )
-                            }
-                        }
-                    }
                 }
             }
             It 'Should return Values from the Get method' {
@@ -190,7 +193,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Applications = (New-CimInstance -ClassName MSFT_AADCrossTenantAccessPolicyTargetConfiguration -Property @{
                             AccessType = 'allowed'
                             Targets    = [CimInstance[]]@((New-CimInstance -ClassName MSFT_AADCrossTenantAccessPolicyTarget -Property @{
-                                    Target     = 'AllApplications'
+                                    Target     = 'DriftApp' #Drift
                                     TargetType = 'application'
                                 } -ClientOnly))
                         } -ClientOnly)
@@ -238,78 +241,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                   = "Present";
                     IsSingleInstance         = "Yes";
                 }
-
-                Mock -CommandName Get-MgBetaPolicyCrossTenantAccessPolicyDefault -MockWith {
-                    return @{
-                        B2BCollaborationInbound = @{
-                            applications = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'DriftApp' #Drift
-                                        targetType = 'application'
-                                    }
-                                )
-                            }
-                            usersAndGroups = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'AllUsers'
-                                        targetType = 'user'
-                                    }
-                                )
-                            }
-                        }
-                        B2BCollaborationOutbound = @{
-                            Applications = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'AllApplications'
-                                        targetType = 'application'
-                                    }
-                                )
-                            }
-                            usersAndGroups = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'My Drift Group' # Drift
-                                        targetType = 'group'
-                                    }
-                                )
-                            }
-                        }
-                        B2BDirectConnectInbound  = @{
-                            applications = @{
-                                accessType = 'blocked'
-                                targets    = @(
-                                    @{
-                                        target     = 'AllApplications'
-                                        targetType = 'application'
-                                    }
-                                )
-                            }
-                            usersAndGroups = @{
-                                accessType = 'blocked'
-                                targets    = @(
-                                    @{
-                                        target     = 'John.Smith@contoso.com'
-                                        targetType = 'user'
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-                Mock -CommandName Invoke-MGGraphRequest -MockWith {
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
             }
-            It 'Should return true from the Test method' {
+            It 'Should return false from the Test method' {
                 Test-TargetResource @testParams | Should -Be $false
             }
             It 'Should update the instance from the Set method' {
@@ -324,75 +260,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyCrossTenantAccessPolicyDefault -MockWith {
-                    return @{
-                        B2BCollaborationInbound = @{
-                            applications = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'Office365'
-                                        targetType = 'application'
-                                    }
-                                )
-                            }
-                            usersAndGroups = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'AllUsers'
-                                        targetType = 'user'
-                                    }
-                                )
-                            }
-                        }
-                        B2BCollaborationOutbound = @{
-                            Applications = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'AllApplications'
-                                        targetType = 'application'
-                                    }
-                                )
-                            }
-                            usersAndGroups = @{
-                                accessType = 'allowed'
-                                targets    = @(
-                                    @{
-                                        target     = 'My Test Group'
-                                        targetType = 'group'
-                                    },
-                                    @{
-                                        target     = 'Bob.Houle@contoso.com'
-                                        targetType = 'user'
-                                    }
-                                )
-                            }
-                        }
-                        B2BDirectConnectInbound  = @{
-                            applications = @{
-                                accessType = 'blocked'
-                                targets    = @(
-                                    @{
-                                        target     = 'AllApplications'
-                                        targetType = 'application'
-                                    }
-                                )
-                            }
-                            usersAndGroups = @{
-                                accessType = 'blocked'
-                                targets    = @(
-                                    @{
-                                        target     = 'John.Smith@contoso.com'
-                                        targetType = 'user'
-                                    }
-                                )
-                            }
-                        }
-                    }
                 }
             }
 

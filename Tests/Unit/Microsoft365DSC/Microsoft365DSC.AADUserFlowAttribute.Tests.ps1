@@ -25,6 +25,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
+
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
 
@@ -41,6 +44,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName New-MgBetaIdentityUserFlowAttribute -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaIdentityUserFlowAttribute -MockWith {
+                return @{
+                    Id = 'testIdSai'
+                    DisplayName = 'saitest'
+                    Description = 'sai test description'
+                    DataType = 'string'
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -94,19 +106,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure          = 'Absent'
                     Credential      = $Credential
                 }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-MgBetaIdentityUserFlowAttribute -MockWith {
-                    $userFlowAttribute = New-Object PSCustomObject
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name Id -Value 'testIdSai'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name DisplayName -Value 'saitest'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name Description -Value 'sai test description'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name DataType -Value 'string'
-                    return $userFlowAttribute
-                }
             }
 
             It 'Should return values from the get method' {
@@ -133,19 +132,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure          = 'Present'
                     Credential      = $Credential
                 }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-MgBetaIdentityUserFlowAttribute -MockWith {
-                    $userFlowAttribute = New-Object PSCustomObject
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name Id -Value 'testIdSai'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name DisplayName -Value 'saitest'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name Description -Value 'sai test description'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name DataType -Value 'string'
-                    return $userFlowAttribute
-                }
             }
 
             It 'Should return Values from the get method' {
@@ -163,23 +149,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Id                 = "testIdSai"
                     DisplayName        = "saitest"
-                    Description        = "sai test description"
+                    Description        = "sai test description changed" # Drift
                     DataType           = "string"
                     Ensure          = 'Present'
                     Credential      = $Credential
-                }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-MgBetaIdentityUserFlowAttribute -MockWith {
-                    $userFlowAttribute = New-Object PSCustomObject
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name Id -Value 'testIdSai'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name DisplayName -Value 'saitest'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name Description -Value 'sai test description changed'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name DataType -Value 'string'
-                    return $userFlowAttribute
                 }
             }
 
@@ -204,19 +177,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-MgBetaIdentityUserFlowAttribute -MockWith {
-                    $userFlowAttribute = New-Object PSCustomObject
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name Id -Value 'testIdSai'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name DisplayName -Value 'saitest'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name Description -Value 'sai test description changed'
-                    $userFlowAttribute | Add-Member -MemberType NoteProperty -Name DataType -Value 'string'
-                    return $userFlowAttribute
                 }
             }
 

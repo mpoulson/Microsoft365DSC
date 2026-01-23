@@ -27,6 +27,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
+
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
 
@@ -35,6 +38,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Set-CsOnlineVoicemailUserSettings -MockWith {
+            }
+
+            Mock -CommandName Get-CsOnlineVoicemailUserSettings -MockWith {
+                return @{
+                    CallAnswerRule                           = 'RegularVoicemail'
+                    Identity                                 = 'JohnSmith@Contoso.com'
+                    OofGreetingEnabled                       = $False
+                    OofGreetingFollowAutomaticRepliesEnabled = $False
+                    OofGreetingFollowCalendarEnabled         = $False
+                    PromptLanguage                           = 'en-US'
+                    ShareData                                = $False
+                    VoicemailEnabled                         = $True
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -86,25 +102,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                                 = 'JohnSmith@Contoso.com'
                     OofGreetingEnabled                       = $False
                     OofGreetingFollowAutomaticRepliesEnabled = $False
-                    OofGreetingFollowCalendarEnabled         = $False
+                    OofGreetingFollowCalendarEnabled         = $True # Drift
                     PromptLanguage                           = 'en-US'
                     ShareData                                = $False
                     VoicemailEnabled                         = $True
                     Ensure                                   = 'Present'
                     Credential                               = $Credential
-                }
-
-                Mock -CommandName Get-CsOnlineVoicemailUserSettings -MockWith {
-                    return @{
-                        CallAnswerRule                           = 'RegularVoicemail'
-                        Identity                                 = 'JohnSmith@Contoso.com'
-                        OofGreetingEnabled                       = $False
-                        OofGreetingFollowAutomaticRepliesEnabled = $False
-                        OofGreetingFollowCalendarEnabled         = $True; #Drift
-                        PromptLanguage                           = 'en-US'
-                        ShareData                                = $False
-                        VoicemailEnabled                         = $True
-                    }
                 }
             }
 
@@ -136,19 +139,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                   = 'Present'
                     Credential                               = $Credential
                 }
-
-                Mock -CommandName Get-CsOnlineVoicemailUserSettings -MockWith {
-                    return @{
-                        CallAnswerRule                           = 'RegularVoicemail'
-                        Identity                                 = 'JohnSmith@Contoso.com'
-                        OofGreetingEnabled                       = $False
-                        OofGreetingFollowAutomaticRepliesEnabled = $False
-                        OofGreetingFollowCalendarEnabled         = $False
-                        PromptLanguage                           = 'en-US'
-                        ShareData                                = $False
-                        VoicemailEnabled                         = $True
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -174,19 +164,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             UserPrincipalName = 'JohnSmith@Contoso.com'
                         }
                     )
-                }
-
-                Mock -CommandName Get-CsOnlineVoicemailUserSettings -MockWith {
-                    return @{
-                        CallAnswerRule                           = 'RegularVoicemail'
-                        Identity                                 = 'JohnSmith@Contoso.com'
-                        OofGreetingEnabled                       = $False
-                        OofGreetingFollowAutomaticRepliesEnabled = $False
-                        OofGreetingFollowCalendarEnabled         = $False
-                        PromptLanguage                           = 'en-US'
-                        ShareData                                = $False
-                        VoicemailEnabled                         = $True
-                    }
                 }
             }
 

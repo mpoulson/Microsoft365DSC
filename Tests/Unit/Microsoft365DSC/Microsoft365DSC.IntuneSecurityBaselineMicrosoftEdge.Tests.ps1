@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -49,7 +49,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Name            = 'My Test'
                     RoleScopeTagIds = @("FakeStringValue")
                     TemplateReference = @{
-                        TemplateId = 'c66347b7-8325-4954-a235-3bf2233dfbfd_2'
+                        TemplateId = 'c66347b7-8325-4954-a235-3bf2233dfbfd_3'
                     }
                 }
             }
@@ -74,6 +74,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 OffsetUri = '/Config/microsoft_edgev92~Policy~microsoft_edge~PrivateNetworkRequestSettings/InsecurePrivateNetworkRequestsAllowed'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        @{
+                                            itemId = 'device_vendor_msft_policy_config_microsoft_edgev92~policy~microsoft_edge~privatenetworkrequestsettings_insecureprivatenetworkrequestsallowed_0'
+                                            name = 'Disabled'
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 0
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         )
@@ -100,6 +110,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 OffsetUri = '/Config/microsoft_edgev92~Policy~microsoft_edge/InternetExplorerIntegrationReloadInIEModeAllowed'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        @{
+                                            itemId = 'device_vendor_msft_policy_config_microsoft_edgev92~policy~microsoft_edge_internetexplorerintegrationreloadiniemodeallowed_0'
+                                            name = 'Disabled'
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 0
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         )
@@ -126,6 +146,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 OffsetUri = '/Config/microsoft_edgev117~Policy~microsoft_edge/InternetExplorerIntegrationZoneIdentifierMhtFileAllowed'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        @{
+                                            itemId = 'device_vendor_msft_policy_config_microsoft_edgev117~policy~microsoft_edge_internetexplorerintegrationzoneidentifiermhtfileallowed_0'
+                                            name = 'Disabled'
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 0
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         )
@@ -152,6 +182,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 OffsetUri = '/Config/microsoft_edgev96~Policy~microsoft_edge/InternetExplorerModeToolbarButtonEnabled'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        @{
+                                            itemId = 'device_vendor_msft_policy_config_microsoft_edgev96~policy~microsoft_edge_internetexplorermodetoolbarbuttonenabled_0'
+                                            name = 'Disabled'
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 0
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         )

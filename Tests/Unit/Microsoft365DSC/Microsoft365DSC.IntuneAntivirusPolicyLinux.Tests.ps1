@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -74,6 +74,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 OffsetUri = 'enabled'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        @{
+                                            itemId = 'linux_mdatp_managed_cloudservice_enabled_true'
+                                            name = 'Enabled'
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'true'
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         )
@@ -146,7 +156,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
                                     options = @(
                                         @{
-                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_1'
+                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_0'
                                             name = 'Path'
                                             dependentOn = @(
                                                 @{
@@ -154,6 +164,38 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'linux_mdatp_managed_antivirusengine_exclusions'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedPath'
+                                            }
+                                        }
+                                        @{
+                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_1'
+                                            name = 'File extension'
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                    parentSettingId = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                }
+                                            )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedFileExtension'
+                                            }
+                                        }
+                                        @{
+                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_2'
+                                            name = 'Process name'
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                    parentSettingId = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                }
+                                            )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedFileName'
+                                            }
                                         }
                                     )
                                 }
@@ -272,6 +314,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'linux_mdatp_managed_antivirusengine_threattypesettings'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'potentially_unwanted_application'
+                                            }
                                         }
                                     )
                                 }
@@ -292,6 +338,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'linux_mdatp_managed_antivirusengine_threattypesettings'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'audit'
+                                            }
                                         }
                                     )
                                 }
@@ -343,6 +393,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 OffsetUri = 'enabled'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        @{
+                                            itemId = 'linux_mdatp_managed_cloudservice_enabled_true'
+                                            name = 'Enabled'
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'true'
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         )
@@ -393,7 +453,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
                                     options = @(
                                         @{
-                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_1'
+                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_0'
                                             name = 'Path'
                                             dependentOn = @(
                                                 @{
@@ -401,6 +461,38 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'linux_mdatp_managed_antivirusengine_exclusions'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedPath'
+                                            }
+                                        }
+                                        @{
+                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_1'
+                                            name = 'File extension'
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                    parentSettingId = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                }
+                                            )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedFileExtension'
+                                            }
+                                        }
+                                        @{
+                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_2'
+                                            name = 'Process name'
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                    parentSettingId = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                }
+                                            )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedFileName'
+                                            }
                                         }
                                     )
                                 }
@@ -446,6 +538,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 Name = 'threatTypeSettings'
                                 OffsetUri = 'threatTypeSettings'
                                 AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSettingGroupCollectionDefinition'
                                     maximumCount = 2147483647
                                     minimumCount = 0
                                     childIds = @(
@@ -459,6 +552,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 Name = 'threatTypeSettings_item_key'
                                 OffsetUri = 'threatTypeSettings/[{0}]/key'
                                 AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
                                     options = @(
                                         @{
                                             itemId = 'linux_mdatp_managed_antivirusengine_threattypesettings_item_key_0'
@@ -469,6 +563,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'linux_mdatp_managed_antivirusengine_threattypesettings'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'potentially_unwanted_application'
+                                            }
                                         }
                                     )
                                 }
@@ -489,6 +587,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'linux_mdatp_managed_antivirusengine_threattypesettings'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'audit'
+                                            }
                                         }
                                     )
                                 }
@@ -553,11 +655,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.exe'
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            Exclusions_item_type = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"
@@ -565,8 +667,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds = @("FakeStringValue")
                     threatTypeSettings = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogThreatTypeSettings -Property @{
-                            ThreatTypeSettings_item_key = '0'
-                            ThreatTypeSettings_item_value = '0'
+                            ThreatTypeSettings_item_key = 'potentially_unwanted_application'
+                            ThreatTypeSettings_item_value = 'audit'
                         } -ClientOnly)
                     );
                     Ensure = "Present"
@@ -605,11 +707,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.exe'
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            Exclusions_item_type = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"
@@ -617,8 +719,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds = @("FakeStringValue")
                     threatTypeSettings = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogThreatTypeSettings -Property @{
-                            ThreatTypeSettings_item_key = '0'
-                            ThreatTypeSettings_item_value = '0'
+                            ThreatTypeSettings_item_key = 'potentially_unwanted_application'
+                            ThreatTypeSettings_item_value = 'audit'
                         } -ClientOnly)
                     );
                     Ensure = "Absent"
@@ -655,11 +757,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.exe'
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            Exclusions_item_type = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"
@@ -667,8 +769,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds = @("FakeStringValue")
                     threatTypeSettings = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogThreatTypeSettings -Property @{
-                            ThreatTypeSettings_item_key = '0'
-                            ThreatTypeSettings_item_value = '0'
+                            ThreatTypeSettings_item_key = 'potentially_unwanted_application'
+                            ThreatTypeSettings_item_value = 'audit'
                         } -ClientOnly)
                     );
                     Ensure = "Present"
@@ -697,11 +799,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.pdf' # Drift
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            Exclusions_item_type = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"
@@ -709,8 +811,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds = @("FakeStringValue")
                     threatTypeSettings = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogThreatTypeSettings -Property @{
-                            ThreatTypeSettings_item_key = '0'
-                            ThreatTypeSettings_item_value = '0'
+                            ThreatTypeSettings_item_key = 'potentially_unwanted_application'
+                            ThreatTypeSettings_item_value = 'audit'
                         } -ClientOnly)
                     );
                     Ensure = "Present"

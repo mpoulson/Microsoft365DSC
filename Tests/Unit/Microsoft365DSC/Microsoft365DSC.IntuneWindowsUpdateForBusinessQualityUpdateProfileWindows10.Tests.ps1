@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -50,6 +50,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
             Mock -CommandName Write-Warning -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementWindowsQualityUpdateProfile -MockWith {
+                return @{
+                    Description = "Description"
+                    DisplayName = "IntuneQualityUpdate"
+                    ExpeditedUpdateSettings = @{
+                        DaysUntilForcedReboot = 0
+                        QualityUpdateRelease = "2024-06-11T00:00:00Z"
+                    }
+                    Id = "FakeStringValue"
+                    RoleScopeTagIds = @("0")
+                }
             }
 
             $Script:exportedInstances =$null
@@ -137,19 +150,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementWindowsQualityUpdateProfile -MockWith {
-                    return @{
-                        Description = "Description"
-                        DisplayName = "IntuneQualityUpdate"
-                        ExpeditedUpdateSettings = @{
-                            DaysUntilForcedReboot = 0
-                            QualityUpdateRelease = "2024-06-11T00:00:00Z"
-                        }
-                        Id = "FakeStringValue"
-                        RoleScopeTagIds = @("0")
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -186,19 +186,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementWindowsQualityUpdateProfile -MockWith {
-                    return @{
-                        Description = "Description"
-                        DisplayName = "IntuneQualityUpdate"
-                        ExpeditedUpdateSettings = @{
-                            DaysUntilForcedReboot = 0
-                            QualityUpdateRelease = "2024-06-11T00:00:00Z"
-                        }
-                        Id = "FakeStringValue"
-                        RoleScopeTagIds = @("0")
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -219,26 +206,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description = "Description"
                     DisplayName = "IntuneQualityUpdate"
                     ExpeditedUpdateSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphExpeditedWindowsQualityUpdateSettings -Property @{
-                        DaysUntilForcedReboot = 0
+                        DaysUntilForcedReboot = 1 # Updated property
                         QualityUpdateRelease = "2024-06-11T00:00:00Z"
                     } -ClientOnly)
                     Id = "FakeStringValue"
                     RoleScopeTagIds = @("0")
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementWindowsQualityUpdateProfile -MockWith {
-                    return @{
-                        Description = "Description"
-                        DisplayName = "IntuneQualityUpdate"
-                        ExpeditedUpdateSettings = @{
-                            DaysUntilForcedReboot = 1 #drift
-                            QualityUpdateRelease = "2024-06-11T00:00:00Z"
-                        }
-                        Id = "FakeStringValue"
-                        RoleScopeTagIds = @("0")
-                    }
                 }
             }
 
@@ -262,19 +236,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementWindowsQualityUpdateProfile -MockWith {
-                    return @{
-                        Description = "Description"
-                        DisplayName = "IntuneQualityUpdate"
-                        ExpeditedUpdateSettings = @{
-                            DaysUntilForcedReboot = 0
-                            QualityUpdateRelease = "2024-06-11T00:00:00Z"
-                        }
-                        Id = "FakeStringValue"
-                        RoleScopeTagIds = @("0")
-                    }
                 }
             }
 

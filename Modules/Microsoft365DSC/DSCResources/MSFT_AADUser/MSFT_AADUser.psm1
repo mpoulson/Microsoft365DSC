@@ -1,3 +1,7 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADUser'
+
+$Script:propertiesToRetrieve = @('Id', 'AccountEnabled', 'UserPrincipalName', 'DisplayName', 'GivenName', 'Surname', 'UsageLocation', 'City', 'Country', 'Department', 'FaxNumber', 'MobilePhone', 'OfficeLocation', 'Mail', 'OtherMails', 'BusinessPhones', 'PostalCode', 'PreferredLanguage', 'State', 'StreetAddress', 'JobTitle', 'UserType', 'PasswordPolicies')
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -7,6 +11,10 @@ function Get-TargetResource
         [Parameter(Mandatory = $true)]
         [System.String]
         $UserPrincipalName,
+
+        [Parameter()]
+        [System.Boolean]
+        $AccountEnabled,
 
         [Parameter()]
         [System.String]
@@ -59,6 +67,10 @@ function Get-TargetResource
         [Parameter()]
         [System.String]
         $Office,
+
+        [Parameter()]
+        [System.String]
+        $Mail,
 
         [Parameter()]
         [System.String[]]
@@ -144,7 +156,7 @@ function Get-TargetResource
         {
             Write-Verbose -Message "Getting configuration of Office 365 User $UserPrincipalName"
 
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -161,27 +173,28 @@ function Get-TargetResource
 
             $nullReturn = @{
                 UserPrincipalName     = $null
+                AccountEnabled        = $null
                 DisplayName           = $null
                 FirstName             = $null
                 LastName              = $null
                 UsageLocation         = $null
                 LicenseAssignment     = $null
                 MemberOf              = $null
+                Mail                  = $null
                 OtherMails            = $null
                 Password              = $null
                 Credential            = $Credential
                 ApplicationId         = $ApplicationId
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 ApplicationSecret     = $ApplicationSecret
                 Ensure                = 'Absent'
                 AccessTokens          = $AccessTokens
             }
 
             Write-Verbose -Message "Getting Office 365 User $UserPrincipalName"
-            $propertiesToRetrieve = @('Id', 'UserPrincipalName', 'DisplayName', 'GivenName', 'Surname', 'UsageLocation', 'City', 'Country', 'Department', 'FaxNumber', 'MobilePhone', 'OfficeLocation', 'OtherMails', 'BusinessPhones', 'PostalCode', 'PreferredLanguage', 'State', 'StreetAddress', 'JobTitle', 'UserType', 'PasswordPolicies')
-            $user = Get-MgUser -UserId $UserPrincipalName -Property $propertiesToRetrieve -ErrorAction SilentlyContinue
+            $user = Get-MgUser -UserId $UserPrincipalName -Property $Script:propertiesToRetrieve -ErrorAction SilentlyContinue
             if ($null -eq $user)
             {
                 Write-Verbose -Message "The specified User doesn't already exist."
@@ -194,16 +207,33 @@ function Get-TargetResource
             $user = $Script:exportedInstance
         }
 
+        $batchRequests = @(
+            @{
+                id     = 'License'
+                method = 'GET'
+                url    = "/users/$($UserPrincipalName)/licenseDetails"
+            }
+            @{
+                id     = 'MemberOf'
+                method = 'GET'
+                url    = "/users/$($UserPrincipalName)/memberOf?`$select=displayName&`$filter=not(groupTypes/any(c:c eq 'DynamicMembership'))"
+                headers = @{
+                    'ConsistencyLevel' = 'eventual'
+                }
+            }
+        )
+        $batchResponse = Invoke-M365DSCGraphBatchRequest -Requests $batchRequests
+
         Write-Verbose -Message "Found User $($UserPrincipalName)"
         $currentLicenseAssignment = @()
-        $skus = Get-MgUserLicenseDetail -UserId $UserPrincipalName -ErrorAction Stop
+        $skus = ($batchResponse | Where-Object -FilterScript { $_.id -eq 'License' }).body.value
         foreach ($sku in $skus)
         {
             $currentLicenseAssignment += $sku.SkuPartNumber
         }
 
         # return membership of static groups only
-        [array]$currentMemberOf = (Get-MgUserMemberOfAsGroup -UserId $UserPrincipalName -All | Where-Object -FilterScript { $_.GroupTypes -notcontains 'DynamicMembership' }).DisplayName
+        [array]$currentMemberOf = ($batchResponse | Where-Object -FilterScript { $_.id -eq 'MemberOf' }).body.value.DisplayName
 
         $userPasswordPolicyInfo = $user | Select-Object UserprincipalName, @{
             N = 'PasswordNeverExpires'; E = { $_.PasswordPolicies -contains 'DisablePasswordExpiration' }
@@ -229,6 +259,7 @@ function Get-TargetResource
 
         $results = @{
             UserPrincipalName     = $UserPrincipalName
+            AccountEnabled        = $user.AccountEnabled
             DisplayName           = $user.DisplayName
             FirstName             = $user.GivenName
             LastName              = $user.Surname
@@ -242,6 +273,7 @@ function Get-TargetResource
             Fax                   = $user.FaxNumber
             MobilePhone           = $user.MobilePhone
             Office                = $user.OfficeLocation
+            Mail                  = $user.Mail
             OtherMails            = $user.OtherMails
             PasswordNeverExpires  = $passwordNeverExpires
             PasswordPolicies      = $user.PasswordPolicies
@@ -261,7 +293,7 @@ function Get-TargetResource
             Ensure                = 'Present'
             AccessTokens          = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -271,7 +303,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -283,6 +315,10 @@ function Set-TargetResource
         [Parameter(Mandatory = $true)]
         [System.String]
         $UserPrincipalName,
+
+        [Parameter()]
+        [System.Boolean]
+        $AccountEnabled,
 
         [Parameter()]
         [System.String]
@@ -335,6 +371,10 @@ function Set-TargetResource
         [Parameter()]
         [System.String]
         $Office,
+
+        [Parameter()]
+        [System.String]
+        $Mail,
 
         [Parameter()]
         [System.String[]]
@@ -429,9 +469,6 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
-
     $user = Get-TargetResource @PSBoundParameters
     if ($user.Ensure -eq 'Present' -and $Ensure -eq 'Absent')
     {
@@ -450,6 +487,7 @@ function Set-TargetResource
             $PasswordPolicies = 'None'
         }
         $CreationParams = @{
+            AccountEnabled           = $AccountEnabled
             City                     = $City
             Country                  = $Country
             Department               = $Department
@@ -460,6 +498,7 @@ function Set-TargetResource
             MobilePhone              = $MobilePhone
             PasswordPolicies         = $PasswordPolicies
             OfficeLocation           = $Office
+            Mail                     = $Mail
             OtherMails               = $OtherMails
             PostalCode               = $PostalCode
             PreferredLanguage        = $PreferredLanguage
@@ -567,7 +606,10 @@ function Set-TargetResource
             $CreationParams.Add('PasswordProfile', $PasswordProfile)
 
             Write-Verbose -Message "Creating Office 365 User $UserPrincipalName"
-            $CreationParams.Add('AccountEnabled', $true)
+            if (-not $CreationParams.ContainsKey('AccountEnabled') -or -not $CreationParams.AccountEnabled)
+            {
+                $CreationParams.AccountEnabled = $true
+            }
             $CreationParams.Add('MailNickName', $UserPrincipalName.Split('@')[0])
             Write-Verbose -Message "Creating new user with values: $(Convert-M365DscHashtableToString -Hashtable $CreationParams)"
             $user = New-MgUser @CreationParams
@@ -723,6 +765,10 @@ function Test-TargetResource
         $UserPrincipalName,
 
         [Parameter()]
+        [System.Boolean]
+        $AccountEnabled,
+
+        [Parameter()]
         [System.String]
         $DisplayName,
 
@@ -773,6 +819,10 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $Office,
+
+        [Parameter()]
+        [System.String]
+        $Mail,
 
         [Parameter()]
         [System.String[]]
@@ -852,11 +902,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -864,26 +912,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Azure AD User $UserPrincipalName"
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    if ($Ensure -eq 'Absent' -and $CurrentValues.Ensure -eq 'Absent')
-    {
-        return $true
-    }
-
-    $ValuesToCheck = $PSBoundParameters
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -924,6 +955,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -942,11 +974,10 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        $propertiesToRetrieve = @('Id', 'UserPrincipalName', 'DisplayName', 'GivenName', 'Surname', 'UsageLocation', 'City', 'Country', 'Department', 'FacsimileTelephoneNumber', 'Mobile', 'OfficeLocation', 'OtherMails', 'TelephoneNumber', 'PostalCode', 'PreferredLanguage', 'State', 'StreetAddress', 'JobTitle', 'UserType', 'PasswordPolicies')
         $ExportParameters = @{
             Filter      = $Filter
             All         = [switch]$true
-            Property    = $propertiesToRetrieve
+            Property    = $Script:propertiesToRetrieve
             ErrorAction = 'Stop'
         }
         $queryTypes = @{
@@ -1074,7 +1105,7 @@ function Export-TargetResource
         }
 
         # If all conditions match the support, add parameters to $ExportParameters
-        if ($allConditionsMatched -or $Filter -like '*endsWith*')
+        if ($allConditionsMatched -or ($Filter -like '*endsWith*') -or ($Filter -like '*not*'))
         {
             $ExportParameters.Add('CountVariable', 'count')
             $ExportParameters.Add('ConsistencyLevel', 'eventual')
@@ -1101,7 +1132,7 @@ function Export-TargetResource
                     ApplicationId         = $ApplicationId
                     TenantId              = $TenantId
                     CertificateThumbprint = $CertificateThumbprint
-                    Managedidentity       = $ManagedIdentity.IsPresent
+                    ManagedIdentity       = $ManagedIdentity.IsPresent
                     ApplicationSecret     = $ApplicationSecret
                     AccessTokens          = $AccessTokens
                 }
@@ -1115,7 +1146,8 @@ function Export-TargetResource
                         -ConnectionMode $ConnectionMode `
                         -ModulePath $PSScriptRoot `
                         -Results $Results `
-                        -Credential $Credential
+                        -Credential $Credential `
+                        -NoEscape @('Password')
 
                     $dscContent.Append($currentDSCBlock) | Out-Null
                     Save-M365DSCPartialExport -Content $currentDSCBlock `
@@ -1129,15 +1161,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

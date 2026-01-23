@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADPasswordRuleSettings'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -69,7 +71,8 @@ function Get-TargetResource
     )
 
     Write-Verbose -Message 'Getting configuration of AzureAD Password Rule Settings'
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -118,11 +121,10 @@ function Get-TargetResource
                 ApplicationSecret                   = $ApplicationSecret
                 CertificateThumbprint               = $CertificateThumbprint
                 Credential                          = $Credential
-                Managedidentity                     = $ManagedIdentity.IsPresent
+                ManagedIdentity                     = $ManagedIdentity.IsPresent
                 AccessTokens                        = $AccessTokens
             }
 
-            Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
             return $result
         }
     }
@@ -134,7 +136,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -227,8 +229,17 @@ function Set-TargetResource
     $needToUpdate = $false
     if ($Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Absent')
     {
-        #$template = Get-MgBetaDirectorySettingTemplate -All | Where-Object -FilterScript {$_.Displayname -eq 'Password Rule Settings'}
-        $Policy = New-MgBetaDirectorySetting -TemplateId '5cf42378-d67d-4f36-ba46-e8b86229381d' | Out-Null
+        write-verbose "Create new DirectorySetting for 'Password Rule Settings' with default values"
+        $template = Get-MgBetaDirectorySettingTemplate -All | Where-Object -FilterScript {$_.Displayname -eq 'Password Rule Settings'}
+        # need to build a new array for values since the template-values contain property DefaultValue but Value is required
+        $defaultValues = @()
+        $template.Values | ForEach-Object {
+            $defaultValues += @{
+                name  = $_.Name
+                value = $_.DefaultValue
+            }
+        }
+        $Policy = New-MgBetaDirectorySetting -TemplateId $template.Id -Values $defaultValues | Out-Null
         $needToUpdate = $true
     }
 
@@ -350,12 +361,8 @@ function Test-TargetResource
         $AccessTokens
     )
 
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -363,23 +370,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration of AzureAD Password Rule Settings'
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -446,7 +439,7 @@ function Export-TargetResource
             IsSingleInstance      = 'Yes'
             ApplicationSecret     = $ApplicationSecret
             Credential            = $Credential
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
         $dscContent = ''
@@ -464,15 +457,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

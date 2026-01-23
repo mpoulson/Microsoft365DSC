@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_O365Group'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -58,12 +60,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Setting configuration of Office 365 Group $DisplayName"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            Write-Verbose -Message "Setting configuration of Office 365 Group $DisplayName"
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -153,7 +156,7 @@ function Get-TargetResource
                 ApplicationSecret     = $ApplicationSecret
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 Ensure                = 'Present'
                 AccessTokens          = $AccessTokens
             }
@@ -176,7 +179,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -252,22 +255,12 @@ function Set-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
 
     $currentGroup = Get-TargetResource @PSBoundParameters
 
     if ($Ensure -eq 'Present')
     {
-        $CurrentParameters = $PSBoundParameters
-        $CurrentParameters.Remove('Ensure') | Out-Null
-        $CurrentParameters.Remove('Credential') | Out-Null
-        $CurrentParameters.Remove('ApplicationId') | Out-Null
-        $CurrentParameters.Remove('TenantId') | Out-Null
-        $CurrentParameters.Remove('CertificateThumbprint') | Out-Null
-        $CurrentParameters.Remove('ApplicationSecret') | Out-Null
-        $CurrentParameters.Remove('ManagedIdentity') | Out-Null
-        $CurrentParameters.Remove('AccessTokens') | Out-Null
+        $CurrentParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
         if ($currentGroup.Ensure -eq 'Absent')
         {
@@ -499,11 +492,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -511,20 +502,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Office 365 Group $DisplayName"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -589,7 +569,7 @@ function Export-TargetResource
             All         = [switch]$true
             ErrorAction = 'Stop'
         }
-        if ($Filter -like '*endsWith*')
+        if ( ($Filter -like '*endsWith*') -or ($Filter -like '*not*') )
         {
             $ExportParameters.Add('CountVariable', 'count')
             $ExportParameters.Add('ConsistencyLevel', 'eventual')
@@ -613,7 +593,7 @@ function Export-TargetResource
                 ApplicationId         = $ApplicationId
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 ApplicationSecret     = $ApplicationSecret
                 DisplayName           = $group.DisplayName
                 ManagedBy             = 'DummyUser'
@@ -638,15 +618,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

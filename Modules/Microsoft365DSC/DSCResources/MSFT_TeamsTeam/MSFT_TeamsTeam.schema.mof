@@ -1,11 +1,11 @@
-[ClassVersion("1.0.0.0"), FriendlyName("TeamsTeam")]
+[ClassVersion("1.0.0.1"), FriendlyName("TeamsTeam")]
 class MSFT_TeamsTeam : OMI_BaseResource
 {
     [Key, Description("Display Name of the Team")] string DisplayName;
     [Write, Description("Description of Team.")] string Description;
     [Write, Description("Team group ID, only used to target a Team when duplicated display names occurs.")] string GroupID;
     [Write, Description("MailNickName of O365 Group associated with Team")] string MailNickName;
-    [Write, Description("Owners of the Team")] string Owner[];
+    [Write, Description("Owners of the Team. At least one entry is required.")] string Owner[];
     [Write, Description("Visibility of the Team"),ValueMap{"Public","Private", "HiddenMembership"},Values{"Public","Private", "HiddenMembership"}] String Visibility;
     [Write, Description("Allow add or remove apps from the Team.")] Boolean AllowAddRemoveApps;
     [Write, Description("Allow giphy in Team.")] Boolean AllowGiphy;
@@ -16,6 +16,7 @@ class MSFT_TeamsTeam : OMI_BaseResource
     [Write, Description("Allow members to delete messages within Team.")] Boolean AllowUserDeleteMessages;
     [Write, Description("Allow owners to delete messages within Team.")] Boolean AllowOwnerDeleteMessages;
     [Write, Description("Allow members to delete channels within Team.")] Boolean AllowDeleteChannels;
+    [Write, Description("Determines whether private channel creation is allowed for the team.")] Boolean AllowCreatePrivateChannels;
     [Write, Description("Allow members to manage connectors within Team.")] Boolean AllowCreateUpdateRemoveConnectors;
     [Write, Description("Allow members to manage tabs within Team.")] Boolean AllowCreateUpdateRemoveTabs;
     [Write, Description("Allow mentions in Team.")] Boolean AllowTeamMentions;

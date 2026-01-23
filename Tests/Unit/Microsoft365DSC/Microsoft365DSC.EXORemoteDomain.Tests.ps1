@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -35,6 +35,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName New-RemoteDomain -MockWith {
+            }
+
+            Mock -CommandName Remove-RemoteDomain -MockWith {
+            }
+
+            Mock -CommandName Set-RemoteDomain -MockWith {
+            }
+
+            Mock -CommandName Get-RemoteDomain -MockWith {
+                return @{
+                    Identity       = 'Contoso'
+                    DomainName     = 'contoso.com'
+                    AllowedOOFType = 'External'
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -56,22 +73,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-RemoteDomain -MockWith {
-                    return @{
-                        Identity       = 'ContosoDifferent'
-                        DomainName     = 'different.contoso.com'
-                        AllowedOOFType = 'External'
-                    }
+                    return $null
                 }
-
-                Mock -CommandName Set-RemoteDomain -MockWith {
-                    return @{
-                        AllowedOOFType = 'External'
-                        Ensure         = 'Present'
-                        Credential     = $Credential
-                        Identity       = 'Contoso'
-                    }
-                }
-
             }
 
             It 'Should return false from the Test method' {
@@ -80,10 +83,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-RemoteDomain -Exactly 1
             }
 
             It 'Should return Absent from the Get method' {
-                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
             }
         }
 
@@ -95,14 +99,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowedOOFType = 'External'
                     Ensure         = 'Present'
                     Credential     = $Credential
-                }
-
-                Mock -CommandName Get-RemoteDomain -MockWith {
-                    return @{
-                        Identity       = 'Contoso'
-                        DomainName     = 'contoso.com'
-                        AllowedOOFType = 'External'
-                    }
                 }
             }
 
@@ -120,27 +116,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Identity       = 'Contoso'
                     DomainName     = 'contoso.com'
-                    AllowedOOFType = 'External'
+                    AllowedOOFType = 'InternalLegacy'
                     Ensure         = 'Present'
                     Credential     = $Credential
-                }
-
-                Mock -CommandName Get-RemoteDomain -MockWith {
-                    return @{
-                        Identity       = 'Contoso'
-                        DomainName     = 'contoso.com'
-                        AllowedOOFType = 'InternalLegacy'
-                    }
-                }
-
-                Mock -CommandName Set-RemoteDomain -MockWith {
-                    return @{
-                        Identity       = 'Contoso'
-                        DomainName     = 'contoso.com'
-                        AllowedOOFType = 'External'
-                        Ensure         = 'Present'
-                        Credential     = $Credential
-                    }
                 }
             }
 
@@ -150,6 +128,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-RemoteDomain -Exactly 1
             }
         }
 
@@ -159,16 +138,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                $remoteDomain1 = @{
-                    Identity       = 'ContosoDifferent1'
-                    DomainName     = 'different1.contoso.com'
-                    AllowedOOFType = 'External'
-                }
-
-                Mock -CommandName Get-RemoteDomain -MockWith {
-                    return $remoteDomain1
                 }
             }
 

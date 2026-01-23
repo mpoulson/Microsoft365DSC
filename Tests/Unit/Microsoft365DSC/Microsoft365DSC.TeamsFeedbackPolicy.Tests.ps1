@@ -24,13 +24,26 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-GUID).ToString() -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Get-CsTeamsFeedbackPolicy -MockWith {
+                return @{
+                    EnableFeatureSuggestions  = $True
+                    ReceiveSurveysMode        = 'Enabled'
+                    AllowEmailCollection      = $True
+                    UserInitiatedMode         = 'FakeStringValue'
+                    Identity                  = 'FakeStringValue'
+                    AllowScreenshotCollection = $True
+                    AllowLogCollection        = $True
+
+                }
             }
 
             Mock -CommandName Set-CsTeamsFeedbackPolicy -MockWith {
@@ -100,19 +113,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                    = 'Absent'
                     Credential                = $Credential
                 }
-
-                Mock -CommandName Get-CsTeamsFeedbackPolicy -MockWith {
-                    return @{
-                        EnableFeatureSuggestions  = $True
-                        ReceiveSurveysMode        = 'Enabled'
-                        AllowEmailCollection      = $True
-                        UserInitiatedMode         = 'FakeStringValue'
-                        Identity                  = 'FakeStringValue'
-                        AllowScreenshotCollection = $True
-                        AllowLogCollection        = $True
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -142,18 +142,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                    = 'Present'
                     Credential                = $Credential
                 }
-
-                Mock -CommandName Get-CsTeamsFeedbackPolicy -MockWith {
-                    return @{
-                        EnableFeatureSuggestions  = $True
-                        ReceiveSurveysMode        = 'Enabled'
-                        AllowEmailCollection      = $True
-                        UserInitiatedMode         = 'FakeStringValue'
-                        Identity                  = 'FakeStringValue'
-                        AllowScreenshotCollection = $True
-                        AllowLogCollection        = $True
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -164,7 +152,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The TeamsFeedbackPolicy exists and values are NOT in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    EnableFeatureSuggestions  = $True
+                    EnableFeatureSuggestions  = $False # Drift
                     ReceiveSurveysMode        = 'Enabled'
                     AllowEmailCollection      = $True
                     UserInitiatedMode         = 'FakeStringValue'
@@ -173,18 +161,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowLogCollection        = $True
                     Ensure                    = 'Present'
                     Credential                = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsFeedbackPolicy -MockWith {
-                    return @{
-                        EnableFeatureSuggestions  = $False
-                        ReceiveSurveysMode        = 'Disabled'
-                        AllowEmailCollection      = $False
-                        UserInitiatedMode         = 'FakeStringValueDrift #Drift'
-                        Identity                  = 'FakeStringValue'
-                        AllowScreenshotCollection = $False
-                        AllowLogCollection        = $False
-                    }
                 }
             }
 
@@ -208,19 +184,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsFeedbackPolicy -MockWith {
-                    return @{
-                        EnableFeatureSuggestions  = $True
-                        ReceiveSurveysMode        = 'Enabled'
-                        AllowEmailCollection      = $True
-                        UserInitiatedMode         = 'FakeStringValue'
-                        Identity                  = 'FakeStringValue'
-                        AllowScreenshotCollection = $True
-                        AllowLogCollection        = $True
-
-                    }
                 }
             }
 

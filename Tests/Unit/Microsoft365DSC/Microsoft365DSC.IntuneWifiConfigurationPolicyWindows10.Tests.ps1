@@ -24,8 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -46,6 +45,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        ForceFIPSCompliance            = $True
+                        NetworkName                    = 'FakeStringValue'
+                        MeteredConnectionLimit         = 'unrestricted'
+                        '@odata.type'                  = '#microsoft.graph.windowsWifiConfiguration'
+                        PreSharedKey                   = 'FakeStringValue'
+                        WifiSecurityType               = 'open'
+                        ProxyManualPort                = 25
+                        ProxyManualAddress             = 'FakeStringValue'
+                        ConnectWhenNetworkNameIsHidden = $True
+                        ProxySetting                   = 'automatic'
+                        ProxyAutomaticConfigurationUrl = 'FakeStringValue'
+                        ConnectAutomatically           = $True
+                        ConnectToPreferredNetwork      = $True
+                        Ssid                           = 'FakeStringValue'
+                    }
+                    Description          = 'FakeStringValue'
+                    DisplayName          = 'FakeStringValue'
+                    Id                   = 'FakeStringValue'
+
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -117,31 +141,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                         = 'Absent'
                     Credential                     = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            ForceFIPSCompliance            = $True
-                            NetworkName                    = 'FakeStringValue'
-                            MeteredConnectionLimit         = 'unrestricted'
-                            '@odata.type'                  = '#microsoft.graph.windowsWifiConfiguration'
-                            PreSharedKey                   = 'FakeStringValue'
-                            WifiSecurityType               = 'open'
-                            ProxyManualPort                = 25
-                            ProxyManualAddress             = 'FakeStringValue'
-                            ConnectWhenNetworkNameIsHidden = $True
-                            ProxySetting                   = 'automatic'
-                            ProxyAutomaticConfigurationUrl = 'FakeStringValue'
-                            ConnectAutomatically           = $True
-                            ConnectToPreferredNetwork      = $True
-                            Ssid                           = 'FakeStringValue'
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -179,33 +178,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                         = 'Present'
                     Credential                     = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            ForceFIPSCompliance            = $True
-                            NetworkName                    = 'FakeStringValue'
-                            MeteredConnectionLimit         = 'unrestricted'
-                            '@odata.type'                  = '#microsoft.graph.windowsWifiConfiguration'
-                            PreSharedKey                   = 'FakeStringValue'
-                            WifiSecurityType               = 'open'
-                            ProxyManualPort                = 25
-                            ProxyManualAddress             = 'FakeStringValue'
-                            ConnectWhenNetworkNameIsHidden = $True
-                            ProxySetting                   = 'automatic'
-                            ProxyAutomaticConfigurationUrl = 'FakeStringValue'
-                            ConnectAutomatically           = $True
-                            ConnectToPreferredNetwork      = $True
-                            Ssid                           = 'FakeStringValue'
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -227,33 +200,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PreSharedKey                   = 'FakeStringValue'
                     ProxyAutomaticConfigurationUrl = 'FakeStringValue'
                     ProxyManualAddress             = 'FakeStringValue'
-                    ProxyManualPort                = 25
+                    ProxyManualPort                = 8443 # Updated property
                     ProxySetting                   = 'automatic'
                     Ssid                           = 'FakeStringValue'
                     WifiSecurityType               = 'open'
                     Ensure                         = 'Present'
                     Credential                     = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type'                  = '#microsoft.graph.windowsWifiConfiguration'
-                            NetworkName                    = 'FakeStringValue'
-                            MeteredConnectionLimit         = 'unrestricted'
-                            WifiSecurityType               = 'open'
-                            ProxyAutomaticConfigurationUrl = 'FakeStringValue'
-                            PreSharedKey                   = 'FakeStringValue'
-                            ProxyManualPort                = 7
-                            Ssid                           = 'FakeStringValue'
-                            ProxyManualAddress             = 'FakeStringValue'
-                            ProxySetting                   = 'automatic'
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
                 }
             }
 
@@ -277,32 +229,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            ForceFIPSCompliance            = $True
-                            NetworkName                    = 'FakeStringValue'
-                            MeteredConnectionLimit         = 'unrestricted'
-                            '@odata.type'                  = '#microsoft.graph.windowsWifiConfiguration'
-                            PreSharedKey                   = 'FakeStringValue'
-                            WifiSecurityType               = 'open'
-                            ProxyManualPort                = 25
-                            ProxyManualAddress             = 'FakeStringValue'
-                            ConnectWhenNetworkNameIsHidden = $True
-                            ProxySetting                  = 'automatic'
-                            ProxyAutomaticConfigurationUrl = 'FakeStringValue'
-                            ConnectAutomatically           = $True
-                            ConnectToPreferredNetwork      = $True
-                            Ssid                           = 'FakeStringValue'
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

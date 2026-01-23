@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -36,6 +36,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Get-MigrationEndpoint -MockWith {
+                return @{
+                    AcceptUntrustedCertificates   = $True;
+                    Authentication                = "Basic";
+                    EndpointType                  = "IMAP";
+                    Identity                      = "testIMAP";
+                    MailboxPermission             = "Admin";
+                    MaxConcurrentIncrementalSyncs = "10";
+                    MaxConcurrentMigrations       = "20";
+                    Port                          = 993;
+                    RemoteServer                  = "gmail.com";
+                    Security                      = "Tls";
+                }
             }
 
             Mock -CommandName Set-MigrationEndpoint -MockWith {
@@ -46,7 +58,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName Remove-MigrationEndpoint -MockWith {
             }
-
 
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
@@ -105,21 +116,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Absent'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-MigrationEndpoint -MockWith {
-                    return @{
-                        AcceptUntrustedCertificates   = $True;
-                        Authentication                = "Basic";
-                        EndpointType                  = "IMAP";
-                        Identity                      = "testIMAP";
-                        MailboxPermission             = "Admin";
-                        MaxConcurrentIncrementalSyncs = "10";
-                        MaxConcurrentMigrations       = "20";
-                        Port                          = 993;
-                        RemoteServer                  = "gmail.com";
-                        Security                      = "Tls";
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -150,21 +146,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-MigrationEndpoint -MockWith {
-                    return @{
-                        AcceptUntrustedCertificates   = $True;
-                        Authentication                = "Basic";
-                        EndpointType                  = "IMAP";
-                        Identity                      = "testIMAP";
-                        MailboxPermission             = "Admin";
-                        MaxConcurrentIncrementalSyncs = "10";
-                        MaxConcurrentMigrations       = "20";
-                        Port                          = 993;
-                        RemoteServer                  = "gmail.com";
-                        Security                      = "Tls";
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -184,24 +165,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MaxConcurrentMigrations       = "20";
                     Port                          = 993;
                     RemoteServer                  = "gmail.com";
-                    Security                      = "Tls";
+                    Security                      = "None"; # Drift
                     Ensure              = 'Present'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MigrationEndpoint -MockWith {
-                    return @{
-                        AcceptUntrustedCertificates   = $True;
-                        Authentication                = "Basic";
-                        EndpointType                  = "IMAP";
-                        Identity                      = "testIMAP";
-                        MailboxPermission             = "Admin";
-                        MaxConcurrentIncrementalSyncs = "10";
-                        MaxConcurrentMigrations       = "20";
-                        Port                          = 993;
-                        RemoteServer                  = "gmail.com";
-                        Security                      = "None";
-                    }
                 }
             }
 
@@ -225,21 +191,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MigrationEndpoint -MockWith {
-                    return @{
-                        AcceptUntrustedCertificates   = $True;
-                        Authentication                = "Basic";
-                        EndpointType                  = "IMAP";
-                        Identity                      = "testIMAP";
-                        MailboxPermission             = "Admin";
-                        MaxConcurrentIncrementalSyncs = "10";
-                        MaxConcurrentMigrations       = "20";
-                        Port                          = 993;
-                        RemoteServer                  = "gmail.com";
-                        Security                      = "Tls";
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

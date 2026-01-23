@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -39,6 +39,51 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    id                   = '12345-12345-12345-12345-12345'
+                    displayName          = 'Android Work Profile - Device Restrictions - Standard'
+                    description          = 'Android device configuration policy'
+                    AdditionalProperties = @{
+                        '@odata.type'                                             = '#microsoft.graph.androidWorkProfileGeneralDeviceConfiguration'
+                        passwordBlockFingerprintUnlock                            = $False
+                        passwordBlockTrustAgents                                  = $False
+                        passwordExpirationDays                                    = 10
+                        passwordMinimumLength                                     = 8
+                        passwordMinutesOfInactivityBeforeScreenTimeout            = 3
+                        passwordPreviousPasswordBlockCount                        = 3
+                        passwordSignInFailureCountBeforeFactoryReset              = 10
+                        passwordRequiredType                                      = 'deviceDefault'
+                        workProfileDataSharingType                                = 'deviceDefault'
+                        workProfileBlockNotificationsWhileDeviceLocked            = $False
+                        workProfileBlockAddingAccounts                            = $False
+                        workProfileBluetoothEnableContactSharing                  = $False
+                        workProfileBlockScreenCapture                             = $False
+                        workProfileBlockCrossProfileCallerId                      = $False
+                        workProfileBlockCamera                                    = $False
+                        workProfileBlockCrossProfileContactsSearch                = $False
+                        workProfileBlockCrossProfileCopyPaste                     = $False
+                        workProfileDefaultAppPermissionPolicy                     = 'deviceDefault'
+                        workProfilePasswordBlockFingerprintUnlock                 = $False
+                        workProfilePasswordBlockTrustAgents                       = $False
+                        workProfilePasswordExpirationDays                         = 90
+                        workProfilePasswordMinimumLength                          = 4
+                        workProfilePasswordMinNumericCharacters                   = 3
+                        workProfilePasswordMinNonLetterCharacters                 = 3
+                        workProfilePasswordMinLetterCharacters                    = 3
+                        workProfilePasswordMinLowerCaseCharacters                 = 3
+                        workProfilePasswordMinUpperCaseCharacters                 = 3
+                        workProfilePasswordMinSymbolCharacters                    = 3
+                        workProfilePasswordMinutesOfInactivityBeforeScreenTimeout = 3
+                        workProfilePasswordPreviousPasswordBlockCount             = 3
+                        workProfilePasswordSignInFailureCountBeforeFactoryReset   = 3
+                        workProfilePasswordRequiredType                           = 'deviceDefault'
+                        workProfileRequirePassword                                = $False
+                        securityRequireVerifyApps                                 = $False
+                    }
+                }
             }
 
             Mock -CommandName Get-MgBetaDeviceManagementDeviceConfigurationAssignment -MockWith {
@@ -126,7 +171,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     passwordExpirationDays                                    = 10
                     passwordMinimumLength                                     = 8
                     passwordMinutesOfInactivityBeforeScreenTimeout            = 3
-                    passwordPreviousPasswordBlockCount                        = 3
+                    passwordPreviousPasswordBlockCount                        = 2 # Updated property
                     passwordSignInFailureCountBeforeFactoryReset              = 10
                     passwordRequiredType                                      = 'deviceDefault'
                     workProfileDataSharingType                                = 'deviceDefault'
@@ -158,51 +203,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                                    = 'Present'
                     Credential                                                = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        id                                                        = '12345-12345-12345-12345-12345'
-                        AdditionalProperties                                      = @{
-                            '@odata.type' = '#microsoft.graph.androidWorkProfileGeneralDeviceConfiguration'
-                        }
-                        description                                               = 'Android device configuration policy'
-                        displayName                                               = 'Android Work Profile - Device Restrictions - Standard'
-                        passwordBlockFingerprintUnlock                            = $False
-                        passwordBlockTrustAgents                                  = $True; #drift
-                        passwordExpirationDays                                    = 10
-                        passwordMinimumLength                                     = 8
-                        passwordMinutesOfInactivityBeforeScreenTimeout            = 3
-                        passwordPreviousPasswordBlockCount                        = 3
-                        passwordSignInFailureCountBeforeFactoryReset              = 10
-                        passwordRequiredType                                      = 'deviceDefault'
-                        workProfileDataSharingType                                = 'deviceDefault'
-                        workProfileBlockNotificationsWhileDeviceLocked            = $False
-                        workProfileBlockAddingAccounts                            = $False
-                        workProfileBluetoothEnableContactSharing                  = $False
-                        workProfileBlockScreenCapture                             = $False
-                        workProfileBlockCrossProfileCallerId                      = $False
-                        workProfileBlockCamera                                    = $False
-                        workProfileBlockCrossProfileContactsSearch                = $False
-                        workProfileBlockCrossProfileCopyPaste                     = $False
-                        workProfileDefaultAppPermissionPolicy                     = 'deviceDefault'
-                        workProfilePasswordBlockFingerprintUnlock                 = $False
-                        workProfilePasswordBlockTrustAgents                       = $False
-                        workProfilePasswordExpirationDays                         = 90
-                        workProfilePasswordMinimumLength                          = 4
-                        workProfilePasswordMinNumericCharacters                   = 3
-                        workProfilePasswordMinNonLetterCharacters                 = 3
-                        workProfilePasswordMinLetterCharacters                    = 3
-                        workProfilePasswordMinLowerCaseCharacters                 = 3
-                        workProfilePasswordMinUpperCaseCharacters                 = 3
-                        workProfilePasswordMinSymbolCharacters                    = 3
-                        workProfilePasswordMinutesOfInactivityBeforeScreenTimeout = 3
-                        workProfilePasswordPreviousPasswordBlockCount             = 3
-                        workProfilePasswordSignInFailureCountBeforeFactoryReset   = 3
-                        workProfilePasswordRequiredType                           = 'deviceDefault'
-                        workProfileRequirePassword                                = $False
-                        securityRequireVerifyApps                                 = $False
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -221,7 +221,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'When the policy already exists and IS in the Desired State' -Fixture {
             BeforeAll {
-
                 $TestParams = @{
                     description                                               = 'Android device configuration policy'
                     displayName                                               = 'Android Work Profile - Device Restrictions - Standard'
@@ -262,51 +261,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                                    = 'Present'
                     Credential                                                = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        id                   = '12345-12345-12345-12345-12345'
-                        displayName          = 'Android Work Profile - Device Restrictions - Standard'
-                        description          = 'Android device configuration policy'
-                        AdditionalProperties = @{
-                            '@odata.type'                                             = '#microsoft.graph.androidWorkProfileGeneralDeviceConfiguration'
-                            passwordBlockFingerprintUnlock                            = $False
-                            passwordBlockTrustAgents                                  = $False
-                            passwordExpirationDays                                    = 10
-                            passwordMinimumLength                                     = 8
-                            passwordMinutesOfInactivityBeforeScreenTimeout            = 3
-                            passwordPreviousPasswordBlockCount                        = 3
-                            passwordSignInFailureCountBeforeFactoryReset              = 10
-                            passwordRequiredType                                      = 'deviceDefault'
-                            workProfileDataSharingType                                = 'deviceDefault'
-                            workProfileBlockNotificationsWhileDeviceLocked            = $False
-                            workProfileBlockAddingAccounts                            = $False
-                            workProfileBluetoothEnableContactSharing                  = $False
-                            workProfileBlockScreenCapture                             = $False
-                            workProfileBlockCrossProfileCallerId                      = $False
-                            workProfileBlockCamera                                    = $False
-                            workProfileBlockCrossProfileContactsSearch                = $False
-                            workProfileBlockCrossProfileCopyPaste                     = $False
-                            workProfileDefaultAppPermissionPolicy                     = 'deviceDefault'
-                            workProfilePasswordBlockFingerprintUnlock                 = $False
-                            workProfilePasswordBlockTrustAgents                       = $False
-                            workProfilePasswordExpirationDays                         = 90
-                            workProfilePasswordMinimumLength                          = 4
-                            workProfilePasswordMinNumericCharacters                   = 3
-                            workProfilePasswordMinNonLetterCharacters                 = 3
-                            workProfilePasswordMinLetterCharacters                    = 3
-                            workProfilePasswordMinLowerCaseCharacters                 = 3
-                            workProfilePasswordMinUpperCaseCharacters                 = 3
-                            workProfilePasswordMinSymbolCharacters                    = 3
-                            workProfilePasswordMinutesOfInactivityBeforeScreenTimeout = 3
-                            workProfilePasswordPreviousPasswordBlockCount             = 3
-                            workProfilePasswordSignInFailureCountBeforeFactoryReset   = 3
-                            workProfilePasswordRequiredType                           = 'deviceDefault'
-                            workProfileRequirePassword                                = $False
-                            securityRequireVerifyApps                                 = $False
-                        }
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -320,51 +274,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = 'Android Work Profile - Device Restrictions - Standard'
                     Ensure      = 'Absent'
                     Credential  = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        id                   = '12345-12345-12345-12345-12345'
-                        displayName          = 'Android Work Profile - Device Restrictions - Standard'
-                        description          = 'Android device configuration policy'
-                        AdditionalProperties = @{
-                            '@odata.type'                                             = '#microsoft.graph.androidWorkProfileGeneralDeviceConfiguration'
-                            passwordBlockFingerprintUnlock                            = $False
-                            passwordBlockTrustAgents                                  = $False
-                            passwordExpirationDays                                    = 10
-                            passwordMinimumLength                                     = 8
-                            passwordMinutesOfInactivityBeforeScreenTimeout            = 3
-                            passwordPreviousPasswordBlockCount                        = 3
-                            passwordSignInFailureCountBeforeFactoryReset              = 10
-                            passwordRequiredType                                      = 'deviceDefault'
-                            workProfileDataSharingType                                = 'deviceDefault'
-                            workProfileBlockNotificationsWhileDeviceLocked            = $False
-                            workProfileBlockAddingAccounts                            = $False
-                            workProfileBluetoothEnableContactSharing                  = $False
-                            workProfileBlockScreenCapture                             = $False
-                            workProfileBlockCrossProfileCallerId                      = $False
-                            workProfileBlockCamera                                    = $False
-                            workProfileBlockCrossProfileContactsSearch                = $False
-                            workProfileBlockCrossProfileCopyPaste                     = $False
-                            workProfileDefaultAppPermissionPolicy                     = 'deviceDefault'
-                            workProfilePasswordBlockFingerprintUnlock                 = $False
-                            workProfilePasswordBlockTrustAgents                       = $False
-                            workProfilePasswordExpirationDays                         = 90
-                            workProfilePasswordMinimumLength                          = 4
-                            workProfilePasswordMinNumericCharacters                   = 3
-                            workProfilePasswordMinNonLetterCharacters                 = 3
-                            workProfilePasswordMinLetterCharacters                    = 3
-                            workProfilePasswordMinLowerCaseCharacters                 = 3
-                            workProfilePasswordMinUpperCaseCharacters                 = 3
-                            workProfilePasswordMinSymbolCharacters                    = 3
-                            workProfilePasswordMinutesOfInactivityBeforeScreenTimeout = 3
-                            workProfilePasswordPreviousPasswordBlockCount             = 3
-                            workProfilePasswordSignInFailureCountBeforeFactoryReset   = 3
-                            workProfilePasswordRequiredType                           = 'deviceDefault'
-                            workProfileRequirePassword                                = $False
-                            securityRequireVerifyApps                                 = $False
-                        }
-                    }
                 }
             }
 
@@ -388,51 +297,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        id                   = '12345-12345-12345-12345-12345'
-                        displayName          = 'Android Work Profile - Device Restrictions - Standard'
-                        description          = 'Android device configuration policy'
-                        AdditionalProperties = @{
-                            '@odata.type'                                             = '#microsoft.graph.androidWorkProfileGeneralDeviceConfiguration'
-                            passwordBlockFingerprintUnlock                            = $False
-                            passwordBlockTrustAgents                                  = $False
-                            passwordExpirationDays                                    = 10
-                            passwordMinimumLength                                     = 8
-                            passwordMinutesOfInactivityBeforeScreenTimeout            = 3
-                            passwordPreviousPasswordBlockCount                        = 3
-                            passwordSignInFailureCountBeforeFactoryReset              = 10
-                            passwordRequiredType                                      = 'deviceDefault'
-                            workProfileDataSharingType                                = 'deviceDefault'
-                            workProfileBlockNotificationsWhileDeviceLocked            = $False
-                            workProfileBlockAddingAccounts                            = $False
-                            workProfileBluetoothEnableContactSharing                  = $False
-                            workProfileBlockScreenCapture                             = $False
-                            workProfileBlockCrossProfileCallerId                      = $False
-                            workProfileBlockCamera                                    = $False
-                            workProfileBlockCrossProfileContactsSearch                = $False
-                            workProfileBlockCrossProfileCopyPaste                     = $False
-                            workProfileDefaultAppPermissionPolicy                     = 'deviceDefault'
-                            workProfilePasswordBlockFingerprintUnlock                 = $False
-                            workProfilePasswordBlockTrustAgents                       = $False
-                            workProfilePasswordExpirationDays                         = 90
-                            workProfilePasswordMinimumLength                          = 4
-                            workProfilePasswordMinNumericCharacters                   = 3
-                            workProfilePasswordMinNonLetterCharacters                 = 3
-                            workProfilePasswordMinLetterCharacters                    = 3
-                            workProfilePasswordMinLowerCaseCharacters                 = 3
-                            workProfilePasswordMinUpperCaseCharacters                 = 3
-                            workProfilePasswordMinSymbolCharacters                    = 3
-                            workProfilePasswordMinutesOfInactivityBeforeScreenTimeout = 3
-                            workProfilePasswordPreviousPasswordBlockCount             = 3
-                            workProfilePasswordSignInFailureCountBeforeFactoryReset   = 3
-                            workProfilePasswordRequiredType                           = 'deviceDefault'
-                            workProfileRequirePassword                                = $False
-                            securityRequireVerifyApps                                 = $False
-                        }
-                    }
                 }
             }
 

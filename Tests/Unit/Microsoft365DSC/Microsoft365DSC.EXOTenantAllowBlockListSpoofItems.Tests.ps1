@@ -28,16 +28,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
             }
 
-            Mock -CommandName New-TenantAllowBlockListSpoofItems -MockWith{}
-            Mock -CommandName Set-TenantAllowBlockListSpoofItems -MockWith{}
-            Mock -CommandName Remove-TenantAllowBlockListSpoofItems -MockWith{}
+            Mock -CommandName New-TenantAllowBlockListSpoofItems -MockWith{
+            }
+
+            Mock -CommandName Set-TenantAllowBlockListSpoofItems -MockWith{
+            }
+
+            Mock -CommandName Remove-TenantAllowBlockListSpoofItems -MockWith{
+            }
+
+            Mock -CommandName Get-TenantAllowBlockListSpoofItems -MockWith {
+                return @{
+                    Identity              = "1234-1234-1234-1234-1234"
+                    Action                = "Block";
+                    SendingInfrastructure = "121.0.0.7";
+                    SpoofedUser           = "contoso.com";
+                    SpoofType             = "Internal";
+                }
+            }
 
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
@@ -84,16 +99,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = 'Absent'
                     Credential            = $Credential;
                 }
-
-                Mock -CommandName Get-TenantAllowBlockListSpoofItems -MockWith {
-                    return @{
-                        Identity              = (New-GUID).TOString()
-                        Action                = "Block";
-                        SendingInfrastructure = "121.0.0.7";
-                        SpoofedUser           = "contoso.com";
-                        SpoofType             = "Internal";
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -118,16 +123,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = 'Present'
                     Credential            = $Credential;
                 }
-
-                Mock -CommandName Get-TenantAllowBlockListSpoofItems -MockWith {
-                    return @{
-                        Identity              = (New-GUID).TOString()
-                        Action                = "Block";
-                        SendingInfrastructure = "121.0.0.7";
-                        SpoofedUser           = "contoso.com";
-                        SpoofType             = "Internal";
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -144,16 +139,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SpoofType             = "Internal";
                     Ensure                = 'Present'
                     Credential            = $Credential;
-                }
-
-                Mock -CommandName Get-TenantAllowBlockListSpoofItems -MockWith {
-                    return @{
-                        Identity              = (New-GUID).TOString()
-                        Action                = "Block";
-                        SendingInfrastructure = "121.0.0.7";
-                        SpoofedUser           = "contoso.com";
-                        SpoofType             = "Internal";
-                    }
                 }
             }
 
@@ -177,16 +162,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-TenantAllowBlockListSpoofItems -MockWith {
-                    return @{
-                        Identity              = (New-GUID).TOString()
-                        Action                = "Block";
-                        SendingInfrastructure = "121.0.0.7";
-                        SpoofedUser           = "contoso.com";
-                        SpoofType             = "Internal";
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

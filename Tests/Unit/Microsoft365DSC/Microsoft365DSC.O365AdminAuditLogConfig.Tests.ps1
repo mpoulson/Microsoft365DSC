@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -44,7 +44,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     IsSingleInstance                = 'Yes'
-                    Ensure                          = 'Present'
                     Credential                      = $Credential
                     UnifiedAuditLogIngestionEnabled = 'Enabled'
                 }
@@ -73,7 +72,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     IsSingleInstance                = 'Yes'
-                    Ensure                          = 'Present'
                     Credential                      = $Credential
                     UnifiedAuditLogIngestionEnabled = 'Disabled'
                 }
@@ -103,7 +101,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     IsSingleInstance                = 'Yes'
-                    Ensure                          = 'Present'
                     Credential                      = $Credential
                     UnifiedAuditLogIngestionEnabled = 'Disabled'
                 }
@@ -129,7 +126,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     IsSingleInstance                = 'Yes'
-                    Ensure                          = 'Present'
                     Credential                      = $Credential
                     UnifiedAuditLogIngestionEnabled = 'Enabled'
                 }
@@ -153,6 +149,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
+                $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
                 }

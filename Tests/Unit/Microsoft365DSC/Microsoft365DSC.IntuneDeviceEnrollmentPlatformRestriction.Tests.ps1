@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -40,6 +40,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
             }
             Mock -CommandName Remove-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
+                return @{
+                    AdditionalProperties              = @{
+                        '@odata.type'       = '#microsoft.graph.deviceEnrollmentPlatformRestrictionConfiguration'
+                        PlatformRestriction = @{
+                            PersonalDeviceEnrollmentBlocked = $False
+                            PlatformBlocked                 = $False
+                        }
+                        platformType        = 'ios'
+                    }
+                    id                                = '12345-12345-12345-12345-12345_SinglePlatformRestriction'
+                    DeviceEnrollmentConfigurationType = 'singlePlatformRestriction'
+                    Description                       = ''
+                    DisplayName                       = 'My DSC Restriction'
+                    Priority                          = 1
+                }
             }
 
             Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfigurationAssignment -MockWith {
@@ -119,24 +137,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             personalDeviceEnrollmentBlocked = $False
                         } -ClientOnly)
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties              = @{
-                            '@odata.type'       = '#microsoft.graph.deviceEnrollmentPlatformRestrictionConfiguration'
-                            PlatformRestriction = @{
-                                PersonalDeviceEnrollmentBlocked = $False
-                                PlatformBlocked                 = $False
-                            }
-                            platformType        = 'ios'
-                        }
-                        id                                = '12345-12345-12345-12345-12345_SinglePlatformRestriction'
-                        DeviceEnrollmentConfigurationType = 'singlePlatformRestriction'
-                        Description                       = ''
-                        DisplayName                       = 'My DSC Restriction'
-                        Priority                          = 1
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -156,26 +156,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Priority                          = 1
                     IosRestriction                    = (New-CimInstance -ClassName MSFT_DeviceEnrollmentPlatformRestriction -Property @{
                             platformBlocked                 = $False
-                            personalDeviceEnrollmentBlocked = $False
+                            personalDeviceEnrollmentBlocked = $True # Updated property
                         } -ClientOnly)
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties              = @{
-                            '@odata.type'       = '#microsoft.graph.deviceEnrollmentPlatformRestrictionConfiguration'
-                            PlatformRestriction = @{
-                                PersonalDeviceEnrollmentBlocked = $true; #drift
-                                PlatformBlocked                 = $False
-                            }
-                            platformType        = 'ios'
-                        }
-                        id                                = '12345-12345-12345-12345-12345_SinglePlatformRestriction'
-                        DeviceEnrollmentConfigurationType = 'singlePlatformRestriction'
-                        Description                       = ''
-                        DisplayName                       = 'My DSC Restriction'
-                        Priority                          = 1
-                    }
                 }
             }
 
@@ -199,24 +181,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             personalDeviceEnrollmentBlocked = $False
                         } -ClientOnly)
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties              = @{
-                            '@odata.type'       = '#microsoft.graph.deviceEnrollmentPlatformRestrictionConfiguration'
-                            PlatformRestriction = @{
-                                PersonalDeviceEnrollmentBlocked = $False
-                                PlatformBlocked                 = $False
-                            }
-                            platformType        = 'ios'
-                        }
-                        id                                = '12345-12345-12345-12345-12345_SinglePlatformRestriction'
-                        DeviceEnrollmentConfigurationType = 'singlePlatformRestriction'
-                        Description                       = ''
-                        DisplayName                       = 'My DSC Restriction'
-                        Priority                          = 1
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -239,24 +203,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties              = @{
-                            '@odata.type'       = '#microsoft.graph.deviceEnrollmentPlatformRestrictionConfiguration'
-                            PlatformRestriction = @{
-                                PersonalDeviceEnrollmentBlocked = $False
-                                PlatformBlocked                 = $False
-                            }
-                            platformType        = 'ios'
-                        }
-                        id                                = '12345-12345-12345-12345-12345_SinglePlatformRestriction'
-                        DeviceEnrollmentConfigurationType = 'singlePlatformRestriction'
-                        Description                       = ''
-                        DisplayName                       = 'My DSC Restriction'
-                        Priority                          = 1
-                    }
                 }
             }
 

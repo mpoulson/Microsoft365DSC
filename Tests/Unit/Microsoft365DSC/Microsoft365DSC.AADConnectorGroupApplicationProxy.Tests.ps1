@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -40,6 +40,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaOnPremisePublishingProfileConnectorGroup -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaOnPremisePublishingProfileConnectorGroup -MockWith {
+                return @{
+                    Id = "FakeStringValue"
+                    Name = "FakeStringValue"
+                    Region = "nam"
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -88,14 +96,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = "Absent"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaOnPremisePublishingProfileConnectorGroup -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                        Name = "FakeStringValue"
-                        Region = "nam"
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -120,17 +120,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = "Present"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaOnPremisePublishingProfileConnectorGroup -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                        Name = "FakeStringValue"
-                        Region = "nam"
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -142,17 +132,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Id = "FakeStringValue"
                     Name = "FakeStringValue"
-                    Region = "nam"
+                    Region = "eur" # Drift
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaOnPremisePublishingProfileConnectorGroup -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                        Name = "NewFakeStringValue"
-                        Region = "nam"
-                    }
                 }
             }
 
@@ -176,15 +158,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaOnPremisePublishingProfileConnectorGroup -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                        Name = "FakeStringValue"
-                        Region = "nam"
-
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

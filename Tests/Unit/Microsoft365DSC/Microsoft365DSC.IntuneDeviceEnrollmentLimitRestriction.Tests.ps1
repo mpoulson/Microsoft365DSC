@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -42,6 +42,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
+            }
+
+             Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        '@odata.type' = '#microsoft.graph.deviceEnrollmentLimitConfiguration'
+                        Limit         = 15
+                    }
+                    Id                   = '12345-12345-12345-12345-12345_Limit'
+                    Priority             = 1
+                    DisplayName          = 'My DSC Restriction'
+                }
             }
 
             Mock -CommandName Invoke-MgGraphRequest -MockWith {
@@ -104,20 +116,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = 'My DSC Restriction'
                     Ensure      = 'Present'
                     Credential  = $Credential
-                    Limit       = 15
+                    Limit       = 12 # Updated property
                     Priority    = 1
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.deviceEnrollmentLimitConfiguration'
-                            Limit         = 12 # Drift
-                        }
-                        Priority             = 1
-                        Id                   = '12345-12345-12345-12345-12345_Limit'
-                        DisplayName          = 'My DSC Restriction';
-                    }
                 }
             }
 
@@ -145,18 +145,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Limit       = 15
                     Priority    = 1
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.deviceEnrollmentLimitConfiguration'
-                            Limit         = 15
-                        }
-                        Id                   = '12345-12345-12345-12345-12345_Limit'
-                        Priority             = 1
-                        DisplayName          = 'My DSC Restriction'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -173,18 +161,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Id          = '12345-12345-12345-12345-12345_Limit'
                     Priority    = 1
                     Limit       = 15
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.deviceEnrollmentLimitConfiguration'
-                            Limit         = 12
-                        }
-                        Id                   = '12345-12345-12345-12345-12345_Limit'
-                        Priority             = 1
-                        DisplayName          = 'My DSC Restriction'
-                    }
                 }
             }
 
@@ -208,18 +184,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.deviceEnrollmentLimitConfiguration'
-                            Limit         = 12
-                        }
-                        Id                        = '12345-12345-12345-12345-12345_Limit'
-                        Priority                  = 1
-                        DisplayName               = 'My DSC Restriction'
-                    }
                 }
             }
 

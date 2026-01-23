@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaDeviceManagementDeviceConfiguration -MockWith {
@@ -39,6 +39,40 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
             }
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        kioskAppDisplayName = "FakeStringValue"
+                        fastFirstSignIn = "notConfigured"
+                        disableEduPolicies = $True
+                        disableAccountManager = $True
+                        accountManagerPolicy = @{
+                            inactiveThresholdDays = 25
+                            cacheAccountsAboveDiskFreePercentage = 25
+                            accountDeletionPolicy = "immediate"
+                            removeAccountsBelowDiskFreePercentage = 25
+                        }
+                        signInOnResume = "notConfigured"
+                        setAccountManager = "notConfigured"
+                        disableSignInOnResume = $True
+                        localStorage = "notConfigured"
+                        setEduPolicies = "notConfigured"
+                        maintenanceStartTime = "00:00:00"
+                        allowedAccounts = "notConfigured"
+                        setPowerPolicies = "notConfigured"
+                        '@odata.type' = "#microsoft.graph.sharedPCConfiguration"
+                        allowLocalStorage = $True
+                        kioskAppUserModelId = "FakeStringValue"
+                        idleTimeBeforeSleepInSeconds = 25
+                        disablePowerPolicies = $True
+                        enabled = $True
+                    }
+                    description = "FakeStringValue"
+                    displayName = "FakeStringValue"
+                    id = "FakeStringValue"
+
+                }
+            }
             Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
             }
             # Mock Write-M365DSCHost to hide output during the tests
@@ -49,7 +83,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName Get-MgBetaDeviceManagementDeviceConfigurationAssignment -MockWith {
             }
-
         }
         # Test contexts
         Context -Name "The IntuneDeviceConfigurationSharedMultiDevicePolicyWindows10 should exist but it DOES NOT" -Fixture {
@@ -133,41 +166,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            kioskAppDisplayName = "FakeStringValue"
-                            fastFirstSignIn = "notConfigured"
-                            disableEduPolicies = $True
-                            disableAccountManager = $True
-                            accountManagerPolicy = @{
-                                inactiveThresholdDays = 25
-                                cacheAccountsAboveDiskFreePercentage = 25
-                                accountDeletionPolicy = "immediate"
-                                removeAccountsBelowDiskFreePercentage = 25
-                            }
-                            signInOnResume = "notConfigured"
-                            setAccountManager = "notConfigured"
-                            disableSignInOnResume = $True
-                            localStorage = "notConfigured"
-                            setEduPolicies = "notConfigured"
-                            maintenanceStartTime = "00:00:00"
-                            allowedAccounts = "notConfigured"
-                            setPowerPolicies = "notConfigured"
-                            '@odata.type' = "#microsoft.graph.sharedPCConfiguration"
-                            allowLocalStorage = $True
-                            kioskAppUserModelId = "FakeStringValue"
-                            idleTimeBeforeSleepInSeconds = 25
-                            disablePowerPolicies = $True
-                            enabled = $True
-                        }
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -215,43 +213,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            kioskAppDisplayName = "FakeStringValue"
-                            fastFirstSignIn = "notConfigured"
-                            disableEduPolicies = $True
-                            disableAccountManager = $True
-                            accountManagerPolicy = @{
-                                inactiveThresholdDays = 25
-                                cacheAccountsAboveDiskFreePercentage = 25
-                                accountDeletionPolicy = "immediate"
-                                removeAccountsBelowDiskFreePercentage = 25
-                            }
-                            signInOnResume = "notConfigured"
-                            setAccountManager = "notConfigured"
-                            disableSignInOnResume = $True
-                            localStorage = "notConfigured"
-                            setEduPolicies = "notConfigured"
-                            maintenanceStartTime = "00:00:00"
-                            allowedAccounts = "notConfigured"
-                            setPowerPolicies = "notConfigured"
-                            '@odata.type' = "#microsoft.graph.sharedPCConfiguration"
-                            allowLocalStorage = $True
-                            kioskAppUserModelId = "FakeStringValue"
-                            idleTimeBeforeSleepInSeconds = 25
-                            disablePowerPolicies = $True
-                            enabled = $True
-                        }
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -262,7 +224,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     accountManagerPolicy = (New-CimInstance -ClassName MSFT_MicrosoftGraphsharedPCAccountManagerPolicy -Property @{
-                        inactiveThresholdDays = 25
+                        inactiveThresholdDays = 7 # Updated property
                         cacheAccountsAboveDiskFreePercentage = 25
                         accountDeletionPolicy = "immediate"
                         removeAccountsBelowDiskFreePercentage = 25
@@ -290,34 +252,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            maintenanceStartTime = "00:00:00"
-                            idleTimeBeforeSleepInSeconds = 7
-                            signInOnResume = "notConfigured"
-                            '@odata.type' = "#microsoft.graph.sharedPCConfiguration"
-                            setPowerPolicies = "notConfigured"
-                            allowedAccounts = "notConfigured"
-                            kioskAppUserModelId = "FakeStringValue"
-                            setEduPolicies = "notConfigured"
-                            accountManagerPolicy = @{
-                                inactiveThresholdDays = 7
-                                cacheAccountsAboveDiskFreePercentage = 7
-                                accountDeletionPolicy = "immediate"
-                                removeAccountsBelowDiskFreePercentage = 7
-                            }
-                            kioskAppDisplayName = "FakeStringValue"
-                            fastFirstSignIn = "notConfigured"
-                            localStorage = "notConfigured"
-                            setAccountManager = "notConfigured"
-                        }
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -341,42 +275,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            kioskAppDisplayName = "FakeStringValue"
-                            fastFirstSignIn = "notConfigured"
-                            disableEduPolicies = $True
-                            disableAccountManager = $True
-                            accountManagerPolicy = @{
-                                inactiveThresholdDays = 25
-                                cacheAccountsAboveDiskFreePercentage = 25
-                                accountDeletionPolicy = "immediate"
-                                removeAccountsBelowDiskFreePercentage = 25
-                            }
-                            signInOnResume = "notConfigured"
-                            setAccountManager = "notConfigured"
-                            disableSignInOnResume = $True
-                            localStorage = "notConfigured"
-                            setEduPolicies = "notConfigured"
-                            maintenanceStartTime = "00:00:00"
-                            allowedAccounts = "notConfigured"
-                            setPowerPolicies = "notConfigured"
-                            '@odata.type' = "#microsoft.graph.sharedPCConfiguration"
-                            allowLocalStorage = $True
-                            kioskAppUserModelId = "FakeStringValue"
-                            idleTimeBeforeSleepInSeconds = 25
-                            disablePowerPolicies = $True
-                            enabled = $True
-                        }
-                        description = "FakeStringValue"
-                        displayName = "FakeStringValue"
-                        id = "FakeStringValue"
-
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

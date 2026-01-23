@@ -28,11 +28,56 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Invoke-AzRest -MockWith {
+                return @{
+                    content = ConvertTo-Json @{
+                        value = @(
+                        @{
+                            id = "12345-12345-12345-12345-12345"
+                            name = 'MyAction'
+                            kind = "Email"
+                            properties = @{
+                                displayName = "MyAction"
+                                scope = "/providers/Microsoft.Billing/billingAccounts/1e5b9e50-a1ea-581e-fb3a-778b93a06854:6487d5cf-0a7b-42e6-9549-23cavvvvvvv_2019-05-31"
+                                status = "Enabled"
+                                viewId = "/providers/Microsoft.Billing/billingAccounts/xxxxx:xxxxx_xxxxx/providers/Microsoft.CostManagement/views/ms:AccumulatedCosts";
+                                schedule = @{
+                                    daysOfWeek = @('Wednesday')
+                                    startDate = '2024-11-06T13:00:00Z'
+                                    endDate = '2025-11-06T05:00:00Z'
+                                    frequency = 'Weekly'
+                                    dayOfMonth = 0
+                                    hourOfDay = 13
+                                }
+                                notification = @{
+                                    subject = 'Cost Alert'
+                                    message = 'This is my demo message!'
+                                    to = @('john.smith@contoso.com')
+                                }
+                                notificationEmail = "alert@contoso.com";
+                            }
+                        }
+                        )
+                    } -Depth 10 -Compress
+                }
+            }
+
+            Mock -CommandName Get-M365DSCAzureBillingAccount -MockWith {
+                return @{
+                    value = @{
+                        name = "1e5b9e50-a1ea-581e-fb3a-778b93a06854:6487d5cf-0a7b-42e6-9549-23cavvvvvvv_2019-05-31"
+                        properties = @{
+                            displayName = "MyBillingAccount"
+                        }
+                    }
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -68,7 +113,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Invoke-AzRest -MockWith {
-                    return $null
+                    return @{
+                        Content = ConvertTo-Json @{
+                            value = @()
+                        }
+                    }
                 }
             }
             It 'Should return Values from the Get method' {
@@ -108,42 +157,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Absent'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        content = ConvertTo-Json(
-                            @{
-                                value = @(
-                                @{
-                                    id = "12345-12345-12345-12345-12345"
-                                    name = 'MyAction'
-                                    kind = "Email"
-                                    properties = @{
-                                        displayName = "MyAction"
-                                        scope = "/providers/Microsoft.Billing/billingAccounts/1e5b9e50-a1ea-581e-fb3a-778b93a06854:6487d5cf-0a7b-42e6-9549-23cavvvvvvv_2019-05-31"
-                                        status = "Enabled"
-                                        viewId = "/providers/Microsoft.Billing/billingAccounts/xxxxx:xxxxx_xxxxx/providers/Microsoft.CostManagement/views/ms:AccumulatedCosts";
-                                        schedule = @{
-                                            daysOfWeek = @('Wednesday')
-                                            startDate = '2024-11-06T13:00:00Z'
-                                            endDate = '2025-11-06T05:00:00Z'
-                                            frequency = 'Weekly'
-                                            dayOfMonth = 0
-                                            hourOfDay = 13
-                                        }
-                                        notification = @{
-                                            subject = 'Cost Alert'
-                                            message = 'This is my demo message!'
-                                            to = @('john.smith@contoso.com')
-                                        }
-                                        notificationEmail = "alert@contoso.com";
-                                    }
-                                }
-                                )
-                            }
-                        ) -Depth 10 -Compress
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -182,42 +195,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        content = ConvertTo-Json(
-                            @{
-                                value = @(
-                                @{
-                                    id = "12345-12345-12345-12345-12345"
-                                    name = 'MyAction'
-                                    kind = "Email"
-                                    properties = @{
-                                        displayName = "MyAction"
-                                        scope = "/providers/Microsoft.Billing/billingAccounts/1e5b9e50-a1ea-581e-fb3a-778b93a06854:6487d5cf-0a7b-42e6-9549-23cavvvvvvv_2019-05-31"
-                                        status = "Enabled"
-                                        viewId = "/providers/Microsoft.Billing/billingAccounts/xxxxx:xxxxx_xxxxx/providers/Microsoft.CostManagement/views/ms:AccumulatedCosts";
-                                        schedule = @{
-                                            daysOfWeek = @('Wednesday')
-                                            startDate = '2024-11-06T13:00:00Z'
-                                            endDate = '2025-11-06T05:00:00Z'
-                                            frequency = 'Weekly'
-                                            dayOfMonth = 0
-                                            hourOfDay = 13
-                                        }
-                                        notification = @{
-                                            subject = 'Cost Alert'
-                                            message = 'This is my demo message!'
-                                            to = @('john.smith@contoso.com')
-                                        }
-                                        notificationEmail = "alert@contoso.com";
-                                    }
-                                }
-                                )
-                            }
-                        ) -Depth 10 -Compress
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -249,42 +226,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        content = ConvertTo-Json(
-                            @{
-                                value = @(
-                                @{
-                                    id = "12345-12345-12345-12345-12345"
-                                    name = 'MyAction'
-                                    kind = "Email"
-                                    properties = @{
-                                        displayName = "MyAction"
-                                        scope = "/providers/Microsoft.Billing/billingAccounts/1e5b9e50-a1ea-581e-fb3a-778b93a06854:6487d5cf-0a7b-42e6-9549-23cavvvvvvv_2019-05-31"
-                                        status = "Enabled"
-                                        viewId = "/providers/Microsoft.Billing/billingAccounts/xxxxx:xxxxx_xxxxx/providers/Microsoft.CostManagement/views/ms:AccumulatedCosts";
-                                        schedule = @{
-                                            daysOfWeek = @('Wednesday')
-                                            startDate = '2024-11-06T13:00:00Z'
-                                            endDate = '2025-11-06T05:00:00Z'
-                                            frequency = 'Weekly'
-                                            dayOfMonth = 0
-                                            hourOfDay = 13
-                                        }
-                                        notification = @{
-                                            subject = 'Cost Alert'
-                                            message = 'This is my demo message!'
-                                            to = @('john.smith@contoso.com')
-                                        }
-                                        notificationEmail = "alert@contoso.com";
-                                    }
-                                }
-                                )
-                            }
-                        ) -Depth 10 -Compress
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -307,52 +248,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-M365DSCAzureBillingAccount -MockWith {
-                    return @{
-                        value = @{
-                            name = "1e5b9e50-a1ea-581e-fb3a-778b93a06854:6487d5cf-0a7b-42e6-9549-23cavvvvvvv_2019-05-31"
-                            properties = @{
-                                displayName = "MyBillingAccount"
-                            }
-                        }
-                    }
-                }
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        content = ConvertTo-Json(
-                            @{
-                                value = @(
-                                @{
-                                    id = "12345-12345-12345-12345-12345"
-                                    name = 'MyAction'
-                                    kind = "Email"
-                                    properties = @{
-                                        displayName = "MyAction"
-                                        scope = "/providers/Microsoft.Billing/billingAccounts/1e5b9e50-a1ea-581e-fb3a-778b93a06854:6487d5cf-0a7b-42e6-9549-23cavvvvvvv_2019-05-31"
-                                        status = "Enabled"
-                                        viewId = "/providers/Microsoft.Billing/billingAccounts/xxxxx:xxxxx_xxxxx/providers/Microsoft.CostManagement/views/ms:AccumulatedCosts";
-                                        schedule = @{
-                                            daysOfWeek = @('Wednesday')
-                                            startDate = '2024-11-06T13:00:00Z'
-                                            endDate = '2025-11-06T05:00:00Z'
-                                            frequency = 'Weekly'
-                                            dayOfMonth = 0
-                                            hourOfDay = 13
-                                        }
-                                        notification = @{
-                                            subject = 'Cost Alert'
-                                            message = 'This is my demo message!'
-                                            to = @('john.smith@contoso.com')
-                                        }
-                                        notificationEmail = "alert@contoso.com";
-                                    }
-                                }
-                                )
-                            }
-                        ) -Depth 10 -Compress
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

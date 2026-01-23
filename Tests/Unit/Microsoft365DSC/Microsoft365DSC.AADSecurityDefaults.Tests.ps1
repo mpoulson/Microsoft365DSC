@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -35,10 +35,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Update-MgBetaPolicyIdentitySecurityDefaultEnforcementPolicy -MockWith {
             }
 
+            Mock -CommandName Get-MgBetaPolicyIdentitySecurityDefaultEnforcementPolicy -MockWith {
+                return @{
+                    DisplayName = 'Security Defaults'
+                    Id          = '000000000000'
+                    Description = 'Security Defaults description'
+                    IsEnabled   = $true
+                }
+            }
+
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
             }
-
 
             Mock -CommandName Invoke-MgGraphRequest -MockWith {
             }
@@ -57,17 +65,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsSingleInstance = 'Yes'
                     DisplayName      = 'Security Defaults'
                     Description      = 'Security Defaults description'
-                    IsEnabled        = $True
+                    IsEnabled        = $false # Drift
                     Credential       = $Credscredential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyIdentitySecurityDefaultEnforcementPolicy -MockWith {
-                    return @{
-                        DisplayName = 'Security Defaults'
-                        Id          = '000000000000'
-                        Description = 'Security Defaults description'
-                        IsEnabled   = $false
-                    }
                 }
             }
 
@@ -91,15 +90,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description      = 'Security Defaults description'
                     IsEnabled        = $True
                     Credential       = $Credscredential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyIdentitySecurityDefaultEnforcementPolicy -MockWith {
-                    return @{
-                        DisplayName = 'Security Defaults'
-                        Id          = '000000000000'
-                        Description = 'Security Defaults description'
-                        IsEnabled   = $true
-                    }
                 }
             }
 

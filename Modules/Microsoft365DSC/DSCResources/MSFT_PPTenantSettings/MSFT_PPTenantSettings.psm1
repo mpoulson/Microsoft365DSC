@@ -1,8 +1,11 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_PPTenantSettings'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
-    param (
+    param
+    (
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
         [System.String]
@@ -230,8 +233,9 @@ function Get-TargetResource
         $ApplicationSecret
     )
 
-    Write-Verbose -Message 'Checking the Power Platform Tenant Settings Configuration'
-    $ConnectionMode = New-M365DSCConnection -Workload 'PowerPlatformREST' `
+    Write-Verbose -Message 'Getting the Power Platform Tenant Settings Configuration'
+
+    $null = New-M365DSCConnection -Workload 'PowerPlatformREST' `
         -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -353,14 +357,15 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
 function Set-TargetResource
 {
     [CmdletBinding()]
-    param (
+    param
+    (
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
         [System.String]
@@ -602,7 +607,7 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'PowerPlatformREST' `
+    $null = New-M365DSCConnection -Workload 'PowerPlatformREST' `
         -InboundParameters $PSBoundParameters
 
     $SetParameters = $PSBoundParameters
@@ -619,7 +624,8 @@ function Test-TargetResource
 {
     [CmdletBinding()]
     [OutputType([System.Boolean])]
-    param (
+    param
+    (
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
         [System.String]
@@ -846,11 +852,9 @@ function Test-TargetResource
         [System.Management.Automation.PSCredential]
         $ApplicationSecret
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -858,22 +862,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration for Power Platform Tenant Settings'
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-    $ValuesToCheck.Remove('Credential') | Out-Null
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -902,6 +893,7 @@ function Export-TargetResource
         [System.Management.Automation.PSCredential]
         $ApplicationSecret
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'PowerPlatformREST' `
         -InboundParameters $PSBoundParameters
 
@@ -966,15 +958,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

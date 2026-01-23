@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@contoso.com', $secpasswd)
             $global:tenantName = $Credential.UserName.Split('@')[1].Split('.')[0]
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -42,6 +42,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Get-PnPTenantCdnEnabled -MockWith {
+                return @{ Value = $true }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -59,10 +60,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     CdnType    = 'Public'
                     Credential = $Credential
                     Ensure     = 'Present'
-                }
-
-                Mock -CommandName Get-PnPTenantCdnEnabled -MockWith {
-                    return @{ Value = 'true' }
                 }
             }
 
@@ -88,10 +85,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential = $Credential
                     Ensure     = 'Present'
                 }
-
-                Mock -CommandName Get-PnPTenantCdnEnabled -MockWith {
-                    return @{ Value = 'True' }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -110,14 +103,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-PnPTenantCdnEnabled -MockWith {
-                    return @{ Value = 'true' }
                 }
             }
 

@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOTransportConfig'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -147,40 +149,35 @@ function Get-TargetResource
     )
 
     Write-Verbose -Message 'Getting EXOTransportConfig'
-    if ($Global:CurrentModeIsExport)
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        IsSingleInstance = 'Yes'
-    }
 
     try
     {
-        $TransportConfigSettings = Get-TransportConfig -ErrorAction Stop
-        if ($null -eq $TransportConfigSettings)
+        if (-not $Script:exportedInstance)
         {
-            throw 'There was an error retrieving values from the Get function in EXOTransportConfig.'
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = @{
+                IsSingleInstance = 'Yes'
+            }
+
+            $TransportConfigSettings = Get-TransportConfig -ErrorAction Stop
+        }
+        else
+        {
+            $TransportConfigSettings = $Script:exportedInstance
         }
 
         $results = @{
@@ -216,7 +213,7 @@ function Get-TargetResource
             CertificateThumbprint                   = $CertificateThumbprint
             CertificatePath                         = $CertificatePath
             CertificatePassword                     = $CertificatePassword
-            Managedidentity                         = $ManagedIdentity.IsPresent
+            ManagedIdentity                         = $ManagedIdentity.IsPresent
             TenantId                                = $TenantId
             AccessTokens                            = $AccessTokens
         }
@@ -231,7 +228,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -381,6 +378,9 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    Write-Verbose -Message 'Setting EXOTransportConfig'
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -393,22 +393,12 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Setting EXOTransportConfig'
-
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+    $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters
 
     Write-Verbose -Message "Setting EXOTransportConfig with values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-    $SetValues = [System.Collections.Hashtable]($PSBoundParameters)
+    $SetValues = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $SetValues.Remove('IsSingleInstance') | Out-Null
-    $SetValues.Remove('Credential') | Out-Null
-    $SetValues.Remove('ApplicationId') | Out-Null
-    $SetValues.Remove('TenantId') | Out-Null
-    $SetValues.Remove('CertificateThumbprint') | Out-Null
-    $SetValues.Remove('CertificatePath') | Out-Null
-    $SetValues.Remove('CertificatePassword') | Out-Null
-    $SetValues.Remove('ManagedIdentity') | Out-Null
-    $SetValues.Remove('AccessTokens') | Out-Null
 
     if ($SetValues.JournalingReportNdrTo -eq '<>' -or [System.String]::IsNullOrEmpty($SetValues.JournalingReportNdrTo))
     {
@@ -565,11 +555,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -577,31 +565,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration of EXOTransportConfig'
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    if ($CurrentValues -is [System.Collections.Hashtable] -and $CurrentValues.Count -lt 1)
-    {
-        # In case transport config is missing at all for whatever reason.
-        $TestResult = $false
-    }
-    else
-    {
-        $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -661,6 +627,9 @@ function Export-TargetResource
 
     try
     {
+        $transportConfiguration = Get-TransportConfig -ErrorAction Stop
+
+        $dscContent = ''
         if ($null -ne $Global:M365DSCExportResourceInstancesCount)
         {
             $Global:M365DSCExportResourceInstancesCount++
@@ -673,11 +642,11 @@ function Export-TargetResource
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint
             CertificatePassword   = $CertificatePassword
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             CertificatePath       = $CertificatePath
             AccessTokens          = $AccessTokens
         }
-
+        $Script:exportedInstance = $transportConfiguration
         $Results = Get-TargetResource @Params
         if ($Results -is [System.Collections.Hashtable] -and $Results.Count -gt 1)
         {
@@ -701,15 +670,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

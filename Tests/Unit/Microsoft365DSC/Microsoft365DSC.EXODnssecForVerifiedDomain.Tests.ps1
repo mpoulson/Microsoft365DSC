@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -39,8 +39,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return $null
             }
 
+            Mock -CommandName Get-DnssecStatusForVerifiedDomain -MockWith {
+                return @{
+                    DomainName          = 'test.com'
+                    DnssecFeatureStatus = 'Enabled'
+                    Credential          = $Credential;
+                }
+            }
+
             Mock -CommandName Disable-DnssecForVerifiedDomain -MockWith {
                 return $null
+            }
+
+            Mock -CommandName Get-AcceptedDomain -MockWith {
+                return @{
+                    DomainName          = 'test.com'
+                    Credential          = $Credential;
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -57,14 +72,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DnssecFeatureStatus = 'Enabled'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-DnssecStatusForVerifiedDomain -MockWith {
-                    return @{
-                        DomainName          = 'test.com'
-                        DnssecFeatureStatus = 'Enabled'
-                        Credential          = $Credential;
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -76,7 +83,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DomainName          = 'test.com'
-                    DnssecFeatureStatus = 'Enabled'
+                    DnssecFeatureStatus = 'Enabled' # Drift
                     Credential          = $Credential;
                 }
 
@@ -110,14 +117,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DnssecFeatureStatus = 'Disabled'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-DnssecStatusForVerifiedDomain -MockWith {
-                    return @{
-                        DomainName          = 'test.com'
-                        DnssecFeatureStatus = 'Enabled'
-                        Credential          = $Credential;
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -140,21 +139,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-DnssecStatusForVerifiedDomain -MockWith {
-                    return @{
-                        DomainName          = 'test.com'
-                        DnssecFeatureStatus = 'Enabled'
-                        Credential          = $Credential;
-                    }
-                }
-
-                Mock -CommandName Get-AcceptedDomain -MockWith {
-                    return @{
-                        DomainName          = 'test.com'
-                        Credential          = $Credential;
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

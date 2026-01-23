@@ -28,10 +28,26 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
+            }
+
+            Mock -CommandName Invoke-MgGraphRequest -MockWith {
+                return @{
+                    UserPrincipalName   = "user@test.com"
+                    PerUserMfaState     = 'Enabled'
+                    Credential          = $Credential;
+                }
+            }
+
+            Mock -CommandName Get-MgUser -MockWith {
+                return @{
+                    Id                  = "98ceffcc-7c54-4227-8844-835af5a023ce"
+                    UserPrincipalName   = "user@test.com"
+                    Credential          = $Credential;
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -51,14 +67,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     UserPrincipalName   = "user@test.com"
                     PerUserMfaState     = 'Enabled'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        UserPrincipalName   = "user@test.com"
-                        PerUserMfaState     = 'Enabled'
-                        Credential          = $Credential;
-                    }
                 }
             }
 
@@ -102,16 +110,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     UserPrincipalName   = "user@test.com"
-                    PerUserMfaState     = 'Disabled'
+                    PerUserMfaState     = 'Disabled' # Drift
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        UserPrincipalName   = "user@test.com"
-                        PerUserMfaState     = 'Enabled'
-                        Credential          = $Credential;
-                    }
                 }
             }
 
@@ -135,22 +135,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        UserPrincipalName   = "user@test.com"
-                        PerUserMfaState     = 'Enabled'
-                        Credential          = $Credential;
-                    }
-                }
-
-                Mock -CommandName Get-MgUser -MockWith {
-                    return @{
-                        Id                  = "98ceffcc-7c54-4227-8844-835af5a023ce"
-                        UserPrincipalName   = "user@test.com"
-                        Credential          = $Credential;
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

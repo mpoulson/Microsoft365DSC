@@ -24,7 +24,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
+
+            Mock -CommandName New-M365DSCConnection -MockWith {
+                return 'Credentials'
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -40,6 +44,48 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName New-MgBetaDirectorySetting -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDirectorySetting -MockWith {
+                if (-not $Script:calledOnceAlready)
+                {
+                    $Script:calledOnceAlready = $true
+                    return $null
+                }
+                else
+                {
+                    return @{
+                        DisplayName = 'Password Rule Settings'
+                        Id          = '123456-1234-1234-1234-123456789012'
+                        TemplateId  = '5cf42378-d67d-4f36-ba46-e8b86229381d'
+                        Values      = @(
+                            @{
+                                Name  = 'BannedPasswordCheckOnPremisesMode'
+                                Value = 'Audit'
+                            },
+                            @{
+                                Name  = 'EnableBannedPasswordCheckOnPremises'
+                                Value = $false
+                            },
+                            @{
+                                Name  = 'EnableBannedPasswordCheck'
+                                Value = $false
+                            },
+                            @{
+                                Name  = 'LockoutDurationInSeconds'
+                                Value = 30
+                            },
+                            @{
+                                Name  = 'LockoutThreshold'
+                                Value = 6
+                            },
+                            @{
+                                Name  = 'BannedPasswordList'
+                                Value = $null
+                            }
+                        )
+                    }
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -63,55 +109,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential                          = $Credential
                     IsSingleInstance                    = 'Yes'
                 }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
             }
 
-            BeforeEach {
-                Mock -CommandName Get-MgBetaDirectorySetting -MockWith {
-                    if (-not $Script:calledOnceAlready)
-                    {
-                        $Script:calledOnceAlready = $true
-                        return $null
-                    }
-                    else
-                    {
-                        return @{
-                            DisplayName = 'Password Rule Settings'
-                            Id          = '123456-1234-1234-1234-123456789012'
-                            TemplateId  = '5cf42378-d67d-4f36-ba46-e8b86229381d'
-                            Values      = @(
-                                @{
-                                    Name  = 'BannedPasswordCheckOnPremisesMode'
-                                    Value = 'Audit'
-                                },
-                                @{
-                                    Name  = 'EnableBannedPasswordCheckOnPremises'
-                                    Value = $true
-                                },
-                                @{
-                                    Name  = 'EnableBannedPasswordCheck'
-                                    Value = $true
-                                },
-                                @{
-                                    Name  = 'LockoutDurationInSeconds'
-                                    Value = 60
-                                },
-                                @{
-                                    Name  = 'LockoutThreshold'
-                                    Value = 10
-                                },
-                                @{
-                                    Name  = 'BannedPasswordList'
-                                    Value = $null
-                                }
-                            )
-                        }
-                    }
-                }
-            }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
                 Should -Invoke -CommandName 'Get-MgBetaDirectorySetting' -Exactly 1
@@ -121,49 +120,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Script:calledOnceAlready = $false
                 Test-TargetResource @testParams | Should -Be $false
             }
-            BeforeEach {
-                Mock -CommandName Get-MgBetaDirectorySetting -MockWith {
-                    if (-not $Script:calledOnceAlready)
-                    {
-                        $Script:calledOnceAlready = $true
-                        return $null
-                    }
-                    else
-                    {
-                        return @{
-                            DisplayName = 'Password Rule Settings'
-                            Id          = '123456-1234-1234-1234-123456789012'
-                            TemplateId  = '5cf42378-d67d-4f36-ba46-e8b86229381d'
-                            Values      = @(
-                                @{
-                                    Name  = 'BannedPasswordCheckOnPremisesMode'
-                                    Value = 'Audit'
-                                },
-                                @{
-                                    Name  = 'EnableBannedPasswordCheckOnPremises'
-                                    Value = $true
-                                },
-                                @{
-                                    Name  = 'EnableBannedPasswordCheck'
-                                    Value = $true
-                                },
-                                @{
-                                    Name  = 'LockoutDurationInSeconds'
-                                    Value = 60
-                                },
-                                @{
-                                    Name  = 'LockoutThreshold'
-                                    Value = 10
-                                },
-                                @{
-                                    Name  = 'BannedPasswordList'
-                                    Value = $null
-                                }
-                            )
-                        }
-                    }
-                }
-            }
+
             It 'Should create and set the settings in the Set method' {
                 $Script:calledOnceAlready = $false
                 Set-TargetResource @testParams
@@ -179,56 +136,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure           = 'Absent'
                     Credential       = $Credential
                 }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-MgBetaDirectorySetting -MockWith {
-                    return @{
-                        DisplayName   = 'Password Rule Settings'
-                        Id            = '123456-1234-1234-1234-123456789012'
-                        TemplateId    = '5cf42378-d67d-4f36-ba46-e8b86229381d'
-                        Values        = @(
-                            @{
-                                Name  = 'BannedPasswordCheckOnPremisesMode'
-                                Value = 'Audit'
-                            },
-                            @{
-                                Name  = 'EnableBannedPasswordCheckOnPremises'
-                                Value = $true
-                            },
-                            @{
-                                Name  = 'EnableBannedPasswordCheck'
-                                Value = $true
-                            },
-                            @{
-                                Name  = 'LockoutDurationInSeconds'
-                                Value = 60
-                            },
-                            @{
-                                Name  = 'LockoutThreshold'
-                                Value = 10
-                            },
-                            @{
-                                Name  = 'BannedPasswordList'
-                                Value = $null
-                            }
-                        )
-                        }
-                }
             }
 
             It 'Should return Values from the Get method' {
+                $Script:calledOnceAlready = $true
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
                 Should -Invoke -CommandName 'Get-MgBetaDirectorySetting' -Exactly 1
             }
 
             It 'Should return false from the Test method' {
+                $Script:calledOnceAlready = $true
                 Test-TargetResource @testParams | Should -Be $false
             }
 
-            It 'Should Prevent Remove the Policy from the Set method' {
+            It 'Should Prevent the Policy from being removed' {
+                $Script:calledOnceAlready = $true
                 { Set-TargetResource @testParams } | Should -Throw 'The AADPasswordRuleSettings resource cannot delete existing Directory Setting entries. Please specify Present.'
             }
         }
@@ -245,53 +167,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential                    = $Credential
                     IsSingleInstance              = 'Yes'
                 }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-MgBetaDirectorySetting -MockWith {
-                    return @{
-                        DisplayName = 'Password Rule Settings'
-                        Id          = '123456-1234-1234-1234-123456789012'
-                        TemplateId  = '5cf42378-d67d-4f36-ba46-e8b86229381d'
-                        Values      = @(
-                            @{
-                                Name  = 'BannedPasswordCheckOnPremisesMode'
-                                Value = 'Audit'
-                            },
-                            @{
-                                Name  = 'EnableBannedPasswordCheckOnPremises'
-                                Value = $false
-                            },
-                            @{
-                                Name  = 'EnableBannedPasswordCheck'
-                                Value = $false
-                            },
-                            @{
-                                Name  = 'LockoutDurationInSeconds'
-                                Value = 30
-                            },
-                            @{
-                                Name  = 'LockoutThreshold'
-                                Value = 6
-                            },
-                            @{
-                                Name  = 'BannedPasswordList'
-                                Value = $null
-                            }
-                        )
-                    }
-                }
-
             }
 
             It 'Should return Values from the Get method' {
+                $Script:calledOnceAlready = $true
                 Get-TargetResource @testParams
                 Should -Invoke -CommandName 'Get-MgBetaDirectorySetting' -Exactly 1
             }
 
             It 'Should return true from the Test method' {
+                $Script:calledOnceAlready = $true
                 Test-TargetResource @testParams | Should -Be $true
             }
         }
@@ -300,7 +185,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     BannedPasswordCheckOnPremisesMode   = 'Audit'
-                    EnableBannedPasswordCheckOnPremises = $false
+                    EnableBannedPasswordCheckOnPremises = $true # Drift
                     EnableBannedPasswordCheck           = $false
                     LockoutDurationInSeconds            = 30
                     LockoutThreshold                    = 6
@@ -309,56 +194,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential                          = $Credential
                     IsSingleInstance                    = 'Yes'
                 }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-MgBetaDirectorySetting -MockWith {
-                    return @{
-                        DisplayName = 'Password Rule Settings'
-                        Id          = '123456-1234-1234-1234-123456789012'
-                        TemplateId  = '5cf42378-d67d-4f36-ba46-e8b86229381d'
-                        Values      = @(
-                            @{
-                                Name  = 'BannedPasswordCheckOnPremisesMode'
-                                Value = 'Enforced'
-                            },
-                            @{
-                                Name  = 'EnableBannedPasswordCheckOnPremises'
-                                Value = $true
-                            },
-                            @{
-                                Name  = 'EnableBannedPasswordCheck'
-                                Value = $true
-                            },
-                            @{
-                                Name  = 'LockoutDurationInSeconds'
-                                Value = 60
-                            },
-                            @{
-                                Name  = 'LockoutThreshold'
-                                Value = 10
-                            },
-                            @{
-                                Name  = 'BannedPasswordList'
-                                Value = $null
-                            }
-                        )
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
+                $Script:calledOnceAlready = $true
                 Get-TargetResource @testParams
                 Should -Invoke -CommandName 'Get-MgBetaDirectorySetting' -Exactly 1
             }
 
             It 'Should return false from the Test method' {
+                $Script:calledOnceAlready = $true
                 Test-TargetResource @testParams | Should -Be $false
             }
 
             It 'Should call the Set method' {
+                $Script:calledOnceAlready = $true
                 Set-TargetResource @testParams
                 Should -Invoke -CommandName 'Update-MgBetaDirectorySetting' -Exactly 1
             }
@@ -371,47 +221,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDirectorySetting -MockWith {
-                    return @{
-                        DisplayName = 'Password Rule Settings'
-                        Id          = '123456-1234-1234-1234-123456789012'
-                        TemplateId  = '5cf42378-d67d-4f36-ba46-e8b86229381d'
-                        Values      = @(
-                            @{
-                                Name  = 'BannedPasswordCheckOnPremisesMode'
-                                Value = 'Audit'
-                            },
-                            @{
-                                Name  = 'EnableBannedPasswordCheckOnPremises'
-                                Value = $false
-                            },
-                            @{
-                                Name  = 'EnableBannedPasswordCheck'
-                                Value = $false
-                            },
-                            @{
-                                Name  = 'LockoutDurationInSeconds'
-                                Value = 30
-                            },
-                            @{
-                                Name  = 'LockoutThreshold'
-                                Value = 6
-                            },
-                            @{
-                                Name  = 'BannedPasswordList'
-                                Value = $null
-                            }
-                        )
-                    }
-                }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
             }
 
             It 'Should Reverse Engineer resource from the Export method' {
+                $Script:calledOnceAlready = $true
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty
             }

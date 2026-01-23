@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_SPOTenantCdnPolicy'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -56,27 +58,30 @@ function Get-TargetResource
 
     Write-Verbose -Message "Getting configuration for SPOTenantCdnPolicy {$CDNType}"
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'PNP' `
-        -InboundParameters $PSBoundParameters
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        CDNType = $CDNType
-    }
-
     try
     {
+        if (-not $Script:ExportMode)
+        {
+            $null = New-M365DSCConnection -Workload 'PNP' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+        }
+
+        $nullReturn = @{
+            CDNType = $CDNType
+        }
+
         $Policies = Get-PnPTenantCdnPolicies -CdnType $CDNType -ErrorAction Stop
         if ($Policies['ExcludeRestrictedSiteClassifications'].Length -gt 0)
         {
@@ -108,7 +113,7 @@ function Get-TargetResource
             CertificatePassword                  = $CertificatePassword
             CertificatePath                      = $CertificatePath
             CertificateThumbprint                = $CertificateThumbprint
-            Managedidentity                      = $ManagedIdentity.IsPresent
+            ManagedIdentity                      = $ManagedIdentity.IsPresent
             AccessTokens                         = $AccessTokens
         }
     }
@@ -120,7 +125,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -273,11 +278,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -285,23 +288,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration for SPO Storage Entity for $Key"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck @('CDNType', `
-            'ExcludeRestrictedSiteClassifications', `
-            'IncludeFileExtensions')
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -368,6 +357,7 @@ function Export-TargetResource
         {
             $Global:M365DSCExportResourceInstancesCount++
         }
+        $Script:ExportMode = $true
 
         $Params = @{
             CdnType               = 'Public'
@@ -377,7 +367,7 @@ function Export-TargetResource
             CertificatePassword   = $CertificatePassword
             CertificatePath       = $CertificatePath
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             Credential            = $Credential
             AccessTokens          = $AccessTokens
         }
@@ -414,7 +404,7 @@ function Export-TargetResource
             CertificatePassword   = $CertificatePassword
             CertificatePath       = $CertificatePath
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             Credential            = $Credential
         }
         Write-M365DSCHost -Message '    |---[2/2] Private' -DeferWrite
@@ -446,18 +436,18 @@ function Export-TargetResource
         if ($_.Exception -like '*The method or operation is not implemented*')
         {
             Write-M365DSCHost -Message "`r`n    $($Global:M365DSCEmojiYellowCircle) The current tenant does not support this feature."
+            return ''
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
+
+            throw
         }
-        return ''
     }
 }
 

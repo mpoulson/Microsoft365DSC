@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -40,6 +40,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
 
+            Mock -CommandName Get-ExternalInOutlook -MockWith {
+                return @{
+                    identity = "ExternalInOutlook"
+                    AllowList = @("test@contoso.com")
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -51,19 +58,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The EXOExternalInOutlook Exists and Values are already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    identity = "ExternalInOutlook"
+                    Identity = "ExternalInOutlook"
                     AllowList = @("test@contoso.com")
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-ExternalInOutlook -MockWith {
-                    return @{
-                        AllowList = @("test@contoso.com")
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -73,17 +73,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The EXOExternalInOutlook exists and values are NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    identity = "ExternalInOutlook"
-                    AllowList = @("test@contoso.com","test2@contoso.com")
+                    Identity = "ExternalInOutlook"
+                    AllowList = @("test@contoso.com","test2@contoso.com") # Drift
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-ExternalInOutlook -MockWith {
-                    return @{
-                        identity = "ExternalInOutlook"
-                        AllowList = @("test@contoso.com")
-                    }
                 }
             }
 
@@ -108,13 +101,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-ExternalInOutlook -MockWith {
-                    return @{
-                        identity = "ExternalInOutlook"
-                        AllowList = @("test@contoso.com","test2@contoso.com")
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

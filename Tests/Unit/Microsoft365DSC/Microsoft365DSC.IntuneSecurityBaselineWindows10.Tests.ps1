@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -74,10 +74,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 OffsetUri = '/Config/MSSLegacy/IPv6SourceRoutingProtectionLevel'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
-                                    options=@(
+                                    options = @(
                                         @{
                                             name ='Enabled'
                                             itemId = 'device_vendor_msft_policy_config_msslegacy_ipv6sourceroutingprotectionlevel_1'
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 1
+                                            }
                                         }
                                     )
                                 }
@@ -88,7 +92,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 OffsetUri = '/Config/MSSLegacy/IPv6SourceRoutingProtectionLevel'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
-                                    options=@(
+                                    options = @(
                                         @{
                                             name ='No additional protection, source routed packets are allowed'
                                             itemId = 'device_vendor_msft_policy_config_msslegacy_ipv6sourceroutingprotectionlevel_disableipsourceroutingipv6_0'
@@ -98,6 +102,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'device_vendor_msft_policy_config_msslegacy_ipv6sourceroutingprotectionlevel'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 0
+                                            }
                                         }
                                     )
                                 }
@@ -139,6 +147,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                         @{
                                             name ='Enabled'
                                             itemId = 'device_vendor_msft_policy_config_connectivity_hardeneduncpaths_1'
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 1
+                                            }
                                         }
                                     )
                                 }
@@ -244,6 +256,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                         @{
                                             name ='Allowed.'
                                             itemId = 'user_vendor_msft_policy_config_experience_allowwindowsspotlight_1'
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 1
+                                            }
                                         }
                                     )
                                 }
@@ -296,6 +312,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'device_vendor_msft_policy_config_defender_attacksurfacereductionrules'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
+                                                value = 'block'
+                                            }
                                         }
                                     )
                                 }
@@ -373,8 +393,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     Description = "My Test"
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineWindows10 -Property @{
-                        Pol_MSS_DisableIPSourceRoutingIPv6 = '1'
-                        DisableIPSourceRoutingIPv6 = '0'
+                        Pol_MSS_DisableIPSourceRoutingIPv6 = 1
+                        DisableIPSourceRoutingIPv6 = 0
                         HardenedUNCPaths_Pol_HardenedPaths = '1'
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'block'
                         pol_hardenedpaths = [CimInstance[]]@(
@@ -422,8 +442,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     Description = "My Test"
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineWindows10 -Property @{
-                        Pol_MSS_DisableIPSourceRoutingIPv6 = '1'
-                        DisableIPSourceRoutingIPv6 = '0'
+                        Pol_MSS_DisableIPSourceRoutingIPv6 = 1
+                        DisableIPSourceRoutingIPv6 = 0
                         HardenedUNCPaths_Pol_HardenedPaths = '1'
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'block'
                         pol_hardenedpaths = [CimInstance[]]@(
@@ -470,8 +490,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     Description = "My Test"
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineWindows10 -Property @{
-                        Pol_MSS_DisableIPSourceRoutingIPv6 = '1'
-                        DisableIPSourceRoutingIPv6 = '0'
+                        Pol_MSS_DisableIPSourceRoutingIPv6 = 1
+                        DisableIPSourceRoutingIPv6 = 0
                         HardenedUNCPaths_Pol_HardenedPaths = '1'
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'block'
                         pol_hardenedpaths = [CimInstance[]]@(
@@ -509,8 +529,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     Description = "My Test"
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineWindows10 -Property @{
-                        Pol_MSS_DisableIPSourceRoutingIPv6 = '1'
-                        DisableIPSourceRoutingIPv6 = '0'
+                        Pol_MSS_DisableIPSourceRoutingIPv6 = 1
+                        DisableIPSourceRoutingIPv6 = 0
                         HardenedUNCPaths_Pol_HardenedPaths = '1'
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'block'
                         pol_hardenedpaths = [CimInstance[]]@(

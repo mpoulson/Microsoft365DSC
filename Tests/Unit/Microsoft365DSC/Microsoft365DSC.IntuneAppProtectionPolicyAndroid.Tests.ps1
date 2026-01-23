@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Function Get-DefaultTestParams
+            function Get-DefaultTestParams
             {
                 param (
                     [string]$description
@@ -74,7 +74,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowedOutboundDataTransferDestinations         = 'managedApps'
                     AppGroupType                                    = 'selectedPublicApps'
                     Apps                                            = @('com.cisco.im.intune', 'com.penlink.penpoint', 'com.slack.intune')
-                    Assignments                                     = @('6ee86c9f-2b3c-471d-ad38-ff4673ed723e')
+                    Assignments                                     = [CimInstance[]]@(
+                        New-CimInstance -ClassName MSFT_DeviceManagementConfigurationPolicyAssignments -Property @{
+                            groupId  = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
+                            dataType = '#microsoft.graph.groupAssignmentTarget'
+                            deviceAndAppManagementAssignmentFilterType = 'none'
+                        } -ClientOnly
+                        New-CimInstance -ClassName MSFT_DeviceManagementConfigurationPolicyAssignments -Property @{
+                            groupId  = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
+                            dataType = '#microsoft.graph.exclusionGroupAssignmentTarget'
+                            deviceAndAppManagementAssignmentFilterType = 'none'
+                        } -ClientOnly
+                    )
                     ContactSyncBlocked                              = $False
                     DataBackupBlocked                               = $False
                     Description                                     = 'DSC Policy'
@@ -83,7 +94,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EncryptAppData                                  = $True
                     DisplayName                                     = 'DSC Policy'
                     Ensure                                          = 'Present'
-                    ExcludedGroups                                  = @('3eacc231-d77b-4efb-bb5f-310f68bd6198')
                     FingerprintBlocked                              = $False
                     Credential                                      = $Credential
                     ManagedBrowserToOpenLinksRequired               = $True
@@ -110,7 +120,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MinimumWarningAppVersion                        = '1.5'
                     MinimumWarningOSVersion                         = '1.5'
                     MinimumWarningPatchVersion                      = '2021-07-13'
-                    IsAssigned                                      = $True
                     CustomBrowserPackageId                          = ''
                     CustomBrowserDisplayName                        = ''
                     id                                              = '12345-12345-12345-12345-12345'
@@ -118,7 +127,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             }
 
-            Function Get-DefaultReturnObj
+            function Get-DefaultReturnObj
             {
                 param (
                     [string]$description
@@ -136,10 +145,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AppActionIfMaximumPinRetriesExceeded              = 'wipe'
                     AppActionIfUnableToAuthenticateUser               = 'block'
                     ApprovedKeyboards                                 = @(
-                            [pscustomobject]@{
+                        [pscustomobject]@{
                             name  = 'fake'
                             value = 'string'
-                            }
+                        }
                     )
                     BiometricAuthenticationBlocked                    = $True
                     BlockAfterCompanyPortalUpdateDeferralInDays       = 7
@@ -179,55 +188,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowedOutboundClipboardSharingLevel            = 'managedAppsWithPasteIn'
                     AllowedOutboundDataTransferDestinations         = 'managedApps'
                     AppGroupType                                    = 'selectedPublicApps'
-                    Apps                                            = @(
-                        [pscustomobject]@{
-                            id                  = 'com.cisco.im.intune.android'
-                            mobileAppIdentifier = @{
-                                'AdditionalProperties' = @{
-                                    '@odata.type' = '#microsoft.graph.androidMobileAppIdentifier'
-                                    'packageid'   = 'com.cisco.im.intune'
-                                }
-                            }
-                        },
-                        [pscustomobject]@{
-                            id                  = 'com.penlink.penpoint.android'
-                            mobileAppIdentifier = @{
-                                'AdditionalProperties' = @{
-                                    '@odata.type' = '#microsoft.graph.androidMobileAppIdentifier'
-                                    'packageid'   = 'com.penlink.penpoint'
-                                }
-                            }
-                        },
-                        [pscustomobject]@{
-                            id                  = 'com.slack.intune.android'
-                            mobileAppIdentifier = @{
-                                'AdditionalProperties' = @{
-                                    '@odata.type' = '#microsoft.graph.androidMobileAppIdentifier'
-                                    'packageid'   = 'com.slack.intune'
-                                }
-                            }
-                        }
-                    )
-                    Assignments                                     = @(
-                        @{
-                            id     = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
-                            target = @{
-                                'AdditionalProperties' = @{
-                                    '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
-                                    groupId       = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
-                                }
-                            }
-                        },
-                        @{
-                            id     = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
-                            target = @{
-                                'AdditionalProperties' = @{
-                                    '@odata.type' = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                                    groupId       = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
-                                }
-                            }
-                        }
-                    )
                     ContactSyncBlocked                              = $False
                     DataBackupBlocked                               = $False
                     Description                                     = 'DSC Policy'
@@ -265,7 +225,99 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementManagedAppStatus -MockWith {
+                return @(
+                    @{
+                        '@odata.type' = '#microsoft.graph.managedAppStatusRaw'
+                        id = 'managedAppList'
+                        displayName = 'Managed App collection for Tenant'
+                        content = @{
+                            '@odata.type' = '#microsoft.graph.managedAppList'
+                            appList = @(
+                                @{
+                                    appGroups = 'none'
+                                    appIdentifier = @{
+                                        '@odata.type' = '#microsoft.graph.androidMobileAppIdentifier'
+                                        bundleId = 'com.cisco.im.intune'
+                                    }
+                                }
+                                @{
+                                    appGroups = 'none'
+                                    appIdentifier = @{
+                                        '@odata.type' = '#microsoft.graph.androidMobileAppIdentifier'
+                                        bundleId = 'com.penlink.penpoint'
+                                    }
+                                }
+                                @{
+                                    appGroups = 'none'
+                                    appIdentifier = @{
+                                        '@odata.type' = '#microsoft.graph.androidMobileAppIdentifier'
+                                        bundleId = 'com.slack.intune'
+                                    }
+                                }
+                            )
+                        }
+                    }
+                )
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementAndroidManagedAppProtectionApp -MockWith {
+                [pscustomobject]@{
+                    id                  = 'com.cisco.im.intune.android'
+                    mobileAppIdentifier = @{
+                        'AdditionalProperties' = @{
+                            '@odata.type' = '#microsoft.graph.androidMobileAppIdentifier'
+                            'packageid'   = 'com.cisco.im.intune'
+                        }
+                    }
+                },
+                [pscustomobject]@{
+                    id                  = 'com.penlink.penpoint.android'
+                    mobileAppIdentifier = @{
+                        'AdditionalProperties' = @{
+                            '@odata.type' = '#microsoft.graph.androidMobileAppIdentifier'
+                            'packageid'   = 'com.penlink.penpoint'
+                        }
+                    }
+                },
+                [pscustomobject]@{
+                    id                  = 'com.slack.intune.android'
+                    mobileAppIdentifier = @{
+                        'AdditionalProperties' = @{
+                            '@odata.type' = '#microsoft.graph.androidMobileAppIdentifier'
+                            'packageid'   = 'com.slack.intune'
+                        }
+                    }
+                }
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementAndroidManagedAppProtectionAssignment -MockWith {
+                return @(
+                    @{
+                        id     = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
+                        target = @{
+                            'AdditionalProperties' = @{
+                                '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
+                                groupId       = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
+                            }
+                        }
+                    },
+                    @{
+                        id     = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
+                        target = @{
+                            'AdditionalProperties' = @{
+                                '@odata.type' = '#microsoft.graph.exclusionGroupAssignmentTarget'
+                                groupId       = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
+                            }
+                        }
+                    }
+                )
+            }
+
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -281,7 +333,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Invoke-MgBetaTargetDeviceAppManagementTargetedManagedAppConfigurationApp -MockWith {
             }
 
-            Mock -CommandName set-MgBetaDeviceAppManagementTargetedManagedAppConfiguration -MockWith {
+            Mock -CommandName Set-MgBetaDeviceAppManagementTargetedManagedAppConfiguration -MockWith {
             }
 
             Mock -CommandName Remove-MgBetaDeviceAppManagementAndroidManagedAppProtection -MockWith {
@@ -297,7 +349,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         # Test contexts
         Context -Name "When the Policy doesn't already exist" -Fixture {
             BeforeAll {
-                $testParams = get-DefaultTestParams
+                $testParams = Get-DefaultTestParams
                 $Global:Count = 0
                 Mock -CommandName Get-MgBetaDeviceAppManagementAndroidManagedAppProtection -MockWith {
                     if ($Global:Count -le 1)
@@ -333,7 +385,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'When the policy already exists and is NOT in the Desired State' -Fixture {
             BeforeAll {
-                $testParams = get-DefaultTestParams
+                $testParams = Get-DefaultTestParams
                 $testParams.FingerprintBlocked = $true #Drift
 
 
@@ -358,7 +410,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'When the policy already exists and IS in the Desired State' -Fixture {
             BeforeAll {
-                $testParams = get-DefaultTestParams
+                $testParams = Get-DefaultTestParams
 
                 Mock -CommandName Get-MgBetaDeviceAppManagementAndroidManagedAppProtection -MockWith {
                     return Get-DefaultReturnObj
@@ -372,7 +424,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'When the policy exists and it SHOULD NOT' -Fixture {
             BeforeAll {
-                $testParams = get-DefaultTestParams
+                $testParams = Get-DefaultTestParams
                 $testParams.Ensure = 'Absent'
 
                 Mock -CommandName Get-MgBetaDeviceAppManagementAndroidManagedAppProtection -MockWith {
@@ -384,7 +436,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
             }
 
-            It 'Should return true from the Test method' {
+            It 'Should return false from the Test method' {
                 Test-TargetResource @testParams | Should -Be $false
             }
 

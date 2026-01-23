@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -37,9 +37,30 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Get-MgBetaNetworkAccessForwardingProfile -MockWith {
+                return @{
+                    Name  = 'Microsoft 365 traffic forwarding profile'
+                    Id    = '58847306-0ae2-4f65-91ee-d6587e9bebda'
+                    State = 'enabled'
+                }
             }
 
             Mock -CommandName Get-MgBetaNetworkAccessForwardingProfilePolicy -MockWith {
+                return @(
+                    @{
+                        Policy = @{
+                            Name = 'Custom Bypass'
+                        }
+                        Id = '58847306-0ae2-4f65-91ee-d6587e9bebda'
+                        State        = 'enabled'
+                    },
+                    @{
+                        Policy = @{
+                            Name = 'Default Bypass'
+                        }
+                        Id = '12345678-1234-1234-1234-123456789012'
+                        State        = 'enabled'
+                    }
+                )
             }
 
             Mock -CommandName Update-MgBetaNetworkAccessForwardingProfilePolicy -MockWith {
@@ -77,35 +98,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential = $Credential
 
                 }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingProfile -MockWith {
-                    return @{
-                        Name  = 'Microsoft 365 traffic forwarding profile'
-                        Id    = '58847306-0ae2-4f65-91ee-d6587e9bebda'
-                        State = 'enabled'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingProfilePolicy -MockWith {
-                    return @(
-                        @{
-                            Policy = @{
-                                Name = 'Custom Bypass'
-                            }
-                            Id = '58847306-0ae2-4f65-91ee-d6587e9bebda'
-                            State        = 'enabled'
-                        },
-                        @{
-                            Policy = @{
-                                Name = 'Default Bypass'
-                            }
-                            Id = '12345678-1234-1234-1234-123456789012'
-                            State        = 'enabled'
-                        }
-                    )
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -132,33 +125,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingProfile -MockWith {
-                    return @{
-                        Name  = 'Microsoft 365 traffic forwarding profile'
-                        Id    = '58847306-0ae2-4f65-91ee-d6587e9bebda'
-                        State = 'disabled'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingProfilePolicy -MockWith {
-                    return @(
-                        @{
-                            Policy = @{
-                                Name = 'Custom Bypass'
-                            }
-                            Id = '58847306-0ae2-4f65-91ee-d6587e9bebda'
-                            State        = 'disabled'
-                        },
-                        @{
-                            Policy = @{
-                                Name = 'Default Bypass'
-                            }
-                            Id = '12345678-1234-1234-1234-123456789012'
-                            State        = 'enabled'
-                        }
-                    )
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -182,33 +148,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingProfile -MockWith {
-                    return @{
-                        Name  = 'Microsoft 365 traffic forwarding profile'
-                        Id    = '58847306-0ae2-4f65-91ee-d6587e9bebda'
-                        State = 'disabled'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaNetworkAccessForwardingProfilePolicy -MockWith {
-                    return @(
-                        @{
-                            Policy = @{
-                                Name = 'Custom Bypass'
-                            }
-                            Id = '58847306-0ae2-4f65-91ee-d6587e9bebda'
-                            State        = 'disabled'
-                        },
-                        @{
-                            Policy = @{
-                                Name = 'Default Bypass'
-                            }
-                            Id = '12345678-1234-1234-1234-123456789012'
-                            State        = 'enabled'
-                        }
-                    )
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

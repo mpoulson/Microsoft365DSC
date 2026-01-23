@@ -24,7 +24,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
+
+            Mock -CommandName New-M365DSCConnection -MockWith {
+                return 'Credentials'
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -36,6 +40,48 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Update-MgBetaPolicyRoleManagementPolicyRule -MockWith {
             }
 
+            Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleDefinition -MockWith {
+                return @{
+                    Id = "FakeStringValue"
+                    DisplayName = "FakeStringValue"
+                }
+            }
+
+            Mock -CommandName Get-MgBetaPolicyRoleManagementPolicyAssignment -MockWith {
+                return @{
+                    PolicyId = "FakeStringValue"
+                    RoleDefinitionId = "FakeStringValue"
+                }
+            }
+
+            Mock -CommandName Get-MgBetaPolicyRoleManagementPolicyRule -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        '@odata.type' = "#microsoft.graph.unifiedRoleManagementPolicyApprovalRule"
+                        setting = @{
+                            approvalStages = @(
+                                @{
+                                    approvalStageTimeOutInDays = 1
+                                    escalationApprovers = @(
+                                        @{
+                                            '@odata.type' = "FakeStringValue"
+                                        }
+                                    )
+                                    isEscalationEnabled = $True
+                                    isApproverJustificationRequired = $True
+                                    escalationTimeInMinutes = 1
+                                }
+                            )
+                            isApprovalRequired = $True
+                            isApprovalRequiredForExtension = $True
+                            approvalMode = "FakeStringValue"
+                            isRequestorJustificationRequired = $True
+                        }
+                    }
+                    Id = "FakeStringValue"
+                }
+            }
+
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
             }
@@ -43,65 +89,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
-            $Script:exportedInstances =$null
+            $Script:exportedInstance = $null
             $Script:ExportMode = $false
         }
 
         Context -Name "The AADRoleManagementPolicyRule Exists and Values are already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    id = "FakeStringValue"
-                    roleDisplayName = "FakeStringValue"
-                    policyId = "FakeStringValue"
-                    ruleType = "#microsoft.graph.unifiedRoleManagementPolicyExpirationRule"
-                    expirationRule = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyExpirationRule -Property @{
-                        isExpirationRequired = $true
-                        maximumDuration = "FakeStringValue"
-                    } -ClientOnly)
-                    Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleDefinition -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyRoleManagementPolicyAssignment -MockWith {
-                    return @{
-                        PolicyId = "FakeStringValue"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyRoleManagementPolicyRule -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.unifiedRoleManagementPolicyExpirationRule"
-                            isExpirationRequired = $true
-                            maximumDuration = "FakeStringValue"
-                        }
-                        id = "FakeStringValue"
-                    }
-                }
-            }
-
-
-            It 'Should return true from the Test method' {
-                Test-TargetResource @testParams | Should -Be $true
-            }
-        }
-
-        Context -Name "The AADRoleManagementPolicyRule exists and values are NOT in the desired state" -Fixture {
-            BeforeAll {
-                $testParams = @{
-                    id = "FakeStringValue"
-                    roleDisplayName = "FakeStringValue"
-                    policyId = "FakeStringValue"
-                    ruleType = "#microsoft.graph.unifiedRoleManagementPolicyApprovalRule"
-                    approvalRule = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalRule -Property @{
+                    Id = "FakeStringValue"
+                    RoleDisplayName = "FakeStringValue"
+                    PolicyId = "FakeStringValue"
+                    RuleType = "#microsoft.graph.unifiedRoleManagementPolicyApprovalRule"
+                    ApprovalRule = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalRule -Property @{
                         setting = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalSettings -Property @{
                             approvalMode = "FakeStringValue"
-                            isApprovalRequired = $false #drift
+                            isApprovalRequired = $true
                             isApprovalRequiredForExtension = $true
                             isRequestorJustificationRequired = $true
                             approvalStages = [CimInstance[]]@(
@@ -121,45 +123,42 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     } -ClientOnly)
                     Credential = $Credential;
                 }
+            }
 
-                Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleDefinition -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                    }
-                }
+            It 'Should return true from the Test method' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+        }
 
-                Mock -CommandName Get-MgBetaPolicyRoleManagementPolicyAssignment -MockWith {
-                    return @{
-                        PolicyId = "FakeStringValue"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyRoleManagementPolicyRule -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.unifiedRoleManagementPolicyApprovalRule"
-                            setting = @{
-                                approvalStages = @(
-                                    @{
-                                        approvalStageTimeOutInDays = 1 
-                                        escalationApprovers = @(
-                                            @{
-                                                '@odata.type' = "FakeStringValue"
-                                            }
-                                        )
-                                        isEscalationEnabled = $True
-                                        isApproverJustificationRequired = $True
-                                        escalationTimeInMinutes = 1
-                                    }
-                                )
-                                isApprovalRequired = $True
-                                isApprovalRequiredForExtension = $True
-                                approvalMode = "FakeStringValue"
-                                isRequestorJustificationRequired = $True
-                            }
-                        }
-                        id = "FakeStringValue"
-                    }
+        Context -Name "The AADRoleManagementPolicyRule exists and values are NOT in the desired state" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Id = "FakeStringValue"
+                    RoleDisplayName = "FakeStringValue"
+                    PolicyId = "FakeStringValue"
+                    RuleType = "#microsoft.graph.unifiedRoleManagementPolicyApprovalRule"
+                    ApprovalRule = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalRule -Property @{
+                        setting = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalSettings -Property @{
+                            approvalMode = "FakeStringValue"
+                            isApprovalRequired = $false # Drift
+                            isApprovalRequiredForExtension = $true
+                            isRequestorJustificationRequired = $true
+                            approvalStages = [CimInstance[]]@(
+                                (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalStage -Property @{
+                                    approvalStageTimeOutInDays = 1
+                                    escalationTimeInMinutes = 1
+                                    isApproverJustificationRequired = $true
+                                    isEscalationEnabled = $true
+                                    escalationApprovers = [CimInstance[]]@(
+                                        (New-CimInstance -ClassName MSFT_AADRoleManagementPolicySubjectSet -Property @{
+                                            odataType = "FakeStringValue"
+                                        } -ClientOnly)
+                                    )
+                                } -ClientOnly)
+                            )
+                        } -ClientOnly)
+                    } -ClientOnly)
+                    Credential = $Credential;
                 }
             }
 
@@ -179,30 +178,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleDefinition -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyRoleManagementPolicyAssignment -MockWith {
-                    return @{
-                        PolicyId = "FakeStringValue"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyRoleManagementPolicyRule -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.unifiedRoleManagementPolicyExpirationRule"
-                            isExpirationRequired = $true
-                            maximumDuration = "FakeStringValue"
-                        }
-                        id = "FakeStringValue"
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

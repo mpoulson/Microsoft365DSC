@@ -28,13 +28,37 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
             }
-            
+
+            Mock -CommandName Invoke-M365DSCDefenderREST -MockWith {
+                return @{
+                    value = @(
+                        @{
+                            id = "12345-12345-12345-12345-12345"
+                            scannerAgent = @{
+                                machineId = '55c636a37ff1a21a3241437eb6ce15881xxxxxx'
+                                machineName = 'WIN-XXXXXXXXXX'
+                                id = 'c819dc6d-f9fe-4d05-8022-88a34766442d_55c636a37ff1a21a3241437eb6ce15881xxxxxxx'
+                            }
+                            scanAuthenticationParams = @{
+                                Type = 'NoAuthNoPriv'
+                                "@odata.type" = '#microsoft.windowsDefenderATP.api.SnmpAuthParams'
+                            }
+                            IntervalInHours          = 1;
+                            IsActive                 = $True;
+                            scanName                 = "MyScan";
+                            ScanType                 = "Network";
+                            Target                   = "172.1.12.1";
+                        }
+                    )
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -100,30 +124,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Absent'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Invoke-M365DSCDefenderREST -MockWith {
-                    return @{
-                        value = @(
-                            @{
-                                id = "12345-12345-12345-12345-12345"
-                                scannerAgent = @{
-                                    machineId = '55c636a37ff1a21a3241437eb6ce15881xxxxxx'
-                                    machineName = 'WIN-XXXXXXXXXX'
-                                    id = 'c819dc6d-f9fe-4d05-8022-88a34766442d_55c636a37ff1a21a3241437eb6ce15881xxxxxxx'
-                                }
-                                scanAuthenticationParams = @{
-                                    Type = 'NoAuthNoPriv'
-                                    "@odata.type" = '#microsoft.windowsDefenderATP.api.SnmpAuthParams'
-                                }
-                                IntervalInHours          = 1;
-                                IsActive                 = $True;
-                                scanName                 = "MyScan";
-                                ScanType                 = "Network";
-                                Target                   = "172.1.12.1"; 
-                            }                   
-                        )
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -158,29 +158,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Invoke-M365DSCDefenderREST -MockWith {
-                    return @{
-                        value = 
-                            @{
-                                id = "12345-12345-12345-12345-12345"
-                                scannerAgent = @{
-                                    machineId = '55c636a37ff1a21a3241437eb6ce15881xxxxxx'
-                                    machineName = 'WIN-XXXXXXXXXX'
-                                    id = 'c819dc6d-f9fe-4d05-8022-88a34766442d_55c636a37ff1a21a3241437eb6ce15881xxxxxxx'
-                                }
-                                scanAuthenticationParams = @{
-                                    Type = 'NoAuthNoPriv'
-                                    "@odata.type" = '#microsoft.windowsDefenderATP.api.SnmpAuthParams'
-                                }
-                                IntervalInHours          = 1
-                                IsActive                 = $True;
-                                scanName                 = "MyScan";
-                                ScanType                 = "Network";
-                                Target                   = "172.1.12.1"; 
-                            }  
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -191,7 +168,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The instance exists and values are NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IntervalInHours          = 1;
+                    IntervalInHours          = 24; # Drift
                     IsActive                 = $True;
                     Name                     = "MyScan";
                     ScanAuthenticationParams = (New-CimInstance -ClassName MSFT_DefenderDeviceAuthenticatedScanDefinitionAuthenticationParams -Property @{
@@ -205,32 +182,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     } -ClientOnly)
                     ScanType                 = "Network";
                     Target                   = "172.1.12.1";
-                    Ensure              = 'Absent'
+                    Ensure              = 'Present'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Invoke-M365DSCDefenderREST -MockWith {
-                    return @{
-                        value = @(
-                            @{
-                                id = "12345-12345-12345-12345-12345"
-                                scannerAgent = @{
-                                    machineId = '55c636a37ff1a21a3241437eb6ce15881xxxxxx'
-                                    machineName = 'WIN-XXXXXXXXXX'
-                                    id = 'c819dc6d-f9fe-4d05-8022-88a34766442d_55c636a37ff1a21a3241437eb6ce15881xxxxxxx'
-                                }
-                                scanAuthenticationParams = @{
-                                    Type = 'NoAuthNoPriv'
-                                    "@odata.type" = '#microsoft.windowsDefenderATP.api.SnmpAuthParams'
-                                }
-                                IntervalInHours          = 24; #Drift
-                                IsActive                 = $True;
-                                scanName                 = "MyScan";
-                                ScanType                 = "Network";
-                                Target                   = "172.1.12.1"; 
-                            }                   
-                        )
-                    }
                 }
             }
 
@@ -254,30 +207,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Invoke-M365DSCDefenderREST -MockWith {
-                    return @{
-                        value = @(
-                            @{
-                                id = "12345-12345-12345-12345-12345"
-                                scannerAgent = @{
-                                    machineId = '55c636a37ff1a21a3241437eb6ce15881xxxxxx'
-                                    machineName = 'WIN-XXXXXXXXXX'
-                                    id = 'c819dc6d-f9fe-4d05-8022-88a34766442d_55c636a37ff1a21a3241437eb6ce15881xxxxxxx'
-                                }
-                                scanAuthenticationParams = @{
-                                    Type = 'NoAuthNoPriv'
-                                    "@odata.type" = '#microsoft.windowsDefenderATP.api.SnmpAuthParams'
-                                }
-                                IntervalInHours          = 1;
-                                IsActive                 = $True;
-                                scanName                 = "MyScan";
-                                ScanType                 = "Network";
-                                Target                   = "172.1.12.1"; 
-                            }                   
-                        )
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -44,6 +44,27 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-OutboundConnector -MockWith {
+            }
+
+            Mock -CommandName Get-OutboundConnector -MockWith {
+                return @{
+                    Ensure                        = 'Present'
+                    Identity                      = 'TestOutboundConnector'
+                    CloudServicesMailEnabled      = $false
+                    Comment                       = 'Test outbound connector'
+                    Enabled                       = $true
+                    ConnectorSource               = 'Default'
+                    ConnectorType                 = 'Partner'
+                    IsTransportRuleScoped         = $false
+                    RecipientDomains              = @('fabrikam.com', 'contoso.com')
+                    RouteAllMessagesViaOnPremises = $false
+                    SmartHosts                    = @('mail.contoso.com')
+                    TestMode                      = $false
+                    TlsDomain                     = '*.contoso.com'
+                    TlsSettings                   = 'EncryptionOnly'
+                    UseMxRecord                   = $false
+                    ValidationRecipients          = @('test@contoso.com')
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -77,9 +98,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-OutboundConnector -MockWith {
-                    return @{
-                        Identity = 'SomeOtherConnector'
-                    }
+                    return $null
                 }
             }
 
@@ -93,6 +112,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-OutboundConnector -Exactly 1
             }
         }
 
@@ -117,27 +137,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     UseMxRecord                   = $false
                     ValidationRecipients          = @('test@contoso.com')
                 }
-
-                Mock -CommandName Get-OutboundConnector -MockWith {
-                    return @{
-                        Ensure                        = 'Present'
-                        Identity                      = 'TestOutboundConnector'
-                        CloudServicesMailEnabled      = $false
-                        Comment                       = 'Test outbound connector'
-                        Enabled                       = $true
-                        ConnectorSource               = 'Default'
-                        ConnectorType                 = 'Partner'
-                        IsTransportRuleScoped         = $false
-                        RecipientDomains              = @('fabrikam.com', 'contoso.com')
-                        RouteAllMessagesViaOnPremises = $false
-                        SmartHosts                    = @('mail.contoso.com')
-                        TestMode                      = $false
-                        TlsDomain                     = '*.contoso.com'
-                        TlsSettings                   = 'EncryptionOnly'
-                        UseMxRecord                   = $false
-                        ValidationRecipients          = @('test@contoso.com')
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -151,7 +150,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                        = 'Present'
                     Credential                    = $Credential
                     Identity                      = 'TestOutboundConnector'
-                    CloudServicesMailEnabled      = $false
+                    CloudServicesMailEnabled      = $true # Drift
                     Comment                       = 'Test outbound connector'
                     Enabled                       = $true
                     ConnectorSource               = 'Default'
@@ -166,32 +165,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     UseMxRecord                   = $false
                     ValidationRecipients          = @('test@contoso.com')
                 }
-
-                Mock -CommandName Get-OutboundConnector -MockWith {
-                    return @{
-                        Identity                      = 'TestOutboundConnector'
-                        CloudServicesMailEnabled      = $false
-                        Comment                       = 'Test outbound connector'
-                        Enabled                       = $false
-                        ConnectorSource               = 'Default'
-                        ConnectorType                 = 'Partner'
-                        IsTransportRuleScoped         = $false
-                        RecipientDomains              = @('fabrikam.com', 'contoso.com')
-                        RouteAllMessagesViaOnPremises = $false
-                        SmartHosts                    = @('mail.contoso.com')
-                        TestMode                      = $false
-                        TlsDomain                     = '*.contoso.org'
-                        TlsSettings                   = 'EncryptionOnly'
-                        UseMxRecord                   = $True
-                        ValidationRecipients          = @('test@contoso.com')
-                    }
-                }
-
-                Mock -CommandName Set-OutboundConnector -MockWith {
-                    return @{
-
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -200,6 +173,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Successfully call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-OutboundConnector -Exactly 1
             }
         }
 
@@ -210,18 +184,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential = $Credential
                     Identity   = 'TestOutboundConnector'
                 }
-
-                Mock -CommandName Get-OutboundConnector -MockWith {
-                    return @{
-                        Identity = 'TestOutboundConnector'
-                    }
-                }
-
-                Mock -CommandName Remove-OutboundConnector -MockWith {
-                    return @{
-
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -230,6 +192,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the Policy in the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Remove-OutboundConnector -Exactly 1
             }
         }
 
@@ -292,26 +255,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-OutboundConnector -MockWith {
-                    return @{
-                        Identity                      = 'TestOutboundConnector'
-                        CloudServicesMailEnabled      = $false
-                        Comment                       = 'Test outbound connector'
-                        Enabled                       = $true
-                        ConnectorSource               = 'AdminUI'
-                        ConnectorType                 = 'Partner'
-                        IsTransportRuleScoped         = $false
-                        RecipientDomains              = @('fabrikam.com', 'contoso.com')
-                        RouteAllMessagesViaOnPremises = $false
-                        SmartHosts                    = @('mail.contoso.com')
-                        TestMode                      = $false
-                        TlsDomain                     = '*.contoso.com'
-                        TlsSettings                   = 'EncryptionOnly'
-                        UseMxRecord                   = $false
-                        ValidationRecipients          = @('test@contoso.com')
-                    }
                 }
             }
 

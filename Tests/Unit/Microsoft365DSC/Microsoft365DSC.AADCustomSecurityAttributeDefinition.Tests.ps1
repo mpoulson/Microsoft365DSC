@@ -28,16 +28,47 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
             }
 
-            Mock -CommandName New-MgBetaDirectoryCustomSecurityAttributeDefinition -MockWith{}
+            Mock -CommandName New-MgBetaDirectoryCustomSecurityAttributeDefinition -MockWith{
+                return @{
+                    Id = "ContosoSet_ShoeSize"
+                }
+            }
 
-            Mock -CommandName Update-MgBetaDirectoryCustomSecurityAttributeDefinition -MockWith{}
+            Mock -CommandName Update-MgBetaDirectoryCustomSecurityAttributeDefinition -MockWith{
+            }
+
+            Mock -CommandName Get-MgBetaDirectoryCustomSecurityAttributeDefinition -MockWith {
+                return @{
+                    AllowedValues           = @(
+                        @{
+                            Id = "Test"
+                            IsActive = $True
+                        }
+                    )
+                    AttributeSet            = 'ContosoSet'
+                    IsCollection            = $false
+                    IsSearchable            = $true
+                    Name                    = "ShoeSize";
+                    Status                  = "Available";
+                    Type                    = "String";
+                    UsePreDefinedValuesOnly = $False;
+                    Description             = "What size of shoe is the person wearing?"
+                    Id                      = "ContosoSet_ShoeSize"
+                }
+            }
+
+            Mock -CommandName New-MgBetaDirectoryCustomSecurityAttributeDefinitionAllowedValue {
+            }
+
+            Mock -CommandName Update-MgBetaDirectoryCustomSecurityAttributeDefinitionAllowedValue {
+            }
 
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
@@ -49,6 +80,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The instance should exist but it DOES NOT" -Fixture {
             BeforeAll {
                 $testParams = @{
+                    AllowedValues           = [CimInstance[]]@(
+                        New-CimInstance -ClassName 'MSFT_CustomSecurityAttributeAllowedValue' -Property @{
+                            ValueId  = "Test"
+                            IsActive = $True
+                        } -ClientOnly
+                    )
                     ApplicationId           = $ApplicationId;
                     AttributeSet            = "ContosoSet";
                     CertificateThumbprint   = $CertificateThumbprint;
@@ -86,6 +123,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     ApplicationId           = $ApplicationId;
+                    AllowedValues           = [CimInstance[]]@(
+                        New-CimInstance -ClassName 'MSFT_CustomSecurityAttributeAllowedValue' -Property @{
+                            ValueId  = "Test"
+                            IsActive = $True
+                        } -ClientOnly
+                    )
                     AttributeSet            = "ContosoSet";
                     CertificateThumbprint   = $CertificateThumbprint;
                     Ensure                  = "Absent";
@@ -98,20 +141,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     UsePreDefinedValuesOnly = $False;
                     Description             = "What size of shoe is the person wearing?"
                     Credential              = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDirectoryCustomSecurityAttributeDefinition -MockWith {
-                    return @{
-                        AttributeSet            = 'ContosoSet'
-                        IsCollection            = $false
-                        IsSearchable            = $true
-                        Name                    = "ShoeSize";
-                        Status                  = "Available";
-                        Type                    = "String";
-                        UsePreDefinedValuesOnly = $False;
-                        Description             = "What size of shoe is the person wearing?"
-                        Id                      = "ContosoSet_ShoeSize"
-                    }
                 }
             }
             It 'Should return Values from the Get method' {
@@ -131,6 +160,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     ApplicationId           = $ApplicationId;
+                    AllowedValues           = [CimInstance[]]@(
+                        New-CimInstance -ClassName 'MSFT_CustomSecurityAttributeAllowedValue' -Property @{
+                            ValueId  = "Test"
+                            IsActive = $True
+                        } -ClientOnly
+                    )
                     AttributeSet            = "ContosoSet";
                     CertificateThumbprint   = $CertificateThumbprint;
                     Ensure                  = "Present";
@@ -144,20 +179,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description             = "What size of shoe is the person wearing?"
                     Credential              = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDirectoryCustomSecurityAttributeDefinition -MockWith {
-                    return @{
-                        AttributeSet            = 'ContosoSet'
-                        IsCollection            = $false
-                        IsSearchable            = $true
-                        Name                    = "ShoeSize";
-                        Status                  = "Available";
-                        Type                    = "String";
-                        UsePreDefinedValuesOnly = $False;
-                        Description             = "What size of shoe is the person wearing?"
-                        Id                      = "ContosoSet_ShoeSize"
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -169,6 +190,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     ApplicationId           = $ApplicationId;
+                    AllowedValues           = [CimInstance[]]@(
+                        New-CimInstance -ClassName 'MSFT_CustomSecurityAttributeAllowedValue' -Property @{
+                            ValueId  = "Test"
+                            IsActive = $True
+                        } -ClientOnly
+                    )
                     AttributeSet            = "ContosoSet";
                     CertificateThumbprint   = $CertificateThumbprint;
                     Ensure                  = "Absent";
@@ -181,20 +208,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     UsePreDefinedValuesOnly = $False;
                     Description             = "What size of shoe is the person wearing? Drift" # drift
                     Credential              = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDirectoryCustomSecurityAttributeDefinition -MockWith {
-                    return @{
-                        AttributeSet            = 'ContosoSet'
-                        IsCollection            = $false
-                        IsSearchable            = $true
-                        Name                    = "ShoeSize";
-                        Status                  = "Available";
-                        Type                    = "String";
-                        UsePreDefinedValuesOnly = $False;
-                        Description             = "What size of shoe is the person wearing?"
-                        Id                      = "ContosoSet_ShoeSize"
-                    }
                 }
             }
 
@@ -218,20 +231,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDirectoryCustomSecurityAttributeDefinition -MockWith {
-                    return @{
-                        AttributeSet            = 'ContosoSet'
-                        IsCollection            = $false
-                        IsSearchable            = $true
-                        Name                    = "ShoeSize";
-                        Status                  = "Available";
-                        Type                    = "String";
-                        UsePreDefinedValuesOnly = $False;
-                        Description             = "What size of shoe is the person wearing?"
-                        Id                      = "ContosoSet_ShoeSize"
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

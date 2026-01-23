@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -47,6 +47,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementRoleScopeTag -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        '@odata.type' = '#microsoft.graph.RoleScopeTag'
+                    }
+                    Description          = 'FakeStringValue'
+                    DisplayName          = 'FakeStringValue'
+                    Id                   = 'FakeStringValue'
+                    IsBuiltIn            = $False
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -96,18 +108,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure      = 'Absent'
                     Credential  = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementRoleScopeTag -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.RoleScopeTag'
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                        IsBuiltIn            = $True
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -133,18 +133,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure      = 'Present'
                     Credential  = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementRoleScopeTag -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.RoleScopeTag'
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                        IsBuiltIn            = $True
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -155,19 +143,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The IntuneRoleScopeTag exists and values are NOT in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Description = 'FakeStringValue'
+                    Description = 'OtherFakeStringValue' # Updated property
                     DisplayName = 'FakeStringValue'
                     Id          = 'FakeStringValue'
                     Ensure      = 'Present'
                     Credential  = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementRoleScopeTag -MockWith {
-                    return @{
-                        Description = 'FakeWrongStringValue'
-                        DisplayName = 'FakeWrongStringValue'
-                        Id          = 'FakeStringValue'
-                    }
                 }
             }
 
@@ -191,18 +171,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementRoleScopeTag -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.RoleScopeTag'
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                        IsBuiltIn            = $false
-                    }
                 }
             }
 

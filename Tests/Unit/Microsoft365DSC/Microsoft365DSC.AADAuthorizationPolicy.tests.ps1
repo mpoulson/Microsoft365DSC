@@ -25,15 +25,40 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
+
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
+            }
 
+            Mock -CommandName Update-MgBetaPolicyAuthorizationPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyAuthorizationPolicy -MockWith {
+                $AADAuthPol = [pscustomobject]@{
+                    Id                                                  = 'authorizationPolicy'
+                    DisplayName                                         = 'Authorization Policy'
+                    Description                                         = 'something'
+                    AllowedToSignUpEmailBasedSubscriptions              = $true
+                    AllowedToUseSspr                                    = $true
+                    AllowEmailVerifiedUsersToJoinOrganization           = $true
+                    AllowInvitesFrom                                    = 'Everyone'
+                    BlockMsolPowerShell                                 = $false
+                    PermissionGrantPolicyIdsAssignedToDefaultUserRole   = [string[]]@()
+                    DefaultUserRolePermissions                          = [pscustomobject]@{
+                    AllowedToCreateApps                    = $true
+                    AllowedToCreateSecurityGroups          = $true
+                    AllowedToReadOtherUsers                = $true
+                    }
+                    GuestUserRoleId                                     = '10dae51f-b6af-4016-8d66-8c2a99b929b3' # Guest
+                }
+                return $AADAuthPol
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
-
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -69,30 +94,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                            = 'Present'
                     Credential                                        = $Credential
                 }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-                Mock -CommandName Get-MgBetaPolicyAuthorizationPolicy -MockWith {
-                    $AADAuthPol = [pscustomobject]@{
-                        Id                                                  = 'authorizationPolicy'
-                        DisplayName                                         = 'Authorization Policy'
-                        Description                                         = 'something'
-                        AllowedToSignUpEmailBasedSubscriptions              = $true
-                        AllowedToUseSspr                                    = $true
-                        AllowEmailVerifiedUsersToJoinOrganization           = $true
-                        AllowInvitesFrom                                    = 'Everyone'
-                        BlockMsolPowerShell                                 = $false
-                        PermissionGrantPolicyIdsAssignedToDefaultUserRole   = [string[]]@()
-                        DefaultUserRolePermissions                          = [pscustomobject]@{
-                        AllowedToCreateApps                    = $true
-                        AllowedToCreateSecurityGroups          = $true
-                        AllowedToReadOtherUsers                = $true
-                        }
-                        GuestUserRoleId                                     = '10dae51f-b6af-4016-8d66-8c2a99b929b3' # Guest
-                    }
-                    return $AADAuthPol
-                }
             }
 
             It 'Should return Values from the get method' {
@@ -120,40 +121,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DefaultUserRoleAllowedToCreateSecurityGroups      = $true
                     DefaultUserRoleAllowedToReadOtherUsers            = $true
                     PermissionGrantPolicyIdsAssignedToDefaultUserRole = [string[]]@()
-                    GuestUserRole                                     = 'RestrictedGuest'
+                    GuestUserRole                                     = 'RestrictedGuest' # Drift
                     Ensure                                            = 'Present'
                     Credential                                        = $Credential
                 }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthorizationPolicy -MockWith {
-                    $AADAuthPol = [pscustomobject]@{
-                        Id                                                  = 'authorizationPolicy'
-                        DisplayName                                         = 'Authorization Policy'
-                        Description                                         = 'something'
-                        allowedToSignUpEmailBasedSubscriptions              = $true
-                        allowedToUseSSPR                                    = $true
-                        allowEmailVerifiedUsersToJoinOrganization           = $true
-                        AllowInvitesFrom                                    = 'Everyone'
-                        blockMsolPowerShell                                 = $false
-                        PermissionGrantPolicyIdsAssignedToDefaultUserRole   = [string[]]@()
-                        defaultUserRolePermissions                          = [pscustomobject]@{
-                            allowedToCreateApps             = $true
-                            allowedToCreateSecurityGroups   = $true
-                            allowedToReadOtherUsers         = $true
-                        }
-                        GuestUserRoleId                                     = '10dae51f-b6af-4016-8d66-8c2a99b929b3' # Guest
-                    }
-                    return $AADAuthPol
-                }
-
-
-                Mock -CommandName Update-MgBetaPolicyAuthorizationPolicy -MockWith {
-                }
-
             }
 
             It 'Should return values from the get method' {
@@ -177,30 +148,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthorizationPolicy -MockWith {
-                    $AADAuthPol = [pscustomobject]@{
-                        DisplayName                                         = 'Authorization Policy'
-                        Description                                         = 'something'
-                        allowedToSignUpEmailBasedSubscriptions              = $true
-                        allowedToUseSSPR                                    = $true
-                        allowEmailVerifiedUsersToJoinOrganization           = $true
-                        AllowInvitesFrom                                    = 'Everyone'
-                        blockMsolPowerShell                                 = $false
-                        PermissionGrantPolicyIdsAssignedToDefaultUserRole   = [string[]]@()
-                        defaultUserRolePermissions                          = [pscustomobject]@{
-                            allowedToCreateApps             = $true
-                            allowedToCreateSecurityGroups   = $true
-                            allowedToReadOtherUsers         = $true
-                        }
-                        GuestUserRoleId                                     = '10dae51f-b6af-4016-8d66-8c2a99b929b3' # Guest
-                    }
-                    return $AADAuthPol
                 }
             }
 

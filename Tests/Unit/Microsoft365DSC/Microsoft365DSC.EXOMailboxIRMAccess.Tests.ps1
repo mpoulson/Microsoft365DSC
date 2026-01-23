@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -36,12 +36,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Get-MailboxIRMAccess -MockWith {
+                return @{
+                    AccessLevel          = "Block";
+                    Identity             = "qwe@test.org";
+                    User                 = "admin@test.org";
+                }
             }
 
             Mock -CommandName Set-MailboxIRMAccess -MockWith {
             }
 
             Mock -CommandName Remove-MailboxIRMAccess -MockWith {
+            }
+
+            Mock -CommandName Get-Mailbox -MockWith {
+                return @{
+                    UserPrincipalName = "john.smith@contoso.com";
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -87,15 +98,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure               = 'Absent'
                     Credential           = $Credential;
                 }
-
-                ##TODO - Mock the Get-Cmdlet to return an instance
-                Mock -CommandName Get-MailboxIRMAccess -MockWith {
-                    return @{
-                        AccessLevel          = "Block";
-                        Identity             = "qwe@test.org";
-                        User                 = "admin@test.org";
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -119,14 +121,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure               = 'Present'
                     Credential           = $Credential;
                 }
-
-                Mock -CommandName Get-MailboxIRMAccess -MockWith {
-                    return @{
-                        AccessLevel          = "Block";
-                        Identity             = "qwe@test.org";
-                        User                 = "admin@test.org";
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -140,20 +134,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MailboxIRMAccess -MockWith {
-                    return @{
-                        Identity             = "john.smith@contoso.com";
-                        AccessLevel          = "Block";
-                        User                 = "admin@contoso.com";
-                    }
-                }
-
-                Mock -CommandName Get-Mailbox -MockWith {
-                    return @{
-                        UserPrincipalName = "john.smith@contoso.com";
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

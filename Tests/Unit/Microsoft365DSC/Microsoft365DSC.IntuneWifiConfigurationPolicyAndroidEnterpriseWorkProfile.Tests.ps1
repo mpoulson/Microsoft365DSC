@@ -24,8 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -48,6 +47,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return 'Credentials'
             }
 
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        '@odata.type'                  = '#microsoft.graph.androidWorkProfileWifiConfiguration'
+                        NetworkName                    = 'FakeStringValue'
+                        WiFiSecurityType               = 'open'
+                        ConnectAutomatically           = $True
+                        ConnectWhenNetworkNameIsHidden = $True
+                        Ssid                           = 'FakeStringValue'
+                    }
+                    Description          = 'FakeStringValue'
+                    DisplayName          = 'FakeStringValue'
+                    Id                   = 'FakeStringValue'
+
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -67,7 +83,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     NetworkName                    = 'FakeStringValue'
                     Ssid                           = 'FakeStringValue'
                     WiFiSecurityType               = 'open'
-
                     Ensure                         = 'Present'
                     Credential                     = $Credential
                 }
@@ -99,27 +114,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     NetworkName                    = 'FakeStringValue'
                     Ssid                           = 'FakeStringValue'
                     WiFiSecurityType               = 'open'
-
                     Ensure                         = 'Absent'
                     Credential                     = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type'                  = '#microsoft.graph.androidWorkProfileWifiConfiguration'
-                            NetworkName                    = 'FakeStringValue'
-                            WiFiSecurityType               = 'open'
-                            ConnectAutomatically           = $True
-                            ConnectWhenNetworkNameIsHidden = $True
-                            Ssid                           = 'FakeStringValue'
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
                 }
             }
 
@@ -136,6 +132,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Should -Invoke -CommandName Remove-MgBetaDeviceManagementDeviceConfiguration -Exactly 1
             }
         }
+
         Context -Name 'The IntuneWifiConfigurationPolicyAndroidEnterpriseWorkProfile Exists and Values are already in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
@@ -147,30 +144,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     NetworkName                    = 'FakeStringValue'
                     Ssid                           = 'FakeStringValue'
                     WiFiSecurityType               = 'open'
-
                     Ensure                         = 'Present'
                     Credential                     = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type'                  = '#microsoft.graph.androidWorkProfileWifiConfiguration'
-                            NetworkName                    = 'FakeStringValue'
-                            WiFiSecurityType               = 'open'
-                            ConnectAutomatically           = $True
-                            ConnectWhenNetworkNameIsHidden = $True
-                            Ssid                           = 'FakeStringValue'
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -180,7 +157,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The IntuneWifiConfigurationPolicyAndroidEnterpriseWorkProfile exists and values are NOT in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    ConnectAutomatically           = $True
+                    ConnectAutomatically           = $False # Updated property
                     ConnectWhenNetworkNameIsHidden = $True
                     Description                    = 'FakeStringValue'
                     DisplayName                    = 'FakeStringValue'
@@ -188,25 +165,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     NetworkName                    = 'FakeStringValue'
                     Ssid                           = 'FakeStringValue'
                     WiFiSecurityType               = 'open'
-
                     Ensure                         = 'Present'
                     Credential                     = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            Ssid             = 'FakeStringValue'
-                            NetworkName      = 'FakeStringValue'
-                            WiFiSecurityType = 'open'
-                            '@odata.type'    = '#microsoft.graph.androidWorkProfileWifiConfiguration'
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
                 }
             }
 
@@ -230,25 +190,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type'                  = '#microsoft.graph.androidWorkProfileWifiConfiguration'
-                            NetworkName                    = 'FakeStringValue'
-                            WiFiSecurityType               = 'open'
-                            ConnectAutomatically           = $True
-                            ConnectWhenNetworkNameIsHidden = $True
-                            Ssid                           = 'FakeStringValue'
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

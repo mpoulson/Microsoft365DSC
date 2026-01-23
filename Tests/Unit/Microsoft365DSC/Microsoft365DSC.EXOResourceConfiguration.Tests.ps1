@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -37,6 +37,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Set-ResourceConfig -MockWith {
+            }
+
+            Mock -CommandName Get-ResourceConfig -MockWith {
+                return @{
+                    Identity               = 'Resource Schema'
+                    ResourcePropertySchema = @('Room/TV', 'Equipment/Laptop')
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -53,14 +60,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsSingleInstance       = 'Yes'
                     Credential             = $Credential
                     Ensure                 = 'Present'
-                    ResourcePropertySchema = @('Room/TV', 'Equipment/Laptop')
-                }
-
-                Mock -CommandName Get-ResourceConfig -MockWith {
-                    return @{
-                        Identity               = 'Resource Schema'
-                        ResourcePropertySchema = @('Room/Phones', 'Equipment/Laptop'); #drift
-                    }
+                    ResourcePropertySchema = @('Room/Phones', 'Equipment/Laptop') # Drift
                 }
             }
 
@@ -83,13 +83,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                 = 'Present'
                     ResourcePropertySchema = @('Room/TV', 'Equipment/Laptop')
                 }
-
-                Mock -CommandName Get-ResourceConfig -MockWith {
-                    return @{
-                        Identity               = 'Resource Schema'
-                        ResourcePropertySchema = @('Room/TV', 'Equipment/Laptop')
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -103,13 +96,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-ResourceConfig -MockWith {
-                    return @{
-                        Identity               = 'Resource Schema'
-                        ResourcePropertySchema = @('Room/TV', 'Equipment/Laptop')
-                    }
                 }
             }
 

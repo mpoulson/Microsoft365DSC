@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -71,6 +71,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             OffsetUri = '/Policies/BackupDirectory'
                             AdditionalProperties = @{
                                 '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                options = @(
+                                    @{
+                                        itemId = 'device_vendor_msft_laps_policies_backupdirectory_1'
+                                        name   = 'Backup the password to Azure AD only'
+                                        optionValue = @{
+                                            '@odata.type' = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+                                            value = 1
+                                        }
+                                    }
+                                )
                             }
                         }
                     )

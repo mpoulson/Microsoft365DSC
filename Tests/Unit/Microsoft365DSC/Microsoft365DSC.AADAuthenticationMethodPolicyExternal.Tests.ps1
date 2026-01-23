@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -37,6 +37,40 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
+            }
+
+            Mock -CommandName Invoke-MgGraphRequest -MockWith {
+                return @{
+                    authenticationMethodConfigurations = @{
+                        IncludeTargets = @(
+                            @{
+                                TargetType = 'group'
+                                Id         = 'Fakegroup'
+                            }
+                        )
+                        ExcludeTargets = @(
+                            @{
+                                TargetType = "group"
+                                Id = "00000000-0000-0000-0000-000000000000"
+                            }
+                        )
+                        OpenIdConnectSetting  = @{
+                            discoveryUrl = 'https://graph.microsoft.com/'
+                            clientId = '00000000-0000-0000-0000-000000000001'
+                        }
+                        DisplayName = "ExternalOath"
+                        AppId  = "00000000-0000-0000-0000-000000000002"
+                        State = "enabled"
+                        '@odata.type' = "#microsoft.graph.externalAuthenticationMethodConfiguration"
+                    }
+                }
+            }
+
+            Mock -CommandName Get-MgGroup -MockWith {
+                return @{
+                    Id = "00000000-0000-0000-0000-000000000000"
+                    DisplayName = "Fakegroup"
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -74,13 +108,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = "Present"
                     AppId  = "00000000-0000-0000-0000-000000000002"
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup"
-                    }
                 }
 
                 Mock -CommandName Invoke-MgGraphRequest -MockWith {
@@ -124,40 +151,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AppId  = "00000000-0000-0000-0000-000000000002"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup"
-                    }
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        authenticationMethodConfigurations = @{
-                            IncludeTargets = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            ExcludeTargets = @(
-                                @{
-                                    TargetType = "group"
-                                    Id = "00000000-0000-0000-0000-000000000000"
-                                }
-                            )
-                            OpenIdConnectSetting  = @{
-                                discoveryUrl = 'https://graph.microsoft.com/'
-                                clientId = '00000000-0000-0000-0000-000000000001'
-                            }
-                            DisplayName = "ExternalOath"
-                            AppId  = "00000000-0000-0000-0000-000000000002"
-                            State = "enabled"
-                            '@odata.type' = "#microsoft.graph.externalAuthenticationMethodConfiguration"
-                        }
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -198,42 +191,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AppId  = "00000000-0000-0000-0000-000000000002"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup"
-                    }
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        authenticationMethodConfigurations = @{
-                            IncludeTargets = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            ExcludeTargets = @(
-                                @{
-                                    TargetType = "group"
-                                    Id = "00000000-0000-0000-0000-000000000000"
-                                }
-                            )
-                            OpenIdConnectSetting  = @{
-                                discoveryUrl = 'https://graph.microsoft.com/'
-                                clientId = '00000000-0000-0000-0000-000000000001'
-                            }
-                            DisplayName = "ExternalOath"
-                            AppId  = "00000000-0000-0000-0000-000000000002"
-                            State = "enabled"
-                            '@odata.type' = "#microsoft.graph.externalAuthenticationMethodConfiguration"
-                        }
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -256,7 +214,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         } -ClientOnly)
                     )
                     OpenIdConnectSetting  = (New-CimInstance -ClassName MSFT_AADAuthenticationMethodPolicyExternalOpenIdConnectSetting -Property @{
-                        discoveryUrl = 'https://microsoft.com/'
+                        discoveryUrl = 'https://microsoft.com/' # Drift
                         clientId = '00000000-0000-0000-0000-000000000001'
                     } -ClientOnly);
                     DisplayName = "ExternalOath"
@@ -264,40 +222,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = "Present"
                     AppId  = "00000000-0000-0000-0000-000000000003"
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup"
-                    }
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        authenticationMethodConfigurations = @{
-                            IncludeTargets = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            ExcludeTargets = @(
-                                @{
-                                    TargetType = "group"
-                                    Id = "00000000-0000-0000-0000-000000000000"
-                                }
-                            )
-                            OpenIdConnectSetting  = @{
-                                discoveryUrl = 'https://graph.microsoft.com/'
-                                clientId = '00000000-0000-0000-0000-000000000001'
-                            }
-                            DisplayName = "ExternalOath"
-                            AppId  = "00000000-0000-0000-0000-000000000002"
-                            State = "enabled"
-                            '@odata.type' = "#microsoft.graph.externalAuthenticationMethodConfiguration"
-                        }
-                    }
                 }
             }
 
@@ -321,40 +245,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000000"
-                        DisplayName = "Fakegroup"
-                    }
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        authenticationMethodConfigurations = @{
-                            IncludeTargets = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            ExcludeTargets = @(
-                                @{
-                                    TargetType = "group"
-                                    Id = "00000000-0000-0000-0000-000000000000"
-                                }
-                            )
-                            OpenIdConnectSetting  = @{
-                                discoveryUrl = 'https://graph.microsoft.com/'
-                                clientId = '00000000-0000-0000-0000-000000000001'
-                            }
-                            DisplayName = "ExternalOath"
-                            AppId  = "00000000-0000-0000-0000-000000000002"
-                            State = "enabled"
-                            '@odata.type' = "#microsoft.graph.externalAuthenticationMethodConfiguration"
-                        }
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

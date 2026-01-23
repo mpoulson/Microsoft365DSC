@@ -27,6 +27,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
@@ -42,6 +44,30 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-CsTeamsEventsPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-CsTeamsEventsPolicy -MockWith {
+                return @{
+                    Description                             = 'Desc'
+                    Identity                                = 'TestPolicy'
+                    EventAccessType                         = 'EveryoneInCompanyExcludingGuests'
+                    AllowWebinars                           = 'Enabled';
+                    AllowedQuestionTypesInRegistrationForm  = "AllQuestions";
+                    AllowedTownhallTypesForRecordingPublish = "Everyone";
+                    AllowedWebinarTypesForRecordingPublish  = "Everyone";
+                    AllowEmailEditing                       = "Enabled";
+                    AllowEventIntegrations                  = $False;
+                    AllowTownhalls                          = "Enabled";
+                    BroadcastPremiumApps                    = "Enabled";
+                    ImmersiveEvents                         = "Enabled";
+                    RecordingForTownhall                    = "Enabled";
+                    RecordingForWebinar                     = "Enabled";
+                    TownhallEventAttendeeAccess             = "Everyone";
+                    TranscriptionForTownhall                = "Enabled";
+                    TranscriptionForWebinar                 = "Enabled";
+                    UseMicrosoftECDN                        = $True;
+                    TownhallChatExperience                  = "Optimized";
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -67,6 +93,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowEmailEditing                       = "Enabled";
                     AllowEventIntegrations                  = $False;
                     AllowTownhalls                          = "Enabled";
+                    BroadcastPremiumApps                    = "Enabled";
+                    ImmersiveEvents                         = "Enabled";
+                    RecordingForTownhall                    = "Enabled";
+                    RecordingForWebinar                     = "Enabled";
+                    TownhallEventAttendeeAccess             = "Everyone";
+                    TranscriptionForTownhall                = "Enabled";
+                    TranscriptionForWebinar                 = "Enabled";
+                    UseMicrosoftECDN                        = $True;
                     TownhallChatExperience                  = "Optimized";
                 }
 
@@ -97,30 +131,22 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential                              = $Credential
                     Identity                                = 'TestPolicy'
                     EventAccessType                         = 'EveryoneInCompanyExcludingGuests'
-                    AllowWebinars                           = 'Enabled'
+                    AllowWebinars                           = 'Disabled'; # Drift
                     AllowedQuestionTypesInRegistrationForm  = "AllQuestions";
                     AllowedTownhallTypesForRecordingPublish = "Everyone";
                     AllowedWebinarTypesForRecordingPublish  = "Everyone";
                     AllowEmailEditing                       = "Enabled";
                     AllowEventIntegrations                  = $False;
                     AllowTownhalls                          = "Enabled";
+                    BroadcastPremiumApps                    = "Enabled";
+                    ImmersiveEvents                         = "Enabled";
+                    RecordingForTownhall                    = "Enabled";
+                    RecordingForWebinar                     = "Enabled";
+                    TownhallEventAttendeeAccess             = "Everyone";
+                    TranscriptionForTownhall                = "Enabled";
+                    TranscriptionForWebinar                 = "Enabled";
+                    UseMicrosoftECDN                        = $True;
                     TownhallChatExperience                  = "Optimized";
-                }
-
-                Mock -CommandName Get-CsTeamsEventsPolicy -MockWith {
-                    return @{
-                        Description                             = 'Desc'
-                        Identity                                = 'TestPolicy'
-                        EventAccessType                         = 'EveryoneInCompanyExcludingGuests'
-                        AllowWebinars                           = 'Disabled'; # Drift
-                        AllowedQuestionTypesInRegistrationForm  = "AllQuestions";
-                        AllowedTownhallTypesForRecordingPublish = "Everyone";
-                        AllowedWebinarTypesForRecordingPublish  = "Everyone";
-                        AllowEmailEditing                       = "Enabled";
-                        AllowEventIntegrations                  = $False;
-                        AllowTownhalls                          = "Enabled";
-                        TownhallChatExperience                  = "Optimized";
-                    }
                 }
             }
 
@@ -154,23 +180,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowEmailEditing                       = "Enabled";
                     AllowEventIntegrations                  = $False;
                     AllowTownhalls                          = "Enabled";
+                    BroadcastPremiumApps                    = "Enabled";
+                    ImmersiveEvents                         = "Enabled";
+                    RecordingForTownhall                    = "Enabled";
+                    RecordingForWebinar                     = "Enabled";
+                    TownhallEventAttendeeAccess             = "Everyone";
+                    TranscriptionForTownhall                = "Enabled";
+                    TranscriptionForWebinar                 = "Enabled";
+                    UseMicrosoftECDN                        = $True;
                     TownhallChatExperience                  = "Optimized";
-                }
-
-                Mock -CommandName Get-CsTeamsEventsPolicy -MockWith {
-                    return @{
-                        Description                             = 'Desc'
-                        Identity                                = 'TestPolicy'
-                        EventAccessType                         = 'EveryoneInCompanyExcludingGuests'
-                        AllowWebinars                           = 'Enabled';
-                        AllowedQuestionTypesInRegistrationForm  = "AllQuestions";
-                        AllowedTownhallTypesForRecordingPublish = "Everyone";
-                        AllowedWebinarTypesForRecordingPublish  = "Everyone";
-                        AllowEmailEditing                       = "Enabled";
-                        AllowEventIntegrations                  = $False;
-                        AllowTownhalls                          = "Enabled";
-                        TownhallChatExperience                  = "Optimized";
-                    }
                 }
             }
 
@@ -198,23 +216,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowEmailEditing                       = "Enabled";
                     AllowEventIntegrations                  = $False;
                     AllowTownhalls                          = "Enabled";
+                    BroadcastPremiumApps                    = "Enabled";
+                    ImmersiveEvents                         = "Enabled";
+                    RecordingForTownhall                    = "Enabled";
+                    RecordingForWebinar                     = "Enabled";
+                    TownhallEventAttendeeAccess             = "Everyone";
+                    TranscriptionForTownhall                = "Enabled";
+                    TranscriptionForWebinar                 = "Enabled";
+                    UseMicrosoftECDN                        = $True;
                     TownhallChatExperience                  = "Optimized";
-                }
-
-                Mock -CommandName Get-CsTeamsEventsPolicy -MockWith {
-                    return @{
-                        Description                             = 'Desc'
-                        Identity                                = 'TestPolicy'
-                        EventAccessType                         = 'EveryoneInCompanyExcludingGuests'
-                        AllowWebinars                           = 'Enabled';
-                        AllowedQuestionTypesInRegistrationForm  = "AllQuestions";
-                        AllowedTownhallTypesForRecordingPublish = "Everyone";
-                        AllowedWebinarTypesForRecordingPublish  = "Everyone";
-                        AllowEmailEditing                       = "Enabled";
-                        AllowEventIntegrations                  = $False;
-                        AllowTownhalls                          = "Enabled";
-                        TownhallChatExperience                  = "Optimized";
-                    }
                 }
             }
 
@@ -238,22 +248,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsEventsPolicy -MockWith {
-                    return @{
-                        Description                             = 'Desc'
-                        Identity                                = 'TestPolicy'
-                        EventAccessType                         = 'EveryoneInCompanyExcludingGuests'
-                        AllowWebinars                           = 'Enabled';
-                        AllowedQuestionTypesInRegistrationForm  = "AllQuestions";
-                        AllowedTownhallTypesForRecordingPublish = "Everyone";
-                        AllowedWebinarTypesForRecordingPublish  = "Everyone";
-                        AllowEmailEditing                       = "Enabled";
-                        AllowEventIntegrations                  = $False;
-                        AllowTownhalls                          = "Enabled";
-                        TownhallChatExperience                  = "Optimized";
-                    }
                 }
             }
 

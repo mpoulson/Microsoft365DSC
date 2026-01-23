@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-GUID).ToString() -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -37,6 +37,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName New-CsTeamsShiftsPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-CsTeamsShiftsPolicy -MockWith {
+                return @{
+                    AccessType                     = 'UnrestrictedAccess_TeamsApp'
+                    ShiftNoticeMessageType         = 'DefaultMessage'
+                    ShiftNoticeMessageCustom       = 'FakeStringValue'
+                    AccessGracePeriodMinutes       = 3
+                    Identity                       = 'FakeStringValue'
+                    ShiftNoticeFrequency           = 'Always'
+                    EnableScheduleOwnerPermissions = $True
+                }
             }
 
             Mock -CommandName Remove-CsTeamsShiftsPolicy -MockWith {
@@ -57,7 +69,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The TeamsShiftsPolicy should exist but it DOES NOT' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    EnableShiftPresence            = $True
                     AccessType                     = 'UnrestrictedAccess_TeamsApp'
                     ShiftNoticeMessageType         = 'DefaultMessage'
                     ShiftNoticeMessageCustom       = 'FakeStringValue'
@@ -91,7 +102,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The TeamsShiftsPolicy exists but it SHOULD NOT' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    EnableShiftPresence            = $True
                     AccessType                     = 'UnrestrictedAccess_TeamsApp'
                     ShiftNoticeMessageType         = 'DefaultMessage'
                     ShiftNoticeMessageCustom       = 'FakeStringValue'
@@ -101,19 +111,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnableScheduleOwnerPermissions = $True
                     Ensure                         = 'Absent'
                     Credential                     = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsShiftsPolicy -MockWith {
-                    return @{
-                        EnableShiftPresence            = $True
-                        AccessType                     = 'UnrestrictedAccess_TeamsApp'
-                        ShiftNoticeMessageType         = 'DefaultMessage'
-                        ShiftNoticeMessageCustom       = 'FakeStringValue'
-                        AccessGracePeriodMinutes       = 3
-                        Identity                       = 'FakeStringValue'
-                        ShiftNoticeFrequency           = 'Always'
-                        EnableScheduleOwnerPermissions = $True
-                    }
                 }
             }
 
@@ -134,7 +131,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The TeamsShiftsPolicy Exists and Values are already in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    EnableShiftPresence            = $True
                     AccessType                     = 'UnrestrictedAccess_TeamsApp'
                     ShiftNoticeMessageType         = 'DefaultMessage'
                     ShiftNoticeMessageCustom       = 'FakeStringValue'
@@ -144,19 +140,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnableScheduleOwnerPermissions = $True
                     Ensure                         = 'Present'
                     Credential                     = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsShiftsPolicy -MockWith {
-                    return @{
-                        EnableShiftPresence            = $True
-                        AccessType                     = 'UnrestrictedAccess_TeamsApp'
-                        ShiftNoticeMessageType         = 'DefaultMessage'
-                        ShiftNoticeMessageCustom       = 'FakeStringValue'
-                        AccessGracePeriodMinutes       = 3
-                        Identity                       = 'FakeStringValue'
-                        ShiftNoticeFrequency           = 'Always'
-                        EnableScheduleOwnerPermissions = $True
-                    }
                 }
             }
 
@@ -168,29 +151,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The TeamsShiftsPolicy exists and values are NOT in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    EnableShiftPresence            = $True
                     AccessType                     = 'UnrestrictedAccess_TeamsApp'
                     ShiftNoticeMessageType         = 'DefaultMessage'
                     ShiftNoticeMessageCustom       = 'FakeStringValue'
-                    AccessGracePeriodMinutes       = 3
+                    AccessGracePeriodMinutes       = 2 # Drift
                     Identity                       = 'FakeStringValue'
                     ShiftNoticeFrequency           = 'Always'
                     EnableScheduleOwnerPermissions = $True
                     Ensure                         = 'Present'
                     Credential                     = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsShiftsPolicy -MockWith {
-                    return @{
-                        EnableShiftPresence            = $False
-                        AccessType                     = 'UnrestrictedAccess_TeamsApp'
-                        ShiftNoticeMessageType         = 'Message1'
-                        ShiftNoticeMessageCustom       = 'FakeStringValueDrift #Drift'
-                        AccessGracePeriodMinutes       = 2
-                        Identity                       = 'FakeStringValue'
-                        ShiftNoticeFrequency           = 'ShowOnceOnChange'
-                        EnableScheduleOwnerPermissions = $False
-                    }
                 }
             }
 
@@ -214,20 +183,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsShiftsPolicy -MockWith {
-                    return @{
-                        EnableShiftPresence            = $True
-                        AccessType                     = 'UnrestrictedAccess_TeamsApp'
-                        ShiftNoticeMessageType         = 'DefaultMessage'
-                        ShiftNoticeMessageCustom       = 'FakeStringValue'
-                        AccessGracePeriodMinutes       = 3
-                        Identity                       = 'FakeStringValue'
-                        ShiftNoticeFrequency           = 'Always'
-                        EnableScheduleOwnerPermissions = $True
-
-                    }
                 }
             }
 

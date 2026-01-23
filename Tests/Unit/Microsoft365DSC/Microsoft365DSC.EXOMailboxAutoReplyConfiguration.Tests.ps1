@@ -15,7 +15,7 @@ Import-Module -Name (Join-Path -Path $M365DSCTestFolder `
         -Resolve)
 
 $Global:DscHelper = New-M365DscUnitTestHelper -StubModule $CmdletModule `
-    -DscResource 'EXOMalwareFilterPolicy' -GenericStubModule $GenericStubPath
+    -DscResource 'EXOMailboxAutoReplyConfiguration' -GenericStubModule $GenericStubPath
 Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
     InModuleScope -ModuleName $Global:DscHelper.ModuleName -ScriptBlock {
         Invoke-Command -ScriptBlock $Global:DscHelper.InitializeScript -NoNewScope
@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -37,13 +37,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-PSSession -MockWith {
             }
 
-            Mock -CommandName New-MalwareFilterPolicy -MockWith {
+            Mock -CommandName Get-MailboxAutoReplyConfiguration -MockWith {
+                return @{
+                    Identity                               = 'TestMailboxAutoReplyConfiguration'
+                    AutoReplyState                         = 'Enabled'
+                    AutoDeclineFutureRequestsWhenOOF       = $true
+                    DeclineAllEventsForScheduledOOF        = $true
+                    ExternalAudience                       = 'All'
+                    ExternalMessage                        = "<ExternalMessage>"
+                    InternalMessage                        = "<InternalMessage>"
+                    OOFEventSubject                        = 'This is a custom external subject'
+                }
             }
 
-            Mock -CommandName Set-MalwareFilterPolicy -MockWith {
-            }
-
-            Mock -CommandName Remove-MalwareFilterPolicy -MockWith {
+            Mock -CommandName Set-MailboxAutoReplyConfiguration -MockWith {
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -57,35 +64,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         }
 
         # Test contexts
-        Context -Name 'MalwareFilterPolicy creation.' -Fixture {
+        Context -Name 'MailboxAutoReplyConfiguration creation.' -Fixture {
             BeforeAll {
                 $testParams = @{
                     Ensure                                 = 'Present'
                     Credential                             = $Credential
-                    Identity                               = 'TestMalwareFilterPolicy'
-                    AdminDisplayName                       = 'TestPolicy'
-                    CustomExternalBody                     = 'This is a custom external body'
-                    CustomExternalSubject                  = 'This is a custom external subject'
-                    CustomFromAddress                      = 'customnotification@contoso.org'
-                    CustomFromName                         = 'customnotifications'
-                    CustomInternalBody                     = 'This is a custom internal body'
-                    CustomInternalSubject                  = 'This is a custom internal subject'
-                    CustomNotifications                    = $true
-                    EnableExternalSenderAdminNotifications = $true
-                    EnableFileFilter                       = $true
-                    EnableInternalSenderAdminNotifications = $true
-                    ExternalSenderAdminAddress             = 'notifications@contoso.org'
-                    FileTypes                              = @('.bat', '.rar')
-                    InternalSenderAdminAddress             = 'internalnotifications@contoso.org'
-                    MakeDefault                            = $False
-                    ZapEnabled                             = $true
+                    Identity                               = 'TestMailboxAutoReplyConfiguration'
+                    AutoReplyState                         = 'Enabled'
+                    AutoDeclineFutureRequestsWhenOOF       = $true
+                    DeclineAllEventsForScheduledOOF        = $true
+                    ExternalAudience                       = 'All'
+                    ExternalMessage                        = "<ExternalMessage>"
+                    InternalMessage                        = "<InternalMessage>"
+                    OOFEventSubject                        = 'This is a custom external subject'
                 }
 
-
-                Mock -CommandName Get-MalwareFilterPolicy -MockWith {
-                    return @{
-                        Identity = 'SomeOtherMalwareFilterPolicy'
-                    }
+                Mock -CommandName Get-MailboxAutoReplyConfiguration -MockWith {
+                    return $null
                 }
             }
 
@@ -99,56 +94,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName 'Set-MailboxAutoReplyConfiguration' -Exactly 1
             }
-
         }
 
-        Context -Name 'MalwareFilterPolicy update not required.' -Fixture {
+        Context -Name 'MailboxAutoReplyConfiguration update not required.' -Fixture {
             BeforeAll {
                 $testParams = @{
                     Ensure                                 = 'Present'
                     Credential                             = $Credential
-                    Identity                               = 'TestMalwareFilterPolicy'
-                    AdminDisplayName                       = 'TestPolicy'
-                    CustomExternalBody                     = 'This is a custom external body'
-                    CustomExternalSubject                  = 'This is a custom external subject'
-                    CustomFromAddress                      = 'customnotification@contoso.org'
-                    CustomFromName                         = 'customnotifications'
-                    CustomInternalBody                     = 'This is a custom internal body'
-                    CustomInternalSubject                  = 'This is a custom internal subject'
-                    CustomNotifications                    = $true
-                    EnableExternalSenderAdminNotifications = $true
-                    EnableFileFilter                       = $true
-                    EnableInternalSenderAdminNotifications = $true
-                    ExternalSenderAdminAddress             = 'notifications@contoso.org'
-                    FileTypes                              = @('.bat', '.rar')
-                    InternalSenderAdminAddress             = 'internalnotifications@contoso.org'
-                    MakeDefault                            = $False
-                    ZapEnabled                             = $true
-                }
-
-                Mock -CommandName Get-MalwareFilterPolicy -MockWith {
-                    return @{
-                        Ensure                                 = 'Present'
-                        Credential                             = $Credential
-                        Identity                               = 'TestMalwareFilterPolicy'
-                        AdminDisplayName                       = 'TestPolicy'
-                        CustomExternalBody                     = 'This is a custom external body'
-                        CustomExternalSubject                  = 'This is a custom external subject'
-                        CustomFromAddress                      = 'customnotification@contoso.org'
-                        CustomFromName                         = 'customnotifications'
-                        CustomInternalBody                     = 'This is a custom internal body'
-                        CustomInternalSubject                  = 'This is a custom internal subject'
-                        CustomNotifications                    = $true
-                        EnableExternalSenderAdminNotifications = $true
-                        EnableFileFilter                       = $true
-                        EnableInternalSenderAdminNotifications = $true
-                        ExternalSenderAdminAddress             = 'notifications@contoso.org'
-                        FileTypes                              = @('.bat', '.rar')
-                        InternalSenderAdminAddress             = 'internalnotifications@contoso.org'
-                        IsDefault                              = $False
-                        ZapEnabled                             = $true
-                    }
+                    Identity                               = 'TestMailboxAutoReplyConfiguration'
+                    AutoReplyState                         = 'Enabled'
+                    AutoDeclineFutureRequestsWhenOOF       = $true
+                    DeclineAllEventsForScheduledOOF        = $true
+                    ExternalAudience                       = 'All'
+                    ExternalMessage                        = "<ExternalMessage>"
+                    InternalMessage                        = "<InternalMessage>"
+                    OOFEventSubject                        = 'This is a custom external subject'
                 }
             }
 
@@ -157,58 +119,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-        Context -Name 'MalwareFilterPolicy update needed.' -Fixture {
+        Context -Name 'MailboxAutoReplyConfiguration update needed.' -Fixture {
             BeforeAll {
                 $testParams = @{
                     Ensure                                 = 'Present'
                     Credential                             = $Credential
-                    Identity                               = 'TestMalwareFilterPolicy'
-                    AdminDisplayName                       = 'TestPolicy'
-                    CustomExternalBody                     = 'This is a custom external body'
-                    CustomExternalSubject                  = 'This is a custom external subject'
-                    CustomFromAddress                      = 'customnotification@contoso.org'
-                    CustomFromName                         = 'customnotifications'
-                    CustomInternalBody                     = 'This is a custom internal body'
-                    CustomInternalSubject                  = 'This is a custom internal subject'
-                    CustomNotifications                    = $true
-                    EnableExternalSenderAdminNotifications = $true
-                    EnableFileFilter                       = $true
-                    EnableInternalSenderAdminNotifications = $true
-                    ExternalSenderAdminAddress             = 'notifications@contoso.org'
-                    FileTypes                              = @('.bat', '.rar')
-                    InternalSenderAdminAddress             = 'internalnotifications@contoso.org'
-                    MakeDefault                            = $False
-                    ZapEnabled                             = $true
-                }
-
-                Mock -CommandName Get-MalwareFilterPolicy -MockWith {
-                    return @{
-                        Ensure                                 = 'Present'
-                        Credential                             = $Credential
-                        Identity                               = 'TestMalwareFilterPolicy'
-                        AdminDisplayName                       = 'TestPolicy'
-                        CustomExternalBody                     = 'This is a custom external body'
-                        CustomExternalSubject                  = 'This is a custom external subject'
-                        CustomFromAddress                      = 'customnotification@contoso.org'
-                        CustomFromName                         = 'customnotifications'
-                        CustomInternalBody                     = 'This is a custom internal body'
-                        CustomInternalSubject                  = 'This is a custom internal subject'
-                        CustomNotifications                    = $false
-                        EnableExternalSenderAdminNotifications = $true
-                        EnableFileFilter                       = $true
-                        EnableInternalSenderAdminNotifications = $true
-                        ExternalSenderAdminAddress             = 'notifications@contoso.org'
-                        FileTypes                              = @('.cmd', '.rar')
-                        InternalSenderAdminAddress             = 'internalnotifications@contoso.org'
-                        IsDefault                              = $False
-                        ZapEnabled                             = $true
-                    }
-                }
-
-                Mock -CommandName Set-MalwareFilterPolicy -MockWith {
-                    return @{
-
-                    }
+                    Identity                               = 'TestMailboxAutoReplyConfiguration'
+                    AutoReplyState                         = 'Enabled'
+                    AutoDeclineFutureRequestsWhenOOF       = $false # Drift
+                    DeclineAllEventsForScheduledOOF        = $true
+                    ExternalAudience                       = 'All'
+                    ExternalMessage                        = "<ExternalMessage>"
+                    InternalMessage                        = "<InternalMessage>"
+                    OOFEventSubject                        = 'This is a custom external subject'
                 }
             }
 
@@ -218,27 +141,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Successfully call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-MailboxAutoReplyConfiguration -Exactly 1
             }
         }
 
-        Context -Name 'MalwareFilterPolicy removal.' -Fixture {
+        Context -Name 'MailboxAutoReplyConfiguration removal.' -Fixture {
             BeforeAll {
                 $testParams = @{
                     Ensure     = 'Absent'
                     Credential = $Credential
-                    Identity   = 'TestMalwareFilterPolicy'
-                }
-
-                Mock -CommandName Get-MalwareFilterPolicy -MockWith {
-                    return @{
-                        Identity = 'TestMalwareFilterPolicy'
-                    }
-                }
-
-                Mock -CommandName Remove-MalwareFilterPolicy -MockWith {
-                    return @{
-
-                    }
+                    Identity   = 'TestMailboxAutoReplyConfiguration'
                 }
             }
 
@@ -246,8 +158,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Test-TargetResource @testParams | Should -Be $false
             }
 
-            It 'Should Remove the Policy in the Set method' {
+            It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-MailboxAutoReplyConfiguration -Exactly 1
             }
         }
 
@@ -259,25 +172,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential = $Credential
                 }
 
-                Mock -CommandName Get-MalwareFilterPolicy -MockWith {
+                Mock -CommandName Get-Mailbox -MockWith {
                     return @{
-                        Identity                               = 'TestMalwareFilterPolicy'
-                        AdminDisplayName                       = 'TestPolicy'
-                        CustomExternalBody                     = 'This is a custom external body'
-                        CustomExternalSubject                  = 'This is a custom external subject'
-                        CustomFromAddress                      = 'customnotification@contoso.org'
-                        CustomFromName                         = 'customnotifications'
-                        CustomInternalBody                     = 'This is a custom internal body'
-                        CustomInternalSubject                  = 'This is a custom internal subject'
-                        CustomNotifications                    = $false
-                        EnableExternalSenderAdminNotifications = $true
-                        EnableFileFilter                       = $true
-                        EnableInternalSenderAdminNotifications = $true
-                        ExternalSenderAdminAddress             = 'notifications@contoso.org'
-                        FileTypes                              = @('.cmd', '.rar')
-                        InternalSenderAdminAddress             = 'internalnotifications@contoso.org'
-                        IsDefault                              = $False
-                        ZapEnabled                             = $true
+                        UserPrincipalName = 'TestMailboxAutoReplyConfiguration'
                     }
                 }
             }

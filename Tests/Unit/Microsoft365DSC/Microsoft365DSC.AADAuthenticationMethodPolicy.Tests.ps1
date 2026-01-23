@@ -24,13 +24,70 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaPolicyAuthenticationMethodPolicy -MockWith {
             }
 
             Mock -CommandName Remove-MgBetaPolicyAuthenticationMethodPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicy -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        '@odata.type' = "#microsoft.graph.AuthenticationMethodsPolicy"
+                    }
+                    Description = "FakeStringValue"
+                    DisplayName = "FakeStringValue"
+                    Id = "FakeStringValue"
+                    PolicyMigrationState = "preMigration"
+                    PolicyVersion = "FakeStringValue"
+                    ReconfirmationInDays = 25
+                    RegistrationEnforcement = @{
+                        AuthenticationMethodsRegistrationCampaign = @{
+                            IncludeTargets = @(
+                                @{
+                                    Id = "FakeStringValue"
+                                    TargetType = "user"
+                                    TargetedAuthenticationMethod = "FakeStringValue"
+                                }
+                            )
+                            State = "default"
+                            SnoozeDurationInDays = 25
+                            ExcludeTargets = @(
+                                @{
+                                    TargetType = "user"
+                                    Id = "FakeStringValue"
+                                }
+                            )
+                        }
+                    }
+                    ReportSuspiciousActivitySettings  = @{
+                        State = 'default'
+                        IncludeTarget = @{
+                            TargetType = 'group'
+                            Id = "a8ab05ba-6680-4f93-88ae-71099eedfda1"
+                        }
+                        VoiceReportingCode  = 0
+                    }
+                    SystemCredentialPreferences = @{
+                        State = "default"
+                        IncludeTargets = @(
+                            @{
+                                TargetType = "user"
+                                Id = "FakeStringValue"
+                            }
+                        )
+                        ExcludeTargets = @(
+                            @{
+                                TargetType = "user"
+                                Id = "FakeStringValue"
+                            }
+                        )
+                    }
+
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -50,7 +107,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
-                    PolicyMigrationState = "preMigration"
                     PolicyVersion = "FakeStringValue"
                     ReconfirmationInDays = 25
                     RegistrationEnforcement = (New-CimInstance -ClassName MSFT_MicrosoftGraphregistrationEnforcement -Property @{
@@ -117,7 +173,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
-                    PolicyMigrationState = "preMigration"
                     PolicyVersion = "FakeStringValue"
                     ReconfirmationInDays = 25
                     RegistrationEnforcement = (New-CimInstance -ClassName MSFT_MicrosoftGraphregistrationEnforcement -Property @{
@@ -165,65 +220,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicy -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.AuthenticationMethodsPolicy"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        PolicyMigrationState = "preMigration"
-                        PolicyVersion = "FakeStringValue"
-                        ReconfirmationInDays = 25
-                        RegistrationEnforcement = @{
-                            AuthenticationMethodsRegistrationCampaign = @{
-                                IncludeTargets = @(
-                                    @{
-                                        Id = "FakeStringValue"
-                                        TargetType = "user"
-                                        TargetedAuthenticationMethod = "FakeStringValue"
-                                    }
-                                )
-                                State = "default"
-                                SnoozeDurationInDays = 25
-                                ExcludeTargets = @(
-                                    @{
-                                        TargetType = "user"
-                                        Id = "FakeStringValue"
-                                    }
-                                )
-                            }
-                        }
-                        ReportSuspiciousActivitySettings  = @{
-                            State = 'default'
-                            IncludeTarget = @{
-                                TargetType = 'group'
-                                Id = "a8ab05ba-6680-4f93-88ae-71099eedfda1"
-                            }
-                            VoiceReportingCode  = 0
-                        }
-                        SystemCredentialPreferences = @{
-                            State = "default"
-                            IncludeTargets = @(
-                                @{
-                                    TargetType = "user"
-                                    Id = "FakeStringValue"
-                                }
-                            )
-                            ExcludeTargets = @(
-                                @{
-                                    TargetType = "user"
-                                    Id = "FakeStringValue"
-                                }
-                            )
-                        }
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -236,7 +233,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
-                    PolicyMigrationState = "preMigration"
                     PolicyVersion = "FakeStringValue"
                     ReconfirmationInDays = 25
                     RegistrationEnforcement = (New-CimInstance -ClassName MSFT_MicrosoftGraphregistrationEnforcement -Property @{
@@ -259,7 +255,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         } -ClientOnly)
                     } -ClientOnly)
                     ReportSuspiciousActivitySettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphreportSuspiciousActivitySettings -Property @{
-                        VoiceReportingCode = 0
+                        VoiceReportingCode = 1 # Drift
                         State = 'default'
                         IncludeTarget = (New-CimInstance -ClassName MSFT_AADAuthenticationMethodPolicyIncludeTarget -Property @{
                                 Id = 'a8ab05ba-6680-4f93-88ae-71099eedfda1'
@@ -283,59 +279,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     } -ClientOnly)
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicy -MockWith {
-                    return @{
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        PolicyMigrationState = "preMigration"
-                        PolicyVersion = "FakeStringValue"
-                        ReconfirmationInDays = 7
-                        RegistrationEnforcement = @{
-                            AuthenticationMethodsRegistrationCampaign = @{
-                                IncludeTargets = @(
-                                    @{
-                                        Id = "FakeStringValue"
-                                        TargetType = "user"
-                                        TargetedAuthenticationMethod = "FakeStringValue"
-                                    }
-                                )
-                                State = "default"
-                                SnoozeDurationInDays = 7
-                                ExcludeTargets = @(
-                                    @{
-                                        TargetType = "user"
-                                        Id = "FakeStringValue"
-                                    }
-                                )
-                            }
-                        }
-                        ReportSuspiciousActivitySettings  = @{
-                            State = "default"
-                            IncludeTarget = @{
-                                TargetType = "user" #drift
-                                Id = "a8ab05ba-6680-4f93-88ae-71099eedfda1"
-                            }
-                            VoiceReportingCode  = 1 #drift
-                        }
-                        SystemCredentialPreferences = @{
-                            State = "default"
-                            IncludeTargets = @(
-                                @{
-                                    TargetType = "user"
-                                    Id = "FakeStringValue"
-                                }
-                            )
-                            ExcludeTargets = @(
-                                @{
-                                    TargetType = "user"
-                                    Id = "FakeStringValue"
-                                }
-                            )
-                        }
-                    }
                 }
             }
 
@@ -359,63 +302,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicy -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.AuthenticationMethodsPolicy"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        PolicyMigrationState = "preMigration"
-                        PolicyVersion = "FakeStringValue"
-                        ReconfirmationInDays = 25
-                        RegistrationEnforcement = @{
-                            AuthenticationMethodsRegistrationCampaign = @{
-                                IncludeTargets = @(
-                                    @{
-                                        Id = "FakeStringValue"
-                                        TargetType = "user"
-                                        TargetedAuthenticationMethod = "FakeStringValue"
-                                    }
-                                )
-                                State = "default"
-                                SnoozeDurationInDays = 25
-                                ExcludeTargets = @(
-                                    @{
-                                        TargetType = "user"
-                                        Id = "FakeStringValue"
-                                    }
-                                )
-                            }
-                        }
-                        ReportSuspiciousActivitySettings  = @{
-                            State = "default"
-                            IncludeTarget = @{
-                                TargetType = "user" #drift
-                                Id = "a8ab05ba-6680-4f93-88ae-71099eedfda1"
-                            }
-                            VoiceReportingCode  = 1 #drift
-                        }
-                        SystemCredentialPreferences = @{
-                            State = "default"
-                            IncludeTargets = @(
-                                @{
-                                    TargetType = "user"
-                                    Id = "FakeStringValue"
-                                }
-                            )
-                            ExcludeTargets = @(
-                                @{
-                                    TargetType = "user"
-                                    Id = "FakeStringValue"
-                                }
-                            )
-                        }
-
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

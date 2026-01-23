@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -38,6 +38,93 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Invoke-M365DSCVerifiedIdWebRequest -MockWith {
+                param ($Uri)
+                switch ($Uri) {
+                    "https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials/authorities" {
+                        return @{
+                            value = @(
+                                @{
+                                    id = "FakeStringValue"
+                                    name = "FakeStringValue"
+                                    didModel = @{
+                                        linkedDomainUrls = @("FakeStringValue")
+                                        did = "did:FakeStringValue"
+                                    }
+                                    keyVaultMetadata = @{
+                                        subscriptionId = "FakeStringValue"
+                                        resourceGroup = "FakeStringValue"
+                                        resourceName = "FakeStringValue"
+                                        resourceUrl = "FakeStringValue"
+                                    }
+
+                                }
+                            )
+                        }
+                    }
+                    default {
+                        return @{
+                            value = @(
+                                @{
+                                    id = "FakeStringValue"
+                                    authorityId = "FakeStringValue"
+                                    name = "FakeStringValue"
+                                    linkedDomainUrl = "FakeStringValue"
+                                    displays = @(
+                                        @{
+                                            consent = @{
+                                                instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
+                                                title = "Do you really want to accept the verified employee credential from Contoso."
+                                            }
+                                            card = @{
+                                                description = "This verifiable credential is issued to all members of the Contoso org."
+                                                issuedBy = "Contoso"
+                                                backgroundColor = "#000000"
+                                                textColor = "#FFFFFA"
+                                                logo = @{
+                                                    uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
+                                                    description = "Default verified employee logo"
+                                                }
+                                                title = "Verified Employee"
+                                            }
+                                            locale = "en-US"
+                                            claims = @(
+                                                @{
+                                                    label = "Revocation id"
+                                                    claim = "vc.credentialSubject.revocationId"
+                                                    type = "String"
+                                                }
+                                            )
+                                        }
+                                    )
+                                    rules = @{
+                                        validityInterval = 15552000
+                                        vc = @{
+                                            type = @("VerifiedEmployee")
+                                        }
+                                        attestations = @{
+                                            accessTokens = @(
+                                                @{
+                                                    mapping = @(
+                                                        @{
+                                                            inputClaim = "photo"
+                                                            indexed = $False
+                                                            outputClaim = "photo"
+                                                            required = $False
+                                                        }
+                                                    )
+                                                    required = $True
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
             }
 
             Mock -CommandName Invoke-WebRequest -MockWith {
@@ -59,16 +146,53 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     authorityId = "FakeStringValue"
                     name = "FakeStringValue"
                     linkedDomainUrl = "FakeStringValue"
-                    displays = @()
+                    displays =  [CimInstance[]]@(
+                        (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayModel -Property @{
+                            consent = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayConsent -Property @{
+                                instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
+                                title = "Do you really want to accept the verified employee credential from Contoso."
+                            } -ClientOnly)
+                            card = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayCard -Property @{
+                                description = "This verifiable credential is issued to all members of the Contoso org."
+                                issuedBy = "Contoso"
+                                backgroundColor = "#000000"
+                                textColor = "#FFFFFA"
+                                logo = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayCredentialLogo -Property @{
+                                    uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
+                                    description = "Default verified employee logo"
+                                } -ClientOnly)
+                                title = "Verified Employee"
+                            } -ClientOnly)
+                            locale = "en-US"
+                            claims =  [CimInstance[]]@(
+                                (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayClaims -Property @{
+                                    label = "Revocation id"
+                                    claim = "vc.credentialSubject.revocationId"
+                                    type = "String"
+                                } -ClientOnly)
+                            )
+                        } -ClientOnly)
+                    )
                     rules = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractRulesModel -Property @{
                         validityInterval = 15552000
                         vc = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractVcType -Property @{
-                            type = @("FakeStringValue")
+                            type = @("VerifiedEmployee")
                         } -ClientOnly)
                         attestations = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractAttestations -Property @{
-                            required = $True
+                            accessTokens =  [CimInstance[]]@(
+                                (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractAttestationValues -Property @{
+                                    mapping =  [CimInstance[]]@(
+                                        (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractClaimMapping -Property @{
+                                            inputClaim = "photo"
+                                            indexed = $False
+                                            outputClaim = "photo"
+                                            required = $False
+                                        } -ClientOnly)
+                                    )
+                                    required = $True
+                                } -ClientOnly)
+                            )
                         } -ClientOnly)
-
                     } -ClientOnly)
                     Ensure = 'Present'
                 }
@@ -104,8 +228,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         }
                     }
                 }
-
             }
+
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
             }
@@ -175,155 +299,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         } -ClientOnly)
                     Ensure = 'Absent'
                 }
-
-                Mock -CommandName Invoke-M365DSCVerifiedIdWebRequest -MockWith {
-                    param ($Uri)
-                    switch ($Uri) {
-                        "https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials/authorities" {
-                            return @{
-                                value = @(
-                                    @{
-                                        id = "FakeStringValue"
-                                        name = "FakeStringValue"
-                                        didModel = @{
-                                            linkedDomainUrls = @("FakeStringValue")
-                                            did = "did:FakeStringValue"
-                                        }
-                                        keyVaultMetadata = @{
-                                            subscriptionId = "FakeStringValue"
-                                            resourceGroup = "FakeStringValue"
-                                            resourceName = "FakeStringValue"
-                                            resourceUrl = "FakeStringValue"
-                                        }
-
-                                    }
-                                )
-                            }
-                        }
-                        default {
-                            return @{
-                                value = @(
-                                    @{
-                                        id = "FakeStringValue"
-                                        authorityId = "FakeStringValue"
-                                        name = "FakeStringValue"
-                                        linkedDomainUrl = "FakeStringValue"
-                                        displays = @(
-                                            @{
-                                                consent = @{
-                                                    instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
-                                                    title = "Do you really want to accept the verified employee credential from Contoso."
-                                                }
-                                                card = @{
-                                                    description = "This verifiable credential is issued to all members of the Contoso org."
-                                                    issuedBy = "Contoso"
-                                                    backgroundColor = "#000000"
-                                                    textColor = "#FFFFFA"
-                                                    logo = @{
-                                                        uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
-                                                        description = "Default verified employee logo"
-                                                    }
-                                                    title = "Verified Employee"
-                                                }
-                                                locale = "en-US"
-                                                claims = @(
-                                                    @{
-                                                        label = "Revocation id"
-                                                        claim = "vc.credentialSubject.revocationId"
-                                                        type = "String"
-                                                    }
-                                                )
-                                            }
-                                        )
-                                        rules = @{
-                                            validityInterval = 15552000
-                                            vc = @{
-                                                type = @("VerifiedEmployee")
-                                            }
-                                            attestations = @{
-                                                accessTokens = @(
-                                                    @{
-                                                        mapping = @(
-                                                            @{
-                                                                inputClaim = "photo"
-                                                                indexed = $False
-                                                                outputClaim = "photo"
-                                                                required = $False
-                                                            }
-                                                        )
-                                                        required = $True
-                                                    }
-                                                )
-                                            }
-                                        }
-                                        Ensure = 'Present'
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    return @{
-                        value = @(
-                            @{
-                                id = "FakeStringValue"
-                                authorityId = "FakeStringValue"
-                                name = "FakeStringValue"
-                                linkedDomainUrl = "FakeStringValue"
-                                displays = @(
-                                    @{
-                                        consent = @{
-                                            instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
-                                            title = "Do you really want to accept the verified employee credential from Contoso."
-                                        }
-                                        card = @{
-                                            description = "This verifiable credential is issued to all members of the Contoso org."
-                                            issuedBy = "Contoso"
-                                            backgroundColor = "#000000"
-                                            textColor = "#FFFFFA"
-                                            logo = @{
-                                                uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
-                                                description = "Default verified employee logo"
-                                            }
-                                            title = "Verified Employee"
-                                        }
-                                        locale = "en-US"
-                                        claims = @(
-                                            @{
-                                                label = "Revocation id"
-                                                claim = "vc.credentialSubject.revocationId"
-                                                type = "String"
-                                            }
-                                        )
-                                    }
-                                )
-                                rules = @{
-                                    validityInterval = 15552000
-                                    vc = @{
-                                        type = @("VerifiedEmployee")
-                                    }
-                                    attestations = @{
-                                        accessTokens = @(
-                                            @{
-                                                mapping = @(
-                                                    @{
-                                                        inputClaim = "photo"
-                                                        indexed = $False
-                                                        outputClaim = "photo"
-                                                        required = $False
-                                                    }
-                                                )
-                                                required = $True
-                                            }
-                                        )
-                                    }
-                                }
-                                Ensure = 'Present'
-                            }
-                        )
-                    }
-
-                }
-
             }
 
             It 'Should return Values from the Get method' {
@@ -347,204 +322,56 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     name = "FakeStringValue"
                     linkedDomainUrl = "FakeStringValue"
                     displays =  [CimInstance[]]@(
-                            (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayModel -Property @{
-                                consent = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayConsent -Property @{
-                                    instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
-                                    title = "Do you really want to accept the verified employee credential from Contoso."
+                        (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayModel -Property @{
+                            consent = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayConsent -Property @{
+                                instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
+                                title = "Do you really want to accept the verified employee credential from Contoso."
+                            } -ClientOnly)
+                            card = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayCard -Property @{
+                                description = "This verifiable credential is issued to all members of the Contoso org."
+                                issuedBy = "Contoso"
+                                backgroundColor = "#000000"
+                                textColor = "#FFFFFA"
+                                logo = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayCredentialLogo -Property @{
+                                    uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
+                                    description = "Default verified employee logo"
                                 } -ClientOnly)
-                                card = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayCard -Property @{
-                                    description = "This verifiable credential is issued to all members of the Contoso org."
-                                    issuedBy = "Contoso"
-                                    backgroundColor = "#000000"
-                                    textColor = "#FFFFFA"
-                                    logo = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayCredentialLogo -Property @{
-                                        uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
-                                        description = "Default verified employee logo"
-                                    } -ClientOnly)
-                                    title = "Verified Employee"
+                                title = "Verified Employee"
+                            } -ClientOnly)
+                            locale = "en-US"
+                            claims =  [CimInstance[]]@(
+                                (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayClaims -Property @{
+                                    label = "Revocation id"
+                                    claim = "vc.credentialSubject.revocationId"
+                                    type = "String"
                                 } -ClientOnly)
-                                locale = "en-US"
-                                claims =  [CimInstance[]]@(
-                                    (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayClaims -Property @{
-                                        label = "Revocation id"
-                                        claim = "vc.credentialSubject.revocationId"
-                                        type = "String"
-                                    } -ClientOnly)
-                                )
-                            } -ClientOnly)
-                        )
-                    rules = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractRulesModel -Property @{
-                            validityInterval = 15552000
-                            vc = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractVcType -Property @{
-                                type = @("VerifiedEmployee")
-                            } -ClientOnly)
-                            attestations = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractAttestations -Property @{
-                                accessTokens =  [CimInstance[]]@(
-                                    (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractAttestationValues -Property @{
-                                        mapping =  [CimInstance[]]@(
-                                            (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractClaimMapping -Property @{
-                                                inputClaim = "photo"
-                                                indexed = $False
-                                                outputClaim = "photo"
-                                                required = $False
-                                            } -ClientOnly)
-                                        )
-                                        required = $True
-                                    } -ClientOnly)
-                                )
-                            } -ClientOnly)
+                            )
                         } -ClientOnly)
+                    )
+                    rules = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractRulesModel -Property @{
+                        validityInterval = 15552000
+                        vc = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractVcType -Property @{
+                            type = @("VerifiedEmployee")
+                        } -ClientOnly)
+                        attestations = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractAttestations -Property @{
+                            accessTokens =  [CimInstance[]]@(
+                                (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractAttestationValues -Property @{
+                                    mapping =  [CimInstance[]]@(
+                                        (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractClaimMapping -Property @{
+                                            inputClaim = "photo"
+                                            indexed = $False
+                                            outputClaim = "photo"
+                                            required = $False
+                                        } -ClientOnly)
+                                    )
+                                    required = $True
+                                } -ClientOnly)
+                            )
+                        } -ClientOnly)
+                    } -ClientOnly)
                     Ensure = 'Present'
                 }
-
-                Mock -CommandName Invoke-M365DSCVerifiedIdWebRequest -MockWith {
-                    param ($Uri)
-                    switch ($Uri) {
-                        "https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials/authorities" {
-                            return @{
-                                value = @(
-                                    @{
-                                        id = "FakeStringValue"
-                                        name = "FakeStringValue"
-                                        didModel = @{
-                                            linkedDomainUrls = @("FakeStringValue")
-                                            did = "did:FakeStringValue"
-                                        }
-                                        keyVaultMetadata = @{
-                                            subscriptionId = "FakeStringValue"
-                                            resourceGroup = "FakeStringValue"
-                                            resourceName = "FakeStringValue"
-                                            resourceUrl = "FakeStringValue"
-                                        }
-
-                                    }
-                                )
-                            }
-                        }
-                        default {
-                            return @{
-                                value = @(
-                                    @{
-                                        id = "FakeStringValue"
-                                        authorityId = "FakeStringValue"
-                                        name = "FakeStringValue"
-                                        linkedDomainUrl = "FakeStringValue"
-                                        displays = @(
-                                            @{
-                                                consent = @{
-                                                    instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
-                                                    title = "Do you really want to accept the verified employee credential from Contoso."
-                                                }
-                                                card = @{
-                                                    description = "This verifiable credential is issued to all members of the Contoso org."
-                                                    issuedBy = "Contoso"
-                                                    backgroundColor = "#000000"
-                                                    textColor = "#FFFFFA"
-                                                    logo = @{
-                                                        uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
-                                                        description = "Default verified employee logo"
-                                                    }
-                                                    title = "Verified Employee"
-                                                }
-                                                locale = "en-US"
-                                                claims = @(
-                                                    @{
-                                                        label = "Revocation id"
-                                                        claim = "vc.credentialSubject.revocationId"
-                                                        type = "String"
-                                                    }
-                                                )
-                                            }
-                                        )
-                                        rules = @{
-                                            validityInterval = 15552000
-                                            vc = @{
-                                                type = @("VerifiedEmployee")
-                                            }
-                                            attestations = @{
-                                                accessTokens = @(
-                                                    @{
-                                                        mapping = @(
-                                                            @{
-                                                                inputClaim = "photo"
-                                                                indexed = $False
-                                                                outputClaim = "photo"
-                                                                required = $False
-                                                            }
-                                                        )
-                                                        required = $True
-                                                    }
-                                                )
-                                            }
-                                        }
-                                        Ensure = 'Present'
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    return @{
-                        value = @(
-                            @{
-                                id = "FakeStringValue"
-                                authorityId = "FakeStringValue"
-                                name = "FakeStringValue"
-                                linkedDomainUrl = "FakeStringValue"
-                                displays = @(
-                                    @{
-                                        consent = @{
-                                            instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
-                                            title = "Do you really want to accept the verified employee credential from Contoso."
-                                        }
-                                        card = @{
-                                            description = "This verifiable credential is issued to all members of the Contoso org."
-                                            issuedBy = "Contoso"
-                                            backgroundColor = "#000000"
-                                            textColor = "#FFFFFA"
-                                            logo = @{
-                                                uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
-                                                description = "Default verified employee logo"
-                                            }
-                                            title = "Verified Employee"
-                                        }
-                                        locale = "en-US"
-                                        claims = @(
-                                            @{
-                                                label = "Revocation id"
-                                                claim = "vc.credentialSubject.revocationId"
-                                                type = "String"
-                                            }
-                                        )
-                                    }
-                                )
-                                rules = @{
-                                    validityInterval = 15552000
-                                    vc = @{
-                                        type = @("VerifiedEmployee")
-                                    }
-                                    attestations = @{
-                                        accessTokens = @(
-                                            @{
-                                                mapping = @(
-                                                    @{
-                                                        inputClaim = "photo"
-                                                        indexed = $False
-                                                        outputClaim = "photo"
-                                                        required = $False
-                                                    }
-                                                )
-                                                required = $True
-                                            }
-                                        )
-                                    }
-                                }
-                                Ensure = 'Present'
-                            }
-                        )
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -559,202 +386,54 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     name = "FakeStringValue"
                     linkedDomainUrl = "FakeStringValue"
                     displays =  [CimInstance[]]@(
-                            (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayModel -Property @{
-                                consent = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayConsent -Property @{
-                                    instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
-                                    title = "Do you want to accept the verified employee credential from Contoso." #drift
+                        (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayModel -Property @{
+                            consent = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayConsent -Property @{
+                                instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
+                                title = "Do you want to accept the verified employee credential from Contoso." #drift
+                            } -ClientOnly)
+                            card = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayCard -Property @{
+                                description = "This verifiable credential is issued to all members of the Contoso org."
+                                issuedBy = "Contoso"
+                                backgroundColor = "#000000"
+                                textColor = "#FFFFFA"
+                                logo = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayCredentialLogo -Property @{
+                                    uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
+                                    description = "Default verified employee logo"
                                 } -ClientOnly)
-                                card = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayCard -Property @{
-                                    description = "This verifiable credential is issued to all members of the Contoso org."
-                                    issuedBy = "Contoso"
-                                    backgroundColor = "#000000"
-                                    textColor = "#FFFFFA"
-                                    logo = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayCredentialLogo -Property @{
-                                        uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
-                                        description = "Default verified employee logo"
-                                    } -ClientOnly)
-                                    title = "Verified Employee"
+                                title = "Verified Employee"
+                            } -ClientOnly)
+                            locale = "en-US"
+                            claims =  [CimInstance[]]@(
+                                (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayClaims -Property @{
+                                    label = "Revocation id"
+                                    claim = "vc.credentialSubject.revocationId"
+                                    type = "String"
                                 } -ClientOnly)
-                                locale = "en-US"
-                                claims =  [CimInstance[]]@(
-                                    (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractDisplayClaims -Property @{
-                                        label = "Revocation id"
-                                        claim = "vc.credentialSubject.revocationId"
-                                        type = "String"
-                                    } -ClientOnly)
-                                )
-                            } -ClientOnly)
-                        )
-                    rules = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractRulesModel -Property @{
-                            validityInterval = 15552000
-                            vc = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractVcType -Property @{
-                                type = @("VerifiedEmployee")
-                            } -ClientOnly)
-                            attestations = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractAttestations -Property @{
-                                accessTokens =  [CimInstance[]]@(
-                                    (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractAttestationValues -Property @{
-                                        mapping =  [CimInstance[]]@(
-                                            (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractClaimMapping -Property @{
-                                                inputClaim = "photo"
-                                                indexed = $False
-                                                outputClaim = "photo"
-                                                required = $False
-                                            } -ClientOnly)
-                                        )
-                                        required = $True
-                                    } -ClientOnly)
-                                )
-                            } -ClientOnly)
+                            )
                         } -ClientOnly)
+                    )
+                    rules = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractRulesModel -Property @{
+                        validityInterval = 15552000
+                        vc = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractVcType -Property @{
+                            type = @("VerifiedEmployee")
+                        } -ClientOnly)
+                        attestations = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractAttestations -Property @{
+                            accessTokens =  [CimInstance[]]@(
+                                (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractAttestationValues -Property @{
+                                    mapping =  [CimInstance[]]@(
+                                        (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityContractClaimMapping -Property @{
+                                            inputClaim = "photo"
+                                            indexed = $False
+                                            outputClaim = "photo"
+                                            required = $False
+                                        } -ClientOnly)
+                                    )
+                                    required = $True
+                                } -ClientOnly)
+                            )
+                        } -ClientOnly)
+                    } -ClientOnly)
                     Ensure = 'Present'
-                }
-
-                Mock -CommandName Invoke-M365DSCVerifiedIdWebRequest -MockWith {
-                    param ($Uri)
-                    switch ($Uri) {
-                        "https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials/authorities" {
-                            return @{
-                                value = @(
-                                    @{
-                                        id = "FakeStringValue"
-                                        name = "FakeStringValue"
-                                        didModel = @{
-                                            linkedDomainUrls = @("FakeStringValue")
-                                            did = "did:FakeStringValue"
-                                        }
-                                        keyVaultMetadata = @{
-                                            subscriptionId = "FakeStringValue"
-                                            resourceGroup = "FakeStringValue"
-                                            resourceName = "FakeStringValue"
-                                            resourceUrl = "FakeStringValue"
-                                        }
-
-                                    }
-                                )
-                            }
-                        }
-                        default {
-                            return @{
-                                value = @(
-                                    @{
-                                        id = "FakeStringValue"
-                                        authorityId = "FakeStringValue"
-                                        name = "FakeStringValue"
-                                        linkedDomainUrl = "FakeStringValue"
-                                        displays = @(
-                                            @{
-                                                consent = @{
-                                                    instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
-                                                    title = "Do you really want to accept the verified employee credential from Contoso."
-                                                }
-                                                card = @{
-                                                    description = "This verifiable credential is issued to all members of the Contoso org."
-                                                    issuedBy = "Contoso"
-                                                    backgroundColor = "#000000"
-                                                    textColor = "#FFFFFA"
-                                                    logo = @{
-                                                        uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
-                                                        description = "Default verified employee logo"
-                                                    }
-                                                    title = "Verified Employee"
-                                                }
-                                                locale = "en-US"
-                                                claims = @(
-                                                    @{
-                                                        label = "Revocation id"
-                                                        claim = "vc.credentialSubject.revocationId"
-                                                        type = "String"
-                                                    }
-                                                )
-                                            }
-                                        )
-                                        rules = @{
-                                            validityInterval = 15552000
-                                            vc = @{
-                                                type = @("VerifiedEmployee")
-                                            }
-                                            attestations = @{
-                                                accessTokens = @(
-                                                    @{
-                                                        mapping = @(
-                                                            @{
-                                                                inputClaim = "photo"
-                                                                indexed = $False
-                                                                outputClaim = "photo"
-                                                                required = $False
-                                                            }
-                                                        )
-                                                        required = $True
-                                                    }
-                                                )
-                                            }
-                                        }
-                                        Ensure = 'Present'
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    return @{
-                        value = @(
-                            @{
-                                id = "FakeStringValue"
-                                authorityId = "FakeStringValue"
-                                name = "FakeStringValue"
-                                linkedDomainUrl = "FakeStringValue"
-                                displays = @(
-                                    @{
-                                        consent = @{
-                                            instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
-                                            title = "Do you really want to accept the verified employee credential from Contoso."
-                                        }
-                                        card = @{
-                                            description = "This verifiable credential is issued to all members of the Contoso org."
-                                            issuedBy = "Contoso"
-                                            backgroundColor = "#000000"
-                                            textColor = "#FFFFFA"
-                                            logo = @{
-                                                uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
-                                                description = "Default verified employee logo"
-                                            }
-                                            title = "Verified Employee"
-                                        }
-                                        locale = "en-US"
-                                        claims = @(
-                                            @{
-                                                label = "Revocation id"
-                                                claim = "vc.credentialSubject.revocationId"
-                                                type = "String"
-                                            }
-                                        )
-                                    }
-                                )
-                                rules = @{
-                                    validityInterval = 15552000
-                                    vc = @{
-                                        type = @("VerifiedEmployee")
-                                    }
-                                    attestations = @{
-                                        accessTokens = @(
-                                            @{
-                                                mapping = @(
-                                                    @{
-                                                        inputClaim = "photo"
-                                                        indexed = $False
-                                                        outputClaim = "photo"
-                                                        required = $False
-                                                    }
-                                                )
-                                                required = $True
-                                            }
-                                        )
-                                    }
-                                }
-                                Ensure = 'Present'
-                            }
-                        )
-                    }
-
                 }
             }
 
@@ -778,154 +457,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Invoke-M365DSCVerifiedIdWebRequest -MockWith {
-                    param ($Uri)
-                    switch ($Uri) {
-                        "https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials/authorities" {
-                            return @{
-                                value = @(
-                                    @{
-                                        id = "FakeStringValue"
-                                        name = "FakeStringValue"
-                                        didModel = @{
-                                            linkedDomainUrls = @("FakeStringValue")
-                                            did = "did:FakeStringValue"
-                                        }
-                                        keyVaultMetadata = @{
-                                            subscriptionId = "FakeStringValue"
-                                            resourceGroup = "FakeStringValue"
-                                            resourceName = "FakeStringValue"
-                                            resourceUrl = "FakeStringValue"
-                                        }
-
-                                    }
-                                )
-                            }
-                        }
-                        default {
-                            return @{
-                                value = @(
-                                    @{
-                                        id = "FakeStringValue"
-                                        authorityId = "FakeStringValue"
-                                        name = "FakeStringValue"
-                                        linkedDomainUrl = "FakeStringValue"
-                                        displays = @(
-                                            @{
-                                                consent = @{
-                                                    instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
-                                                    title = "Do you really want to accept the verified employee credential from Contoso."
-                                                }
-                                                card = @{
-                                                    description = "This verifiable credential is issued to all members of the Contoso org."
-                                                    issuedBy = "Contoso"
-                                                    backgroundColor = "#000000"
-                                                    textColor = "#FFFFFA"
-                                                    logo = @{
-                                                        uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
-                                                        description = "Default verified employee logo"
-                                                    }
-                                                    title = "Verified Employee"
-                                                }
-                                                locale = "en-US"
-                                                claims = @(
-                                                    @{
-                                                        label = "Revocation id"
-                                                        claim = "vc.credentialSubject.revocationId"
-                                                        type = "String"
-                                                    }
-                                                )
-                                            }
-                                        )
-                                        rules = @{
-                                            validityInterval = 15552000
-                                            vc = @{
-                                                type = @("VerifiedEmployee")
-                                            }
-                                            attestations = @{
-                                                accessTokens = @(
-                                                    @{
-                                                        mapping = @(
-                                                            @{
-                                                                inputClaim = "photo"
-                                                                indexed = $False
-                                                                outputClaim = "photo"
-                                                                required = $False
-                                                            }
-                                                        )
-                                                        required = $True
-                                                    }
-                                                )
-                                            }
-                                        }
-                                        Ensure = 'Present'
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    return @{
-                        value = @(
-                            @{
-                                id = "FakeStringValue"
-                                authorityId = "FakeStringValue"
-                                name = "FakeStringValue"
-                                linkedDomainUrl = "FakeStringValue"
-                                displays = @(
-                                    @{
-                                        consent = @{
-                                            instructions = "Verify your identity and workplace the easy way. Add this ID for online and in-person use."
-                                            title = "Do you really want to accept the verified employee credential from Contoso."
-                                        }
-                                        card = @{
-                                            description = "This verifiable credential is issued to all members of the Contoso org."
-                                            issuedBy = "Contoso"
-                                            backgroundColor = "#000000"
-                                            textColor = "#FFFFFA"
-                                            logo = @{
-                                                uri = "https://proddideussg1.z13.web.core.windows.net/systemgeneratedcontractlogo.png"
-                                                description = "Default verified employee logo"
-                                            }
-                                            title = "Verified Employee"
-                                        }
-                                        locale = "en-US"
-                                        claims = @(
-                                            @{
-                                                label = "Revocation id"
-                                                claim = "vc.credentialSubject.revocationId"
-                                                type = "String"
-                                            }
-                                        )
-                                    }
-                                )
-                                rules = @{
-                                    validityInterval = 15552000
-                                    vc = @{
-                                        type = @("VerifiedEmployee")
-                                    }
-                                    attestations = @{
-                                        accessTokens = @(
-                                            @{
-                                                mapping = @(
-                                                    @{
-                                                        inputClaim = "photo"
-                                                        indexed = $False
-                                                        outputClaim = "photo"
-                                                        required = $False
-                                                    }
-                                                )
-                                                required = $True
-                                            }
-                                        )
-                                    }
-                                }
-                                Ensure = 'Present'
-                            }
-                        )
-                    }
-
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

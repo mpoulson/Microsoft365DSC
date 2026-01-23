@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -48,6 +48,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 )
             }
 
+            Mock -CommandName Invoke-AzRest -MockWith {
+                return @{
+                    Content =  '{"location":"westus2","id" : "12345-12345-12345-12345-12345"}'
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -58,20 +64,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name "The instance exists and values are already in the desired state" -Fixture {
             BeforeAll {
-                    $testParams = @{
-                        FaceCheckEnabled            = $True;
-                        ResourceGroupName           = "testrg";
-                        SubscriptionId              = "2dbaf4c4-78f8-4ac9-8188-536d921cf690";
-                        VerifiedIdAuthorityId       = "30961e04-9c35-42db-b80f-c1b6515eb4b2";
-                        VerifiedIdAuthorityLocation = "westus2";
-                        Ensure                      = 'Present'
-                        Credential                  = $Credential;
-                    }
-                    Mock -CommandName Invoke-AzRest -MockWith {
-                        return @{
-                            Content =  '{"location":"westus2","id" : "12345-12345-12345-12345-12345"}'
-                        }
-                    }
+                $testParams = @{
+                    FaceCheckEnabled            = $True;
+                    ResourceGroupName           = "testrg";
+                    SubscriptionId              = "2dbaf4c4-78f8-4ac9-8188-536d921cf690";
+                    VerifiedIdAuthorityId       = "30961e04-9c35-42db-b80f-c1b6515eb4b2";
+                    VerifiedIdAuthorityLocation = "westus2";
+                    Ensure                      = 'Present'
+                    Credential                  = $Credential;
+                }
             }
 
             It 'Should return true from the Test method' {
@@ -81,20 +82,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name "The instance exists and values are NOT in the desired state" -Fixture {
             BeforeAll {
-                    $testParams = @{
-                        FaceCheckEnabled            = $False;
-                        ResourceGroupName           = "testrg";
-                        SubscriptionId              = "2dbaf4c4-78f8-4ac9-8188-536d921cf690";
-                        VerifiedIdAuthorityId       = "30961e04-9c35-42db-b80f-c1b6515eb4b2";
-                        VerifiedIdAuthorityLocation = "westus2";
-                        Ensure                      = 'Present'
-                        Credential                  = $Credential;
-                    }
-                    Mock -CommandName Invoke-AzRest -MockWith {
-                        return @{
-                            Content =  '{"location":"westus2","id" : "12345-12345-12345-12345-12345"}'
-                        }
-                    }
+                $testParams = @{
+                    FaceCheckEnabled            = $False;
+                    ResourceGroupName           = "testrg";
+                    SubscriptionId              = "2dbaf4c4-78f8-4ac9-8188-536d921cf690";
+                    VerifiedIdAuthorityId       = "30961e04-9c35-42db-b80f-c1b6515eb4b2";
+                    VerifiedIdAuthorityLocation = "westus2";
+                    Ensure                      = 'Present'
+                    Credential                  = $Credential;
+                }
             }
 
             It 'Should return Values from the Get method' {
@@ -117,12 +113,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        Content =  '{"location":"westus2","id" : "12345-12345-12345-12345-12345"}'
-                    }
                 }
 
                 Mock -CommandName Invoke-WebRequest -MockWith {

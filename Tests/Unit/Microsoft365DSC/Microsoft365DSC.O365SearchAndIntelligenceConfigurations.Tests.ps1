@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -51,6 +51,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Get-MgBetaOrganizationSettingItemInsight -MockWith {
+                return @{
+                    IsEnabledInOrganization = $True
+                    DisabledForGroup        = "12345-12345-12345-12345-12345"
+                }
+            }
+
+            Mock -CommandName Get-MgBetaOrganizationSettingPersonInsight -MockWith {
+                return @{
+                    IsEnabledInOrganization = $True
+                    DisabledForGroup        = $null
+                }
+            }
+
             Mock -CommandName Get-MeetingInsightsSettings -MockWith {
                 return "Meeting Insights setting enabled: false"
             }
@@ -70,20 +84,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MeetingInsightsIsEnabledInOrganization = $false;
                     Credential                             = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaOrganizationSettingItemInsight -MockWith {
-                    return @{
-                        IsEnabledInOrganization = $True
-                        DisabledForGroup        = "12345-12345-12345-12345-12345"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaOrganizationSettingPersonInsight -MockWith {
-                    return @{
-                        IsEnabledInOrganization = $True
-                        DisabledForGroup        = $null
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -100,24 +100,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     IsSingleInstance                      = 'Yes'
-                    ItemInsightsIsEnabledInOrganization   = $False;
+                    ItemInsightsIsEnabledInOrganization   = $False; # Drift
                     ItemInsightsDisabledForGroup          = "TestGroup"
                     PersonInsightsIsEnabledInOrganization = $True;
                     Credential                            = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaOrganizationSettingItemInsight -MockWith {
-                    return @{
-                        IsEnabledInOrganization = $True
-                        DisabledForGroup        = "12345-12345-12345-12345-12345"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaOrganizationSettingPersonInsight -MockWith {
-                    return @{
-                        IsEnabledInOrganization = $True
-                        DisabledForGroup        = $null
-                    }
                 }
             }
 
@@ -137,25 +123,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
 
                 $testParams = @{
-                    Credential                            = $Credential
+                    Credential = $Credential
                 }
             }
 
             It 'Should Reverse Engineer resource from the Export method' {
-
-                Mock -CommandName Get-MgBetaOrganizationSettingItemInsight -MockWith {
-                    return @{
-                        IsEnabledInOrganization = $True
-                        DisabledForGroup        = "12345-12345-12345-12345-12345"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaOrganizationSettingPersonInsight -MockWith {
-                    return @{
-                        IsEnabledInOrganization = $True
-                        DisabledForGroup        = $null
-                    }
-                }
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty
             }

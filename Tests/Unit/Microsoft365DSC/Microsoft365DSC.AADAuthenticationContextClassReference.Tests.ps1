@@ -24,13 +24,22 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaIdentityConditionalAccessAuthenticationContextClassReference -MockWith {
             }
 
             Mock -CommandName Remove-MgBetaIdentityConditionalAccessAuthenticationContextClassReference -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaIdentityConditionalAccessAuthenticationContextClassReference -MockWith {
+                return @{
+                    Description = "This is my super context test";
+                    DisplayName = "My Super Context";
+                    Id          = "c3";
+                    IsAvailable = $True;
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -77,15 +86,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsAvailable          = $True;
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaIdentityConditionalAccessAuthenticationContextClassReference -MockWith {
-                    return @{
-                        Description = "This is my super context test";
-                        DisplayName = "My Super Context";
-                        Id          = "c3";
-                        IsAvailable = $True;
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -111,15 +111,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsAvailable = $True;
                     Credential  = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaIdentityConditionalAccessAuthenticationContextClassReference -MockWith {
-                    return @{
-                        Description = "This is my super context test";
-                        DisplayName = "My Super Context";
-                        Id          = "c3";
-                        IsAvailable = $True;
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -131,20 +122,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Description = "This is my super context test";
-                    DisplayName = "My Super Context";
+                    DisplayName = "My Super Drifted Context"; # Drift
                     Ensure      = "Present";
                     Id          = "c3";
                     IsAvailable = $True;
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaIdentityConditionalAccessAuthenticationContextClassReference -MockWith {
-                    return @{
-                        Description = "This is my super context test";
-                        DisplayName = "My Super Drifted Context"; # Drift
-                        Id          = "c3";
-                        IsAvailable = $True;
-                    }
                 }
             }
 
@@ -168,15 +150,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaIdentityConditionalAccessAuthenticationContextClassReference -MockWith {
-                    return @{
-                        Description = "This is my super context test";
-                        DisplayName = "My Super Context";
-                        Id          = "c3";
-                        IsAvailable = $True;
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

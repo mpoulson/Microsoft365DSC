@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaDeviceManagementDeviceConfiguration -MockWith {
@@ -39,6 +39,30 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        requireSsl = $True
+                        '@odata.type' = "#microsoft.graph.windows10EasEmailProfileConfiguration"
+                        accountName = "FakeStringValue"
+                        hostName = "FakeStringValue"
+                        syncContacts = $True
+                        syncTasks = $True
+                        emailSyncSchedule = "userDefined"
+                        emailAddressSource = "userPrincipalName"
+                        durationOfEmailToSync = "userDefined"
+                        syncCalendar = $True
+                        customDomainName = "FakeStringValue"
+                        userDomainNameSource = "fullDomainName"
+                        usernameAADSource = "userPrincipalName"
+                        usernameSource = "userPrincipalName"
+                    }
+                    Description = "FakeStringValue"
+                    DisplayName = "FakeStringValue"
+                    Id = "FakeStringValue"
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -113,30 +137,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            requireSsl = $True
-                            '@odata.type' = "#microsoft.graph.windows10EasEmailProfileConfiguration"
-                            accountName = "FakeStringValue"
-                            hostName = "FakeStringValue"
-                            syncContacts = $True
-                            syncTasks = $True
-                            emailSyncSchedule = "userDefined"
-                            emailAddressSource = "userPrincipalName"
-                            durationOfEmailToSync = "userDefined"
-                            syncCalendar = $True
-                            customDomainName = "FakeStringValue"
-                            userDomainNameSource = "fullDomainName"
-                            usernameAADSource = "userPrincipalName"
-                            usernameSource = "userPrincipalName"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -174,30 +174,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            requireSsl = $True
-                            '@odata.type' = "#microsoft.graph.windows10EasEmailProfileConfiguration"
-                            accountName = "FakeStringValue"
-                            hostName = "FakeStringValue"
-                            syncContacts = $True
-                            syncTasks = $True
-                            emailSyncSchedule = "userDefined"
-                            emailAddressSource = "userPrincipalName"
-                            durationOfEmailToSync = "userDefined"
-                            syncCalendar = $True
-                            customDomainName = "FakeStringValue"
-                            userDomainNameSource = "fullDomainName"
-                            usernameAADSource = "userPrincipalName"
-                            usernameSource = "userPrincipalName"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                    }
-                }
             }
 
 
@@ -218,7 +194,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EmailSyncSchedule = "userDefined"
                     HostName = "FakeStringValue"
                     Id = "FakeStringValue"
-                    RequireSsl = $True
+                    RequireSsl = $False # Updated property
                     SyncCalendar = $True
                     SyncContacts = $True
                     SyncTasks = $True
@@ -227,26 +203,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     UsernameSource = "userPrincipalName"
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.windows10EasEmailProfileConfiguration"
-                            accountName = "FakeStringValue"
-                            hostName = "FakeStringValue"
-                            emailSyncSchedule = "userDefined"
-                            emailAddressSource = "userPrincipalName"
-                            durationOfEmailToSync = "userDefined"
-                            customDomainName = "FakeStringValue"
-                            userDomainNameSource = "fullDomainName"
-                            usernameAADSource = "userPrincipalName"
-                            usernameSource = "userPrincipalName"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                    }
                 }
             }
 
@@ -271,31 +227,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            requireSsl = $True
-                            '@odata.type' = "#microsoft.graph.windows10EasEmailProfileConfiguration"
-                            accountName = "FakeStringValue"
-                            hostName = "FakeStringValue"
-                            syncContacts = $True
-                            syncTasks = $True
-                            emailSyncSchedule = "userDefined"
-                            emailAddressSource = "userPrincipalName"
-                            durationOfEmailToSync = "userDefined"
-                            syncCalendar = $True
-                            customDomainName = "FakeStringValue"
-                            userDomainNameSource = "fullDomainName"
-                            usernameAADSource = "userPrincipalName"
-                            usernameSource = "userPrincipalName"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

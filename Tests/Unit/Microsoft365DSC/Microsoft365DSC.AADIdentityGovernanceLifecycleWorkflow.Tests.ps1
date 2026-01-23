@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -48,9 +48,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflow -MockWith {
+                return @{
+                    Id                   = "random guid"
+                    Category             = "joiner";
+                    Description          = "Description the onboard of prehire employee";
+                    DisplayName          = "Onboard pre-hire employee updated version";
+                    IsEnabled            = $True;
+                    IsSchedulingEnabled  = $False;
+                }
             }
 
             Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflowTask -MockWith {
+                return $null
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -72,11 +81,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential          = $Credential;
                 }
 
-                ##TODO - Mock the Get-MgBetaIdentityGovernanceLifecycleWorkflow to return $null
                 Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflow -MockWith {
-                    return $null
-                }
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflowTask -MockWith {
                     return $null
                 }
             }
@@ -103,20 +108,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsSchedulingEnabled  = $False;
                     Ensure              = 'Absent'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflow -MockWith {
-                    return @{
-                        Id                   = "random guid"
-                        Category             = "joiner";
-                        Description          = "Description the onboard of prehire employee";
-                        DisplayName          = "Onboard pre-hire employee updated version";
-                        IsEnabled            = $True;
-                        IsSchedulingEnabled  = $False;
-                    }
-                }
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflowTask -MockWith {
-                    return $null
                 }
             }
             It 'Should return Values from the Get method' {
@@ -146,20 +137,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflow -MockWith {
-                    return @{
-                        Id                   = "random guid"
-                        Category             = "joiner";
-                        Description          = "Description the onboard of prehire employee";
-                        DisplayName          = "Onboard pre-hire employee updated version";
-                        IsEnabled            = $True;
-                        IsSchedulingEnabled  = $False;
-                    }
-                }
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflowTask -MockWith {
-                    return $null
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -171,26 +148,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Category             = "joiner";
-                    Description          = "Description the onboard of prehire employee";
+                    Description          = "Drifted Description the onboard of prehire employee"; # Drift
                     DisplayName          = "Onboard pre-hire employee updated version";
                     IsEnabled            = $True;
                     IsSchedulingEnabled  = $False;
                     Ensure              = 'Present'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflow -MockWith {
-                    return @{
-                        Id                   = "random guid"
-                        Category             = "joiner";
-                        Description          = "Drifted Description the onboard of prehire employee";
-                        DisplayName          = "Onboard pre-hire employee updated version";
-                        IsEnabled            = $True;
-                        IsSchedulingEnabled  = $False;
-                    }
-                }
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflowTask -MockWith {
-                    return $null
                 }
             }
 
@@ -214,20 +177,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflow -MockWith {
-                    return @{
-                        Id                   = "random guid"
-                        Category             = "joiner";
-                        Description          = "Description the onboard of prehire employee";
-                        DisplayName          = "Onboard pre-hire employee updated version";
-                        IsEnabled            = $True;
-                        IsSchedulingEnabled  = $False;
-                    }
-                }
-                Mock -CommandName Get-MgBetaIdentityGovernanceLifecycleWorkflowTask -MockWith {
-                    return $null
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

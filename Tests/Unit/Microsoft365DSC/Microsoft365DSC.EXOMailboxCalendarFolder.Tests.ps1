@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -58,6 +58,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     UserPrincipalName = 'john.smith'
                 }
             }
+
+            Mock -CommandName Get-MailboxCalendarFolder -MockWith {
+                return @{
+                    DetailLevel          = "AvailabilityOnly";
+                    Identity             = "john.smith:\Calendar";
+                    PublishDateRangeFrom = "ThreeMonths";
+                    PublishDateRangeTo   = "ThreeMonths"
+                    PublishEnabled       = $False;
+                    SearchableUrlEnabled = $False;
+                }
+            }
         }
 
         # Test contexts
@@ -68,20 +79,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure               = "Present";
                     Identity             = "john.smith:\Calendar";
                     PublishDateRangeFrom = "ThreeMonths";
-                    PublishDateRangeTo   = "ThreeMonths";
+                    PublishDateRangeTo   = "SixMonths"; # Drift
                     PublishEnabled       = $False;
                     SearchableUrlEnabled = $False;
-                }
-
-                Mock -CommandName Get-MailboxCalendarFolder -MockWith {
-                    return @{
-                        DetailLevel          = "AvailabilityOnly";
-                        Identity             = "john.smith:\Calendar";
-                        PublishDateRangeFrom = "ThreeMonths";
-                        PublishDateRangeTo   = "SixMonths"; #Drift
-                        PublishEnabled       = $False;
-                        SearchableUrlEnabled = $False;
-                    }
                 }
             }
 
@@ -109,17 +109,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PublishDateRangeTo   = "ThreeMonths";
                     PublishEnabled       = $False;
                     SearchableUrlEnabled = $False;
-                }
-
-                Mock -CommandName Get-MailboxCalendarFolder -MockWith {
-                    return @{
-                        DetailLevel          = "AvailabilityOnly";
-                        Identity             = "john.smith:\Calendar";
-                        PublishDateRangeFrom = "ThreeMonths";
-                        PublishDateRangeTo   = "ThreeMonths"
-                        PublishEnabled       = $False;
-                        SearchableUrlEnabled = $False;
-                    }
                 }
             }
 
@@ -170,17 +159,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return @{
                         FolderType  = "Calendar";
                         Name        = "Calendar";
-                    }
-                }
-
-                Mock -CommandName Get-MailboxCalendarFolder -MockWith {
-                    return @{
-                        DetailLevel          = "AvailabilityOnly";
-                        Identity             = "john.smith:\Calendar";
-                        PublishDateRangeFrom = "ThreeMonths";
-                        PublishDateRangeTo   = "ThreeMonths"
-                        PublishEnabled       = $False;
-                        SearchableUrlEnabled = $False;
                     }
                 }
             }

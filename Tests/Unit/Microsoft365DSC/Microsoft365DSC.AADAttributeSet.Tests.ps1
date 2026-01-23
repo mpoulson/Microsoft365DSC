@@ -24,13 +24,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaDirectoryAttributeSet -MockWith {
             }
 
             Mock -CommandName Remove-MgBetaDirectoryAttributeSet -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDirectoryAttributeSet -MockWith {
+                return @{
+                    Description         = "This is my super context test";
+                    MaxAttributesPerSet = 420;
+                    Id                  = "c3";
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -66,7 +74,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-
         Context -Name "The instance exists and values are already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
@@ -75,14 +82,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = "Present";
                     Id                  = "c3";
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDirectoryAttributeSet -MockWith {
-                    return @{
-                        Description         = "This is my super context test";
-                        MaxAttributesPerSet = 420;
-                        Id                  = "c3";
-                    }
                 }
             }
 
@@ -95,20 +94,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Description         = "This is my super context test";
-                    MaxAttributesPerSet = 420;
+                    MaxAttributesPerSet = 431; # Drift
                     Ensure              = "Present";
                     Id                  = "c3";
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDirectoryAttributeSet -MockWith {
-                    return @{
-                        Description         = "This is my super context test";
-                        MaxAttributesPerSet = 431; #drift
-                        Ensure              = "Present";
-                        Id                  = "c3";
-                        Credential          = $Credential;
-                    }
                 }
             }
 
@@ -132,14 +121,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDirectoryAttributeSet -MockWith {
-                    return @{
-                        Description         = "This is my super context test";
-                        MaxAttributesPerSet = 420;
-                        Id                  = "c3";
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_SPOSearchResultSource'
+
 
 $InfoMapping = @(
     @{
@@ -113,33 +115,32 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Setting configuration for Result Source instance $Name"
-
-    $ConnectionMode = New-M365DSCConnection -Workload 'PnP' `
-        -InboundParameters $PSBoundParameters
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        Name     = $Name
-        Protocol = $Protocol
-        Ensure   = 'Absent'
-    }
+    Write-Verbose -Message "Getting configuration for Result Source instance $Name"
 
     try
     {
-        if ($null -eq $Script:RecentExtract)
+        if (-not $Script:exportMode)
         {
+            $null = New-M365DSCConnection -Workload 'PnP' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = @{
+                Name     = $Name
+                Protocol = $Protocol
+                Ensure   = 'Absent'
+            }
             $Script:RecentExtract = [Xml] (Get-PnPSearchConfiguration -Scope Subscription)
         }
         $source = $Script:RecentExtract.SearchConfigurationSettings.SearchQueryConfigurationSettings.SearchQueryConfigurationSettings.Sources.Source `
@@ -178,7 +179,7 @@ function Get-TargetResource
             CertificatePassword   = $CertificatePassword
             CertificatePath       = $CertificatePath
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             Ensure                = 'Present'
             AccessTokens          = $AccessTokens
         }
@@ -198,7 +199,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -297,7 +298,7 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'PnP' `
+    $null = New-M365DSCConnection -Workload 'PnP' `
         -InboundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Absent')
@@ -373,7 +374,7 @@ function Set-TargetResource
     $node = $SearchConfigXML.CreateElement('d4p1:ProviderId', `
             'http://schemas.datacontract.org/2004/07/Microsoft.Office.Server.Search.Administration.Query')
     $node.InnerText = $mapping.ProviderID
-    $catch = $newSource.AppendChild($node)
+    $newSource.AppendChild($node) | Out-Null
 
     Write-Verbose -Message 'Setting QueryTransform'
     $queryTransformNode = $SearchConfigXML.CreateElement('d4p1:QueryTransform', `
@@ -525,11 +526,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -537,20 +536,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration for Result Source instance $Name"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -615,6 +603,8 @@ function Export-TargetResource
 
         $SearchConfig = [Xml] (Get-PnPSearchConfiguration -Scope Subscription -ErrorAction Stop)
         [array]$sources = $SearchConfig.SearchConfigurationSettings.SearchQueryConfigurationSettings.SearchQueryConfigurationSettings.Sources.Source
+        $Script:RecentExtract = $SearchConfig
+        $Script:exportMode = $true
 
         $dscContent = ''
         $i = 1
@@ -646,7 +636,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 CertificatePath       = $CertificatePath
                 CertificatePassword   = $CertificatePassword
                 AccessTokens          = $AccessTokens
@@ -676,15 +666,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

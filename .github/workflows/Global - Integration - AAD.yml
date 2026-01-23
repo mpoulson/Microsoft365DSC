@@ -4,7 +4,7 @@ on: [push]
 jobs:
   Integration-Global-AAD:
     # The type of runner that the job will run on
-    runs-on: windows-latest
+    runs-on: [self-hosted, windows, x64]
 
     permissions: write-all
 
@@ -14,64 +14,38 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Copy Microsoft365DSC
         shell: powershell
         run: |
+          winrm quickconfig -force
           $source = "./Modules/Microsoft365DSC/"
           $destination = "C:\Program Files\WindowsPowerShell\Modules"
           Copy-Item -Path $source -Recurse -Destination $destination -Container -Force
+          Update-M365DSCDependencies
       - name: Configure Environment
         shell: powershell
         run: |
           Set-ExecutionPolicy Unrestricted -Force
           Get-ChildItem "C:\Program Files\WindowsPowerShell\Modules" -Recurse | Unblock-File
           Set-M365DSCTelemetryOption -Enabled $false
+          Set-Item -Path WSMan:\localhost\MaxEnvelopeSizekb -Value 1000000
       - name: Generate {Create} Integration Tests from Examples
         shell: powershell
         run: |
           Import-Module './Tests/Integration/M365DSCTestEngine.psm1'
           New-M365DSCIntegrationTest -Workload AAD -Step '1-Create'
-      - name: Commit {Create} Integration Tests
-        shell: powershell
-        run: |
-          git config --local user.email "nicharl@microsoft.com"
-          git config --local user.name "NikCharlebois"
-          git add D:/a/Microsoft365DSC/Microsoft365DSC/Tests/Integration/*
-          git pull
-          git commit -m "Updated {Create} AAD Integration Tests"
-          git push
-          $SHA = git rev-parse HEAD
-          echo "commitid=$SHA" >> $env:GITHUB_OUTPUT
       - name: Generate {Update} Integration Tests from Examples
         shell: powershell
         run: |
           Import-Module './Tests/Integration/M365DSCTestEngine.psm1'
           New-M365DSCIntegrationTest -Workload AAD -Step '2-Update'
-      - name: Commit {Update} Integration Tests
-        shell: powershell
-        run: |
-          git config --local user.email "nicharl@microsoft.com"
-          git config --local user.name "NikCharlebois"
-          git add D:/a/Microsoft365DSC/Microsoft365DSC/Tests/Integration/*
-          git pull
-          git commit -m "Updated {Update} AAD Integration Tests"
-          git push
-          $SHA = git rev-parse HEAD
-          echo "commitid=$SHA" >> $env:GITHUB_OUTPUT
       - name: Generate {Remove} Integration Tests from Examples
         shell: powershell
         run: |
           Import-Module './Tests/Integration/M365DSCTestEngine.psm1'
           New-M365DSCIntegrationTest -Workload AAD -Step '3-Remove'
-      - name: Commit {Remove} Integration Tests
+      - name: Execute {Create} Integration Tests
         shell: powershell
         run: |
-            git config --local user.email "nicharl@microsoft.com"
-            git config --local user.name "NikCharlebois"
-            git add D:/a/Microsoft365DSC/Microsoft365DSC/Tests/Integration/*
-            git pull
-            git commit -m "Updated {Update} AAD Integration Tests"
-            git push
-            $SHA = git rev-parse HEAD
-            echo "commitid=$SHA" >> $env:GITHUB_OUTPUT
+            .\Tests\Integration\Microsoft365DSC\M365DSCIntegration.AAD.Create.Tests.ps1 -ApplicationID ${{ secrets.RUNNERAPPID }} -TenantId ${{ secrets.RUNNERTENANTID }} -CertificateThumbprint ${{ secrets.RUNNERCERTIFICATETHUMBPRINT }}

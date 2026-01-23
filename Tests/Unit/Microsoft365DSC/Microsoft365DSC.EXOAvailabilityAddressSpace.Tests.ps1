@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -36,10 +36,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-PSSession -MockWith {
             }
 
-            Mock -CommandName add-AvailabilityAddressSpace -MockWith {
+            Mock -CommandName Add-AvailabilityAddressSpace -MockWith {
             }
 
-            Mock -CommandName get-AvailabilityAddressSpace -MockWith {
+            Mock -CommandName Get-AvailabilityAddressSpace -MockWith {
+                return @{
+                    Credential            = $Credential
+                    Ensure                = 'Present'
+                    Identity              = 'contoso.com'
+                    AccessMethod          = 'OrgWideFB'
+                    Credentials           = $Null
+                    ForestName            = 'contoso.com'
+                    TargetAutodiscoverEpr = 'http://autodiscover.contoso.com/autodiscover/autodiscover.xml'
+                }
             }
 
             Mock -CommandName Remove-AvailabilityAddressSpace -MockWith {
@@ -80,6 +89,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Add-AvailabilityAddressSpace -Exactly 1
             }
         }
 
@@ -94,18 +104,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ForestName            = 'contoso.com'
                     TargetAutodiscoverEpr = 'http://autodiscover.contoso.com/autodiscover/autodiscover.xml'
                 }
-
-                Mock -CommandName Get-AvailabilityAddressSpace -MockWith {
-                    return @{
-                        Credential            = $Credential
-                        Ensure                = 'Present'
-                        Identity              = 'contoso.com'
-                        AccessMethod          = 'OrgWideFB'
-                        Credentials           = $Null
-                        ForestName            = 'contoso.com'
-                        TargetAutodiscoverEpr = 'http://autodiscover.contoso.com/autodiscover/autodiscover.xml'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -119,28 +117,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential            = $Credential
                     Ensure                = 'Present'
                     Identity              = 'contoso.com'
-                    AccessMethod          = 'OrgWideFB'
+                    AccessMethod          = 'PerUserFB' # Drift
                     Credentials           = $Null
                     ForestName            = 'contoso.com'
                     TargetAutodiscoverEpr = 'http://autodiscover.contoso.com/autodiscover/autodiscover.xml'
-                }
-
-                Mock -CommandName Get-AvailabilityAddressSpace -MockWith {
-                    return @{
-                        Credential            = $Credential
-                        Ensure                = 'Present'
-                        Identity              = 'contoso.com'
-                        AccessMethod          = 'PerUserFB'
-                        Credentials           = $Null
-                        ForestName            = 'contoso.com'
-                        TargetAutodiscoverEpr = 'http://autodiscover.contoso.com/autodiscover/autodiscover.xml'
-                    }
-                }
-
-                Mock -CommandName Add-AvailabilityAddressSpace -MockWith {
-                    return @{
-
-                    }
                 }
             }
 
@@ -150,6 +130,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Successfully call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Add-AvailabilityAddressSpace -Exactly 1
+                Should -Invoke -CommandName Remove-AvailabilityAddressSpace -Exactly 1
             }
         }
 
@@ -161,18 +143,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ForestName = 'contoso.com'
                     Identity   = 'TestAvailabilityAddressSpace'
                 }
-
-                Mock -CommandName Get-AvailabilityAddressSpace -MockWith {
-                    return @{
-                        Identity = 'TestAvailabilityAddressSpace'
-                    }
-                }
-
-                Mock -CommandName Remove-AvailabilityAddressSpace -MockWith {
-                    return @{
-
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -181,6 +151,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the Connector in the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Remove-AvailabilityAddressSpace -Exactly 1
             }
         }
 
@@ -190,12 +161,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-AvailabilityAddressSpace -MockWith {
-                    return @{
-                        Identity = 'TestAvailabilityAddressSpace'
-                    }
                 }
             }
 

@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -36,15 +36,32 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName New-ServicePrincipal -MockWith {
-                return $null
             }
 
             Mock -CommandName Remove-ServicePrincipal -MockWith {
-                return $null
             }
 
             Mock -CommandName Set-ServicePrincipal -MockWith {
-                return $null
+            }
+
+            Mock -CommandName Get-ServicePrincipal -MockWith {
+                return @{
+                    AppId                = "c6871074-3ded-4935-a5dc-b8f8d91d7d06";
+                    DisplayName          = "Arpita";
+                    Identity             = "00f6b0e4-1d00-427b-9a5b-ce6c43c43fc7";
+                    Ensure               = "Present"
+                    Credential           = $Credential;
+                }
+            }
+            Mock -CommandName Get-MgServicePrincipal -MockWith {
+                return @{
+                    AppDisplayName       = "ISV Portal";
+                    DisplayName          = "ISV Portal";
+                    Id                   = "00f6b0e4-1d00-427b-9a5b-ce6c43c43fc7"
+                    AppId                = "f53895d3-095d-408f-8e93-8f94b391404e"
+                    SignInAudience       = "AzureADMultipleOrgs"
+                    ServicePrincipalType = "Application"
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -97,26 +114,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity             = "00f6b0e4-1d00-427b-9a5b-ce6c43c43fc7";
                     Credential           = $Credential;
                 }
-
-                Mock -CommandName Get-ServicePrincipal -MockWith {
-                    return @{
-                        AppId                = "c6871074-3ded-4935-a5dc-b8f8d91d7d06";
-                        DisplayName          = "Arpita";
-                        Identity             = "00f6b0e4-1d00-427b-9a5b-ce6c43c43fc7";
-                        Ensure               = "Present"
-                        Credential           = $Credential;
-                    }
-                }
-                Mock -CommandName Get-MgServicePrincipal -MockWith {
-                    return @{
-                        AppDisplayName       = "Portfolios";
-                        DisplayName          = "Portfolios";
-                        Id                   = "003e4f9a-3bd6-46a2-ac8f-2fc6b87c56c7"
-                        AppId                = "f53895d3-095d-408f-8e93-8f94b391404e"
-                        SignInAudience       = "AzureADMultipleOrgs"
-                        ServicePrincipalType = "Application"
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -141,26 +138,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure               = "Present"
                     Credential           = $Credential;
                 }
-
-                Mock -CommandName Get-ServicePrincipal -MockWith {
-                    return @{
-                        AppId                = "c6871074-3ded-4935-a5dc-b8f8d91d7d06";
-                        DisplayName          = "Arpita";
-                        Identity             = "00f6b0e4-1d00-427b-9a5b-ce6c43c43fc7";
-                        Ensure               = "Present"
-                        Credential           = $Credential;
-                    }
-                }
-                Mock -CommandName Get-MgServicePrincipal -MockWith {
-                    return @{
-                        AppDisplayName       = "ISV Portal";
-                        DisplayName          = "ISV Portal";
-                        Id                   = "00f6b0e4-1d00-427b-9a5b-ce6c43c43fc7"
-                        AppId                = "c6871074-3ded-4935-a5dc-b8f8d91d7d06"
-                        SignInAudience       = "AzureADMultipleOrgs"
-                        ServicePrincipalType = "Application"
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -173,31 +150,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     AppId                = "c6871074-3ded-4935-a5dc-b8f8d91d7d06";
                     AppName              = "ISV Portal";
-                    DisplayName          = "Arpita";
+                    DisplayName          = "Aditya";   # Drift
                     Identity             = "00f6b0e4-1d00-427b-9a5b-ce6c43c43fc7";
                     Ensure               = "Present"
                     Credential           = $Credential;
 
-                }
-
-                Mock -CommandName Get-ServicePrincipal -MockWith {
-                    return @{
-                        AppId                = "c6871074-3ded-4935-a5dc-b8f8d91d7d06";
-                        AppName              = "ISV Portal";
-                        DisplayName          = "Aditya";   #Drift
-                        Identity             = "00f6b0e4-1d00-427b-9a5b-ce6c43c43fc7";
-                        Ensure               = "Present"
-                        Credential           = $Credential;
-                    }
-                }
-                Mock -CommandName Get-MgServicePrincipal -MockWith {
-                    return @{
-                        DisplayName          = "ISV Portal";
-                        Id                   = "00f6b0e4-1d00-427b-9a5b-ce6c43c43fc7"
-                        AppId                = "c6871074-3ded-4935-a5dc-b8f8d91d7d06"
-                        SignInAudience       = "AzureADMultipleOrgs"
-                        ServicePrincipalType = "Application"
-                    }
                 }
             }
 
@@ -221,27 +178,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-ServicePrincipal -MockWith {
-                    return @{
-                        AppId                = "c6871074-3ded-4935-a5dc-b8f8d91d7d06";
-                        AppName              = "ISV Portal";
-                        DisplayName          = "Arpita";
-                        Identity             = "00f6b0e4-1d00-427b-9a5b-ce6c43c43fc7";
-                        Ensure               = "Present"
-                        Credential           = $Credential;
-                    }
-                }
-                Mock -CommandName Get-MgServicePrincipal -MockWith {
-                    return @{
-                        AppDisplayName       = "ISV Portal";
-                        DisplayName          = "ISV Portal";
-                        Id                   = "00f6b0e4-1d00-427b-9a5b-ce6c43c43fc7"
-                        AppId                = "c6871074-3ded-4935-a5dc-b8f8d91d7d06"
-                        SignInAudience       = "AzureADMultipleOrgs"
-                        ServicePrincipalType = "Application"
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

@@ -40,11 +40,11 @@ class MSFT_EXOMobileDeviceMailboxPolicy : OMI_BaseResource
     [Write, Description("The MaxEmailHTMLBodyTruncationSize parameter specifies the maximum size at which HTML-formatted email messages are synchronized to the mobile phone. The value is specified in KB.")] String MaxEmailHTMLBodyTruncationSize;
     [Write, Description("The MaxInactivityTimeDeviceLock parameter specifies the length of time that the mobile phone can be inactive before the password is required to reactivate it.")] String MaxInactivityTimeLock;
     [Write, Description("The MaxPasswordFailedAttempts parameter specifies the number of attempts a user can make to enter the correct password for the mobile phone. You can enter any number from 4 through 16 or the value Unlimited.")] String MaxPasswordFailedAttempts;
-    [Write, Description("The MinPasswordComplexCharacters parameter specifies the character sets that are required in the password of the mobile device.")] String MinPasswordComplexCharacters;
+    [Write, Description("The MinPasswordComplexCharacters parameter specifies the character sets that are required in the password of the mobile device.")] SInt32 MinPasswordComplexCharacters;
     [Write, Description("The MinPasswordLength parameter specifies the minimum number of characters in the mobile device password.")] String MinPasswordLength;
     [Write, Description("The PasswordEnabled parameter specifies whether a password is required on the mobile device.")] Boolean PasswordEnabled;
     [Write, Description("The PasswordExpiration parameter specifies how long a password can be used on a mobile device before the user is forced to change the password.")] String PasswordExpiration;
-    [Write, Description("The PasswordHistory parameter specifies the number of unique new passwords that need to be created on the mobile device before an old password can be reused.")] String PasswordHistory;
+    [Write, Description("The PasswordHistory parameter specifies the number of unique new passwords that need to be created on the mobile device before an old password can be reused.")] SInt32 PasswordHistory;
     [Write, Description("The PasswordRecoveryEnabled parameter specifies whether the recovery password for the mobile device is stored in Exchange.")] Boolean PasswordRecoveryEnabled;
     [Write, Description("The RequireDeviceEncryption parameter specifies whether encryption is required on the mobile device.")] Boolean RequireDeviceEncryption;
     [Write, Description("The RequireEncryptedSMIMEMessages parameter specifies whether the mobile device must send encrypted S/MIME messages.")] Boolean RequireEncryptedSMIMEMessages;

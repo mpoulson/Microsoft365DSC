@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_SCInsiderRiskPolicy'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -726,12 +728,14 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of SCInsiderRiskPolicy for $Name"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -966,7 +970,11 @@ function Get-TargetResource
                 PowerBISensitivityLabelRemovedFromArtifacts   = ($tenantSettings.ExtensibleIndicators | Where-Object -FilterScript { $_.Name -eq 'PowerBISensitivityLabelRemovedFromArtifacts' }).Enabled
                 HistoricTimeSpan                              = $tenantSettings.TimeSpan.HistoricTimeSpan
                 InScopeTimeSpan                               = $tenantSettings.TimeSpan.InScopeTimeSpan
-                EnableTeam                                    = [Boolean]::Parse($tenantSettings.FeatureSettings.EnableTeam)
+            }
+
+            if (-not [System.String]::IsNullOrEmpty($tenantSettings.FeatureSettings.EnableTeam))
+            {
+                $tenantSettingsHash.Add('EnableTeam', [Boolean]::Parse($tenantSettings.FeatureSettings.EnableTeam))
             }
 
             $AnalyticsNewInsight = $tenantSettings.NotificationPreferences | Where-Object -FilterScript { $_.NotificationType -eq 'AnalyticsNewInsight' }
@@ -1091,18 +1099,17 @@ function Get-TargetResource
             $results += $tenantSettingsHash
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -1833,6 +1840,8 @@ function Set-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Setting configuration of SCInsiderRiskPolicy for $Name"
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -1846,9 +1855,6 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
-    $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-
     $indicatorsProperties = @('AnomalyDetections', 'CopyToPersonalCloud', 'CopyToUSB', 'CumulativeExfiltrationDetector', `
             'EmailExternal', 'EmployeeAccessedEmployeePatientData', 'EmployeeAccessedFamilyData', `
             'EmployeeAccessedHighVolumePatientData', 'EmployeeAccessedNeighbourData', `
@@ -2712,9 +2718,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -2724,20 +2727,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -2841,15 +2833,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

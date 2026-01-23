@@ -25,14 +25,35 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
             }
 
+            Mock -CommandName Get-PnPTenant -MockWith {
+                return @{
+                    OneDriveStorageQuota = '1024'
+                }
+            }
+
+            Mock -CommandName Set-PnPTenant -MockWith {
+            }
+
             Mock -CommandName Set-PnPTenantSyncClientRestriction -MockWith {
+            }
+
+            Mock -CommandName Get-PnPTenantSyncClientRestriction -MockWith {
+                return @{
+                    OptOutOfGrooveBlock        = $false
+                    OptOutOfGrooveSoftBlock    = $false
+                    DisableReportProblemDialog = $false
+                    BlockMacSync               = $true
+                    AllowedDomainList          = @([System.Guid]::Empty)
+                    TenantRestrictionEnabled   = $true
+                    ExcludedFileExtensions     = @('.asmx')
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -50,10 +71,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsSingleInstance     = 'Yes'
                     Ensure               = 'Present'
                     Credential           = $Credential
-                }
-
-                Mock -CommandName Set-PnPTenant -MockWith {
-                    return @{OneDriveStorageQuota = $null }
                 }
 
                 Mock -CommandName Get-PnPTenant -MockWith {
@@ -77,38 +94,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsSingleInstance                          = 'Yes'
                     OrphanedPersonalSitesRetentionPeriod      = 60
                     OneDriveForGuestsEnabled                  = $true
-                    NotifyOwnersWhenInvitationsAccepted       = $true
                     NotificationsInOneDriveForBusinessEnabled = $true
                     ODBMembersCanShare                        = 'On'
                     ODBAccessRequests                         = 'On'
                     BlockMacSync                              = $true
                     DisableReportProblemDialog                = $true
                     TenantRestrictionEnabled                  = $true
-                    DomainGuids                               = @(New-Guid)
+                    DomainGuids                               = @('00000000-0000-0000-0000-000000000000')
                     ExcludedFileExtensions                    = @('.asmx')
                     GrooveBlockOption                         = 'HardOptIn'
                     Credential                                = $Credential
-                }
-
-                Mock -CommandName Get-PnPTenant -MockWith {
-                    return @{
-                        OneDriveStorageQuota = '1024'
-                    }
-                }
-
-                Mock -CommandName Get-PnPTenantSyncClientRestriction -MockWith {
-                    return @{
-                        OptOutOfGrooveBlock        = $false
-                        OptOutOfGrooveSoftBlock    = $false
-                        DisableReportProblemDialog = $false
-                        BlockMacSync               = $true
-                        AllowedDomainList          = @('')
-                        TenantRestrictionEnabled   = $true
-                        ExcludedFileExtensions     = @('.asmx')
-                    }
-                }
-                Mock -CommandName Set-PnPTenant -MockWith {
-                    return @{OneDriveStorageQuota = $null }
                 }
             }
 
@@ -131,12 +126,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-PnPTenant -MockWith {
-                    return @{
-                        OneDriveStorageQuota = '1024'
-                    }
                 }
             }
 

@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -45,6 +45,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName Remove-ActiveSyncMailboxPolicy -MockWith {
                 return $null
+            }
+
+            Mock -CommandName Get-ActiveSyncMailboxPolicy -MockWith {
+                return @{
+                    Identity                    = 'FakeStringValue'
+                    Name                        = 'FakeStringValue'
+                    AllowHTMLEmail              = $true
+                    ApprovedApplicationList     = @('FakeStringValue1', 'FakeStringValue2')
+                    DevicePasswordHistory       = 5
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -86,12 +96,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity            = 'FakeStringValue'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-ActiveSyncMailboxPolicy -MockWith {
-                    return @{
-                        Identity = 'FakeStringValue'
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -117,17 +121,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DevicePasswordHistory       = 5
                     Credential                  = $Credential;
                 }
-
-                Mock -CommandName Get-ActiveSyncMailboxPolicy -MockWith {
-                    return @{
-                        Identity                    = 'FakeStringValue'
-                        Name                        = 'FakeStringValue'
-                        AllowHTMLEmail              = $true
-                        ApprovedApplicationList     = @('FakeStringValue1', 'FakeStringValue2')
-                        DevicePasswordHistory       = 5
-                    }
-                }
-
             }
 
             It 'Should return true from the Test method' {
@@ -142,19 +135,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                    = 'FakeStringValue'
                     Name                        = 'FakeStringValue'
                     AllowHTMLEmail              = $true
-                    ApprovedApplicationList     = @('FakeStringValue1', 'FakeStringValue2')
+                    ApprovedApplicationList     = @('FakeStringValue1') # Drift
                     DevicePasswordHistory       = 5
                     Credential                  = $Credential;
-                }
-
-                Mock -CommandName Get-ActiveSyncMailboxPolicy -MockWith {
-                    return @{
-                        Identity                    = 'FakeStringValue'
-                        Name                        = 'FakeStringValue'
-                        AllowHTMLEmail              = $true
-                        ApprovedApplicationList     = @('FakeStringValue1') #drift
-                        DevicePasswordHistory       = 5
-                    }
                 }
             }
 
@@ -178,16 +161,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-ActiveSyncMailboxPolicy -MockWith {
-                    return @{
-                        Identity                    = 'FakeStringValue'
-                        Name                        = 'FakeStringValue'
-                        AllowHTMLEmail              = $true
-                        ApprovedApplicationList     = @('FakeStringValue1', 'FakeStringValue2')
-                        DevicePasswordHistory       = 5
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

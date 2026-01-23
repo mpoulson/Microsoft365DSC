@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -78,6 +78,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                         @{
                                             name = 'Enable Personal Data Encryption.'
                                             itemId = 'user_vendor_msft_pde_enablepersonaldataencryption_1'
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 1
+                                            }
                                         }
                                     )
                                 }
@@ -98,6 +102,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'user_vendor_msft_pde_enablepersonaldataencryption'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 0
+                                            }
                                         }
                                     )
                                 }
@@ -118,6 +126,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'user_vendor_msft_pde_enablepersonaldataencryption'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 0
+                                            }
                                         }
                                     )
                                 }
@@ -131,13 +143,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     options = @(
                                         @{
                                             name = 'Disable PDE on the folder. If the folder is currently protected by PDE, this will result in unprotecting the folder.'
-                                            itemId = 'user_vendor_msft_pde_protectfolders_protectdocuments_1'
+                                            itemId = 'user_vendor_msft_pde_protectfolders_protectdocuments_0'
                                             dependentOn = @(
                                                 @{
                                                     dependentOn = 'user_vendor_msft_pde_enablepersonaldataencryption_1'
                                                     parentSettingId = 'user_vendor_msft_pde_enablepersonaldataencryption'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 0
+                                            }
                                         }
                                     )
                                 }

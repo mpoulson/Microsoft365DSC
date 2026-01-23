@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADCustomSecurityAttributeDefinition'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -11,6 +13,10 @@ function Get-TargetResource
         [Parameter(Mandatory = $true)]
         [System.String]
         $AttributeSet,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance[]]
+        $AllowedValues,
 
         [Parameter()]
         [System.String]
@@ -29,6 +35,7 @@ function Get-TargetResource
         $IsSearchable,
 
         [Parameter()]
+        [ValidateSet('Available', 'Deprecated')]
         [System.String]
         $Status,
 
@@ -74,12 +81,14 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of AzureAD Custom Security Attribute Definition for {$Name}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -99,11 +108,13 @@ function Get-TargetResource
             if (-not [System.String]::IsNullOrEmpty($Id))
             {
                 $instance = Get-MgBetaDirectoryCustomSecurityAttributeDefinition -CustomSecurityAttributeDefinitionId $Id `
+                    -ExpandProperty 'allowedValues' `
                     -ErrorAction SilentlyContinue
             }
             if ($null -eq $instance)
             {
                 $instance = Get-MgBetaDirectoryCustomSecurityAttributeDefinition -Filter "Name eq '$($Name -replace "'", "''")'" `
+                    -ExpandProperty 'allowedValues' `
                     -ErrorAction SilentlyContinue
             }
             if ($null -eq $instance)
@@ -116,8 +127,18 @@ function Get-TargetResource
             $instance = $Script:exportedInstance
         }
 
+        $complexAllowedValues = @()
+        foreach ($allowedValue in $instance.AllowedValues)
+        {
+            $complexAllowedValues += [ordered]@{
+                ValueId  = $allowedValue.Id
+                IsActive = $allowedValue.IsActive
+            }
+        }
+
         $results = @{
             Name                    = $instance.Name
+            AllowedValues           = $complexAllowedValues
             AttributeSet            = $instance.AttributeSet
             Id                      = $instance.Id
             Description             = $instance.Description
@@ -135,18 +156,17 @@ function Get-TargetResource
             ManagedIdentity         = $ManagedIdentity.IsPresent
             AccessTokens            = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -162,6 +182,10 @@ function Set-TargetResource
         [Parameter(Mandatory = $true)]
         [System.String]
         $AttributeSet,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance[]]
+        $AllowedValues,
 
         [Parameter()]
         [System.String]
@@ -180,6 +204,7 @@ function Set-TargetResource
         $IsSearchable,
 
         [Parameter()]
+        [ValidateSet('Available', 'Deprecated')]
         [System.String]
         $Status,
 
@@ -225,6 +250,8 @@ function Set-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Setting configuration of AzureAD Custom Security Attribute Definition for {$Name}"
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -239,13 +266,22 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
     $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    $setParameters.Remove('AllowedValues') | Out-Null
 
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         $setParameters.Remove('Id') | Out-Null
         Write-Verbose -Message "Creating new Atribute Definition {$Name}"
-        New-MgBetaDirectoryCustomSecurityAttributeDefinition @SetParameters
+        $attributeDefinition = New-MgBetaDirectoryCustomSecurityAttributeDefinition @SetParameters
+
+        foreach ($allowedValue in $AllowedValues)
+        {
+            New-MgBetaDirectoryCustomSecurityAttributeDefinitionAllowedValue `
+                -CustomSecurityAttributeDefinitionId $attributeDefinition.Id `
+                -Id $allowedValue.ValueId `
+                -IsActive:$allowedValue.IsActive
+        }
     }
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
@@ -258,7 +294,33 @@ function Set-TargetResource
         $setParameters.Remove('IsSearchable') | Out-Null
         $setParameters.Remove('Name') | Out-Null
         $setParameters.Remove('Type') | Out-Null
+        if ($setParameters.ContainsKey('UsePreDefinedValuesOnly') -and $setParameters.UsePreDefinedValuesOnly -eq $currentInstance.UsePreDefinedValuesOnly)
+        {
+            $setParameters.Remove('UsePreDefinedValuesOnly') | Out-Null
+        }
         Update-MgBetaDirectoryCustomSecurityAttributeDefinition @SetParameters
+
+        # Allowed values cannot be removed, therefore we only need to add new ones or update existing ones
+        foreach ($allowedValue in $AllowedValues)
+        {
+            $existingAllowedValue = $currentInstance.AllowedValues | Where-Object { $_.Id -eq $allowedValue.ValueId }
+            if ($null -eq $existingAllowedValue)
+            {
+                # Add new allowed value
+                New-MgBetaDirectoryCustomSecurityAttributeDefinitionAllowedValue `
+                    -CustomSecurityAttributeDefinitionId $currentInstance.Id `
+                    -Id $allowedValue.ValueId `
+                    -IsActive:$allowedValue.IsActive
+            }
+            elseif ($existingAllowedValue.IsActive -ne $allowedValue.IsActive)
+            {
+                # Update existing allowed value
+                Update-MgBetaDirectoryCustomSecurityAttributeDefinitionAllowedValue `
+                    -CustomSecurityAttributeDefinitionId $currentInstance.Id `
+                    -AllowedValueId $allowedValue.ValueId `
+                    -IsActive:$allowedValue.IsActive
+            }
+        }
     }
     # REMOVE
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
@@ -284,6 +346,10 @@ function Test-TargetResource
         $AttributeSet,
 
         [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance[]]
+        $AllowedValues,
+
+        [Parameter()]
         [System.String]
         $Id,
 
@@ -300,6 +366,7 @@ function Test-TargetResource
         $IsSearchable,
 
         [Parameter()]
+        [ValidateSet('Available', 'Deprecated')]
         [System.String]
         $Status,
 
@@ -345,9 +412,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -357,20 +421,11 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $compareParameters = Get-CompareParameters
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                             -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+                                             @compareParameters
+    return $result
 }
 
 function Export-TargetResource
@@ -425,7 +480,9 @@ function Export-TargetResource
 
     try
     {
-        [array] $Script:exportedInstances = Get-MgBetaDirectoryCustomSecurityAttributeDefinition -ErrorAction Stop
+        [array] $Script:exportedInstances = Get-MgBetaDirectoryCustomSecurityAttributeDefinition `
+            -ExpandProperty 'allowedValues' `
+            -ErrorAction Stop
 
         $i = 1
         $dscContent = ''
@@ -461,12 +518,28 @@ function Export-TargetResource
 
             $Script:exportedInstance = $config
             $Results = Get-TargetResource @Params
+            if ($null -ne $Results.AllowedValues)
+            {
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.AllowedValues `
+                    -CIMInstanceName 'CustomSecurityAttributeAllowedValue'
+
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                {
+                    $Results.AllowedValues = $complexTypeStringResult
+                }
+                else
+                {
+                    $Results.Remove('AllowedValues') | Out-Null
+                }
+            }
 
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
                 -Results $Results `
-                -Credential $Credential
+                -Credential $Credential `
+                -NoEscape @('AllowedValues')
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
@@ -477,16 +550,64 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return @{
+        IncludedProperties = @('ValueId', 'IsActive')
+        PostProcessing = {
+            param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+            # Values cannot be removed from AllowedValues
+            # Therefore, we add the missing values from CurrentValues to DesiredValues for comparison
+            if ($DesiredValues.ContainsKey('AllowedValues'))
+            {
+                foreach ($currentValue in $CurrentValues.AllowedValues)
+                {
+                    $matchingValue = $DesiredValues.AllowedValues | Where-Object { $_.ValueId -eq $currentValue.ValueId }
+                    if ($null -eq $matchingValue)
+                    {
+                        # AllowedValues is either an array of CIM instances or an array of hashtables
+                        # CIM instances is when using Test-DscConfiguration (compiled configuration) and hashtables when creating a report, using values from ConvertTo-DscObject
+                        if ($DesiredValues.AllowedValues -is [CimInstance[]])
+                        {
+                            $DesiredValues.AllowedValues += New-CimInstance -ClassName MSFT_CustomSecurityAttributeAllowedValue -Property @{
+                                IsActive = $currentValue.IsActive
+                                ValueId = $currentValue.ValueId
+                            } -Namespace root/Microsoft/Windows/DesiredStateConfiguration -ClientOnly
+                        }
+                        else
+                        {
+                            $DesiredValues.AllowedValues = @($DesiredValues.AllowedValues)
+                            $DesiredValues.AllowedValues += @{
+                                CIMInstance = 'MSFT_CustomSecurityAttributeAllowedValue'
+                                IsActive = $currentValue.IsActive
+                                ValueId = $currentValue.ValueId
+                            }
+                        }
+                    }
+                }
+
+                if ($DesiredValues.AllowedValues -is [CimInstance[]])
+                {
+                    $DesiredValues.AllowedValues = [CimInstance[]]$DesiredValues.AllowedValues
+                }
+            }
+            return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+        }
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

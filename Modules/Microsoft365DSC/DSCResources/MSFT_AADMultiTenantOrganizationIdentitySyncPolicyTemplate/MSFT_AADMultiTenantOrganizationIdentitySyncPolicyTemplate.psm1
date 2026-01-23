@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADMultiTenantOrganizationIdentitySyncPolicyTemplate'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -6,7 +8,7 @@ function Get-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [System.String]
-        $IsSingleInstance = 'Yes',
+        $IsSingleInstance,
 
         [Parameter()]
         [System.String]
@@ -46,8 +48,8 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters | Out-Null
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -88,18 +90,17 @@ function Get-TargetResource
             ManagedIdentity          = $ManagedIdentity.IsPresent
             AccessTokens             = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -110,7 +111,7 @@ function Set-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [System.String]
-        $IsSingleInstance = 'Yes',
+        $IsSingleInstance,
 
         [Parameter()]
         [System.String]
@@ -150,6 +151,11 @@ function Set-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Setting the AAD Multi Tenant Organization Identity Sync Policy Template"
+
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        -InboundParameters $PSBoundParameters
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -163,7 +169,6 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-MgBetaPolicyCrossTenantAccessPolicyTemplateMultiTenantOrganizationIdentitySynchronization
-    Write-Verbose -Message "Updating MTO Identity Sync Policy Template."
     $setParameters = @{
         Id                       = $currentInstance.Id
         TemplateApplicationLevel = $TemplateApplicationLevel
@@ -182,7 +187,7 @@ function Test-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [System.String]
-        $IsSingleInstance = 'Yes',
+        $IsSingleInstance,
 
         [Parameter()]
         [System.String]
@@ -222,9 +227,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -234,54 +236,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-    $testTargetResource = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            if (-not ($source.GetType().Name -eq 'CimInstance[]' -and $source.Count -eq 0))
-            {
-                $testResult = Compare-M365DSCComplexObject `
-                    -Source ($source) `
-                    -Target ($target)
-
-                if (-not $testResult)
-                {
-                    Write-Verbose "TestResult returned False for $source"
-                    $testTargetResource = $false
-                }
-                else
-                {
-                    $ValuesToCheck.Remove($key) | Out-Null
-                }
-            }
-            else
-            {
-                $ValuesToCheck.Remove($key) | Out-Null
-            }
-        }
-    }
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-    if (-not $TestResult)
-    {
-        $testTargetResource = $false
-    }
-
-    return $testTargetResource
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -394,15 +351,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

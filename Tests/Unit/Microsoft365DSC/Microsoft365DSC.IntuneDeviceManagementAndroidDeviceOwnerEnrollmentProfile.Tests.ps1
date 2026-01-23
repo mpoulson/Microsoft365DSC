@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -38,6 +38,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName New-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile -MockWith {
             }
             Mock -CommandName Remove-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile -MockWith {
+                return @{
+                    Id                      = "164655f7-1232-4d56-ae8f-b095196a0309";
+                    DisplayName             = "Android Owner Enrollment Profile"
+                    Description             = "Profile for enrolling Android devices"
+                    TokenExpirationDateTime = "2024-12-31T23:59:59Z"
+                    TokenCreationDateTime   = "2024-12-31T23:59:59Z"
+                    TokenValue              = "your-token-value"
+                    EnrollmentMode          = "corporateOwnedWorkProfile"
+                    EnrollmentTokenType     = 'TokenType'
+                    QrCodeContent           = "your-qr-code-content"
+                    WifiSsid                = "your-wifi-ssid"
+                    WifiPassword            = "your-wifi-password"
+                    WifiSecurityType        = "wpa"
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -94,24 +111,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                  = 'Absent'
                     Credential              = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile -MockWith {
-                    return @{
-                        Id                      = "164655f7-1232-4d56-ae8f-b095196a0309";
-                        DisplayName             = "Android Owner Enrollment Profile"
-                        Description             = "Profile for enrolling Android"
-                        TokenExpirationDateTime = "2024-12-31T23:59:59Z"
-                        TokenCreationDateTime   = "2024-12-31T23:59:59Z"
-                        TokenValue              = "your-token-value"
-                        EnrollmentMode          = "corporateOwnedWorkProfile"
-                        EnrollmentTokenType     = 'TokenType'
-                        QrCodeContent           = "your-qr-code-content"
-                        WifiSsid                = "your-wifi-ssid"
-                        WifiPassword            = "your-wifi-password"
-                        WifiSecurityType        = "wpa"
-                        Ensure                  = 'Present'
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -140,24 +139,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                  = 'Present'
                     Credential              = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile -MockWith {
-                    return @{
-                        Id                      = "164655f7-1232-4d56-ae8f-b095196a0309";
-                        DisplayName             = "Android Owner Enrollment Profile"
-                        Description             = "Profile for enrolling Android devices"
-                        TokenExpirationDateTime = "2024-12-31T23:59:59Z"
-                        TokenCreationDateTime   = "2024-12-31T23:59:59Z"
-                        TokenValue              = "your-token-value"
-                        EnrollmentMode          = "corporateOwnedWorkProfile"
-                        EnrollmentTokenType     = 'TokenType'
-                        QrCodeContent           = "your-qr-code-content"
-                        WifiSsid                = "your-wifi-ssid"
-                        WifiPassword            = "your-wifi-password"
-                        WifiSecurityType        = "wpa"
-                        Ensure                  = 'Present'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -178,24 +159,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     WifiSecurityType        = "wpa"
                     Ensure                  = 'Present'
                     Credential              = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile -MockWith {
-                    return @{
-                        Id                      = "164655f7-1232-4d56-ae8f-b095196a0309";
-                        DisplayName             = "Android Owner Enrollment Profile"
-                        Description             = "Profile for enrolling Android devices"
-                        TokenExpirationDateTime = "2024-12-31T23:59:59Z"
-                        TokenCreationDateTime   = "2024-12-31T23:59:59Z"
-                        TokenValue              = "your-token-value"
-                        EnrollmentMode          = "corporateOwnedWorkProfile"
-                        EnrollmentTokenType     = 'TokenType'
-                        QrCodeContent           = "your-qr-code-content"
-                        WifiSsid                = "your-wifi-ssid"
-                        WifiPassword            = "your-wifi-password"
-                        WifiSecurityType        = "wpa"
-                        Ensure                  = 'Present'
-                    }
                 }
             }
 
@@ -221,25 +184,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential  = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile -MockWith {
-                    return @{
-                        Id                      = "164655f7-1232-4d56-ae8f-b095196a0309";
-                        DisplayName             = "Android Owner Enrollment Profile"
-                        Description             = "Profile for enrolling Android"
-                        TokenExpirationDateTime = "2024-12-31T23:59:59Z"
-                        TokenCreationDateTime   = "2024-12-31T23:59:59Z"
-                        TokenValue              = "your-token-value"
-                        EnrollmentMode          = "corporateOwnedWorkProfile"
-                        EnrollmentTokenType     = 'TokenType'
-                        QrCodeContent           = "your-qr-code-content"
-                        WifiSsid                = "your-wifi-ssid"
-                        WifiPassword            = "your-wifi-password"
-                        WifiSecurityType        = "wpa"
-                        Ensure                  = 'Present'
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

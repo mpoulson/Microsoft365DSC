@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXORoleGroup'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -59,12 +61,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting Role Group configuration for $Name"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            Write-Verbose -Message "Getting Role Group configuration for $Name"
-            $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -82,9 +85,7 @@ function Get-TargetResource
             $nullReturn = $PSBoundParameters
             $nullReturn.Ensure = 'Absent'
 
-            $AllRoleGroups = Get-RoleGroup -ErrorAction Stop
-            $RoleGroup = $AllRoleGroups | Where-Object -FilterScript { $_.Name -eq $Name }
-
+            $RoleGroup = Get-RoleGroup -Identity $Name -ErrorAction SilentlyContinue
             if ($null -eq $RoleGroup)
             {
                 Write-Verbose -Message "Role Group $($Name) does not exist."
@@ -130,7 +131,7 @@ function Get-TargetResource
             CertificateThumbprint = $CertificateThumbprint
             CertificatePath       = $CertificatePath
             CertificatePassword   = $CertificatePassword
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             TenantId              = $TenantId
             AccessTokens          = $AccessTokens
         }
@@ -146,7 +147,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -225,9 +226,6 @@ function Set-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters
 
     $NewRoleGroupParams = @{
         Name        = $Name
@@ -358,11 +356,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -370,64 +366,53 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing Role Group configuration for $Name"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    $ValuesToCheck = $PSBoundParameters
-
     # If the group is passed in a display name (no @) then we resolve it manually
-    $newMembersValue = @()
-    foreach ($member in $Members)
+    if ($PSBoundParameters.ContainsKey('Members'))
     {
-        Write-Verbose -Message "The current member {$member} is provided as a group display name."
-        $group = Get-Group -Filter "DisplayName eq '$member'" -ErrorAction 'SilentlyContinue'
+        $newMembersValue = @()
+        foreach ($member in $Members)
+        {
+            Write-Verbose -Message "The current member {$member} is provided as a group display name."
+            $group = Get-Group -Filter "DisplayName eq '$member'" -ErrorAction 'SilentlyContinue'
 
-        if ($null -ne $group)
-        {
-            if ($null -ne $group.PrimaryStmpAddress)
+            if ($null -ne $group)
             {
-                $newMembersValue += $group.PrimarySmtpAddress
-            }
-            elseif ($null -ne $group.WindowsEmailAddress)
-            {
-                $newMembersValue += $group.WindowsEmailAddress
-            }
-        }
-        else
-        {
-            $user = Get-User -Identity $member -ErrorAction 'SilentlyContinue'
-            if ($null -ne $user)
-            {
-                if ($member.Contains('@'))
+                if ($null -ne $group.PrimaryStmpAddress)
                 {
-                    $newMembersValue += $user.UserPrincipalName
+                    $newMembersValue += $group.PrimarySmtpAddress
                 }
-                else
+                elseif ($null -ne $group.WindowsEmailAddress)
                 {
-                    $newMembersValue += $user.DisplayName
+                    $newMembersValue += $group.WindowsEmailAddress
                 }
             }
             else
             {
-                # Case where the member is an app.
-                $newMembersValue += $member
+                $user = Get-User -Identity $member -ErrorAction 'SilentlyContinue'
+                if ($null -ne $user)
+                {
+                    if ($member.Contains('@'))
+                    {
+                        $newMembersValue += $user.UserPrincipalName
+                    }
+                    else
+                    {
+                        $newMembersValue += $user.DisplayName
+                    }
+                }
+                else
+                {
+                    # Case where the member is an app.
+                    $newMembersValue += $member
+                }
             }
         }
+        $PSBoundParameters.Members = $newMembersValue
     }
-    $ValuesToCheck.Members = $newMembersValue
 
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -472,6 +457,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters
 
@@ -529,7 +515,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
                 CertificatePassword   = $CertificatePassword
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 CertificatePath       = $CertificatePath
                 AccessTokens          = $AccessTokens
             }
@@ -550,17 +536,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

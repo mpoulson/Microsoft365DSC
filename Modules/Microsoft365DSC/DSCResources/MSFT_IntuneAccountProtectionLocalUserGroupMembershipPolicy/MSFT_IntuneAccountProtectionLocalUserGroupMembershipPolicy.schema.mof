@@ -10,13 +10,13 @@ class MSFT_IntuneAccountProtectionLocalUserGroupMembershipPolicyAssignments
     [Write, Description("The collection Id that is the target of the assignment.(ConfigMgr)")] String collectionId;
 };
 
-[ClassVersion("1.0.0.0")]
-class MSFT_IntuneAccountProtectionLocalUserGroupCollection
+[ClassVersion("1.0.0.1")]
+class MSFT_MicrosoftGraphIntuneSettingsCatalogAccessGroup
 {
-    [Write, Description("The action to use for adding / removing members."), ValueMap{"add_update", "remove_update", "add_restrict"}, Values{"add_update", "remove_update", "add_restrict"}] String Action;
-    [Write, Description("The local groups to add / remove the members to / from. List of the following values: `administrators`, `users`, `guests`, `powerusers`, `remotedesktopusers`, `remotemanagementusers`")] String LocalGroups[];
-    [Write, Description("The members to add / remove to / from the group. For AzureAD Users, use the format `AzureAD\\<UserPrincipalName>`. For groups, use the security identifier (SID).")] String Members[];
-    [Write, Description("The type of the selection. Either users / groups from AzureAD, or by manual identifier."), ValueMap{"users", "manual"}, Values{"users", "manual"}] String UserSelectionType;
+    [Write, Description("The action to use for adding / removing members. Possible values: Add (AddUpdate), Remove (RemoveUpdate), Replace (AddRestrict). Add and Remove do not update unspecified members, whereas Replace will replace all members with the ones specified."), ValueMap{"AddUpdate", "RemoveUpdate", "AddRestrict"}, Values{"AddUpdate", "RemoveUpdate", "AddRestrict"}] String action;
+    [Write, Description("The local groups to add / remove the members to / from. List of the following values: `administrators`, `users`, `guests`, `powerusers`, `remotedesktopusers`, `remotemanagementusers`"), ValueMap{"administrators","users","guests","powerusers","remotedesktopusers","remotemanagementusers"}, Values{"administrators","users","guests","powerusers","remotedesktopusers","remotemanagementusers"}] String desc[];
+    [Write, Description("The members to add / remove to / from the group. For AzureAD Users, use the format `AzureAD\\<UserPrincipalName>`. For groups, use the security identifier (SID).")] String member[];
+    [Write, Description("The type of the selection. Either users / groups from AzureAD, or by manual identifier."), ValueMap{"users", "manual"}, Values{"users", "manual"}] String userselectiontype;
 };
 
 [ClassVersion("1.0.0.0"), FriendlyName("IntuneAccountProtectionLocalUserGroupMembershipPolicy")]
@@ -27,7 +27,7 @@ class MSFT_IntuneAccountProtectionLocalUserGroupMembershipPolicy : OMI_BaseResou
     [Write, Description("Description of the account protection rules policy.")] String Description;
     [Write, Description("List of Scope Tags for this Entity instance.")] String RoleScopeTagIds[];
     [Write, Description("Assignments of the Intune Policy."), EmbeddedInstance("MSFT_IntuneAccountProtectionLocalUserGroupMembershipPolicyAssignments")] String Assignments[];
-    [Write, Description("Local User Group Collections of the Intune Policy."), EmbeddedInstance("MSFT_IntuneAccountProtectionLocalUserGroupCollection")] String LocalUserGroupCollection[];
+    [Write, Description("Local User Group Collections of the Intune Policy."), EmbeddedInstance("MSFT_MicrosoftGraphIntuneSettingsCatalogAccessGroup")] String AccessGroup[];
     [Write, Description("Present ensures the site collection exists, absent ensures it is removed"), ValueMap{"Present", "Absent"}, Values{"Present", "Absent"}] string Ensure;
     [Write, Description("Credentials of the Intune Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;

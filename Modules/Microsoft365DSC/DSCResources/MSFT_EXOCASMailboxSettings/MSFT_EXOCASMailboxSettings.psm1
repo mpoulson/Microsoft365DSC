@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOCASMailboxSettings'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -184,104 +186,103 @@ function Get-TargetResource
 
     Write-Verbose -Message "Getting configuration of Exchange Online CAS Mailbox Settings for $Identity"
 
-    if ($Global:CurrentModeIsExport)
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        Identity = $Identity
-    }
-
     try
     {
-        if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $mailboxCasSettings = $Script:exportedInstances | Where-Object -FilterScript { $_.Identity -eq $Identity }
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = @{
+                Identity = $Identity
+                Ensure   = 'Absent'
+            }
+
+            $mailboxCasSettings = Get-CASMailbox -Identity $Identity -ErrorAction SilentlyContinue
+            if ($null -eq $mailboxCasSettings)
+            {
+                Write-Verbose -Message 'The specified Mailbox does not exist.'
+                return $nullReturn
+            }
         }
         else
         {
-            $mailboxCasSettings = Get-CASMailbox -Identity $Identity -ErrorAction Stop
+            $mailboxCasSettings = $Script:exportedInstance
         }
+
+        Write-Verbose -Message "Found an existing instance of Mailbox '$($Identity)'"
+
+        $result = @{
+            Ensure                                  = 'Present'
+            Identity                                = $Identity
+            ActiveSyncAllowedDeviceIDs              = $mailboxCasSettings.ActiveSyncAllowedDeviceIDs
+            ActiveSyncBlockedDeviceIDs              = $mailboxCasSettings.ActiveSyncBlockedDeviceIDs
+            ActiveSyncDebugLogging                  = $mailboxCasSettings.ActiveSyncDebugLogging
+            ActiveSyncEnabled                       = $mailboxCasSettings.ActiveSyncEnabled
+            ActiveSyncMailboxPolicy                 = $mailboxCasSettings.ActiveSyncMailboxPolicy
+            ActiveSyncSuppressReadReceipt           = $mailboxCasSettings.ActiveSyncSuppressReadReceipt
+            EwsAllowEntourage                       = $mailboxCasSettings.EwsAllowEntourage
+            EwsAllowList                            = $mailboxCasSettings.EwsAllowList
+            EwsAllowMacOutlook                      = $mailboxCasSettings.EwsAllowMacOutlook
+            EwsAllowOutlook                         = $mailboxCasSettings.EwsAllowOutlook
+            EwsApplicationAccessPolicy              = $mailboxCasSettings.EwsApplicationAccessPolicy
+            EwsBlockList                            = $mailboxCasSettings.EwsBlockList
+            EwsEnabled                              = $mailboxCasSettings.EwsEnabled
+            ImapEnabled                             = $mailboxCasSettings.ImapEnabled
+            ImapMessagesRetrievalMimeFormat         = $mailboxCasSettings.ImapMessagesRetrievalMimeFormat
+            ImapForceICalForCalendarRetrievalOption = $mailboxCasSettings.ImapForceICalForCalendarRetrievalOption
+            ImapSuppressReadReceipt                 = $mailboxCasSettings.ImapSuppressReadReceipt
+            ImapUseProtocolDefaults                 = $mailboxCasSettings.ImapUseProtocolDefaults
+            MacOutlookEnabled                       = $mailboxCasSettings.MacOutlookEnabled
+            MAPIEnabled                             = $mailboxCasSettings.MAPIEnabled
+            OneWinNativeOutlookEnabled              = $mailboxCasSettings.OneWinNativeOutlookEnabled
+            OutlookMobileEnabled                    = $mailboxCasSettings.OutlookMobileEnabled
+            OWAEnabled                              = $mailboxCasSettings.OWAEnabled
+            OWAforDevicesEnabled                    = $mailboxCasSettings.OWAforDevicesEnabled
+            OwaMailboxPolicy                        = $mailboxCasSettings.OwaMailboxPolicy
+            PopEnabled                              = $mailboxCasSettings.PopEnabled
+            PopForceICalForCalendarRetrievalOption  = $mailboxCasSettings.PopForceICalForCalendarRetrievalOption
+            PopMessagesRetrievalMimeFormat          = $mailboxCasSettings.PopMessagesRetrievalMimeFormat
+            PopSuppressReadReceipt                  = $mailboxCasSettings.PopSuppressReadReceipt
+            PopUseProtocolDefaults                  = $mailboxCasSettings.PopUseProtocolDefaults
+            PublicFolderClientAccess                = $mailboxCasSettings.PublicFolderClientAccess
+            ShowGalAsDefaultView                    = $mailboxCasSettings.ShowGalAsDefaultView
+            SmtpClientAuthenticationDisabled        = $mailboxCasSettings.SmtpClientAuthenticationDisabled
+            UniversalOutlookEnabled                 = $mailboxCasSettings.UniversalOutlookEnabled
+            Credential                              = $Credential
+            ApplicationId                           = $ApplicationId
+            CertificateThumbprint                   = $CertificateThumbprint
+            CertificatePath                         = $CertificatePath
+            CertificatePassword                     = $CertificatePassword
+            ManagedIdentity                         = $ManagedIdentity.IsPresent
+            TenantId                                = $TenantId
+            AccessTokens                            = $AccessTokens
+        }
+
+        return $result
     }
     catch
     {
-        return $nullReturn
-    }
+        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
 
-    if ($null -eq $mailboxCasSettings)
-    {
-        Write-Verbose -Message 'The specified Mailbox does not exist.'
-        return $nullReturn
+        throw
     }
-
-    $result = @{
-        Identity                                = $Identity
-        ActiveSyncAllowedDeviceIDs              = $mailboxCasSettings.ActiveSyncAllowedDeviceIDs
-        ActiveSyncBlockedDeviceIDs              = $mailboxCasSettings.ActiveSyncBlockedDeviceIDs
-        ActiveSyncDebugLogging                  = $mailboxCasSettings.ActiveSyncDebugLogging
-        ActiveSyncEnabled                       = $mailboxCasSettings.ActiveSyncEnabled
-        ActiveSyncMailboxPolicy                 = $mailboxCasSettings.ActiveSyncMailboxPolicy
-        ActiveSyncSuppressReadReceipt           = $mailboxCasSettings.ActiveSyncSuppressReadReceipt
-        EwsAllowEntourage                       = $mailboxCasSettings.EwsAllowEntourage
-        EwsAllowList                            = $mailboxCasSettings.EwsAllowList
-        EwsAllowMacOutlook                      = $mailboxCasSettings.EwsAllowMacOutlook
-        EwsAllowOutlook                         = $mailboxCasSettings.EwsAllowOutlook
-        EwsApplicationAccessPolicy              = $mailboxCasSettings.EwsApplicationAccessPolicy
-        EwsBlockList                            = $mailboxCasSettings.EwsBlockList
-        EwsEnabled                              = $mailboxCasSettings.EwsEnabled
-        ImapEnabled                             = $mailboxCasSettings.ImapEnabled
-        ImapMessagesRetrievalMimeFormat         = $mailboxCasSettings.ImapMessagesRetrievalMimeFormat
-        ImapForceICalForCalendarRetrievalOption = $mailboxCasSettings.ImapForceICalForCalendarRetrievalOption
-        ImapSuppressReadReceipt                 = $mailboxCasSettings.ImapSuppressReadReceipt
-        ImapUseProtocolDefaults                 = $mailboxCasSettings.ImapUseProtocolDefaults
-        MacOutlookEnabled                       = $mailboxCasSettings.MacOutlookEnabled
-        MAPIEnabled                             = $mailboxCasSettings.MAPIEnabled
-        OneWinNativeOutlookEnabled              = $mailboxCasSettings.OneWinNativeOutlookEnabled
-        OutlookMobileEnabled                    = $mailboxCasSettings.OutlookMobileEnabled
-        OWAEnabled                              = $mailboxCasSettings.OWAEnabled
-        OWAforDevicesEnabled                    = $mailboxCasSettings.OWAforDevicesEnabled
-        OwaMailboxPolicy                        = $mailboxCasSettings.OwaMailboxPolicy
-        PopEnabled                              = $mailboxCasSettings.PopEnabled
-        PopForceICalForCalendarRetrievalOption  = $mailboxCasSettings.PopForceICalForCalendarRetrievalOption
-        PopMessagesRetrievalMimeFormat          = $mailboxCasSettings.PopMessagesRetrievalMimeFormat
-        PopSuppressReadReceipt                  = $mailboxCasSettings.PopSuppressReadReceipt
-        PopUseProtocolDefaults                  = $mailboxCasSettings.PopUseProtocolDefaults
-        PublicFolderClientAccess                = $mailboxCasSettings.PublicFolderClientAccess
-        ShowGalAsDefaultView                    = $mailboxCasSettings.ShowGalAsDefaultView
-        SmtpClientAuthenticationDisabled        = $mailboxCasSettings.SmtpClientAuthenticationDisabled
-        UniversalOutlookEnabled                 = $mailboxCasSettings.UniversalOutlookEnabled
-        Credential                              = $Credential
-        ApplicationId                           = $ApplicationId
-        CertificateThumbprint                   = $CertificateThumbprint
-        CertificatePath                         = $CertificatePath
-        CertificatePassword                     = $CertificatePassword
-        Managedidentity                         = $ManagedIdentity.IsPresent
-        TenantId                                = $TenantId
-        AccessTokens                            = $AccessTokens
-    }
-
-    Write-Verbose -Message "Found an existing instance of Mailbox '$($Identity)'"
-    return $result
 }
 
 function Set-TargetResource
@@ -480,21 +481,10 @@ function Set-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters
 
     $currentMailbox = Get-TargetResource @PSBoundParameters
 
-    $CASMailboxParams = [System.Collections.Hashtable]($PSBoundParameters)
-    $CASMailboxParams.Remove('Ensure') | Out-Null
-    $CASMailboxParams.Remove('Credential') | Out-Null
-    $CASMailboxParams.Remove('ApplicationId') | Out-Null
-    $CASMailboxParams.Remove('TenantId') | Out-Null
-    $CASMailboxParams.Remove('CertificateThumbprint') | Out-Null
-    $CASMailboxParams.Remove('CertificatePath') | Out-Null
-    $CASMailboxParams.Remove('CertificatePassword') | Out-Null
-    $CASMailboxParams.Remove('ManagedIdentity') | Out-Null
-    $CASMailboxParams.Remove('AccessTokens') | Out-Null
+    $CASMailboxParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     # CASE: Mailbox exists;
     Write-Verbose -Message "Setting CAS Mailbox settings for $($Identity) with values: $(Convert-M365DscHashtableToString -Hashtable $CASMailboxParams)"
@@ -684,11 +674,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -696,24 +684,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Exchange Online CAS Mailbox Settings for $Identity"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-    $ValuesToCheck.Remove('Ensure') | Out-Null
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -754,6 +727,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters `
         -SkipModuleReload $true
@@ -772,11 +746,10 @@ function Export-TargetResource
 
     try
     {
-        $Script:ExportMode = $true
-        [array] $Script:exportedInstances = Get-CASMailbox -ResultSize 'Unlimited'
+        [array]$mailboxes = Get-CASMailbox -ResultSize 'Unlimited'
 
         $i = 1
-        if ($Script:exportedInstances.Length -eq 0)
+        if ($mailboxes.Count -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
@@ -785,9 +758,9 @@ function Export-TargetResource
             Write-M365DSCHost -Message "`r`n"-DeferWrite
         }
         $dscContent = ''
-        foreach ($mailbox in $Script:exportedInstances)
+        foreach ($mailbox in $mailboxes)
         {
-            Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Length)] $($mailbox.Name)" -DeferWrite
+            Write-M365DSCHost -Message "    |---[$i/$($mailboxes.Count)] $($mailbox.Name)" -DeferWrite
             $mailboxName = $mailbox.Identity
             if (![System.String]::IsNullOrEmpty($mailboxName))
             {
@@ -803,10 +776,11 @@ function Export-TargetResource
                     TenantId              = $TenantId
                     CertificateThumbprint = $CertificateThumbprint
                     CertificatePassword   = $CertificatePassword
-                    Managedidentity       = $ManagedIdentity.IsPresent
+                    ManagedIdentity       = $ManagedIdentity.IsPresent
                     CertificatePath       = $CertificatePath
                     AccessTokens          = $AccessTokens
                 }
+                $Script:exportedInstance = $mailbox
                 $Results = Get-TargetResource @Params
                 if ($Results -is [System.Collections.Hashtable] -and $Results.Count -gt 1)
                 {
@@ -834,15 +808,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

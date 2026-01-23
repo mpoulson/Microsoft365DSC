@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -39,7 +39,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return $null
             }
 
-            
             Mock -CommandName Get-Mailbox -MockWith {
                 return @{
                     Id                = '12345-12345-12345-12345-12345'
@@ -47,17 +46,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
-            # Mock Write-M365DSCHost to hide output during the tests
-            Mock -CommandName Write-M365DSCHost -MockWith {
-            }
-            $Script:exportedInstances =$null
-            $Script:ExportMode = $false
-        }
-        # Test contexts
-
-        Context -Name 'Settings are not in the desired state' -Fixture {
-            BeforeAll {
-                $testParams = @{
+            Mock -CommandName Get-MailboxCalendarConfiguration -MockWith {
+                return @{
                     AgendaMailIntroductionEnabled            = $True;
                     AutoDeclineWhenBusy                      = $False;
                     ConversationalSchedulingEnabled          = $True;
@@ -99,51 +89,59 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     WorkingHoursTimeZone                     = "Pacific Standard Time";
                     WorkspaceUserEnabled                     = $False;
                 }
+            }
 
-                Mock -CommandName Get-MailboxCalendarConfiguration -MockWith {
-                    return @{
-                        AgendaMailIntroductionEnabled            = $True;
-                        AutoDeclineWhenBusy                      = $False;
-                        ConversationalSchedulingEnabled          = $True;
-                        CreateEventsFromEmailAsPrivate           = $True;
-                        Credential                               = $Credscredential;
-                        DefaultMinutesToReduceLongEventsBy       = 10;
-                        DefaultMinutesToReduceShortEventsBy      = 6; #drift
-                        DefaultOnlineMeetingProvider             = "TeamsForBusiness";
-                        DefaultReminderTime                      = "00:15:00";
-                        DeleteMeetingRequestOnRespond            = $True;
-                        DiningEventsFromEmailEnabled             = $True;
-                        Ensure                                   = "Present";
-                        EntertainmentEventsFromEmailEnabled      = $True;
-                        EventsFromEmailEnabled                   = $True;
-                        FirstWeekOfYear                          = "FirstDay";
-                        FlightEventsFromEmailEnabled             = $True;
-                        HotelEventsFromEmailEnabled              = $True;
-                        Identity                                 = "admin@contoso.com";
-                        InvoiceEventsFromEmailEnabled            = $True;
-                        LocationDetailsInFreeBusy                = "Desk";
-                        PackageDeliveryEventsFromEmailEnabled    = $False;
-                        PreserveDeclinedMeetings                 = $False;
-                        RemindersEnabled                         = $True;
-                        ReminderSoundEnabled                     = $True;
-                        RentalCarEventsFromEmailEnabled          = $True;
-                        ServiceAppointmentEventsFromEmailEnabled = $True;
-                        ShortenEventScopeDefault                 = "None";
-                        ShowWeekNumbers                          = $False;
-                        TimeIncrement                            = "ThirtyMinutes";
-                        UseBrightCalendarColorThemeInOwa         = $False;
-                        WeatherEnabled                           = "FirstRun";
-                        WeatherLocationBookmark                  = 0;
-                        WeatherLocations                         = @();
-                        WeatherUnit                              = "Default";
-                        WeekStartDay                             = "Sunday";
-                        WorkDays                                 = "Monday, Tuesday";
-                        WorkingHoursEndTime                      = "17:00:00";
-                        WorkingHoursStartTime                    = "08:00:00";
-                        WorkingHoursTimeZone                     = "Pacific Standard Time";
-                        WorkspaceUserEnabled                     = $False;
+            # Mock Write-M365DSCHost to hide output during the tests
+            Mock -CommandName Write-M365DSCHost -MockWith {
+            }
+            $Script:exportedInstances =$null
+            $Script:ExportMode = $false
+        }
+        # Test contexts
 
-                    }
+        Context -Name 'Settings are not in the desired state' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    AgendaMailIntroductionEnabled            = $True;
+                    AutoDeclineWhenBusy                      = $False;
+                    ConversationalSchedulingEnabled          = $True;
+                    CreateEventsFromEmailAsPrivate           = $True;
+                    Credential                               = $Credscredential;
+                    DefaultMinutesToReduceLongEventsBy       = 10;
+                    DefaultMinutesToReduceShortEventsBy      = 6; # Drift
+                    DefaultOnlineMeetingProvider             = "TeamsForBusiness";
+                    DefaultReminderTime                      = "00:15:00";
+                    DeleteMeetingRequestOnRespond            = $True;
+                    DiningEventsFromEmailEnabled             = $True;
+                    Ensure                                   = "Present";
+                    EntertainmentEventsFromEmailEnabled      = $True;
+                    EventsFromEmailEnabled                   = $True;
+                    FirstWeekOfYear                          = "FirstDay";
+                    FlightEventsFromEmailEnabled             = $True;
+                    HotelEventsFromEmailEnabled              = $True;
+                    Identity                                 = "admin@contoso.com";
+                    InvoiceEventsFromEmailEnabled            = $True;
+                    LocationDetailsInFreeBusy                = "Desk";
+                    PackageDeliveryEventsFromEmailEnabled    = $False;
+                    PreserveDeclinedMeetings                 = $False;
+                    RemindersEnabled                         = $True;
+                    ReminderSoundEnabled                     = $True;
+                    RentalCarEventsFromEmailEnabled          = $True;
+                    ServiceAppointmentEventsFromEmailEnabled = $True;
+                    ShortenEventScopeDefault                 = "None";
+                    ShowWeekNumbers                          = $False;
+                    TimeIncrement                            = "ThirtyMinutes";
+                    UseBrightCalendarColorThemeInOwa         = $False;
+                    WeatherEnabled                           = "FirstRun";
+                    WeatherLocationBookmark                  = 0;
+                    WeatherLocations                         = @();
+                    WeatherUnit                              = "Default";
+                    WeekStartDay                             = "Sunday";
+                    WorkDays                                 = "Monday, Tuesday";
+                    WorkingHoursEndTime                      = "17:00:00";
+                    WorkingHoursStartTime                    = "08:00:00";
+                    WorkingHoursTimeZone                     = "Pacific Standard Time";
+                    WorkspaceUserEnabled                     = $False;
                 }
             }
 
@@ -205,54 +203,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     WorkingHoursTimeZone                     = "Pacific Standard Time";
                     WorkspaceUserEnabled                     = $False;
                 }
-
-                Mock -CommandName Get-MailboxCalendarConfiguration -MockWith {
-                    return @{
-                        AgendaMailIntroductionEnabled            = $True;
-                        AutoDeclineWhenBusy                      = $False;
-                        ConversationalSchedulingEnabled          = $True;
-                        CreateEventsFromEmailAsPrivate           = $True;
-                        Credential                               = $Credscredential;
-                        DefaultMinutesToReduceLongEventsBy       = 10;
-                        DefaultMinutesToReduceShortEventsBy      = 5;
-                        DefaultOnlineMeetingProvider             = "TeamsForBusiness";
-                        DefaultReminderTime                      = "00:15:00";
-                        DeleteMeetingRequestOnRespond            = $True;
-                        DiningEventsFromEmailEnabled             = $True;
-                        Ensure                                   = "Present";
-                        EntertainmentEventsFromEmailEnabled      = $True;
-                        EventsFromEmailEnabled                   = $True;
-                        FirstWeekOfYear                          = "FirstDay";
-                        FlightEventsFromEmailEnabled             = $True;
-                        HotelEventsFromEmailEnabled              = $True;
-                        Identity                                 = "admin@contoso.com";
-                        InvoiceEventsFromEmailEnabled            = $True;
-                        LocationDetailsInFreeBusy                = "Desk";
-                        PackageDeliveryEventsFromEmailEnabled    = $False;
-                        PreserveDeclinedMeetings                 = $False;
-                        RemindersEnabled                         = $True;
-                        ReminderSoundEnabled                     = $True;
-                        RentalCarEventsFromEmailEnabled          = $True;
-                        ServiceAppointmentEventsFromEmailEnabled = $True;
-                        ShortenEventScopeDefault                 = "None";
-                        ShowWeekNumbers                          = $False;
-                        TimeIncrement                            = "ThirtyMinutes";
-                        UseBrightCalendarColorThemeInOwa         = $False;
-                        WeatherEnabled                           = "FirstRun";
-                        WeatherLocationBookmark                  = 0;
-                        WeatherLocations                         = @();
-                        WeatherUnit                              = "Default";
-                        WeekStartDay                             = "Sunday";
-                        WorkDays                                 = "Monday, Tuesday";
-                        WorkingHoursEndTime                      = "17:00:00";
-                        WorkingHoursStartTime                    = "08:00:00";
-                        WorkingHoursTimeZone                     = "Pacific Standard Time";
-                        WorkspaceUserEnabled                     = $False;
-                    }
-                }
             }
 
-            It 'Should return false from the Test method' {
+            It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
             }
 
@@ -320,67 +273,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-
-
-
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-Mailbox -MockWith {
-                    return @{
-                        Id                = '12345-12345-12345-12345-12345'
-                        UserPrincipalName = "admin@contoso.com"
-                    }
-                }
-
-                Mock -CommandName Get-MailboxCalendarConfiguration -MockWith {
-                    return @{
-                        AgendaMailIntroductionEnabled            = $True;
-                        AutoDeclineWhenBusy                      = $False;
-                        ConversationalSchedulingEnabled          = $True;
-                        CreateEventsFromEmailAsPrivate           = $True;
-                        Credential                               = $Credscredential;
-                        DefaultMinutesToReduceLongEventsBy       = 10;
-                        DefaultMinutesToReduceShortEventsBy      = 5;
-                        DefaultOnlineMeetingProvider             = "TeamsForBusiness";
-                        DefaultReminderTime                      = "00:15:00";
-                        DeleteMeetingRequestOnRespond            = $True;
-                        DiningEventsFromEmailEnabled             = $True;
-                        Ensure                                   = "Present";
-                        EntertainmentEventsFromEmailEnabled      = $True;
-                        EventsFromEmailEnabled                   = $True;
-                        FirstWeekOfYear                          = "FirstDay";
-                        FlightEventsFromEmailEnabled             = $True;
-                        HotelEventsFromEmailEnabled              = $True;
-                        Identity                                 = "admin@contoso.com";
-                        InvoiceEventsFromEmailEnabled            = $True;
-                        LocationDetailsInFreeBusy                = "Desk";
-                        PackageDeliveryEventsFromEmailEnabled    = $False;
-                        PreserveDeclinedMeetings                 = $False;
-                        RemindersEnabled                         = $True;
-                        ReminderSoundEnabled                     = $True;
-                        RentalCarEventsFromEmailEnabled          = $True;
-                        ServiceAppointmentEventsFromEmailEnabled = $True;
-                        ShortenEventScopeDefault                 = "None";
-                        ShowWeekNumbers                          = $False;
-                        TimeIncrement                            = "ThirtyMinutes";
-                        UseBrightCalendarColorThemeInOwa         = $False;
-                        WeatherEnabled                           = "FirstRun";
-                        WeatherLocationBookmark                  = 0;
-                        WeatherLocations                         = @();
-                        WeatherUnit                              = "Default";
-                        WeekStartDay                             = "Sunday";
-                        WorkDays                                 = "Monday, Tuesday";
-                        WorkingHoursEndTime                      = "17:00:00";
-                        WorkingHoursStartTime                    = "08:00:00";
-                        WorkingHoursTimeZone                     = "Pacific Standard Time";
-                        WorkspaceUserEnabled                     = $False;
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

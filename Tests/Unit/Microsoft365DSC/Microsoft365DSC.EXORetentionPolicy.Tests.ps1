@@ -28,24 +28,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
             }
 
-
             Mock -CommandName New-RetentionPolicy -MockWith {
-                return $null
             }
 
             Mock -CommandName Remove-RetentionPolicy -MockWith {
-                return $null
             }
 
             Mock -CommandName Set-RetentionPolicy -MockWith {
-                return $null
+            }
+
+            Mock -CommandName Get-RetentionPolicy -MockWith {
+                return @{
+                    Identity                    = "Ritik";
+                    IsDefault                   = $False;
+                    IsDefaultArbitrationMailbox = $False;
+                    Name                        = "Ritik";
+                    RetentionId                 = "559f68de-1e58-4dcc-9d40-ba5ff0e4253e";
+                    RetentionPolicyTagLinks     = @("6 Month Delete","Personal 5 year move to archive","1 Month Delete","1 Week Delete","Personal never move to archive","Personal 1 year move to archive","Default 2 year move to archive","Deleted Items","Junk Email","Recoverable Items 14 days move to archive","Never Delete");
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -97,18 +104,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RetentionId                 = "559f68de-1e58-4dcc-9d40-ba5ff0e4253e";
                     RetentionPolicyTagLinks     = @("6 Month Delete","Personal 5 year move to archive","1 Month Delete","1 Week Delete","Personal never move to archive","Personal 1 year move to archive","Default 2 year move to archive","Deleted Items","Junk Email","Recoverable Items 14 days move to archive","Never Delete");
                 }
-
-                Mock -CommandName Get-RetentionPolicy -MockWith {
-                    return @{
-                        Identity                    = "Ritik";
-                        IsDefault                   = $False;
-                        IsDefaultArbitrationMailbox = $False;
-                        Name                        = "Ritik";
-                        RetentionId                 = "559f68de-1e58-4dcc-9d40-ba5ff0e4253e";
-                        RetentionPolicyTagLinks     = @("6 Month Delete","Personal 5 year move to archive","1 Month Delete","1 Week Delete","Personal never move to archive","Personal 1 year move to archive","Default 2 year move to archive","Deleted Items","Junk Email","Recoverable Items 14 days move to archive","Never Delete");
-
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -134,19 +129,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Name                        = "Ritik";
                     RetentionId                 = "559f68de-1e58-4dcc-9d40-ba5ff0e4253e";
                     RetentionPolicyTagLinks     = @("6 Month Delete","Personal 5 year move to archive","1 Month Delete","1 Week Delete","Personal never move to archive","Personal 1 year move to archive","Default 2 year move to archive","Deleted Items","Junk Email","Recoverable Items 14 days move to archive","Never Delete");
-
-                }
-
-                Mock -CommandName Get-RetentionPolicy -MockWith {
-                    return @{
-                        Identity                    = "Ritik";
-                        IsDefault                   = $False;
-                        IsDefaultArbitrationMailbox = $False;
-                        Name                        = "Ritik";
-                        RetentionId                 = "559f68de-1e58-4dcc-9d40-ba5ff0e4253e";
-                        RetentionPolicyTagLinks     = @("6 Month Delete","Personal 5 year move to archive","1 Month Delete","1 Week Delete","Personal never move to archive","Personal 1 year move to archive","Default 2 year move to archive","Deleted Items","Junk Email","Recoverable Items 14 days move to archive","Never Delete");
-
-                    }
                 }
             }
 
@@ -162,24 +144,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential                  = $Credential;
                     Identity                    = "Ritik";
                     IsDefault                   = $False;
-                    IsDefaultArbitrationMailbox = $False;
+                    IsDefaultArbitrationMailbox = $true; # Drift
                     Name                        = "Ritik";
                     RetentionId                 = "559f68de-1e58-4dcc-9d40-ba5ff0e4253e";
                     RetentionPolicyTagLinks     = @("6 Month Delete","Personal 5 year move to archive","1 Month Delete","1 Week Delete","Personal never move to archive","Personal 1 year move to archive","Default 2 year move to archive","Deleted Items","Junk Email","Recoverable Items 14 days move to archive","Never Delete");
-
-                }
-
-                Mock -CommandName Get-RetentionPolicy -MockWith {
-                    return @{
-                        Identity                    = "Ritik";
-                        IsDefault                   = $False;
-                        IsDefaultArbitrationMailbox = $True; # drift
-                        Name                        = "Ritik";
-                        RetentionId                 = "559f68de-1e58-4dcc-9d40-ba5ff0e4253e";
-                        RetentionPolicyTagLinks     = @("6 Month Delete","Personal 5 year move to archive","1 Month Delete","1 Week Delete","Personal never move to archive","Personal 1 year move to archive","Default 2 year move to archive","Deleted Items","Junk Email","Recoverable Items 14 days move to archive","Never Delete");
-
-
-                    }
                 }
             }
 
@@ -203,17 +171,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-RetentionPolicy -MockWith {
-                    return @{
-                        Identity                    = "Ritik";
-                        IsDefault                   = $False;
-                        IsDefaultArbitrationMailbox = $False;
-                        Name                        = "Ritik";
-                        RetentionId                 = "559f68de-1e58-4dcc-9d40-ba5ff0e4253e";
-                        RetentionPolicyTagLinks     = @("6 Month Delete","Personal 5 year move to archive","1 Month Delete","1 Week Delete","Personal never move to archive","Personal 1 year move to archive","Default 2 year move to archive","Deleted Items","Junk Email","Recoverable Items 14 days move to archive","Never Delete");
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

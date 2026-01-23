@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -90,7 +90,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
                                     options = @(
                                         @{
-                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_1'
+                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_0'
                                             name = 'Path'
                                             dependentOn = @(
                                                 @{
@@ -98,6 +98,38 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'linux_mdatp_managed_antivirusengine_exclusions'
                                                 }
                                             )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedPath'
+                                            }
+                                        }
+                                        @{
+                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_1'
+                                            name = 'File extension'
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                    parentSettingId = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                }
+                                            )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedFileExtension'
+                                            }
+                                        }
+                                        @{
+                                            itemId = 'linux_mdatp_managed_antivirusengine_exclusions_item_$type_2'
+                                            name = 'Process name'
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                    parentSettingId = 'linux_mdatp_managed_antivirusengine_exclusions'
+                                                }
+                                            )
+                                            optionValue = @{
+                                                '@odata.type' = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                                                value = 'excludedFileName'
+                                            }
                                         }
                                     )
                                 }
@@ -237,11 +269,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.exe'
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            Exclusions_item_type = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"
@@ -281,11 +313,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.exe'
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            Exclusions_item_type = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"
@@ -323,11 +355,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.exe'
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            Exclusions_item_type = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"
@@ -357,11 +389,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Exclusions = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_extension = '.bat' # Drift
-                            Exclusions_item_type = '1'
+                            Exclusions_item_type = 'excludedFileExtension'
                         } -ClientOnly)
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogExclusions -Property @{
                             Exclusions_item_name = 'Test'
-                            Exclusions_item_type = '2'
+                            Exclusions_item_type = 'excludedFileName'
                         } -ClientOnly)
                     );
                     Id = "12345-12345-12345-12345-12345"

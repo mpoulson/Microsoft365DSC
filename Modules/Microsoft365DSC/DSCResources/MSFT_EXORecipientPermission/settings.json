@@ -1,55 +1,52 @@
-﻿{
-    "resourceName": "EXORecipientPermission",
-    "description": "",
-    "roles": {
+{
+  "resourceName": "EXORecipientPermission",
+  "description": "",
+  "roles": {
+    "read": [
+      "Global Reader"
+    ],
+    "update": [
+      "Exchange Administrator"
+    ]
+  },
+  "permissions": {
+    "Office 365 Exchange Online": {
+      "application": {
         "read": [
-            "Global Reader"
+          {
+            "name": "Exchange.ManageAsApp"
+          }
         ],
         "update": [
-            "Exchange Administrator"
+          {
+            "name": "Exchange.ManageAsApp"
+          }
         ]
+      }
     },
-    "permissions": {
-        "graph": {
-            "delegated": {
-                "read": [],
-                "update": []
-            },
-            "application": {
-                "read": [],
-                "update": []
-            }
-        },
-        "exchange": {
-            "requiredroles": [
-                "Mail Enabled Public Folders",
-                "MyName",
-                "Public Folders",
-                "Compliance Admin",
-                "User Options",
-                "Message Tracking",
-                "View-Only Recipients",
-                "Role Management",
-                "Legal Hold",
-                "Audit Logs",
-                "Retention Management",
-                "Distribution Groups",
-                "Move Mailboxes",
-                "Information Rights Management",
-                "Mail Recipient Creation",
-                "Reset Password",
-                "View-Only Audit Logs",
-                "Mail Recipients",
-                "Mailbox Search",
-                "UM Mailboxes",
-                "Security Group Creation and Membership",
-                "Mailbox Import Export",
-                "MyMailboxDelegation",
-                "MyDisplayName"
-            ],
-            "requiredrolegroups": [
-                "Organization Management"
-            ]
-        }
+    "exchange": {
+      "requiredroles": {
+        "read": [
+          "Mail Recipients"
+        ],
+        "update": [
+          "Mail Recipients"
+        ]
+      },
+      "requiredrolegroups": {
+        "read": [
+          "Recipient Management"
+        ],
+        "update": [
+          "Recipient Management"
+        ]
+      }
     }
+  },
+  "requiredModules": [],
+  "supportedEnvironments": [
+    "Global",
+    "USGov"
+  ],
+  "mode": "Configuration"
 }

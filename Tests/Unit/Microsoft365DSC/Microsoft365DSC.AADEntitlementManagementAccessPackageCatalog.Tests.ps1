@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -40,6 +40,25 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaEntitlementManagementAccessPackageCatalog -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaEntitlementManagementAccessPackageCatalog -MockWith {
+                return @{
+                    CatalogStatus       = 'FakeStringValue'
+                    CatalogType         = 'UserManaged'
+                    Description         = 'FakeStringValue'
+                    DisplayName         = 'FakeStringValue'
+                    Id                  = 'FakeStringValue'
+                    IsExternallyVisible = $True
+                }
+            }
+
+            Mock -CommandName Get-MgBetaEntitlementManagementAccessPackage -MockWith {
+                return @(
+                    @{
+                        CatalogId = 'FakeStringValue'
+                    }
+                )
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -63,7 +82,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName         = 'FakeStringValue'
                     Id                  = 'FakeStringValue'
                     IsExternallyVisible = $True
-
                     Ensure              = 'Present'
                     Credential          = $Credential
                 }
@@ -93,21 +111,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName         = 'FakeStringValue'
                     Id                  = 'FakeStringValue'
                     IsExternallyVisible = $True
-
                     Ensure              = 'Absent'
                     Credential          = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaEntitlementManagementAccessPackageCatalog -MockWith {
-                    return @{
-                        CatalogStatus       = 'FakeStringValue'
-                        CatalogType         = 'UserManaged'
-                        Description         = 'FakeStringValue'
-                        DisplayName         = 'FakeStringValue'
-                        Id                  = 'FakeStringValue'
-                        IsExternallyVisible = $True
-
-                    }
                 }
             }
 
@@ -133,24 +138,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName         = 'FakeStringValue'
                     Id                  = 'FakeStringValue'
                     IsExternallyVisible = $True
-
                     Ensure              = 'Present'
                     Credential          = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaEntitlementManagementAccessPackageCatalog -MockWith {
-                    return @{
-                        CatalogStatus       = 'FakeStringValue'
-                        CatalogType         = 'UserManaged'
-                        Description         = 'FakeStringValue'
-                        DisplayName         = 'FakeStringValue'
-                        Id                  = 'FakeStringValue'
-                        IsExternallyVisible = $True
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -165,21 +156,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description         = 'FakeStringValue'
                     DisplayName         = 'FakeStringValue'
                     Id                  = 'FakeStringValue'
-                    IsExternallyVisible = $True
-
+                    IsExternallyVisible = $false # Drift
                     Ensure              = 'Present'
                     Credential          = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaEntitlementManagementAccessPackageCatalog -MockWith {
-                    return @{
-                        CatalogStatus       = 'FakeStringValue'
-                        CatalogType         = 'UserManaged'
-                        Description         = 'FakeStringValue'
-                        DisplayName         = 'FakeStringValue'
-                        Id                  = 'FakeStringValue'
-                        IsExternallyVisible = $False #Drift
-                    }
                 }
             }
 
@@ -203,22 +182,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaEntitlementManagementAccessPackage -MockWith {
-                    return @([PSCustomObject]@{
-                        CatalogId = 'FakeStringValue'
-                        })
-                }
-                Mock -CommandName Get-MgBetaEntitlementManagementAccessPackageCatalog -MockWith {
-                    return [PSCustomObject]@{
-                            CatalogStatus       = 'FakeStringValue'
-                            CatalogType         = 'UserManaged'
-                            Description         = 'FakeStringValue'
-                            DisplayName         = 'FakeStringValue'
-                            Id                  = 'FakeStringValue'
-                            IsExternallyVisible = $True
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

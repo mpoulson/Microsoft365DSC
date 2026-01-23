@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_O365OrgSettings'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -75,10 +77,6 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $MicrosoftVivaBriefingEmail,
-
-        [Parameter()]
-        [System.Boolean]
         $ToDoIsPushNotificationEnabled,
 
         [Parameter()]
@@ -125,11 +123,6 @@ function Get-TargetResource
         $InstallationOptionsAppsForMac,
 
         [Parameter()]
-        [ValidateSet('Present', 'Absent')]
-        [System.String]
-        $Ensure = 'Present',
-
-        [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
 
@@ -150,6 +143,14 @@ function Get-TargetResource
         $CertificateThumbprint,
 
         [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
+
+        [Parameter()]
         [Switch]
         $ManagedIdentity,
 
@@ -158,7 +159,9 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+    Write-Verbose -Message "Setting configuration of Office 365 Group $DisplayName"
+
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
     $ConnectionModeTasks = New-M365DSCConnection -Workload 'Tasks' `
@@ -171,7 +174,7 @@ function Get-TargetResource
     {
         Reset-MSCloudLoginConnectionProfileContext -Workload ExchangeOnline
     }
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+    $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -198,7 +201,9 @@ function Get-TargetResource
         TenantId              = $TenantId
         ApplicationSecret     = $ApplicationSecret
         CertificateThumbprint = $CertificateThumbprint
-        Managedidentity       = $ManagedIdentity.IsPresent
+        CertificatePath       = $CertificatePath
+        CertificatePassword   = $CertificatePassword
+        ManagedIdentity       = $ManagedIdentity.IsPresent
         AccessTokens          = $AccessTokens
     }
     try
@@ -298,8 +303,8 @@ function Get-TargetResource
 
             $results += @{
                 InstallationOptionsUpdateChannel  = $installationOptions.updateChannel
-                InstallationOptionsAppsForWindows = $appsForWindowsValue
-                InstallationOptionsAppsForMac     = $appsForMacValue
+                InstallationOptionsAppsForWindows = $appsForWindowsValue | Sort-Object
+                InstallationOptionsAppsForMac     = $appsForMacValue | Sort-Object
             }
         }
 
@@ -360,7 +365,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -440,10 +445,6 @@ function Set-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $MicrosoftVivaBriefingEmail,
-
-        [Parameter()]
-        [System.Boolean]
         $ToDoIsPushNotificationEnabled,
 
         [Parameter()]
@@ -490,11 +491,6 @@ function Set-TargetResource
         $InstallationOptionsAppsForMac,
 
         [Parameter()]
-        [ValidateSet('Present', 'Absent')]
-        [System.String]
-        $Ensure = 'Present',
-
-        [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
 
@@ -515,6 +511,14 @@ function Set-TargetResource
         $CertificateThumbprint,
 
         [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
+
+        [Parameter()]
         [Switch]
         $ManagedIdentity,
 
@@ -523,10 +527,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    if ($PSBoundParameters.ContainsKey('Ensure') -and $Ensure -eq 'Absent')
-    {
-        throw 'This resource is not able to remove the Org settings and therefore only accepts Ensure=Present.'
-    }
+    Write-Verbose -Message "Setting configuration of Office 365 Org Settings"
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -540,7 +541,7 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
     $currentValues = Get-TargetResource @PSBoundParameters
 
@@ -576,20 +577,6 @@ function Set-TargetResource
                 -AccountEnabled:$CortanaEnabled
         }
     }
-
-    # Microsoft Viva Briefing Email
-    if ($null -ne $MicrosoftVivaBriefingEmail)
-    {
-        Write-Verbose -Message 'DEPRECATED - The MicrosoftVivaBriefingEmail parameter is deprecated and will be ignored.'
-    }
-    #$briefingValue = 'opt-out'
-
-    <# DEPRECATED
-    if ($currentValues.MicrosoftVivaBriefingEmail -and $MicrosoftVivaBriefingEmail -ne $currentValues.MicrosoftVivaBriefingEmail)
-    {
-        Write-Verbose -Message "Updating Microsoft Viva Briefing Email settings."
-        Set-DefaultTenantBriefingConfig -IsEnabledByDefault $briefingValue | Out-Null
-    }#>
 
     # Viva Insights
     if ($PSBoundParameters.ContainsKey('VivaInsightsWebExperience') -and `
@@ -879,10 +866,6 @@ function Test-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $MicrosoftVivaBriefingEmail,
-
-        [Parameter()]
-        [System.Boolean]
         $ToDoIsPushNotificationEnabled,
 
         [Parameter()]
@@ -929,11 +912,6 @@ function Test-TargetResource
         $InstallationOptionsAppsForMac,
 
         [Parameter()]
-        [ValidateSet('Present', 'Absent')]
-        [System.String]
-        $Ensure = 'Present',
-
-        [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
 
@@ -954,6 +932,14 @@ function Test-TargetResource
         $CertificateThumbprint,
 
         [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
+
+        [Parameter()]
         [Switch]
         $ManagedIdentity,
 
@@ -961,11 +947,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -973,23 +957,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration for Org Settings.'
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-    $ValuesToCheck.Remove('MicrosoftVivaBriefingEmail') | Out-Null
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -1019,6 +989,14 @@ function Export-TargetResource
         $CertificateThumbprint,
 
         [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
+
+        [Parameter()]
         [Switch]
         $ManagedIdentity,
 
@@ -1026,6 +1004,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -1055,7 +1034,9 @@ function Export-TargetResource
             TenantId              = $TenantId
             ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            CertificatePath       = $CertificatePath
+            CertificatePassword   = $CertificatePassword
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
 
@@ -1076,15 +1057,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

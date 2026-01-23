@@ -27,6 +27,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
@@ -36,13 +38,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Get-CsTeamsMeetingBroadcastPolicy -MockWith {
-                return @(@{
+                return @(
+                    @{
                         AllowBroadcastScheduling        = $True
                         AllowBroadcastTranscription     = $False
                         BroadcastAttendeeVisibilityMode = 'EveryoneInCompany'
                         BroadcastRecordingMode          = 'AlwaysEnabled'
                         Identity                        = 'MyDemoPolicy'
-                    })
+                    }
+                )
             }
 
             Mock -CommandName Set-CsTeamsMeetingBroadcastPolicy -MockWith {

@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -34,6 +34,41 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaDirectoryAttributeSet -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyDeviceRegistrationPolicy -MockWith {
+                return @{
+                    AzureAdJoin = @{
+                        IsAdminConfigurable = $true
+                        AllowedToJoin = @{
+                            "@odata.type" = "#microsoft.graph.allDeviceRegistrationMembership"
+                        }
+                        LocalAdmins = @{
+                            EnableGlobalAdmins = $true
+                            RegisteringUsers = @{
+                                AdditionalProperties = @{
+                                    "@odata.type" = "#microsoft.graph.enumeratedDeviceRegistrationMembership"
+                                    users = @('12345-12345-12345-12345-12345')
+                                    groups = @()
+                                }
+                            }
+                        }
+                    }
+                    AzureADRegistration = @{
+                        IsAdminConfigurable = $false
+                        AllowedToRegister = @{
+                            "@odata.type" = "#microsoft.graph.allDeviceRegistrationMembership"
+                        }
+                    }
+                    Description = "Tenant-wide policy that manages initial provisioning controls using quota restrictions, additional authentication and authorization checks"
+                    DisplayName = "Device Registration Policy"
+                    Id = "deviceRegistrationPolicy"
+                    LocalAdminPassword = @{
+                        IsEnabled = $false
+                    }
+                    MultiFactorAuthConfiguration = "notRequired"
+                    UserDeviceQuota = 50
+                }
             }
 
             Mock -CommandName Get-MgUser -MockWith {
@@ -58,7 +93,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $Script:ExportMode = $false
         }
 
-
         Context -Name "The instance exists and values are already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
@@ -74,41 +108,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MultiFactorAuthConfiguration            = $False;
                     UserDeviceQuota                         = 50;
                     Credential                              = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyDeviceRegistrationPolicy -MockWith {
-                    return @{
-                        AzureAdJoin = @{
-                            IsAdminConfigurable = $true
-                            AllowedToJoin = @{
-                                "@odata.type" = "#microsoft.graph.allDeviceRegistrationMembership"
-                            }
-                            LocalAdmins = @{
-                                EnableGlobalAdmins = $true
-                                RegisteringUsers = @{
-                                    AdditionalProperties = @{
-                                        "@odata.type" = "#microsoft.graph.enumeratedDeviceRegistrationMembership"
-                                        users = @('12345-12345-12345-12345-12345')
-                                        groups = @()
-                                    }
-                                }
-                            }
-                        }
-                        AzureADRegistration = @{
-                            IsAdminConfigurable = $false
-                            AllowedToRegister = @{
-                                "@odata.type" = "#microsoft.graph.allDeviceRegistrationMembership"
-                            }
-                        }
-                        Description = "Tenant-wide policy that manages initial provisioning controls using quota restrictions, additional authentication and authorization checks"
-                        DisplayName = "Device Registration Policy"
-                        Id = "deviceRegistrationPolicy"
-                        LocalAdminPassword = @{
-                            IsEnabled = $false
-                        }
-                        MultiFactorAuthConfiguration = "notRequired"
-                        UserDeviceQuota = 50
-                    }
                 }
             }
 
@@ -133,39 +132,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     UserDeviceQuota                         = 50;
                     Credential                              = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyDeviceRegistrationPolicy -MockWith {
-                    return @{
-                        AzureAdJoin = @{
-                            IsAdminConfigurable = $true
-                            AllowedToJoin = @{
-                                "@odata.type" = "#microsoft.graph.allDeviceRegistrationMembership"
-                            }
-                            LocalAdmins = @{
-                                EnableGlobalAdmins = $true
-                                RegisteringUsers = @{
-                                    users = @()
-                                    groups = @()
-                                    "@odata.type" = "#microsoft.graph.enumeratedDeviceRegistrationMembership"
-                                }
-                            }
-                        }
-                        AzureADRegistration = @{
-                            IsAdminConfigurable = $false
-                            AllowedToRegister = @{
-                                "@odata.type" = "#microsoft.graph.allDeviceRegistrationMembership"
-                            }
-                        }
-                        Description = "Tenant-wide policy that manages initial provisioning controls using quota restrictions, additional authentication and authorization checks"
-                        DisplayName = "Device Registration Policy"
-                        Id = "deviceRegistrationPolicy"
-                        LocalAdminPassword = @{
-                            IsEnabled = $false
-                        }
-                        MultiFactorAuthConfiguration = "notRequired"
-                        UserDeviceQuota = 50
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -184,39 +150,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyDeviceRegistrationPolicy -MockWith {
-                    return @{
-                        AzureAdJoin = @{
-                            IsAdminConfigurable = $true
-                            AllowedToJoin = @{
-                                "@odata.type" = "#microsoft.graph.allDeviceRegistrationMembership"
-                            }
-                            LocalAdmins = @{
-                                EnableGlobalAdmins = $true
-                                RegisteringUsers = @{
-                                    users = @()
-                                    groups = @()
-                                    "@odata.type" = "#microsoft.graph.enumeratedDeviceRegistrationMembership"
-                                }
-                            }
-                        }
-                        AzureADRegistration = @{
-                            IsAdminConfigurable = $false
-                            AllowedToRegister = @{
-                                "@odata.type" = "#microsoft.graph.allDeviceRegistrationMembership"
-                            }
-                        }
-                        Description = "Tenant-wide policy that manages initial provisioning controls using quota restrictions, additional authentication and authorization checks"
-                        DisplayName = "Device Registration Policy"
-                        Id = "deviceRegistrationPolicy"
-                        LocalAdminPassword = @{
-                            IsEnabled = $false
-                        }
-                        MultiFactorAuthConfiguration = "notRequired"
-                        UserDeviceQuota = 50
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

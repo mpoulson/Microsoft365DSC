@@ -1,9 +1,11 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_SPOBrowserIdleSignout'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
-    param (
-
+    param
+    (
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
         [String]
@@ -62,28 +64,34 @@ function Get-TargetResource
 
     Write-Verbose -Message 'Getting configuration for SPO Browser Idle Signout settings'
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'PnP' `
-        -InboundParameters $PSBoundParameters
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        IsSingleInstance = 'Yes'
-    }
-
     try
     {
-        $BrowserIdleSignout = Get-PnPBrowserIdleSignout -ErrorAction Stop
+        if ($null -eq $Script:exportedInstance)
+        {
+            $null = New-M365DSCConnection -Workload 'PnP' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = @{
+                IsSingleInstance = 'Yes'
+            }
+            $BrowserIdleSignout = Get-PnPBrowserIdleSignout -ErrorAction Stop
+        }
+        else
+        {
+            $BrowserIdleSignout = $Script:exportedInstance
+        }
 
         return @{
             IsSingleInstance      = 'Yes'
@@ -97,31 +105,27 @@ function Get-TargetResource
             CertificatePassword   = $CertificatePassword
             CertificatePath       = $CertificatePath
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
     }
     catch
     {
-        if ($error[0].Exception.Message -like 'No connection available')
-        {
-            Write-Verbose -Message 'Make sure that you are connected to your SPOService'
-        }
-
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 
 }
 function Set-TargetResource
 {
     [CmdletBinding()]
-    param (
+    param
+    (
 
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
@@ -193,21 +197,11 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'PnP' `
+    $null = New-M365DSCConnection -Workload 'PnP' `
         -InboundParameters $PSBoundParameters
 
-    $CurrentParameters = $PSBoundParameters
-    $CurrentParameters.Remove('Credential') | Out-Null
-    $CurrentParameters.Remove('Verbose') | Out-Null
+    $CurrentParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $CurrentParameters.Remove('IsSingleInstance') | Out-Null
-    $CurrentParameters.Remove('ApplicationId') | Out-Null
-    $CurrentParameters.Remove('TenantId') | Out-Null
-    $CurrentParameters.Remove('CertificatePath') | Out-Null
-    $CurrentParameters.Remove('CertificatePassword') | Out-Null
-    $CurrentParameters.Remove('CertificateThumbprint') | Out-Null
-    $CurrentParameters.Remove('ManagedIdentity') | Out-Null
-    $CurrentParameters.Remove('ApplicationSecret') | Out-Null
-    $CurrentParameters.Remove('AccessTokens') | Out-Null
 
     Set-PnPBrowserIdleSignout @CurrentParameters | Out-Null
 }
@@ -215,7 +209,8 @@ function Test-TargetResource
 {
     [CmdletBinding()]
     [OutputType([System.Boolean])]
-    param (
+    param
+    (
 
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
@@ -273,11 +268,8 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -285,24 +277,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration for SPO Browser Idle Signin settings'
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck @('IsSingleInstance', `
-            'Enabled', `
-            'SignOutAfter', `
-            'WarnAfter')
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -370,6 +347,8 @@ function Export-TargetResource
             $Global:M365DSCExportResourceInstancesCount++
         }
 
+        $Script:exportedInstance = Get-PnPBrowserIdleSignout -ErrorAction Stop
+
         $Params = @{
             IsSingleInstance      = 'Yes'
             Enabled               = $false
@@ -378,7 +357,7 @@ function Export-TargetResource
             CertificatePassword   = $CertificatePassword
             CertificatePath       = $CertificatePath
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             Credential            = $Credential
             ApplicationSecret     = $ApplicationSecret
             AccessTokens          = $AccessTokens
@@ -408,15 +387,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

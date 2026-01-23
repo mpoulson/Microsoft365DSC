@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_FabricAdminTenantSettings'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -566,8 +568,10 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    New-M365DSCConnection -Workload 'Fabric' `
-        -InboundParameters $PSBoundParameters | Out-Null
+    Write-Verbose -Message 'Getting configuration of Fabric Admin Tenant Settings'
+
+    $null = New-M365DSCConnection -Workload 'Fabric' `
+        -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -740,7 +744,7 @@ function Get-TargetResource
             ApplicationSecret                                                     = $ApplicationSecret
             AccessTokens                                                          = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -750,7 +754,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -1892,9 +1896,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -1904,48 +1905,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            $source = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $source
-
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                Write-Verbose -Message "Difference found for $key"
-                Write-Verbose -Message "Current Values: $($source | Out-String)"
-                Write-Verbose -Message "Desired Values: $($target | Out-String)"
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -2012,6 +1974,7 @@ function Export-TargetResource
         $Results = Get-TargetResource @Params
 
         $newResults = ([Hashtable]$Results).Clone()
+        $noEscape = @()
         foreach ($key in @($Results.Keys))
         {
             if ($null -ne $Results.$key -and $key -notin $params.Keys)
@@ -2044,7 +2007,8 @@ function Export-TargetResource
                     -ComplexTypeMapping $complexTypeMapping
                 if (-not [String]::IsNullOrEmpty($complexTypeStringResult))
                 {
-                    $Results.$key = $complexTypeStringResult
+                    $newResults.$key = $complexTypeStringResult
+                    $noEscape += $key
                 }
             }
         }
@@ -2053,7 +2017,8 @@ function Export-TargetResource
             -ConnectionMode $ConnectionMode `
             -ModulePath $PSScriptRoot `
             -Results $newResults `
-            -Credential $Credential
+            -Credential $Credential `
+            -NoEscape $noEscape
 
         $dscContent += $currentDSCBlock
         Save-M365DSCPartialExport -Content $currentDSCBlock `
@@ -2063,15 +2028,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -2094,7 +2057,7 @@ function Get-M365DSCFabricTenantSettingObject
     $values = @{
         settingName = $Setting.settingName
         enabled     = [Boolean]$Setting.enabled
-        title       = ($Setting.title -creplace '\P{IsBasicLatin}')
+        title       = ($Setting.title -creplace '\P{IsBasicLatin}').Replace("`"", "```"")
     }
     if (-not [System.String]::IsNullOrEmpty($Setting.canSpecifySecurityGroups))
     {

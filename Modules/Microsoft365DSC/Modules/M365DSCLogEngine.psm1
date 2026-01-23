@@ -132,14 +132,7 @@ function New-M365DSCLogEntry
         $LogFileName = Join-Path -Path (Get-Location).Path -ChildPath $LogFileName
         $LogFileName = $LogFileName.Replace('\', '/')
         $LogContent | Out-File $LogFileName -Append
-        if (Assert-M365DSCIsNonInteractiveShell)
-        {
-            Write-Verbose -Message "Error Log created at {file://$LogFileName}"
-        }
-        else
-        {
-            Write-M365DSCHost -Message "Error Log created at {file://$LogFileName}" -ForegroundColor Red
-        }
+        Write-M365DSCHost -Message "Error Log created at {file://$LogFileName}" -ForegroundColor Red
         #endregion
     }
     catch
@@ -210,21 +203,13 @@ function Add-M365DSCEvent
         }
         else
         {
-            if ([System.Diagnostics.EventLog]::Exists($LogName) -eq $false)
+            try
             {
-                # Create event log
-                $null = New-EventLog -LogName $LogName -Source $Source
+                [System.Diagnostics.EventLog]::CreateEventSource($Source, $LogName)
             }
-            else
+            catch [System.Security.SecurityException]
             {
-                try
-                {
-                    [System.Diagnostics.EventLog]::CreateEventSource($Source, $LogName)
-                }
-                catch [System.Security.SecurityException]
-                {
-                    Write-Verbose -Message "[WARNING] Not all event logs could be searched. Source might exist in another event log."
-                }
+                Write-Verbose -Message "[WARNING] Not all event logs could be searched. Source might exist in another event log."
             }
         }
 
@@ -253,8 +238,7 @@ function Add-M365DSCEvent
 
         try
         {
-            Write-EventLog -LogName $LogName -Source $Source `
-                -EventId $EventID -Message $outputMessage -EntryType $EntryType -ErrorAction Stop
+            [System.Diagnostics.EventLog]::WriteEntry($Source, $outputMessage, $EntryType, $EventID)
         }
         catch
         {
@@ -385,7 +369,7 @@ function Export-M365DSCDiagnosticData
     try
     {
         Write-Host '    * Anonymizing DSC Event Log' -ForegroundColor Gray
-        Get-EventLog -LogName 'M365Dsc' -After $afterDate | Export-Csv $evtExportLog -NoTypeInformation
+        Get-WinEvent -FilterHashtable @{ LogName = 'M365Dsc'; StartTime = $afterDate } -ErrorAction SilentlyContinue | Export-Csv $evtExportLog -NoTypeInformation
         if ($Anonymize)
         {
             $newLog = Import-Csv $evtExportLog
@@ -452,7 +436,7 @@ Represents the type of events that need to be reported to the endpoint.
 .Functionality
 Public
 #>
-function New-M365DSCNotificationEndPointRegistration
+function New-M365DSCNotificationEndpointRegistration
 {
     [CmdletBinding()]
     param
@@ -502,7 +486,7 @@ Represents the type of events that need to be reported to the endpoint.
 .Functionality
 Public
 #>
-function Remove-M365DSCNotificationEndPointRegistration
+function Remove-M365DSCNotificationEndpointRegistration
 {
     [CmdletBinding()]
     param
@@ -554,7 +538,7 @@ Represents the type of events that need to be reported to the endpoint.
 .Functionality
 Public
 #>
-function Get-M365DSCNotificationEndPointRegistration
+function Get-M365DSCNotificationEndpointRegistration
 {
     [CmdletBinding()]
     param
@@ -626,7 +610,7 @@ function Send-M365DSCNotificationEndPointMessage
     )
 
     # Get all notification endpoints that are registered for the given EventType
-    [Array]$endpointsToContact = Get-M365DSCNotificationEndPointRegistration -EventType $EventType
+    [Array]$endpointsToContact = Get-M365DSCNotificationEndpointRegistration -EventType $EventType
 
     $messageBody = @{
         Details   = $EventDetails
@@ -748,8 +732,8 @@ Export-ModuleMember -Function @(
     'Export-M365DSCDiagnosticData',
     'Get-M365DSCLoggingOption',
     'New-M365DSCLogEntry',
-    'Get-M365DSCNotificationEndPointRegistration',
-    'New-M365DSCNotificationEndPointRegistration',
-    'Remove-M365DSCNotificationEndPointRegistration',
+    'Get-M365DSCNotificationEndpointRegistration',
+    'New-M365DSCNotificationEndpointRegistration',
+    'Remove-M365DSCNotificationEndpointRegistration',
     'Set-M365DSCLoggingOption'
 )

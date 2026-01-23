@@ -25,11 +25,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceCategory -MockWith {
+                return @{
+                    DisplayName = 'Test Category'
+                    Description = 'Test Definition'
+                    Id          = '12345-12345-12345-12345-12345'
+                }
             }
 
             Mock -CommandName Update-MgBetaDeviceManagementDeviceCategory -MockWith {
@@ -85,14 +93,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure      = 'Absent'
                     Credential  = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceCategory -MockWith {
-                    return @{
-                        DisplayName = 'Test Category'
-                        Description = 'Test Definition'
-                        Id          = '12345-12345-12345-12345-12345'
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -117,14 +117,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure      = 'Present'
                     Credential  = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceCategory -MockWith {
-                    return @{
-                        DisplayName = 'Test Category'
-                        Description = 'Test Definition'
-                        Id          = '12345-12345-12345-12345-12345'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -136,17 +128,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName = 'Test Category'
-                    Description = 'Test Definition'
+                    Description = 'Different Value' # Updated property
                     Ensure      = 'Present'
                     Credential  = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceCategory -MockWith {
-                    return @{
-                        DisplayName = 'Test Category'
-                        Description = 'Different Value'
-                        Id          = '12345-12345-12345-12345-12345'
-                    }
                 }
             }
 
@@ -170,14 +154,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceCategory -MockWith {
-                    return @{
-                        DisplayName = 'Test Category'
-                        Description = 'Test Definition'
-                        Id          = '12345-12345-12345-12345-12345'
-                    }
                 }
             }
 

@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -38,20 +38,27 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName New-SafeAttachmentRule -MockWith {
-                return @{
-
-                }
             }
 
             Mock -CommandName Set-SafeAttachmentRule -MockWith {
-                return @{
-
-                }
             }
 
             Mock -CommandName Remove-SafeAttachmentRule -MockWith {
-                return @{
+            }
 
+            Mock -CommandName Get-SafeAttachmentRule -MockWith {
+                return @{
+                    Ensure                    = 'Present'
+                    Identity                  = 'TestRule'
+                    SafeAttachmentPolicy      = 'TestPolicy'
+                    Priority                  = 0
+                    ExceptIfRecipientDomainIs = @('dev.contoso.com')
+                    ExceptIfSentTo            = @('test@contoso.com')
+                    ExceptIfSentToMemberOf    = @('Special Group')
+                    RecipientDomainIs         = @('contoso.com')
+                    SentTo                    = @('someone@contoso.com')
+                    SentToMemberOf            = @('Some Group', 'Some Other Group')
+                    State                     = 'Enabled'
                 }
             }
 
@@ -73,9 +80,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-SafeAttachmentRule -MockWith {
-                    return @{
-                        Identity = 'SomeOtherPolicy'
-                    }
+                    return $null
                 }
             }
 
@@ -85,6 +90,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-SafeAttachmentRule -Exactly 1
             }
         }
 
@@ -104,22 +110,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SentTo                    = @('someone@contoso.com')
                     SentToMemberOf            = @('Some Group', 'Some Other Group')
                 }
-
-                Mock -CommandName Get-SafeAttachmentRule -MockWith {
-                    return @{
-                        Ensure                    = 'Present'
-                        Identity                  = 'TestRule'
-                        SafeAttachmentPolicy      = 'TestPolicy'
-                        Priority                  = 0
-                        ExceptIfRecipientDomainIs = @('dev.contoso.com')
-                        ExceptIfSentTo            = @('test@contoso.com')
-                        ExceptIfSentToMemberOf    = @('Special Group')
-                        RecipientDomainIs         = @('contoso.com')
-                        SentTo                    = @('someone@contoso.com')
-                        SentToMemberOf            = @('Some Group', 'Some Other Group')
-                        State                     = 'Enabled'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -136,29 +126,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SafeAttachmentPolicy      = 'TestPolicy'
                     Enabled                   = $true
                     Priority                  = 0
-                    ExceptIfRecipientDomainIs = @('dev.contoso.com')
+                    ExceptIfRecipientDomainIs = @('notdev.contoso.com') # Drift
                     ExceptIfSentTo            = @('test@contoso.com')
                     ExceptIfSentToMemberOf    = @('Special Group')
                     RecipientDomainIs         = @('contoso.com')
                     SentTo                    = @('someone@contoso.com')
                     SentToMemberOf            = @('Some Group', 'Some Other Group')
-                }
-
-                Mock -CommandName Get-SafeAttachmentRule -MockWith {
-                    return @{
-                        Ensure                    = 'Present'
-                        Identity                  = 'TestRule'
-                        Credential                = $Credential
-                        SafeAttachmentPolicy      = 'TestPolicy'
-                        Enabled                   = $true
-                        Priority                  = 0
-                        ExceptIfRecipientDomainIs = @('notdev.contoso.com')
-                        ExceptIfSentTo            = @('nottest@contoso.com')
-                        ExceptIfSentToMemberOf    = @('UnSpecial Group')
-                        RecipientDomainIs         = @('contoso.com')
-                        SentTo                    = @('wrongperson@contoso.com', 'someone@contoso.com')
-                        SentToMemberOf            = @('Some Group', 'Some Other Group', 'DeletedGroup')
-                    }
                 }
             }
 
@@ -168,6 +141,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-SafeAttachmentRule -Exactly 1
             }
         }
 
@@ -179,12 +153,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity             = 'TestRule'
                     SafeAttachmentPolicy = 'TestPolicy'
                 }
-
-                Mock -CommandName Get-SafeAttachmentRule -MockWith {
-                    return @{
-                        Identity = 'TestRule'
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -193,6 +161,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Remove-SafeAttachmentRule -Exactly 1
             }
         }
 
@@ -206,13 +175,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Confirm-ImportedCmdletIsAvailable -MockWith {
                     return $true
-                }
-
-                Mock -CommandName Get-SafeAttachmentRule -MockWith {
-                    return @{
-                        Identity             = 'TestRule'
-                        SafeAttachmentPolicy = 'TestPolicy'
-                    }
                 }
             }
 

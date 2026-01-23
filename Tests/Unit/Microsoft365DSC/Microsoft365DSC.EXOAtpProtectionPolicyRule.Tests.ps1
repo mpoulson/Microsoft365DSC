@@ -28,11 +28,34 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Get-ATPProtectionPolicyRule -MockWith {
+                return @{
+                    Identity = 'TestRule'
+                    State    = 'Enabled'
+                }
+            }
+
+            Mock -CommandName Set-ATPProtectionPolicyRule -MockWith {
+            }
+
+            Mock -CommandName Remove-ATPProtectionPolicyRule -MockWith {
+                return $null
+            }
+
+            Mock -CommandName New-ATPProtectionPolicyRule -MockWith {
+            }
+
+            Mock -CommandName Enable-ATPProtectionPolicyRule -MockWith {
+            }
+
+            Mock -CommandName Disable-ATPProtectionPolicyRule -MockWith {
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -52,12 +75,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-ATPProtectionPolicyRule -MockWith {
                     return $null
-                }
-
-                Mock -CommandName New-ATPProtectionPolicyRule -MockWith {
-                    return @{
-                        Identity = 'TestRule'
-                    }
                 }
             }
             It 'Should return Values from the Get method' {
@@ -80,16 +97,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Absent'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-ATPProtectionPolicyRule -MockWith {
-                    return @{
-                        Identity = 'TestRule'
-                    }
-                }
-
-                Mock -CommandName Remove-ATPProtectionPolicyRule -MockWith {
-                    return $null
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -111,18 +118,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-ATPProtectionPolicyRule -MockWith {
-                    return @{
-                        Identity       = 'TestRule'
-                    }
-                }
-
-                Mock -CommandName Set-ATPProtectionPolicyRule -MockWith {
-                    return @{
-                        Identity       = 'TestRule'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -134,20 +129,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Identity            = 'TestRule'
-                    Comments            = 'TestComment'
+                    Comments            = 'TestComment' # Drift
                     Ensure              = 'Present'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-ATPProtectionPolicyRule -MockWith {
-                    return @{
-                        Identity            = 'TestRule'
-                        Comments            = 'TestComment #DriftValue'
-                    }
-                }
-
-                Mock -CommandName Set-ATPProtectionPolicyRule -MockWith {
-                    return $testParams
                 }
             }
 
@@ -172,21 +156,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Enabled             = $false
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-ATPProtectionPolicyRule -MockWith {
-                    return @{
-                        Identity            = 'TestRule'
-                        State               = 'Enabled'
-                    }
-                }
-
-                Mock -CommandName Set-ATPProtectionPolicyRule -MockWith {
-                    return $testParams
-                }
-
-                Mock -CommandName Disable-ATPProtectionPolicyRule -MockWith {
-                    return $null
                 }
             }
 
@@ -241,12 +210,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-ATPProtectionPolicyRule -MockWith {
-                    return @{
-                        Identity = 'TestRule'
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

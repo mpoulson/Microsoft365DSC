@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -44,6 +44,38 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        wakeOnPower = "notConfigured"
+                        microphone = "notConfigured"
+                        bootFromBuiltInNetworkAdapters = "notConfigured"
+                        radios = "notConfigured"
+                        simultaneousMultiThreading = "notConfigured"
+                        usbTypeAPort = "notConfigured"
+                        microphonesAndSpeakers = "notConfigured"
+                        rearCamera = "notConfigured"
+                        infraredCamera = "notConfigured"
+                        changeUefiSettingsPermission = "notConfiguredOnly"
+                        sdCard = "notConfigured"
+                        bootFromExternalMedia = "notConfigured"
+                        frontCamera = "notConfigured"
+                        windowsPlatformBinaryTable = "notConfigured"
+                        '@odata.type' = "#microsoft.graph.windows10DeviceFirmwareConfigurationInterface"
+                        wakeOnLAN = "notConfigured"
+                        virtualizationOfCpuAndIO = "notConfigured"
+                        wirelessWideAreaNetwork = "notConfigured"
+                        nearFieldCommunication = "notConfigured"
+                        wiFi = "notConfigured"
+                        bluetooth = "notConfigured"
+                        cameras = "notConfigured"
+                    }
+                    Description = "FakeStringValue"
+                    DisplayName = "FakeStringValue"
+                    Id = "FakeStringValue"
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -78,7 +110,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RearCamera = "notConfigured"
                     SdCard = "notConfigured"
                     SimultaneousMultiThreading = "notConfigured"
-                    SupportsScopeTags = $True
                     UsbTypeAPort = "notConfigured"
                     VirtualizationOfCpuAndIO = "notConfigured"
                     WakeOnLAN = "notConfigured"
@@ -126,7 +157,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RearCamera = "notConfigured"
                     SdCard = "notConfigured"
                     SimultaneousMultiThreading = "notConfigured"
-                    SupportsScopeTags = $True
                     UsbTypeAPort = "notConfigured"
                     VirtualizationOfCpuAndIO = "notConfigured"
                     WakeOnLAN = "notConfigured"
@@ -136,40 +166,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     WirelessWideAreaNetwork = "notConfigured"
                     Ensure = 'Absent'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            wakeOnPower = "notConfigured"
-                            microphone = "notConfigured"
-                            bootFromBuiltInNetworkAdapters = "notConfigured"
-                            radios = "notConfigured"
-                            simultaneousMultiThreading = "notConfigured"
-                            usbTypeAPort = "notConfigured"
-                            microphonesAndSpeakers = "notConfigured"
-                            rearCamera = "notConfigured"
-                            infraredCamera = "notConfigured"
-                            changeUefiSettingsPermission = "notConfiguredOnly"
-                            sdCard = "notConfigured"
-                            bootFromExternalMedia = "notConfigured"
-                            frontCamera = "notConfigured"
-                            windowsPlatformBinaryTable = "notConfigured"
-                            '@odata.type' = "#microsoft.graph.windows10DeviceFirmwareConfigurationInterface"
-                            wakeOnLAN = "notConfigured"
-                            virtualizationOfCpuAndIO = "notConfigured"
-                            wirelessWideAreaNetwork = "notConfigured"
-                            nearFieldCommunication = "notConfigured"
-                            wiFi = "notConfigured"
-                            bluetooth = "notConfigured"
-                            cameras = "notConfigured"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        SupportsScopeTags = $True
-
-                    }
                 }
             }
 
@@ -206,7 +202,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RearCamera = "notConfigured"
                     SdCard = "notConfigured"
                     SimultaneousMultiThreading = "notConfigured"
-                    SupportsScopeTags = $True
                     UsbTypeAPort = "notConfigured"
                     VirtualizationOfCpuAndIO = "notConfigured"
                     WakeOnLAN = "notConfigured"
@@ -216,40 +211,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     WirelessWideAreaNetwork = "notConfigured"
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            wakeOnPower = "notConfigured"
-                            microphone = "notConfigured"
-                            bootFromBuiltInNetworkAdapters = "notConfigured"
-                            radios = "notConfigured"
-                            simultaneousMultiThreading = "notConfigured"
-                            usbTypeAPort = "notConfigured"
-                            microphonesAndSpeakers = "notConfigured"
-                            rearCamera = "notConfigured"
-                            infraredCamera = "notConfigured"
-                            changeUefiSettingsPermission = "notConfiguredOnly"
-                            sdCard = "notConfigured"
-                            bootFromExternalMedia = "notConfigured"
-                            frontCamera = "notConfigured"
-                            windowsPlatformBinaryTable = "notConfigured"
-                            '@odata.type' = "#microsoft.graph.windows10DeviceFirmwareConfigurationInterface"
-                            wakeOnLAN = "notConfigured"
-                            virtualizationOfCpuAndIO = "notConfigured"
-                            wirelessWideAreaNetwork = "notConfigured"
-                            nearFieldCommunication = "notConfigured"
-                            wiFi = "notConfigured"
-                            bluetooth = "notConfigured"
-                            cameras = "notConfigured"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        SupportsScopeTags = $True
-
-                    }
                 }
             }
 
@@ -278,8 +239,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Radios = "notConfigured"
                     RearCamera = "notConfigured"
                     SdCard = "notConfigured"
-                    SimultaneousMultiThreading = "notConfigured"
-                    SupportsScopeTags = $True
+                    SimultaneousMultiThreading = "enabled" # Updated property
                     UsbTypeAPort = "notConfigured"
                     VirtualizationOfCpuAndIO = "notConfigured"
                     WakeOnLAN = "notConfigured"
@@ -289,38 +249,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     WirelessWideAreaNetwork = "notConfigured"
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            wakeOnPower = "notConfigured"
-                            microphone = "notConfigured"
-                            bootFromBuiltInNetworkAdapters = "notConfigured"
-                            radios = "notConfigured"
-                            simultaneousMultiThreading = "notConfigured"
-                            usbTypeAPort = "notConfigured"
-                            microphonesAndSpeakers = "notConfigured"
-                            rearCamera = "notConfigured"
-                            infraredCamera = "notConfigured"
-                            changeUefiSettingsPermission = "notConfiguredOnly"
-                            sdCard = "notConfigured"
-                            bootFromExternalMedia = "notConfigured"
-                            frontCamera = "notConfigured"
-                            windowsPlatformBinaryTable = "notConfigured"
-                            '@odata.type' = "#microsoft.graph.windows10DeviceFirmwareConfigurationInterface"
-                            wakeOnLAN = "notConfigured"
-                            virtualizationOfCpuAndIO = "notConfigured"
-                            wirelessWideAreaNetwork = "notConfigured"
-                            nearFieldCommunication = "notConfigured"
-                            wiFi = "notConfigured"
-                            bluetooth = "notConfigured"
-                            cameras = "notConfigured"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                    }
                 }
             }
 
@@ -345,41 +273,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            wakeOnPower = "notConfigured"
-                            microphone = "notConfigured"
-                            bootFromBuiltInNetworkAdapters = "notConfigured"
-                            radios = "notConfigured"
-                            simultaneousMultiThreading = "notConfigured"
-                            usbTypeAPort = "notConfigured"
-                            microphonesAndSpeakers = "notConfigured"
-                            rearCamera = "notConfigured"
-                            infraredCamera = "notConfigured"
-                            changeUefiSettingsPermission = "notConfiguredOnly"
-                            sdCard = "notConfigured"
-                            bootFromExternalMedia = "notConfigured"
-                            frontCamera = "notConfigured"
-                            windowsPlatformBinaryTable = "notConfigured"
-                            '@odata.type' = "#microsoft.graph.windows10DeviceFirmwareConfigurationInterface"
-                            wakeOnLAN = "notConfigured"
-                            virtualizationOfCpuAndIO = "notConfigured"
-                            wirelessWideAreaNetwork = "notConfigured"
-                            nearFieldCommunication = "notConfigured"
-                            wiFi = "notConfigured"
-                            bluetooth = "notConfigured"
-                            cameras = "notConfigured"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                        SupportsScopeTags = $True
-
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

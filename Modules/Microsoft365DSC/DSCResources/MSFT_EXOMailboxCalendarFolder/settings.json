@@ -1,34 +1,52 @@
-﻿{
-    "resourceName": "EXOMailboxCalendarFolder",
-    "description": "",
-    "roles": {
+{
+  "resourceName": "EXOMailboxCalendarFolder",
+  "description": "",
+  "roles": {
+    "read": [
+      "Global Reader"
+    ],
+    "update": [
+      "Exchange Administrator"
+    ]
+  },
+  "permissions": {
+    "Office 365 Exchange Online": {
+      "application": {
         "read": [
-            "Global Reader"
+          {
+            "name": "Exchange.ManageAsApp"
+          }
         ],
         "update": [
-            "Exchange Administrator"
+          {
+            "name": "Exchange.ManageAsApp"
+          }
         ]
+      }
     },
-    "permissions": {
-        "graph": {
-            "delegated": {
-                "read": [],
-                "update": []
-            },
-            "application": {
-                "read": [],
-                "update": []
-            }
-        },
-        "exchange": {
-            "requiredroles": [
-                "Organization Management",
-                "Recipient Management"
-            ],
-            "requiredrolegroups": [
-                "Organization Management",
-                "Help Desk"
-            ]
-        }
+    "exchange": {
+      "requiredroles": {
+        "read": [
+          "View-Only Recipients"
+        ],
+        "update": [
+          "Mail Recipients"
+        ]
+      },
+      "requiredrolegroups": {
+        "read": [
+          "View-Only Organization Management"
+        ],
+        "update": [
+          "Recipient Management"
+        ]
+      }
     }
+  },
+  "requiredModules": [],
+  "supportedEnvironments": [
+    "Global",
+    "USGov"
+  ],
+  "mode": "Data"
 }

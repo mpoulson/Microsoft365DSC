@@ -1,5 +1,5 @@
 
-# IntuneDeviceConfigurationScepCertificatePolicyWindows10
+# IntuneDeviceConfigurationSCEPCertificatePolicyWindows10
 
 ## Description
 

@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADAdministrativeUnit'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -82,19 +84,15 @@ function Get-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    Write-Verbose -Message "Getting configuration for Administrative Unit '$DisplayName'"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            try
-            {
-                $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                    -InboundParameters $PSBoundParameters
-            }
-            catch
-            {
-                Write-Verbose -Message ($_)
-            }
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -137,6 +135,7 @@ function Get-TargetResource
         {
             $getValue = $Script:exportedInstance
         }
+
         $Id = $getValue.Id
         Write-Verbose -Message "An Azure AD Administrative Unit with Id {$Id} and DisplayName {$DisplayName} was found."
         $results = @{
@@ -152,7 +151,7 @@ function Get-TargetResource
             TenantId                     = $TenantId
             ApplicationSecret            = $ApplicationSecret
             CertificateThumbprint        = $CertificateThumbprint
-            Managedidentity              = $ManagedIdentity.IsPresent
+            ManagedIdentity              = $ManagedIdentity.IsPresent
             AccessTokens                 = $AccessTokens
             #endregion
         }
@@ -174,14 +173,14 @@ function Get-TargetResource
         if ($results.MembershipType -ne 'Dynamic')
         {
             Write-Verbose -Message "AU {$DisplayName} get Members"
-            [array]$auMembers = Get-MgDirectoryAdministrativeUnitMember -AdministrativeUnitId $getValue.Id -All
+            [array]$auMembers = Get-MgDirectoryAdministrativeUnitMember -AdministrativeUnitId $getValue.Id -All -Property @('id', 'displayName', 'userPrincipalName')
             if ($auMembers.Count -gt 0)
             {
                 Write-Verbose -Message "AU {$DisplayName} process $($auMembers.Count) members"
                 $memberSpec = @()
                 foreach ($auMember in $auMembers)
                 {
-                    $member = @{}
+                    $member = [ordered]@{}
                     if ($auMember.AdditionalProperties.'@odata.type' -match 'user')
                     {
                         $member.Add('Identity', $auMember.AdditionalProperties.userPrincipalName)
@@ -192,10 +191,14 @@ function Get-TargetResource
                         $member.Add('Identity', $auMember.AdditionalProperties.displayName)
                         $member.Add('Type', 'Group')
                     }
-                    else
+                    elseif ($auMember.AdditionalProperties.'@odata.type' -match 'device')
                     {
                         $member.Add('Identity', $auMember.AdditionalProperties.displayName)
                         $member.Add('Type', 'Device')
+                    }
+                    else
+                    {
+                        throw "AU {$DisplayName}: member {$($auMember.Id)} has invalid type {$($auMember.AdditionalProperties.'@odata.type')}"
                     }
                     $memberSpec += $member
                 }
@@ -207,25 +210,38 @@ function Get-TargetResource
         Write-Verbose -Message "AU {$DisplayName} get Scoped Role Members"
         $ErrorActionPreference = 'Stop'
         [array]$auScopedRoleMembers = Get-MgDirectoryAdministrativeUnitScopedRoleMember -AdministrativeUnitId $getValue.Id -All
+        $scopedRoleMemberRequests = [System.Collections.Generic.List[System.Object]]::new($auScopedRoleMembers.Count)
+        foreach ($auScopedRoleMemberId in ($auScopedRoleMembers.RoleMemberInfo.Id | Select-Object -Unique))
+        {
+            $scopedRoleMemberRequests.Add(@{
+                id = $auScopedRoleMemberId
+                method = 'GET'
+                url = "/directoryObjects/$($auScopedRoleMemberId)?`$select=id"
+            })
+        }
+        if ($null -eq $Script:DirectoryRoles)
+        {
+            $Script:DirectoryRoles = Get-MgDirectoryRole -All
+        }
         if ($auScopedRoleMembers.Count -gt 0)
         {
             Write-Verbose -Message "AU {$DisplayName} process $($auScopedRoleMembers.Count) scoped role members"
+            $memberObjectResponses = Invoke-M365DSCGraphBatchRequest -Requests $scopedRoleMemberRequests -AsList
             $scopedRoleMemberSpec = @()
             foreach ($auScopedRoleMember in $auScopedRoleMembers)
             {
                 Write-Verbose -Message "AU {$DisplayName} verify RoleId {$($auScopedRoleMember.RoleId)}"
-                $roleObject = Get-MgDirectoryRole -DirectoryRoleId $auScopedRoleMember.RoleId -ErrorAction Stop
+                $roleObject = $Script:DirectoryRoles | Where-Object { $_.Id -eq $auScopedRoleMember.RoleId }
                 Write-Verbose -Message "Found DirectoryRole '$($roleObject.DisplayName)' with id $($roleObject.Id)"
                 $scopedRoleMember = [ordered]@{
                     RoleName       = $roleObject.DisplayName
-                    RoleMemberInfo = @{
-                        Type     = $null
+                    RoleMemberInfo = [ordered]@{
                         Identity = $null
+                        Type     = $null
                     }
                 }
                 Write-Verbose -Message "AU {$DisplayName} verify RoleMemberInfo.Id {$($auScopedRoleMember.RoleMemberInfo.Id)}"
-                $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryobjects/$($auScopedRoleMember.RoleMemberInfo.Id)"
-                $memberObject = Invoke-MgGraphRequest -Uri $url
+                $memberObject = $memberObjectResponses.Where({ $_.id -eq $auScopedRoleMember.RoleMemberInfo.Id }).body
                 Write-Verbose -Message "AU {$DisplayName} @odata.Type={$($memberObject.'@odata.type')}"
                 if (($memberObject.'@odata.type') -match 'user')
                 {
@@ -239,11 +255,15 @@ function Get-TargetResource
                     $scopedRoleMember.RoleMemberInfo.Identity = $auScopedRoleMember.RoleMemberInfo.DisplayName
                     $scopedRoleMember.RoleMemberInfo.Type = 'Group'
                 }
-                else
+                elseif (($memberObject.'@odata.type') -match 'servicePrincipal')
                 {
                     Write-Verbose -Message "AU {$DisplayName} SPN = {$($auScopedRoleMember.RoleMemberInfo.DisplayName)}"
                     $scopedRoleMember.RoleMemberInfo.Identity = $auScopedRoleMember.RoleMemberInfo.DisplayName
                     $scopedRoleMember.RoleMemberInfo.Type = 'ServicePrincipal'
+                }
+                else
+                {
+                    throw "AU {$DisplayName}: scoped role member {$($memberObject.Id)} has invalid type {$($memberObject.'@odata.type')}"
                 }
                 Write-Verbose -Message "AU {$DisplayName} scoped role member: RoleName '$($scopedRoleMember.RoleName)' Type '$($scopedRoleMember.RoleMemberInfo.Type)' Identity '$($scopedRoleMember.RoleMemberInfo.Identity)'"
                 $scopedRoleMemberSpec += $scopedRoleMember
@@ -252,7 +272,7 @@ function Get-TargetResource
             $results.Add('ScopedRoleMembers', $scopedRoleMemberSpec)
         }
         Write-Verbose -Message "AU {$DisplayName} return results"
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -262,7 +282,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -349,15 +369,8 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    try
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-            -InboundParameters $PSBoundParameters
-    }
-    catch
-    {
-        Write-Verbose -Message $_
-    }
+
+    Write-Verbose -Message "Setting configuration for Administrative Unit '$DisplayName'"
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -373,16 +386,6 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    $PSBoundParameters.Remove('Ensure') | Out-Null
-    $PSBoundParameters.Remove('Credential') | Out-Null
-    $PSBoundParameters.Remove('ApplicationId') | Out-Null
-    $PSBoundParameters.Remove('ApplicationSecret') | Out-Null
-    $PSBoundParameters.Remove('TenantId') | Out-Null
-    $PSBoundParameters.Remove('CertificateThumbprint') | Out-Null
-    $PSBoundParameters.Remove('ManagedIdentity') | Out-Null
-    $PSBoundParameters.Remove('Verbose') | Out-Null
-    $PSBoundParameters.Remove('AccessTokens') | Out-Null
-
     $backCurrentMembers = $currentInstance.Members
     $backCurrentScopedRoleMembers = $currentInstance.ScopedRoleMembers
 
@@ -392,14 +395,14 @@ function Set-TargetResource
         {
             throw "AU {$($DisplayName)}: Members is not allowed when MembershipType is Dynamic"
         }
-        $CreateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $CreateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters
         $CreateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$CreateParameters).clone()).Keys
+        $keys = (([Hashtable]$CreateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
             }
@@ -417,7 +420,7 @@ function Set-TargetResource
                     $memberIdentity = Get-MgUser -Filter "UserPrincipalName eq '$($member.Identity -replace "'", "''")'" -ErrorAction Stop
                     if ($memberIdentity)
                     {
-                        $memberSpecification += [pscustomobject]@{Type = "$($member.Type)s"; Id = $memberIdentity.Id }
+                        $memberSpecification += $memberIdentity.Id
                     }
                     else
                     {
@@ -433,7 +436,7 @@ function Set-TargetResource
                         {
                             throw "AU {$($DisplayName)}: Group displayname {$($member.Identity)} is not unique"
                         }
-                        $memberSpecification += [pscustomobject]@{Type = "$($member.Type)s"; Id = $memberIdentity.Id }
+                        $memberSpecification += $memberIdentity.Id
                     }
                     else
                     {
@@ -449,7 +452,7 @@ function Set-TargetResource
                         {
                             throw "AU {$($DisplayName)}: Device displayname {$($member.Identity)} is not unique"
                         }
-                        $memberSpecification += [pscustomobject]@{Type = "$($member.Type)s"; Id = $memberIdentity.Id }
+                        $memberSpecification += $memberIdentity.Id
                     }
                     else
                     {
@@ -458,7 +461,7 @@ function Set-TargetResource
                 }
                 else
                 {
-                    throw "AU {$($DisplayName)}: Member {$($Member.Identity)} has invalid type {$($Member.Type)}"
+                    throw "AU {$($DisplayName)}: Member {$($member.Identity)} has invalid type {$($member.Type)}"
                 }
             }
             # Members are added to the AU *after* it has been created
@@ -532,7 +535,7 @@ function Set-TargetResource
                 {
                     throw "AU {$($DisplayName)}: ScopedRoleMember for role {$($roleMember.RoleName)}: $($roleMember.RoleMemberInfo.Type) {$($roleMember.RoleMemberInfo.Identity)} is not unique"
                 }
-                $scopedRoleMemberSpecification += @{
+                $scopedRoleMemberSpecification += [ordered]@{
                     RoleId         = $roleObject.Id
                     RoleMemberInfo = @{
                         Id = $roleMemberIdentity.Id
@@ -557,8 +560,8 @@ function Set-TargetResource
         {
             foreach ($member in $memberSpecification)
             {
-                Write-Verbose -Message "Adding new dynamic member {$($member.Id)}"
-                $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/$($member.Type)/$($member.Id)"
+                Write-Verbose -Message "Adding new assigned member {$($member)}"
+                $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/$($member)"
 
                 New-MgDirectoryAdministrativeUnitMemberByRef -AdministrativeUnitId $policy.Id -OdataId $url
             }
@@ -576,15 +579,15 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Updating the Azure AD Administrative Unit with Id {$($currentInstance.Id)}"
 
-        $UpdateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
 
         $UpdateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$UpdateParameters).clone()).Keys
+        $keys = (([Hashtable]$UpdateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
             }
@@ -620,17 +623,17 @@ function Set-TargetResource
                     if ($diff.Type -eq 'User')
                     {
                         $memberObject = Get-MgUser -Filter "UserPrincipalName eq '$($diff.Identity -replace "'", "''")'"
-                        $memberType = 'users'
+                        #$memberType = 'users'
                     }
                     elseif ($diff.Type -eq 'Group')
                     {
                         $memberObject = Get-MgGroup -Filter "DisplayName eq '$($diff.Identity -replace "'", "''")'"
-                        $membertype = 'groups'
+                        #$memberType = 'groups'
                     }
                     elseif ($diff.Type -eq 'Device')
                     {
                         $memberObject = Get-MgDevice -Filter "DisplayName eq '$($diff.Identity -replace "'", "''")'"
-                        $membertype = 'devices'
+                        #memberType = 'devices'
                     }
                     else
                     {
@@ -649,7 +652,7 @@ function Set-TargetResource
                     {
                         Write-Verbose -Message "AdministrativeUnit {$DisplayName} Adding member {$($diff.Identity)}, type {$($diff.Type)}"
 
-                        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/$memberType/$($memberObject.Id)"
+                        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/$($memberObject.Id)"
                         New-MgDirectoryAdministrativeUnitMemberByRef -AdministrativeUnitId ($currentInstance.Id) -OdataId $url | Out-Null
                     }
                     else
@@ -752,7 +755,7 @@ function Set-TargetResource
                 {
                     Write-Verbose -Message "Adding new scoped role {$($diff.RoleName)} member {$($diff.Identity)}, type {$($diff.Type)} to Administrative Unit {$DisplayName}"
 
-                    $scopedRoleMemberParam = @{
+                    $scopedRoleMemberParam = [ordered]@{
                         RoleId         = $roleObject.Id
                         RoleMemberInfo = @{
                             Id = $memberObject.Id
@@ -867,9 +870,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -879,62 +879,11 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Azure AD Administrative Unit with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            $source = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $source
-
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                Write-Verbose -Message "Difference found for $key"
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-
-    # Visibility is currently not returned by Get-TargetResource
-    $ValuesToCheck.Remove('Visibility') | Out-Null
-
-    if ($ValuesToCheck.ContainsKey('MembershipType') -and $MembershipType -ne 'Dynamic' -and $CurrentValues.MembershipType -ne 'Dynamic')
-    {
-        # MembershipType may be returned as null or Assigned with same effect. Only compare if Dynamic is specified or returned
-        $ValuesToCheck.Remove('MembershipType') | Out-Null
-    }
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $compareParameters = Get-CompareParameters
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                             -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+                                             @compareParameters
+    return $result
 }
 
 function Export-TargetResource
@@ -1015,7 +964,7 @@ function Export-TargetResource
         $query = $Filter
 
         # Match all words in the query
-        $matches = [regex]::matches($query, $pattern)
+        $matches = [regex]::Matches($query, $pattern)
 
         # Extract the matched argument into an array
         $arguments = @()
@@ -1035,7 +984,7 @@ function Export-TargetResource
         }
 
         # If all conditions match the support, add parameters to $ExportParameters
-        if ($allConditionsMatched -or $Filter -like '*endsWith*')
+        if ($allConditionsMatched -or ($Filter -like '*endsWith*') -or ($Filter -like '*not*'))
         {
             $ExportParameters.Add('CountVariable', 'count')
             $ExportParameters.Add('headers', @{'ConsistencyLevel' = 'Eventual' })
@@ -1112,7 +1061,6 @@ function Export-TargetResource
                 }
             }
 
-
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
@@ -1130,18 +1078,25 @@ function Export-TargetResource
     }
     catch
     {
-        Write-Verbose -Message "Exception: $($_.Exception.Message)"
-
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return @{
+        ExcludedProperties = @('Visibility')
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -45,7 +45,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MgBetaIdentityB2XUserFlow -MockWith {
             }
 
-            Mock -CommandName Remove-MgBetaIdentityB2XUserFlowIdentityProviderByRef -MockWith {
+            Mock -CommandName Remove-MgBetaIdentityB2XUserFlowIdentityProviderBaseByRef -MockWith {
             }
 
             Mock -CommandName New-MgBetaIdentityB2XUserFlowIdentityProviderByRef -MockWith {
@@ -64,6 +64,58 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Set-MgBetaIdentityB2XUserFlowPostFederationSignupByRef -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaIdentityB2XUserFlow -MockWith {
+                return @{
+                    id = "FakeStringValue"
+                }
+            }
+
+            Mock -CommandName Get-MgBetaIdentityApiConnector -MockWith {
+                return @{
+                    id = "FakeStringValue"
+                }
+            }
+
+            Mock -CommandName Get-MgBetaIdentityB2XUserFlowIdentityProvider -MockWith {
+                return @(
+                    @{
+                        id = "Provider1"
+                    },
+                    @{
+                        id = "Provider2"
+                    }
+                )
+            }
+
+            Mock -CommandName Get-MgBetaIdentityB2XUserFlowApiConnectorConfiguration -MockWith {
+                return @{
+                    PostFederationSignup = [PSCustomObject]@{
+                        DisplayName = "FakeConnector2"
+                    }
+                    PostAttributeCollection = [PSCustomObject]@{
+                        DisplayName = "FakeConnector1"
+                    }
+                }
+            }
+
+            Mock -CommandName Get-MgBetaIdentityB2XUserFlowUserAttributeAssignment -MockWith {
+                return @(
+                    [PSCustomObject]@{
+                        UserInputType = 'textBox'
+                        IsOptional = $True
+                        DisplayName = 'Email Address'
+                        Id = 'emailReadonly'
+                        UserAttributeValues = @(
+                            [PSCustomObject]@{
+                                IsDefault = $True
+                                Name = 'S'
+                                Value = '2'
+                            }
+                        )
+                    }
+                )
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -156,52 +208,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = "Absent"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlow -MockWith {
-                    return @{
-                        id = "FakeStringValue"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowIdentityProvider -MockWith {
-                    return @(
-                        @{
-                            id = "Provider1"
-                        },
-                        @{
-                            id = "Provider2"
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowApiConnectorConfiguration -MockWith {
-                    return @{
-                        PostFederationSignup = [PSCustomObject]@{
-                            DisplayName = "FakeConnector2"
-                        }
-                        PostAttributeCollection = [PSCustomObject]@{
-                            DisplayName = "FakeConnector1"
-                        }
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowUserAttributeAssignment -MockWith {
-                    return @(
-                        [PSCustomObject]@{
-                            UserInputType = 'textBox'
-                            IsOptional = $True
-                            DisplayName = 'Email Address'
-                            Id = 'emailReadonly'
-                            UserAttributeValues = @(
-                                [PSCustomObject]@{
-                                    IsDefault = $True
-                                    Name = 'S'
-                                    Value = '2'
-                                }
-                            )
-                        }
-                    )
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -242,54 +248,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = "Present"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlow -MockWith {
-                    return @{
-                        id = "FakeStringValue"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowIdentityProvider -MockWith {
-                    return @(
-                        @{
-                            id = "Provider1"
-                        },
-                        @{
-                            id = "Provider2"
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowApiConnectorConfiguration -MockWith {
-                    return @{
-                        PostFederationSignup = [PSCustomObject]@{
-                            DisplayName = "FakeConnector2"
-                        }
-                        PostAttributeCollection = [PSCustomObject]@{
-                            DisplayName = "FakeConnector1"
-                        }
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowUserAttributeAssignment -MockWith {
-                    return @(
-                        [PSCustomObject]@{
-                            UserInputType = 'textBox'
-                            IsOptional = $True
-                            DisplayName = 'Email Address'
-                            Id = 'emailReadonly'
-                            UserAttributeValues = @(
-                                [PSCustomObject]@{
-                                    IsDefault = $True
-                                    Name = 'S'
-                                    Value = '2'
-                                }
-                            )
-                        }
-                    )
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -304,7 +263,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         postFederationSignupConnectorName = 'FakeConnector2'
                     } -ClientOnly)
                     Id = "FakeStringValue"
-                    IdentityProviders = @("Provider1", "Provider2")
+                    IdentityProviders = @("Provider1", "Provider2", "Provider3") # Drift
                     UserAttributeAssignments = @((New-CimInstance -ClassName MSFT_MicrosoftGraphuserFlowUserAttributeAssignment -Property @{
                         UserInputType = 'dropdownSingleSelect'
                         IsOptional = $True
@@ -317,87 +276,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 Value = '2'
                             } -ClientOnly
                         )
-                    } -ClientOnly),
-                    (New-CimInstance -ClassName MSFT_MicrosoftGraphuserFlowUserAttributeAssignment -Property @{
-                        UserInputType = 'textBox'
-                        IsOptional = $True
-                        DisplayName = 'Surname'
-                        Id = 'surname'
-                        UserAttributeValues = [CimInstance[]]@(
-                            New-CimInstance -ClassName MSFT_MicrosoftGraphuserFlowUserAttributeAssignment -Property @{
-                                IsDefault = $True
-                                Name = 'S'
-                                Value = '2'
-                            } -ClientOnly
-                        )
                     } -ClientOnly))
                     Ensure = "Present"
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlow -MockWith {
-                    return @{
-                        id = "FakeStringValue"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaIdentityApiConnector -MockWith {
-                    return @{
-                        id = "FakeStringValue"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowIdentityProvider -MockWith {
-                    return @(
-                        @{
-                            id = "Provider3"
-                        },
-                        @{
-                            id = "Provider2"
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowApiConnectorConfiguration -MockWith {
-                    return @{
-                        PostFederationSignup = [PSCustomObject]@{
-                            DisplayName = "FakeConnector2"
-                        }
-                        PostAttributeCollection = [PSCustomObject]@{
-                            DisplayName = "FakeConnector1"
-                        }
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowUserAttributeAssignment -MockWith {
-                    return @(
-                        [PSCustomObject]@{
-                            UserInputType = 'textBox'
-                            IsOptional = $True
-                            DisplayName = 'Email Address'
-                            Id = 'emailReadonly'
-                            UserAttributeValues = @(
-                                [PSCustomObject]@{
-                                    IsDefault = $True
-                                    Name = 'S'
-                                    Value = '2'
-                                }
-                            )
-                        },
-                        [PSCustomObject]@{
-                            UserInputType = 'textBox'
-                            IsOptional = $True
-                            DisplayName = 'City'
-                            Id = 'city'
-                            UserAttributeValues = @(
-                                [PSCustomObject]@{
-                                    IsDefault = $True
-                                    Name = 'S'
-                                    Value = '2'
-                                }
-                            )
-                        }
-                    )
                 }
             }
 
@@ -412,12 +293,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
                 Should -Invoke -CommandName New-MgBetaIdentityB2XUserFlowIdentityProviderByRef -Exactly 1
-                Should -Invoke -CommandName Remove-MgBetaIdentityB2XUserFlowIdentityProviderByRef -Exactly 1
                 Should -Invoke -CommandName Set-MgBetaIdentityB2XUserFlowPostFederationSignupByRef -Exactly 1
                 Should -Invoke -CommandName Set-MgBetaIdentityB2XUserFlowPostAttributeCollectionByRef -Exactly 1
-                Should -Invoke -CommandName New-MgBetaIdentityB2XUserFlowUserAttributeAssignment -Exactly 1
                 Should -Invoke -CommandName Update-MgBetaIdentityB2XUserFlowUserAttributeAssignment -Exactly 1
-                Should -Invoke -CommandName Remove-MgBetaIdentityB2XUserFlowUserAttributeAssignment -Exactly 1
             }
         }
 
@@ -427,71 +305,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlow -MockWith {
-                    return @{
-                        id = "FakeStringValue"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaIdentityApiConnector -MockWith {
-                    return @{
-                        id = "FakeStringValue"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowIdentityProvider -MockWith {
-                    return @(
-                        @{
-                            id = "Provider3"
-                        },
-                        @{
-                            id = "Provider2"
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowApiConnectorConfiguration -MockWith {
-                    return @{
-                        PostFederationSignup = [PSCustomObject]@{
-                            DisplayName = "FakeConnector2"
-                        }
-                        PostAttributeCollection = [PSCustomObject]@{
-                            DisplayName = "FakeConnector1"
-                        }
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaIdentityB2XUserFlowUserAttributeAssignment -MockWith {
-                    return @(
-                        [PSCustomObject]@{
-                            UserInputType = 'textBox'
-                            IsOptional = $True
-                            DisplayName = 'Email Address'
-                            Id = 'emailReadonly'
-                            UserAttributeValues = @(
-                                [PSCustomObject]@{
-                                    IsDefault = $True
-                                    Name = 'S'
-                                    Value = '2'
-                                }
-                            )
-                        },
-                        [PSCustomObject]@{
-                            UserInputType = 'textBox'
-                            IsOptional = $True
-                            DisplayName = 'City'
-                            Id = 'city'
-                            UserAttributeValues = @(
-                                [PSCustomObject]@{
-                                    IsDefault = $True
-                                    Name = 'S'
-                                    Value = '2'
-                                }
-                            )
-                        }
-                    )
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

@@ -85,8 +85,14 @@ function Get-M365DSCCompiledPermissionList
                 }
             }
         )
-        RequiredRoles       = @()
-        RequiredRoleGroups  = @()
+        RequiredRoles       = @{
+            Read = @()
+            Update = @()
+        }
+        RequiredRoleGroups  = @{
+            Read = @()
+            Update = @()
+        }
     }
 
     $total = $ResourceNameList.Count
@@ -195,30 +201,54 @@ function Get-M365DSCCompiledPermissionList
             {
                 Write-Verbose -Message '  Retrieving Exchange permissions'
                 # Required Role
-                foreach ($requiredRole in $resourceSettings.permissions.exchange.requiredroles)
+                foreach ($requiredRole in $resourceSettings.permissions.exchange.requiredroles.read)
                 {
-                    if (-not $results.RequiredRoles.Contains($requiredRole))
+                    if (-not $results.RequiredRoles.Read.Contains($requiredRole))
                     {
-                        Write-Verbose -Message "    Found new Required Role {$($requiredRole)}"
-                        $results.RequiredRoles += $requiredRole
+                        Write-Verbose -Message "    Found new Read Required Role {$($requiredRole)}"
+                        $results.RequiredRoles.Read += $requiredRole
                     }
                     else
                     {
-                        Write-Verbose -Message "    Required Role {$($requiredRole)} was already added"
+                        Write-Verbose -Message "    Required Read Role {$($requiredRole)} was already added"
+                    }
+                }
+                foreach ($requiredRole in $resourceSettings.permissions.exchange.requiredroles.update)
+                {
+                    if (-not $results.RequiredRoles.Update.Contains($requiredRole))
+                    {
+                        Write-Verbose -Message "    Found new Update Required Role {$($requiredRole)}"
+                        $results.RequiredRoles.Update += $requiredRole
+                    }
+                    else
+                    {
+                        Write-Verbose -Message "    Required Update Role {$($requiredRole)} was already added"
                     }
                 }
 
                 # Required RoleGroups
-                foreach ($requiredRoleGroup in $resourceSettings.permissions.exchange.requiredrolegroups)
+                foreach ($requiredRoleGroup in $resourceSettings.permissions.exchange.requiredrolegroups.read)
                 {
-                    if (-not $results.RequiredRoleGroups.Contains($requiredRoleGroup))
+                    if (-not $results.RequiredRoleGroups.Read.Contains($requiredRoleGroup))
                     {
-                        Write-Verbose -Message "    Found new Required Role Group {$($requiredRoleGroup)}"
-                        $results.RequiredRoleGroups += $requiredRoleGroup
+                        Write-Verbose -Message "    Found new Read Required Role Group {$($requiredRoleGroup)}"
+                        $results.RequiredRoleGroups.Read += $requiredRoleGroup
                     }
                     else
                     {
-                        Write-Verbose -Message "    Required Role Group {$($requiredRoleGroup)} was already added"
+                        Write-Verbose -Message "    Required Read Role Group {$($requiredRoleGroup)} was already added"
+                    }
+                }
+                foreach ($requiredRoleGroup in $resourceSettings.permissions.exchange.requiredrolegroups.update)
+                {
+                    if (-not $results.RequiredRoleGroups.Update.Contains($requiredRoleGroup))
+                    {
+                        Write-Verbose -Message "    Found new Update Required Role Group {$($requiredRoleGroup)}"
+                        $results.RequiredRoleGroups.Update += $requiredRoleGroup
+                    }
+                    else
+                    {
+                        Write-Verbose -Message "    Required Update Role Group {$($requiredRoleGroup)} was already added"
                     }
                 }
 
@@ -249,6 +279,91 @@ function Get-M365DSCCompiledPermissionList
             else
             {
                 Write-Verbose "  No Exchange node in settings.json for $resourceName."
+            }
+
+            # Purview permissions
+            if ($null -ne $resourceSettings.permissions.purview)
+            {
+                Write-Verbose -Message '  Retrieving Purview permissions'
+                # Required Role
+                foreach ($requiredRole in $resourceSettings.permissions.purview.requiredroles.read)
+                {
+                    if (-not $results.RequiredRoles.Read.Contains($requiredRole))
+                    {
+                        Write-Verbose -Message "    Found new Read Required Role {$($requiredRole)}"
+                        $results.RequiredRoles.Read += $requiredRole
+                    }
+                    else
+                    {
+                        Write-Verbose -Message "    Required Read Role {$($requiredRole)} was already added"
+                    }
+                }
+                foreach ($requiredRole in $resourceSettings.permissions.purview.requiredroles.update)
+                {
+                    if (-not $results.RequiredRoles.Update.Contains($requiredRole))
+                    {
+                        Write-Verbose -Message "    Found new Update Required Role {$($requiredRole)}"
+                        $results.RequiredRoles.Update += $requiredRole
+                    }
+                    else
+                    {
+                        Write-Verbose -Message "    Required Update Role {$($requiredRole)} was already added"
+                    }
+                }
+
+                # Required RoleGroups
+                foreach ($requiredRoleGroup in $resourceSettings.permissions.purview.requiredrolegroups.read)
+                {
+                    if (-not $results.RequiredRoleGroups.Read.Contains($requiredRoleGroup))
+                    {
+                        Write-Verbose -Message "    Found new Read Required Role Group {$($requiredRoleGroup)}"
+                        $results.RequiredRoleGroups.Read += $requiredRoleGroup
+                    }
+                    else
+                    {
+                        Write-Verbose -Message "    Required Read Role Group {$($requiredRoleGroup)} was already added"
+                    }
+                }
+                foreach ($requiredRoleGroup in $resourceSettings.permissions.purview.requiredrolegroups.update)
+                {
+                    if (-not $results.RequiredRoleGroups.Update.Contains($requiredRoleGroup))
+                    {
+                        Write-Verbose -Message "    Found new Update Required Role Group {$($requiredRoleGroup)}"
+                        $results.RequiredRoleGroups.Update += $requiredRoleGroup
+                    }
+                    else
+                    {
+                        Write-Verbose -Message "    Required Update Role Group {$($requiredRoleGroup)} was already added"
+                    }
+                }
+
+                $exchangeRead = $results.Read | Where-Object -FilterScript { $_.API -eq 'Exchange' -and $_.Permission.Name -eq 'Exchange.ManageAsApp' }
+                if ($null -eq $exchangeRead)
+                {
+                    $results.Read += @{
+                        API        = 'Exchange'
+                        Permission = @{
+                            Type = 'Application'
+                            Name = 'Exchange.ManageAsApp'
+                        }
+                    }
+                }
+
+                $exchangeUpdate = $results.Update | Where-Object -FilterScript { $_.API -eq 'Exchange' -and $_.Permission.Name -eq 'Exchange.ManageAsApp' }
+                if ($null -eq $exchangeUpdate)
+                {
+                    $results.Update += @{
+                        API        = 'Exchange'
+                        Permission = @{
+                            Type = 'Application'
+                            Name = 'Exchange.ManageAsApp'
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Write-Verbose "  No Purview node in settings.json for $resourceName."
             }
 
             # SharePoint permissions
@@ -302,10 +417,14 @@ function Get-M365DSCCompiledPermissionList
         $results = @{
             AdministrativeRoles = $results.AdministrativeRoles.$AccessType
             Permissions = $resultsByType
-            RequiredRoles = $results.RequiredRoles
+            RequiredRoles = $results.RequiredRoles | Select-Object -ExpandProperty $AccessType
+            RequiredRoleGroups = $results.RequiredRoleGroups | Select-Object -ExpandProperty $AccessType
         }
     }
 
+    $results.AdministrativeRoles = $results.AdministrativeRoles | Sort-Object -Unique
+    $results.RequiredRoleGroups = $results.RequiredRoleGroups | Sort-Object -Unique
+    $results.RequiredRoles = $results.RequiredRoles | Sort-Object -Unique
     return $results
 }
 
@@ -348,14 +467,14 @@ function Update-M365DSCPermissionsMatrix
     {
         if ($permission.Name -ne 'NotSupported')
         {
-            $matrixPermission = $results.$AccessType | Where-Object -FilterScript {
+            $matrixPermission = $Matrix.$AccessType | Where-Object -FilterScript {
                 $_.API -eq $Source -and $_.Permission.Name -eq $permission.name -and $_.Permission.Type -eq $PermissionType
             }
 
             if ($null -eq $matrixPermission)
             {
                 Write-Verbose -Message "    Found new $AccessType permission {$($permission.name)} for API {$Source}"
-                $results.$AccessType += @{
+                $Matrix.$AccessType += @{
                     API        = $Source
                     Permission = @{
                         Type = $PermissionType
@@ -436,9 +555,11 @@ function Update-M365DSCAllowedGraphScopes
     }
 
     Write-Verbose -Message "Specified type: $Type"
-    $results = Get-M365DSCCompiledPermissionList -ResourceNameList $resourceNames -PermissionType 'Delegated' -AccessType $Type
+    $results = (Get-M365DSCCompiledPermissionList -ResourceNameList $resourceNames -PermissionType 'Delegated' -AccessType $Type).Permissions
     $permissions = ($results | Where-Object -FilterScript { $_.API -eq 'Graph' }).PermissionName
 
+    # Remove the Tasks.Read.All permission from the list as it is causing an issue with the Graph SDK
+    $permissions = $permissions | Where-Object { $_ -ne "Tasks.Read.All" }
     Write-Verbose -Message "Found permissions: $($permissions -join ', ')"
     $params = @{
         Scopes = $permissions
@@ -601,19 +722,6 @@ function Update-M365DSCResourcesSettingsJSON
                 $settingsJson = Get-Content -Path $settingsFile -Raw
                 $settings = ConvertFrom-Json $settingsJson
 
-                $newPermissions = @{
-                    graph = @{
-                        delegated   = @{
-                            read   = @()
-                            update = @()
-                        }
-                        application = @{
-                            read   = @()
-                            update = @()
-                        }
-                    }
-                }
-
                 if ($delegatedReadPermissions.Count -eq 0 -and $settings.permissions.graph.delegated.read.Count -ne 0)
                 {
                     [array]$delegatedReadPermissions = $settings.permissions.graph.delegated.read
@@ -675,408 +783,6 @@ function Update-M365DSCResourcesSettingsJSON
         {
             Write-Verbose "$($file.BaseName) - Skipping Intune resources (unable to process those Graph cmdlets)"
         }
-    }
-}
-
-<#
-.Description
-This function updates the settings.json files for all Exchange resources. It is
-compiling a permissions list based on all used Exchange cmdlets in the resource and
-retrieving the permissions for these cmdlets. Then it updates the
-settings.json file
-
-.Example
-Update-M365DSCExchangeResourcesSettingsJSON -UserPrincipalName m365dsc@contoso.onmicrosoft.com
-
-.Functionality
-Internal
-#>
-function Update-M365DSCExchangeResourcesSettingsJSON
-{
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        $UserPrincipalName
-    )
-
-    Write-Verbose 'Connecting to Exchange Online'
-    if ($null -eq (Get-Command -Name Get-Mailbox -ErrorAction SilentlyContinue))
-    {
-        Import-Module ExchangeOnlineManagement
-        Connect-ExchangeOnline -UserPrincipalName $UserPrincipalName
-    }
-
-    Write-Verbose 'Determining DSCResources path'
-    $dscResourcesRoot = Join-Path -Path $PSScriptRoot -ChildPath '..\DSCResources'
-    Write-Verbose "  DSCResouces path: $dscResourcesRoot"
-
-    Write-Verbose 'Getting all psm1 files'
-    $files = Get-ChildItem -Path "$dscResourcesRoot\MSFT_EXO*\*.psm1" -Recurse
-    Write-Verbose "  Found $($files.Count) psm1 files"
-
-    foreach ($file in $files)
-    {
-        Write-Verbose "Processing file: $($file.BaseName)"
-
-        $content = Get-Content $file -Raw
-
-        $sb = [ScriptBlock]::Create($content)
-
-        $functions = $sb.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true)
-
-        $functions = $functions | Where-Object { $_.Name -in ('Get-TargetResource', 'Set-TargetResource') }
-
-        $roleGroups = @()
-        $allRoles = @()
-        foreach ($function in $functions)
-        {
-            $errors = $null
-
-            $functionCode = [ScriptBlock]::Create($function.Extent.Text)
-            $tokens = [System.Management.Automation.PSParser]::Tokenize($functionCode, [ref]$errors)
-            $allCmdlets = $tokens | Where-Object { $_.Type -eq 'Command' } | Select-Object -Property Content -Unique -ExpandProperty Content
-
-            foreach ($cmdlet in $allCmdlets)
-            {
-                # Checking all cmdlets, even none-EXO ones. This because requesting
-                # cmdlets from the module depends on the permissions the user has.
-                # No permissions for the Role means no cmdlet.
-                $roles = Get-ManagementRole -Cmdlet $cmdlet
-
-                if ($null -eq $roles)
-                {
-                    continue
-                }
-
-                foreach ($role in $roles)
-                {
-                    $roleAssignments = Get-ManagementRoleAssignment -Role $role.Name -Delegating $false
-                    if ($null -eq $roleAssignments -and $allRoles -notcontains $role.Name)
-                    {
-                        $allRoles += $role.Name
-                    }
-                    else
-                    {
-                        $roleGroupAssignments = $roleAssignments | Where-Object { $_.RoleAssigneeType -eq 'RoleGroup' }
-                        if ($null -ne $roleGroupAssignments)
-                        {
-                            if ($allRoles -notcontains $role.Name)
-                            {
-                                $allRoles += $role.Name
-                            }
-
-                            $roleAssigneeName = $roleGroupAssignments.RoleAssigneeName
-                            if ($roleGroups.Count -eq 0)
-                            {
-                                $roleGroups += $roleAssigneeName
-                            }
-                            else
-                            {
-                                $roleGroups = (Compare-Object -ReferenceObject $roleGroups -DifferenceObject $roleAssigneeName -IncludeEqual -ExcludeDifferent).InputObject
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Write-Verbose "  Required Roles      : $($allRoles -join ', ')"
-        Write-Verbose "  Required Role Groups: $($roleGroups -join ', ')"
-
-        $settingsFile = Join-Path -Path $file.DirectoryName -ChildPath 'settings.json'
-        if (Test-Path -Path $settingsFile)
-        {
-            Write-Verbose '  Updating existing settings.json file'
-            $settingsJson = Get-Content -Path $settingsFile -Raw
-            $settings = ConvertFrom-Json $settingsJson
-
-            if ($null -eq $settings.permissions)
-            {
-                $settings | Add-Member -MemberType NoteProperty -Name 'permissions' -Value $value
-
-                $value = [PSCustomObject]@{
-                    requiredroles      = $allRoles
-                    requiredrolegroups = $roleGroups
-                }
-                $settings.permissions | Add-Member -MemberType NoteProperty -Name 'exchange' -Value $value
-            }
-            else
-            {
-                if ($null -eq $settings.permissions.exchange)
-                {
-                    $value = [PSCustomObject]@{
-                        requiredroles      = $allRoles
-                        requiredrolegroups = $roleGroups
-                    }
-                    $settings.permissions | Add-Member -MemberType NoteProperty -Name 'exchange' -Value $value
-                }
-                else
-                {
-                    $settings.permissions.exchange | Add-Member -MemberType NoteProperty -Name 'requiredroles' -Value $allRoles
-                    $settings.permissions.exchange | Add-Member -MemberType NoteProperty -Name 'requiredrolegroups' -Value $roleGroups
-                }
-            }
-        }
-        else
-        {
-            Write-Verbose '    Creating new settings.json file'
-            $settings = [PSCustomObject]@{
-                resourceName = $file.BaseName -replace 'MSFT_'
-                description  = ''
-                permissions  = [PSCustomObject]@{
-                    graph    = [PSCustomObject]@{
-                        delegated   = [PSCustomObject]@{
-                            read   = @()
-                            update = @()
-                        }
-                        application = [PSCustomObject]@{
-                            read   = @()
-                            update = @()
-                        }
-                    }
-                    exchange = [PSCustomObject]@{
-                        requiredroles      = $allRoles
-                        requiredrolegroups = $roleGroups
-                    }
-                }
-            }
-        }
-        $json = ConvertTo-Json -InputObject $settings -Depth 10
-        Set-Content -Path $settingsFile -Value $json -Encoding UTF8
-    }
-}
-
-<#
-.Description
-This function updates the settings.json files for all SharePoint resources. It is
-setting the Sites.FullControl.All permissions for all available actions, since
-all used PnP cmdlets require this permissions.
-Then it updates the settings.json file
-
-.Example
-Update-M365DSCSharePointResourcesSettingsJSON
-
-.Functionality
-Internal
-#>
-function Update-M365DSCSharePointResourcesSettingsJSON
-{
-    [CmdletBinding()]
-    param ()
-
-    Write-Verbose 'Determining DSCResources path'
-    $dscResourcesRoot = Join-Path -Path $PSScriptRoot -ChildPath '..\DSCResources'
-    Write-Verbose "  DSCResouces path: $dscResourcesRoot"
-
-    Write-Verbose 'Getting all psm1 files'
-    $files = Get-ChildItem -Path "$dscResourcesRoot\MSFT_SPO*\*.psm1" -Recurse
-    Write-Verbose "  Found $($files.Count) psm1 files"
-
-    foreach ($file in $files)
-    {
-        Write-Verbose "Processing file: $($file.BaseName)"
-
-        $settingsFile = Join-Path -Path $file.DirectoryName -ChildPath 'settings.json'
-        if (Test-Path -Path $settingsFile)
-        {
-            Write-Verbose '  Updating existing settings.json file'
-            $settingsJson = Get-Content -Path $settingsFile -Raw
-            $settings = ConvertFrom-Json $settingsJson
-
-            if ($null -eq $settings.permissions)
-            {
-                $settings | Add-Member -MemberType NoteProperty -Name 'permissions' -Value $value
-
-                $value = [PSCustomObject]@{
-                    delegated   = [PSCustomObject]@{
-                        read   = @(
-                            [PSCustomObject]@{
-                                name = 'Sites.FullControl.All'
-                            }
-                        )
-                        update = @(
-                            [PSCustomObject]@{
-                                name = 'Sites.FullControl.All'
-                            }
-                        )
-                    }
-                    application = [PSCustomObject]@{
-                        read   = @(
-                            [PSCustomObject]@{
-                                name = 'Sites.FullControl.All'
-                            }
-                        )
-                        update = @(
-                            [PSCustomObject]@{
-                                name = 'Sites.FullControl.All'
-                            }
-                        )
-                    }
-                }
-                $settings.permissions | Add-Member -MemberType NoteProperty -Name 'sharepoint' -Value $value
-            }
-            else
-            {
-                if ($null -eq $settings.permissions.sharepoint)
-                {
-                    $value = [PSCustomObject]@{
-                        delegated   = [PSCustomObject]@{
-                            read   = @(
-                                [PSCustomObject]@{
-                                    name = 'Sites.FullControl.All'
-                                }
-                            )
-                            update = @(
-                                [PSCustomObject]@{
-                                    name = 'Sites.FullControl.All'
-                                }
-                            )
-                        }
-                        application = [PSCustomObject]@{
-                            read   = @(
-                                [PSCustomObject]@{
-                                    name = 'Sites.FullControl.All'
-                                }
-                            )
-                            update = @(
-                                [PSCustomObject]@{
-                                    name = 'Sites.FullControl.All'
-                                }
-                            )
-                        }
-                    }
-
-                    $settings.permissions | Add-Member -MemberType NoteProperty -Name 'sharepoint' -Value $value
-                }
-                else
-                {
-                    $value = [PSCustomObject]@{
-                        read   = @(
-                            [PSCustomObject]@{
-                                name = 'Sites.FullControl.All'
-                            }
-                        )
-                        update = @(
-                            [PSCustomObject]@{
-                                name = 'Sites.FullControl.All'
-                            }
-                        )
-                    }
-
-                    if ($null -eq $settings.permissions.sharepoint.delegated)
-                    {
-                        $settings.permissions.sharepoint | Add-Member -MemberType NoteProperty -Name 'delegated' -Value $value
-                    }
-                    else
-                    {
-                        $value = @(
-                            [PSCustomObject]@{
-                                name = 'Sites.FullControl.All'
-                            }
-                        )
-
-                        if ($null -eq $settings.permissions.sharepoint.delegated.read)
-                        {
-                            $settings.permissions.sharepoint.delegated | Add-Member -MemberType NoteProperty -Name 'read' -Value $value
-                        }
-                        else
-                        {
-                            $settings.permissions.sharepoint.delegated.read = $value
-                        }
-
-                        if ($null -eq $settings.permissions.sharepoint.delegated.update)
-                        {
-                            $settings.permissions.sharepoint.delegated | Add-Member -MemberType NoteProperty -Name 'update' -Value $value
-                        }
-                        else
-                        {
-                            $settings.permissions.sharepoint.delegated.update = $value
-                        }
-                    }
-
-                    if ($null -eq $settings.permissions.sharepoint.application)
-                    {
-                        $settings.permissions.sharepoint | Add-Member -MemberType NoteProperty -Name 'application' -Value $value
-                    }
-                    else
-                    {
-                        $value = @(
-                            [PSCustomObject]@{
-                                name = 'Sites.FullControl.All'
-                            }
-                        )
-
-                        if ($null -eq $settings.permissions.sharepoint.application.read)
-                        {
-                            $settings.permissions.sharepoint.application | Add-Member -MemberType NoteProperty -Name 'read' -Value $value
-                        }
-                        else
-                        {
-                            $settings.permissions.sharepoint.application.read = $value
-                        }
-
-                        if ($null -eq $settings.permissions.sharepoint.application.update)
-                        {
-                            $settings.permissions.sharepoint.application | Add-Member -MemberType NoteProperty -Name 'update' -Value $value
-                        }
-                        else
-                        {
-                            $settings.permissions.sharepoint.application.update = $value
-                        }
-
-                    }
-                }
-            }
-        }
-        else
-        {
-            Write-Verbose '    Creating new settings.json file'
-            $settings = [PSCustomObject]@{
-                resourceName = $file.BaseName -replace 'MSFT_'
-                description  = ''
-                permissions  = [PSCustomObject]@{
-                    graph      = [PSCustomObject]@{
-                        delegated   = [PSCustomObject]@{
-                            read   = @()
-                            update = @()
-                        }
-                        application = [PSCustomObject]@{
-                            read   = @()
-                            update = @()
-                        }
-                    }
-                    sharepoint = [PSCustomObject]@{
-                        delegated   = [PSCustomObject]@{
-                            read   = @(
-                                [PSCustomObject]@{
-                                    name = 'Sites.FullControl.All'
-                                }
-                            )
-                            update = @(
-                                [PSCustomObject]@{
-                                    name = 'Sites.FullControl.All'
-                                }
-                            )
-                        }
-                        application = [PSCustomObject]@{
-                            read   = @(
-                                [PSCustomObject]@{
-                                    name = 'Sites.FullControl.All'
-                                }
-                            )
-                            update = @(
-                                [PSCustomObject]@{
-                                    name = 'Sites.FullControl.All'
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        $json = ConvertTo-Json -InputObject $settings -Depth 10
-        Set-Content -Path $settingsFile -Value $json -Encoding UTF8
     }
 }
 
@@ -1179,7 +885,6 @@ Update-M365DSCAzureAdApplication -ApplicationName 'Microsoft365DSC' -Permissions
 
 .EXAMPLE
 Update-M365DSCAzureAdApplication -ApplicationName $Microsoft365DSC -Permissions $((Get-M365DSCCompiledPermissionList -ResourceNameList (Get-M365DSCAllResources) -PermissionType Application -AccessType Read).Permissions) -Type Certificate -CreateSelfSignedCertificate -AdminConsent -MonthsValid 12 -Credential $creds -CertificatePath c:\Temp\M365DSC.cer
-
 
 .Functionality
 Public
@@ -1295,7 +1000,7 @@ function Update-M365DSCAzureAdApplication
         Write-Host @params
     }
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
     $requireWait = $false
@@ -1384,7 +1089,7 @@ function Update-M365DSCAzureAdApplication
         Write-LogEntry ' '
         Write-LogEntry 'Checking app permissions'
         $allRequiredAccess = @{}
-        foreach ($permission in $Permissions)
+        foreach ($permission in $Permissions.Permissions)
         {
             if ($null -eq $permission.Api -or $permission.Api -notin @('Graph', 'SharePoint', 'Exchange'))
             {
@@ -1482,7 +1187,7 @@ function Update-M365DSCAzureAdApplication
             }
             else
             {
-                $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                     -InboundParameters $PSBoundParameters
                 if ($requireWait)
                 {
@@ -1689,7 +1394,5 @@ Export-ModuleMember -Function @(
     'Get-M365DSCCompiledPermissionList',
     'Update-M365DSCAllowedGraphScopes',
     'Update-M365DSCAzureAdApplication',
-    'Update-M365DSCExchangeResourcesSettingsJSON',
-    'Update-M365DSCSharePointResourcesSettingsJSON',
     'Update-M365DSCResourcesSettingsJSON'
 )

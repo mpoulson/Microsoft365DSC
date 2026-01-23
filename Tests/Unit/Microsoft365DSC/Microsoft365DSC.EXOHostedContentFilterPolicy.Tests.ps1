@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -43,6 +43,71 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-HostedContentFilterPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-HostedContentFilterPolicy -MockWith {
+                return @{
+                    Identity                             = 'TestPolicy'
+                    AdminDisplayName                     = 'This ContentFilter policiy is a test'
+                    AddXHeaderValue                      = 'MyCustomSpamHeader'
+                    ModifySubjectValue                   = 'SPAM!'
+                    RedirectToRecipients                 = @()
+                    TestModeBccToRecipients              = @()
+                    QuarantineRetentionPeriod            = 15
+                    TestModeAction                       = 'AddXHeader'
+                    IncreaseScoreWithImageLinks          = 'Off'
+                    IncreaseScoreWithNumericIps          = 'On'
+                    IncreaseScoreWithRedirectToOtherPort = 'On'
+                    IncreaseScoreWithBizOrInfoUrls       = 'On'
+                    IntraOrgFilterState                  = 'Default'
+                    MarkAsSpamEmptyMessages              = 'On'
+                    MarkAsSpamJavaScriptInHtml           = 'On'
+                    MarkAsSpamFramesInHtml               = 'On'
+                    MarkAsSpamObjectTagsInHtml           = 'On'
+                    MarkAsSpamEmbedTagsInHtml            = 'Off'
+                    MarkAsSpamFormTagsInHtml             = 'Off'
+                    MarkAsSpamWebBugsInHtml              = 'On'
+                    MarkAsSpamSensitiveWordList          = 'Test'
+                    MarkAsSpamSpfRecordHardFail          = 'On'
+                    MarkAsSpamFromAddressAuthFail        = 'On'
+                    MarkAsSpamBulkMail                   = 'On'
+                    MarkAsSpamNdrBackscatter             = 'On'
+                    LanguageBlockList                    = @('AF', 'SQ', 'AR', 'HY', 'AZ', 'EU', 'BE', 'BN', 'BS', 'BR', 'BG', 'CA', 'ZH-CN', 'ZH-TW', 'HR', 'CS', 'DA', 'NL', 'EO', 'ET', 'FO', 'TL', 'FI', 'FR', 'FY', 'GL', 'KA', 'DE', 'EL', 'KL', 'GU', 'HA', 'HE', 'HI', 'HU', 'IS', 'ID', 'GA', 'ZU', 'IT', 'JA', 'KN', 'KK', 'SW', 'KO', 'KU', 'KY', 'LA', 'LV', 'LT', 'LB', 'MK', 'MS', 'ML', 'MT', 'MI', 'MR', 'MN', 'NB', 'NN', 'PS', 'FA', 'PL', 'PT', 'PA', 'RO', 'RM', 'RU', 'SE', 'SR', 'SK', 'SL', 'WEN', 'SV', 'TA', 'TE', 'TH', 'TR', 'UK', 'UR', 'UZ', 'VI', 'CY', 'YI')
+                    RegionBlockList                      = @('AF', 'AX', 'AL', 'DZ', 'AS', 'AD', 'AO', 'AI', 'AQ', 'AG', 'AR', 'AM', 'AW', 'AU', 'AT', 'AZ', 'BS', 'BH', 'BD', 'BB', 'BY', 'BE', 'BZ', 'BJ', 'BM', 'BT', 'BO', 'BQ', 'BA', 'BW', 'BV', 'BR', 'IO', 'VG', 'BN', 'BG', 'BF', 'BI', 'CV', 'KH', 'CM', 'KY', 'CF', 'TD', 'CL', 'CN', 'CX', 'CC', 'CO', 'KM', 'CG', 'CD', 'CK', 'CR', 'CI', 'HR', 'CU', 'CW', 'CY', 'CZ', 'DK', 'DJ', 'DM', 'DO', 'EC', 'EG', 'SV', 'GQ', 'ER', 'EE', 'ET', 'FK', 'FO', 'FJ', 'FI', 'FR', 'GF', 'PF', 'TF', 'GA', 'GM', 'GE', 'DE', 'GH', 'GI', 'GR', 'GL', 'GD', 'GP', 'GU', 'GT', 'GG', 'GN', 'GW', 'GY', 'HT', 'HM', 'VA', 'HN', 'HK', 'HU', 'IS', 'IN', 'ID', 'IR', 'IQ', 'IE', 'IM', 'IL', 'IT', 'JM', 'XJ', 'SJ', 'JP', 'JE', 'JO', 'KZ', 'KE', 'KI', 'KR', 'KW', 'KG', 'LA', 'LV', 'LB', 'LS', 'LR', 'LY', 'LI', 'LT', 'LU', 'MO', 'MK', 'MG', 'MW', 'MY', 'MV', 'ML', 'MT', 'MH', 'MQ', 'MR', 'MU', 'YT', 'FM', 'MD', 'MC', 'MN', 'ME', 'MS', 'MA', 'MZ', 'MM', 'NA', 'NR', 'NP', 'NL', 'NC', 'NZ', 'NI', 'NE', 'NG', 'NU', 'NF', 'KP', 'MP', 'NO', 'OM', 'PK', 'PW', 'PS', 'PA', 'PG', 'PY', 'PE', 'PH', 'PN', 'PL', 'PT', 'PR', 'QA', 'RE', 'RO', 'RU', 'RW', 'XS', 'BL', 'SH', 'KN', 'LC', 'MF', 'PM', 'VC', 'WS', 'SM', 'ST', 'SA', 'SN', 'RS', 'SC', 'SL', 'SG', 'XE', 'SX', 'SK', 'SI', 'SB', 'SO', 'ZA', 'GS', 'ES', 'LK', 'SD', 'SR', 'SZ', 'SE', 'CH', 'SY', 'TW', 'TJ', 'TZ', 'TH', 'TL', 'TG', 'TK', 'TO', 'TT', 'TN', 'TR', 'TM', 'TC', 'TV', 'UG', 'UA', 'AE', 'UY', 'UZ', 'VU', 'VE', 'VN', 'WF', 'YE', 'ZM', 'ZW')
+                    HighConfidencePhishAction            = 'Quarantine'
+                    HighConfidenceSpamAction             = 'Quarantine'
+                    SpamAction                           = 'MoveToJmf'
+                    DownloadLink                         = $false
+                    EnableRegionBlockList                = $true
+                    EnableLanguageBlockList              = $true
+                    BulkThreshold                        = 5
+                    AllowedSenders                       = @{
+                        Sender = @(
+                            [PSCustomObject]@{Address = 'test@contoso.com' },
+                            [PSCustomObject]@{Address = 'test@fabrikam.com' }
+                        )
+                    }
+                    AllowedSenderDomains                 = @(
+                        [PSCustomObject]@{Domain = 'contoso.com' },
+                        [PSCustomObject]@{Domain = 'fabrikam.com' }
+                    )
+                    BlockedSenders                       = @{
+                        Sender = @(
+                            [PSCustomObject]@{Address = 'me@privacy.net' },
+                            [PSCustomObject]@{Address = 'thedude@contoso.com' }
+                        )
+                    }
+                    BlockedSenderDomains                 = @(
+                        [PSCustomObject]@{Domain = 'privacy.net' },
+                        [PSCustomObject]@{Domain = 'facebook.com' }
+                    )
+                    PhishZapEnabled                      = $true
+                    SpamZapEnabled                       = $true
+                    InlineSafetyTipsEnabled              = $true
+                    BulkSpamAction                       = 'MoveToJmf'
+                    PhishSpamAction                      = 'Quarantine'
+                    IsDefault                            = $false
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -88,12 +153,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     HighConfidencePhishAction            = 'Quarantine'
                     HighConfidenceSpamAction             = 'Quarantine'
                     SpamAction                           = 'MoveToJmf'
-                    EnableEndUserSpamNotifications       = $true
-                    DownloadLink                         = $false
                     EnableRegionBlockList                = $true
                     EnableLanguageBlockList              = $true
-                    EndUserSpamNotificationCustomSubject = 'This is SPAM'
-                    EndUserSpamNotificationLanguage      = 'Default'
                     BulkThreshold                        = 5
                     AllowedSenders                       = @('test@contoso.com', 'test@fabrikam.com')
                     AllowedSenderDomains                 = @('contoso.com', 'fabrikam.com')
@@ -108,9 +169,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-HostedContentFilterPolicy -MockWith {
-                    return @{
-                        Identity = 'SomeOtherPolicy'
-                    }
+                    return $null
                 }
             }
 
@@ -120,6 +179,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-HostedContentFilterPolicy -Exactly 1
             }
         }
 
@@ -135,7 +195,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RedirectToRecipients                 = @()
                     TestModeBccToRecipients              = @()
                     QuarantineRetentionPeriod            = 15
-                    EndUserSpamNotificationFrequency     = 1
                     TestModeAction                       = 'AddXHeader'
                     IncreaseScoreWithImageLinks          = 'Off'
                     IncreaseScoreWithNumericIps          = 'On'
@@ -159,12 +218,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     HighConfidencePhishAction            = 'Quarantine'
                     HighConfidenceSpamAction             = 'Quarantine'
                     SpamAction                           = 'MoveToJmf'
-                    EnableEndUserSpamNotifications       = $true
-                    DownloadLink                         = $false
                     EnableRegionBlockList                = $true
                     EnableLanguageBlockList              = $true
-                    EndUserSpamNotificationCustomSubject = 'This is SPAM'
-                    EndUserSpamNotificationLanguage      = 'Default'
                     BulkThreshold                        = 5
                     AllowedSenders                       = @('test@contoso.com', 'test@fabrikam.com')
                     AllowedSenderDomains                 = @('contoso.com', 'fabrikam.com')
@@ -210,7 +265,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         HighConfidencePhishAction            = 'Quarantine'
                         HighConfidenceSpamAction             = 'Quarantine'
                         SpamAction                           = 'MoveToJmf'
-                        DownloadLink                         = $false
                         EnableRegionBlockList                = $true
                         EnableLanguageBlockList              = $true
                         BulkThreshold                        = 5
@@ -261,7 +315,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RedirectToRecipients                 = @()
                     TestModeBccToRecipients              = @()
                     QuarantineRetentionPeriod            = 15
-                    EndUserSpamNotificationFrequency     = 1
                     TestModeAction                       = 'AddXHeader'
                     IncreaseScoreWithImageLinks          = 'Off'
                     IncreaseScoreWithNumericIps          = 'On'
@@ -285,25 +338,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     HighConfidencePhishAction            = 'Quarantine'
                     HighConfidenceSpamAction             = 'Quarantine'
                     SpamAction                           = 'MoveToJmf'
-                    EnableEndUserSpamNotifications       = $true
-                    DownloadLink                         = $false
                     EnableRegionBlockList                = $true
                     EnableLanguageBlockList              = $true
-                    EndUserSpamNotificationCustomSubject = 'This is SPAM'
-                    EndUserSpamNotificationLanguage      = 'Default'
                     BulkThreshold                        = 5
                     AllowedSenders                       = @('test@contoso.com', 'test@fabrikam.com')
                     AllowedSenderDomains                 = @('contoso.com', 'fabrikam.com')
                     BlockedSenders                       = @('me@privacy.net', 'thedude@contoso.com')
                     BlockedSenderDomains                 = @('privacy.net', 'facebook.com')
                     PhishZapEnabled                      = $true
-                    SpamZapEnabled                       = $true
+                    SpamZapEnabled                       = $false # Drift
                     InlineSafetyTipsEnabled              = $true
                     BulkSpamAction                       = 'MoveToJmf'
                     PhishSpamAction                      = 'Quarantine'
                     MakeDefault                          = $false
                 }
-
                 Mock -CommandName Get-HostedContentFilterPolicy -MockWith {
                     return @{
                         Ensure                               = 'Present'
@@ -315,7 +363,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         RedirectToRecipients                 = @()
                         TestModeBccToRecipients              = @()
                         QuarantineRetentionPeriod            = 15
-                        EndUserSpamNotificationFrequency     = 1
                         TestModeAction                       = 'AddXHeader'
                         IncreaseScoreWithImageLinks          = 'Off'
                         IncreaseScoreWithNumericIps          = 'On'
@@ -339,12 +386,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         HighConfidencePhishAction            = 'Quarantine'
                         HighConfidenceSpamAction             = 'Quarantine'
                         SpamAction                           = 'MoveToJmf'
-                        EnableEndUserSpamNotifications       = $true
-                        DownloadLink                         = $false
                         EnableRegionBlockList                = $true
                         EnableLanguageBlockList              = $true
-                        EndUserSpamNotificationCustomSubject = 'This is SPAM'
-                        EndUserSpamNotificationLanguage      = 'Default'
                         BulkThreshold                        = 5
                         AllowedSenders                       = @{
                             Sender = @(
@@ -382,6 +425,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-HostedContentFilterPolicy -Exactly 1
             }
         }
 
@@ -392,12 +436,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity   = 'TestPolicy'
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-HostedContentFilterPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -406,6 +444,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Remove-HostedContentFilterPolicy -Exactly 1
             }
         }
 
@@ -415,12 +454,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-HostedContentFilterPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
                 }
             }
 

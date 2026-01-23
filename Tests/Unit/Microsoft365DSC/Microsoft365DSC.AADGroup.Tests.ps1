@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -37,30 +37,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-PSSession -MockWith {
             }
 
-            Mock -CommandName Get-MgGroupMember -MockWith {
-            }
-
-            Mock -CommandName Get-MgBetaGroupMember -MockWith {
-            }
-
             Mock -CommandName Get-MgGroup -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaGroup -MockWith {
             }
 
             Mock -CommandName Restore-MgBetaDirectoryDeletedItem -MockWith {
             }
+
             Mock -CommandName Get-MgBetaDirectoryDeletedItemAsGroup -MockWith {
-            }
-
-            Mock -CommandName Get-MgGroupMemberOf -MockWith {
-            }
-
-            Mock -CommandName Get-MgGroupOwner -MockWith {
-            }
-
-            Mock -CommandName Get-MgBetaGroupMemberOf -MockWith {
-            }
-
-            Mock -CommandName Get-MgBetaGroupOwner -MockWith {
             }
 
             Mock -CommandName Invoke-MgGraphRequest -MockWith {
@@ -99,9 +85,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MgGroupMemberDirectoryObjectByRef -MockWith {
             }
 
-            Mock -CommandName Remove-MgBetaDirectoryRoleMemberDirectoryObjectByRef -MockWith {
-            }
-
             Mock -CommandName Invoke-MgGraphRequest -MockWith {
             }
 
@@ -110,14 +93,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleAssignment -MockWith {
                 return @{
+                    PrincipalId = "12345-12345-12345-12345-12345"
                     RoleDefinitionId = "12345-12345-12345-12345-12345"
                 }
             }
 
             Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleDefinition -MockWith {
                 return @{
+                    Id          = "12345-12345-12345-12345-12345"
                     DisplayName = "AADRole"
                 }
+            }
+
+            Mock -CommandName Invoke-M365DSCGraphBatchRequest -MockWith {
+                return @()
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -146,13 +135,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return $null
                 }
             }
+
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
             }
             It 'Should return false from the Test method' {
                 Test-TargetResource @testParams | Should -Be $false
@@ -181,7 +171,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return @{
                         DisplayName = 'DSCGroup'
                         ID          = '12345-12345-12345-12345-12345'
@@ -191,7 +181,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
             }
 
             It 'Should return false from the Test method' {
@@ -208,7 +198,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName     = 'DSCGroup'
-                    ID              = '12345-12345-12345-12345'
+                    ID              = '12345-12345-12345-12345-12345'
                     Description     = 'Microsoft DSC Group'
                     SecurityEnabled = $True
                     MailEnabled     = $True
@@ -224,10 +214,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return @{
                         DisplayName     = 'DSCGroup'
-                        ID              = '12345-12345-12345-12345'
+                        ID              = '12345-12345-12345-12345-12345'
                         Description     = 'Microsoft DSC Group'
                         SecurityEnabled = $True
                         MailEnabled     = $True
@@ -240,7 +230,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
             }
 
             It 'Should return true from the Test method' {
@@ -252,7 +242,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName     = 'DSCGroup'
-                    ID              = '12345-12345-12345-12345'
+                    ID              = '12345-12345-12345-12345-12345'
                     Description     = 'Microsoft DSC Group'
                     SecurityEnabled = $True
                     MailEnabled     = $True
@@ -263,15 +253,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential      = $Credential
                 }
 
-
                 Mock -CommandName New-M365DSCConnection -MockWith {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -ParameterFilter { $Id -eq '12345-12345-12345-12345' -or $Filter -eq "DisplayName eq 'DSCGroup'" } -MockWith {
+                Mock -CommandName Get-MgBetaGroup -ParameterFilter { $Id -eq '12345-12345-12345-12345-12345' -or $Filter -eq "DisplayName eq 'DSCGroup'" } -MockWith {
                     return @{
                         DisplayName     = 'DSCGroup'
-                        ID              = '12345-12345-12345-12345'
+                        ID              = '12345-12345-12345-12345-12345'
                         Description     = 'Microsoft DSC Group'
                         SecurityEnabled = $True
                         MailEnabled     = $true
@@ -279,15 +268,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         GroupTypes      = @()
                     }
                 }
-                Mock -CommandName Get-MgBetaGroupMemberOf -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.group'
-                            displayName   = 'DSCMemberOfGroup'
+                Mock -CommandName Invoke-M365DSCGraphBatchRequest -MockWith {
+                    return @(
+                        @{
+                            id = 'MemberOf'
+                            body = @{
+                                value = @{
+                                    '@odata.type' = '#microsoft.graph.group'
+                                    displayName   = 'DSCMemberOfGroup'
+                                }
+                            }
                         }
-                    }
+                    )
                 }
-                Mock -CommandName Get-MgGroup -ParameterFilter { $Id -eq '67890-67890-67890-67890' -or $Filter -eq "DisplayName -eq 'DSCMemberOfGroup'" } -MockWith {
+                Mock -CommandName Get-MgBetaGroup -ParameterFilter { $Id -eq '67890-67890-67890-67890' -or $Filter -eq "DisplayName -eq 'DSCMemberOfGroup'" } -MockWith {
                     $returnData = @{
                         DisplayName     = 'DSCMemberOfGroup'
                         ID              = '67890-67890-67890-67890'
@@ -298,15 +292,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         MailNickname    = 'M365DSCM'
                     }
                     # Set-TargetResource expects data-type of answer to contain 'group'
-                    $returnData.psobject.TypeNames.insert(0, 'Group')
+                    $returnData.psobject.TypeNames.Insert(0, 'Group')
                     return $returnData
                 }
             }
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
-                Should -Invoke -CommandName 'Get-MgBetaGroupMemberOf' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
+                Should -Invoke -CommandName 'Invoke-M365DSCGraphBatchRequest' -Exactly 1
             }
 
             It 'Should return true from the Test method' {
@@ -318,7 +312,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName        = 'DSCGroup'
-                    ID                 = '12345-12345-12345-12345'
+                    ID                 = '12345-12345-12345-12345-12345'
                     Description        = 'Microsoft DSC Group'
                     SecurityEnabled    = $True
                     MailEnabled        = $True
@@ -335,10 +329,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return @{
                         DisplayName        = 'DSCGroup'
-                        ID                 = '12345-12345-12345-12345'
+                        ID                 = '12345-12345-12345-12345-12345'
                         Description        = 'Microsoft DSC Group'
                         SecurityEnabled    = $True
                         MailEnabled        = $true
@@ -347,20 +341,26 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         IsAssignableToRole = $true
                     }
                 }
-                Mock -CommandName Get-MgBetaGroupMemberOf -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.directoryRole'
-                            displayName   = 'AADRole'
+
+                Mock -CommandName Invoke-M365DSCGraphBatchRequest -MockWith {
+                    return @(
+                        @{
+                            id   = 'MemberOf'
+                            body = @{
+                                value = @{
+                                    '@odata.type' = '#microsoft.graph.directoryRole'
+                                    displayName   = 'AADRole'
+                                }
+                            }
                         }
-                    }
+                    )
                 }
             }
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
-                Should -Invoke -CommandName 'Get-MgBetaGroupMemberOf' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
+                Should -Invoke -CommandName 'Invoke-M365DSCGraphBatchRequest' -Exactly 1
             }
 
             It 'Should return true from the Test method' {
@@ -386,7 +386,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return @{
                         DisplayName     = 'DSCGroup'
                         Description     = 'Microsoft DSC' #Drift
@@ -402,7 +402,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
             }
 
             It 'Should return false from the Test method' {
@@ -419,7 +419,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName     = 'DSCGroup'
-                    ID              = '12345-12345-12345-12345'
+                    ID              = '12345-12345-12345-12345-12345'
                     Description     = 'Microsoft DSC Group'
                     SecurityEnabled = $True
                     MailEnabled     = $true
@@ -434,10 +434,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName New-M365DSCConnection -MockWith {
                     return 'Credentials'
                 }
-                Mock -CommandName Get-MgGroup -ParameterFilter { $Id -eq '12345-12345-12345-12345' -or $Filter -eq "DisplayName eq 'DSCGroup'" } -MockWith {
+                Mock -CommandName Get-MgBetaGroup -ParameterFilter { $Id -eq '12345-12345-12345-12345-12345' -or $Filter -eq "DisplayName eq 'DSCGroup'" } -MockWith {
                     $returnData = @{
                         DisplayName     = 'DSCGroup'
-                        ID              = '12345-12345-12345-12345'
+                        ID              = '12345-12345-12345-12345-12345'
                         Description     = 'Microsoft DSC Group'
                         SecurityEnabled = $True
                         MailEnabled = $true
@@ -446,10 +446,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
 
                     # Set-TargetResource expects object-type of answer to contain 'group'
-                    $returnData.psobject.TypeNames.insert(0, 'Group')
+                    $returnData.psobject.TypeNames.Insert(0, 'Group')
                     return $returnData
                 }
-                Mock -CommandName Get-MgGroup -ParameterFilter { $Id -eq '67890-67890-67890-67890' -or $Filter -eq "DisplayName -eq 'DSCMemberOfGroup'" } -MockWith {
+                Mock -CommandName Get-MgBetaGroup -ParameterFilter { $Id -eq '67890-67890-67890-67890' -or $Filter -eq "DisplayName -eq 'DSCMemberOfGroup'" } -MockWith {
                     $returnData = @{
                         DisplayName     = 'DSCMemberOfGroup'
                         ID              = '67890-67890-67890-67890'
@@ -460,15 +460,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         MailNickname    = 'M365DSCM'
                     }
                     # Set-TargetResource expects object-type of answer to contain 'group'
-                    $returnData.psobject.TypeNames.insert(0, 'Group')
+                    $returnData.psobject.TypeNames.Insert(0, 'Group')
                     return $returnData
                 }
             }
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
-                Should -Invoke -CommandName 'Get-MgBetaGroupMemberOf' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
             }
 
             It 'Should return false from the Test method' {
@@ -477,65 +476,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 2
-            }
-        }
-
-        Context -Name 'The Group Exists but is not assigned to a role. Values are NOT in the desired state' -Fixture {
-            BeforeAll {
-                $testParams = @{
-                    DisplayName        = 'DSCGroup'
-                    ID                 = '12345-12345-12345-12345'
-                    Description        = 'Microsoft DSC Group'
-                    SecurityEnabled    = $True
-                    MailEnabled        = $true
-                    GroupTypes         = @()
-                    MailNickname       = 'M365DSC'
-                    IsAssignableToRole = $true
-                    AssignedToRole     = 'AADRole'
-                    Ensure             = 'Present'
-                    Credential         = $Credential
-                }
-
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        DisplayName        = 'DSCGroup'
-                        ID                 = '12345-12345-12345-12345'
-                        Description        = 'Microsoft DSC Group'
-                        SecurityEnabled    = $True
-                        MailEnabled        = $true
-                        GroupTypes         = @()
-                        MailNickname       = 'M365DSC'
-                        IsAssignableToRole = $true
-                        AssignedToRole     = @()
-                        Ensure             = 'Present'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleAssignment -MockWith {
-                    return $null
-                }
-            }
-
-            It 'Should return Values from the Get method' {
-                Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
-            }
-
-            It 'Should return false from the Test method' {
-                Test-TargetResource @testParams | Should -Be $false
-            }
-
-            It 'Should call the Set method' {
-                Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
-                Should -Invoke -CommandName 'Get-MgBetaRoleManagementDirectoryRoleAssignment' -Exactly 1
-                Should -Invoke -CommandName 'New-MgBetaRoleManagementDirectoryRoleAssignment' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 2
             }
         }
 
@@ -543,7 +484,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName        = 'DSCGroup'
-                    ID                 = '12345-12345-12345-12345'
+                    ID                 = '12345-12345-12345-12345-12345'
                     Description        = 'Microsoft DSC Group'
                     SecurityEnabled    = $True
                     MailEnabled        = $true
@@ -555,15 +496,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential         = $Credential
                 }
 
-
                 Mock -CommandName New-M365DSCConnection -MockWith {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return @{
                         DisplayName        = 'DSCGroupMember'
-                        ID                 = '12345-12345-12345-12345'
+                        ID                 = '12345-12345-12345-12345-12345'
                         Description        = 'Microsoft DSC Group'
                         SecurityEnabled    = $True
                         MailEnabled        = $true
@@ -581,7 +521,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
             }
 
             It 'Should return false from the Test method' {
@@ -590,9 +530,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 2
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 2
                 Should -Invoke -CommandName 'New-MgBetaGroupMemberByRef' -Exactly 1
-                #Should -Invoke -CommandName 'Remove-MgGroupMemberDirectoryObjectByRef' -Exactly 1
             }
         }
 
@@ -600,7 +539,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName        = 'DSCGroup'
-                    ID                 = '12345-12345-12345-12345'
+                    ID                 = '12345-12345-12345-12345-12345'
                     Description        = 'Microsoft DSC Group'
                     SecurityEnabled    = $True
                     MailEnabled        = $true
@@ -617,10 +556,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return @{
                         DisplayName        = 'DSCGroup'
-                        ID                 = '12345-12345-12345-12345'
+                        ID                 = '12345-12345-12345-12345-12345'
                         Description        = 'Microsoft DSC Group'
                         SecurityEnabled    = $True
                         MailEnabled        = $true
@@ -629,20 +568,25 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         IsAssignableToRole = $true
                     }
                 }
-                Mock -CommandName Get-MgBetaGroupMemberOf -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.directoryRole'
-                            displayName   = 'AADRole'
+                Mock -CommandName Invoke-M365DSCGraphBatchRequest -MockWith {
+                    return @(
+                        @{
+                            id   = 'MemberOf'
+                            body = @{
+                                value = @{
+                                    '@odata.type' = '#microsoft.graph.directoryRole'
+                                    displayName   = 'AADRole'
+                                }
+                            }
                         }
-                    }
+                    )
                 }
             }
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
-                Should -Invoke -CommandName 'Get-MgBetaGroupMemberOf' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
+                Should -Invoke -CommandName 'Invoke-M365DSCGraphBatchRequest' -Exactly 1
             }
 
             It 'Should return false from the Test method' {
@@ -651,7 +595,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
                 Should -Invoke -CommandName 'Get-MgBetaRoleManagementDirectoryRoleDefinition' -Exactly 2
                 Should -Invoke -CommandName 'Remove-MgBetaRoleManagementDirectoryRoleAssignment' -Exactly 1
             }
@@ -661,7 +605,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName        = 'DSCGroup'
-                    ID                 = '12345-12345-12345-12345'
+                    ID                 = '12345-12345-12345-12345-12345'
                     Description        = 'Microsoft DSC Group'
                     SecurityEnabled    = $True
                     MailEnabled        = $false
@@ -681,7 +625,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                 }
 
                 Mock -CommandName Get-MgBetaSubscribedSku -MockWith {
@@ -692,7 +636,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 ServicePlanName = 'Something_P2'
                             }
                         )
-                        SkuId                = '12345-12345-12345-12345'
+                        SkuId                = '12345-12345-12345-12345-12345'
                         SkuPartNumber        = 'AAD_PREMIUM_P2'
                     }
                 }
@@ -700,7 +644,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
             }
 
             It 'Should return false from the Test method' {
@@ -718,7 +662,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName        = 'DSCGroup'
-                    ID                 = '12345-12345-12345-12345'
+                    ID                 = '12345-12345-12345-12345-12345'
                     Description        = 'Microsoft DSC Group'
                     SecurityEnabled    = $True
                     MailEnabled        = $false
@@ -738,10 +682,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return @{
                         DisplayName        = 'DSCGroup'
-                        ID                 = '12345-12345-12345-12345'
+                        ID                 = '12345-12345-12345-12345-12345'
                         Description        = 'Microsoft DSC Group'
                         SecurityEnabled    = $True
                         MailEnabled        = $false
@@ -751,13 +695,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
 
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        value = @{
-                            DisabledPlans = @()
-                            SkuId         = '12345-12345-12345'
+                Mock -CommandName Invoke-M365DSCGraphBatchRequest -MockWith {
+                    return @(
+                        @{
+                            id   = 'Licenses'
+                            body = @{
+                                value = @{
+                                    DisabledPlans = @()
+                                    SkuId         = '12345-12345-12345'
+                                }
+                            }
                         }
-                    }
+                    )
                 }
 
                 Mock -CommandName Get-MgBetaSubscribedSku -MockWith {
@@ -776,99 +725,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
+                Should -Invoke -CommandName 'Invoke-M365DSCGraphBatchRequest' -Exactly 1
             }
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
             }
         }
-        Context -Name "The Group exists and has been assigned the correct license but DisabledPlans differ. Values are NOT in the desired state" -Fixture {
-            BeforeAll {
-                $testParams = @{
-                    DisplayName        = 'DSCGroup'
-                    ID                 = '12345-12345-12345-12345'
-                    Description        = 'Microsoft DSC Group'
-                    SecurityEnabled    = $True
-                    MailEnabled        = $false
-                    GroupTypes         = @()
-                    MailNickname       = 'M365DSC'
-                    AssignedLicenses   = @(
-                        (New-CimInstance -ClassName MSFT_AADGroupLicense -Property @{
-                            DisabledPlans  = [string[]]@()
-                            SkuId          = 'AAD_PREMIUM_P2'  # is really the SkuPartNumber
-                        } -ClientOnly)
-                    )
-                    Ensure             = 'Present'
-                    Credential         = $Credential
-                }
 
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        DisplayName        = 'DSCGroup'
-                        ID                 = '12345-12345-12345-12345'
-                        Description        = 'Microsoft DSC Group'
-                        SecurityEnabled    = $True
-                        MailEnabled        = $false
-                        GroupTypes         = @()
-                        MailNickname       = 'M365DSC'
-                        IsAssignableToRole = $false
-                    }
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        value = @{
-                            DisabledPlans = @('56789-56789-56789-56789')
-                            SkuId         = '23456-23456-23456-23456'
-                        }
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaSubscribedSku -MockWith {
-                    return [pscustomobject]@{
-                        ServicePlans         = @(
-                            @{
-                                ServicePlanId   = '56789-56789-56789-56789'
-                                ServicePlanName = 'AAD_PREMIUM'
-                            },
-                            @{
-                                ServicePlanId   = '67890-67890-67890-67890'
-                                ServicePlanName = 'AAD_PREMIUM_P2'
-                            }
-                        )
-                        SkuId                = '23456-23456-23456-23456'
-                        SkuPartNumber        = 'AAD_PREMIUM_P2'
-                    }
-                }
-            }
-
-            It 'Should return Values from the Get method' {
-                Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -Exactly 1
-            }
-
-            It 'Should return false from the Test method' {
-                Test-TargetResource @testParams | Should -Be $false
-            }
-
-            It 'Should call the Set method' {
-                Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Update-MgGroup' -Exactly 1
-                Should -Invoke -CommandName 'Set-MgGroupLicense' -Exactly 1
-            }
-        }
         Context -Name "The Group exists and is not assigned a license but it should be. Values are NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName        = 'DSCGroup'
-                    ID                 = '12345-12345-12345-12345'
+                    ID                 = '12345-12345-12345-12345-12345'
                     Description        = 'Microsoft DSC Group'
                     SecurityEnabled    = $True
                     MailEnabled        = $false
@@ -888,10 +758,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return @{
                         DisplayName        = 'DSCGroup'
-                        ID                 = '12345-12345-12345-12345'
+                        ID                 = '12345-12345-12345-12345-12345'
                         Description        = 'Microsoft DSC Group'
                         SecurityEnabled    = $True
                         MailEnabled        = $false
@@ -917,8 +787,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
             }
 
             It 'Should return false from the Test method' {
@@ -927,7 +796,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
                 Should -Invoke -CommandName 'Set-MgGroupLicense' -Exactly 1
             }
         }
@@ -935,7 +804,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName        = 'DSCGroup'
-                    ID                 = '12345-12345-12345-12345'
+                    ID                 = '12345-12345-12345-12345-12345'
                     Description        = 'Microsoft DSC Group'
                     SecurityEnabled    = $True
                     MailEnabled        = $false
@@ -950,10 +819,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return @{
                         DisplayName        = 'DSCGroup'
-                        ID                 = '12345-12345-12345-12345'
+                        ID                 = '12345-12345-12345-12345-12345'
                         Description        = 'Microsoft DSC Group'
                         SecurityEnabled    = $True
                         MailEnabled        = $false
@@ -963,13 +832,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
 
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        value = @{
-                            DisabledPlans = @()
-                            SkuId         = '12345-12345-12345'
+                Mock -CommandName Invoke-M365DSCGraphBatchRequest -MockWith {
+                    return @(
+                        @{
+                            id   = 'Licenses'
+                            body = @{
+                                value = @{
+                                    DisabledPlans = @()
+                                    SkuId         = '12345-12345-12345'
+                                }
+                            }
                         }
-                    }
+                    )
                 }
 
                 Mock -CommandName Get-MgBetaSubscribedSku -MockWith {
@@ -988,8 +862,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
+                Should -Invoke -CommandName 'Invoke-M365DSCGraphBatchRequest' -Exactly 1
             }
 
             It 'Should return false from the Test method' {
@@ -998,7 +872,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
                 Should -Invoke -CommandName 'Set-MgGroupLicense' -Exactly 1
             }
         }
@@ -1007,7 +881,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName        = 'DSCGroup'
-                    ID                 = '12345-12345-12345-12345'
+                    ID                 = '12345-12345-12345-12345-12345'
                     Description        = 'Microsoft DSC Group'
                     SecurityEnabled    = $True
                     MailEnabled        = $false
@@ -1021,25 +895,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return @{
                         DisplayName        = 'DSCGroup'
-                        ID                 = '12345-12345-12345-12345'
+                        ID                 = '12345-12345-12345-12345-12345'
                         Description        = 'Microsoft DSC Group'
                         SecurityEnabled    = $True
                         MailEnabled        = $false
                         GroupTypes         = @()
                         MailNickname       = 'M365DSC'
                         IsAssignableToRole = $false
-                    }
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        value = @{
-                            DisabledPlans = @()
-                            SkuId         = '12345-12345-12345'
-                        }
                     }
                 }
 
@@ -1059,8 +924,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 Get-TargetResource @testParams
-                Should -Invoke -CommandName 'Get-MgGroup' -Exactly 1
-                Should -Invoke -CommandName 'Invoke-MgGraphRequest' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaGroup' -Exactly 1
             }
 
             It 'Should return true from the Test method' {
@@ -1080,10 +944,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return 'Credentials'
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-MgBetaGroup -MockWith {
                     return @{
                         DisplayName        = 'DSCGroup'
-                        ID                 = '12345-12345-12345-12345'
+                        ID                 = '12345-12345-12345-12345-12345'
                         Description        = 'Microsoft DSC Group'
                         SecurityEnabled    = $True
                         MailEnabled        = $False

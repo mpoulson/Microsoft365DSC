@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADEntitlementManagementAccessPackageAssignmentPolicy'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -88,7 +90,7 @@ function Get-TargetResource
 
     try
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
 
         #Ensure the proper dependencies are installed in the current environment.
@@ -143,25 +145,25 @@ function Get-TargetResource
             $formattedAccessReviewSettings = $null
         }
 
-        if ($null -ne $formattedAccessReviewSettings.Reviewers -and $formattedAccessReviewSettings.Reviewers.count -gt 0 )
+        if ($null -ne $formattedAccessReviewSettings.Reviewers -and $formattedAccessReviewSettings.Reviewers.Count -gt 0 )
         {
             foreach ($setting in $formattedAccessReviewSettings.Reviewers)
             {
-                $setting.add('odataType', $setting.AdditionalProperties.'@odata.type')
+                $setting.Add('odataType', $setting.AdditionalProperties.'@odata.type')
                 if (-not [String]::isNullOrEmpty($setting.AdditionalProperties.id))
                 {
                     $user = Get-MgUser -UserId $setting.AdditionalProperties.id -ErrorAction SilentlyContinue
 
                     if ($null -ne $user)
                     {
-                        $setting.add('Id', $user.UserPrincipalName)
+                        $setting.Add('Id', $user.UserPrincipalName)
                     }
                 }
                 if (-not [String]::isNullOrEmpty($setting.AdditionalProperties.managerLevel))
                 {
-                    $setting.add('ManagerLevel', $setting.AdditionalProperties.managerLevel)
+                    $setting.Add('ManagerLevel', $setting.AdditionalProperties.managerLevel)
                 }
-                $setting.remove('AdditionalProperties') | Out-Null
+                $setting.Remove('AdditionalProperties') | Out-Null
             }
         }
         #endregion
@@ -170,54 +172,54 @@ function Get-TargetResource
         $formattedRequestApprovalSettings = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $getValue.RequestApprovalSettings
         if ($null -ne $formattedRequestApprovalSettings)
         {
-            $formattedRequestApprovalSettings.remove('additionalProperties') | Out-Null
+            $formattedRequestApprovalSettings.Remove('additionalProperties') | Out-Null
         }
-        if ($null -ne $formattedRequestApprovalSettings.approvalStages -and $formattedRequestApprovalSettings.approvalStages.count -gt 0 )
+        if ($null -ne $formattedRequestApprovalSettings.approvalStages -and $formattedRequestApprovalSettings.approvalStages.Count -gt 0 )
         {
             foreach ($approvalStage in $formattedRequestApprovalSettings.approvalStages)
             {
-                if ($null -ne $approvalStage.PrimaryApprovers -and $approvalStage.PrimaryApprovers.count -gt 0)
+                if ($null -ne $approvalStage.PrimaryApprovers -and $approvalStage.PrimaryApprovers.Count -gt 0)
                 {
                     foreach ($setting in $approvalStage.PrimaryApprovers)
                     {
-                        $setting.add('odataType', $setting.AdditionalProperties.'@odata.type')
+                        $setting.Add('odataType', $setting.AdditionalProperties.'@odata.type')
                         if (-not [String]::isNullOrEmpty($setting.AdditionalProperties.id))
                         {
                             $user = Get-MgUser -UserId $setting.AdditionalProperties.id -ErrorAction SilentlyContinue
                             if ($null -ne $user)
                             {
-                                $setting.add('Id', $user.UserPrincipalName)
+                                $setting.Add('Id', $user.UserPrincipalName)
                             }
                         }
                         if (-not [String]::isNullOrEmpty($setting.AdditionalProperties.managerLevel))
                         {
-                            $setting.add('ManagerLevel', $setting.AdditionalProperties.managerLevel)
+                            $setting.Add('ManagerLevel', $setting.AdditionalProperties.managerLevel)
                         }
-                        $setting.remove('additionalProperties') | Out-Null
+                        $setting.Remove('additionalProperties') | Out-Null
                     }
                 }
 
-                if ($null -ne $approvalStage.EscalationApprovers -and $approvalStage.EscalationApprovers.count -gt 0)
+                if ($null -ne $approvalStage.EscalationApprovers -and $approvalStage.EscalationApprovers.Count -gt 0)
                 {
                     foreach ($setting in $approvalStage.EscalationApprovers)
                     {
-                        $setting.add('odataType', $setting.AdditionalProperties.'@odata.type')
+                        $setting.Add('odataType', $setting.AdditionalProperties.'@odata.type')
                         if (-not [String]::isNullOrEmpty($setting.AdditionalProperties.id))
                         {
                             $user = Get-MgUser -UserId $setting.AdditionalProperties.id -ErrorAction SilentlyContinue
                             if ($null -ne $user)
                             {
-                                $setting.add('Id', $user.UserPrincipalName)
+                                $setting.Add('Id', $user.UserPrincipalName)
                             }
                         }
                         if (-not [String]::isNullOrEmpty($setting.AdditionalProperties.managerLevel))
                         {
-                            $setting.add('ManagerLevel', $setting.AdditionalProperties.managerLevel)
+                            $setting.Add('ManagerLevel', $setting.AdditionalProperties.managerLevel)
                         }
-                        $setting.remove('additionalProperties') | Out-Null
+                        $setting.Remove('additionalProperties') | Out-Null
                     }
                 }
-                $approvalStage.remove('additionalProperties') | Out-Null
+                $approvalStage.Remove('additionalProperties') | Out-Null
             }
         }
         #endregion
@@ -226,29 +228,60 @@ function Get-TargetResource
         $formattedRequestorSettings = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $getValue.RequestorSettings
         if ($null -ne $formattedRequestorSettings)
         {
-            $formattedRequestorSettings.remove('additionalProperties') | Out-Null
+            $formattedRequestorSettings.Remove('additionalProperties') | Out-Null
         }
-        if ($null -ne $formattedRequestorSettings.allowedRequestors -and $formattedRequestorSettings.allowedRequestors.count -gt 0 )
+        if ($null -ne $formattedRequestorSettings.allowedRequestors -and $formattedRequestorSettings.allowedRequestors.Count -gt 0 )
         {
             foreach ($setting in $formattedRequestorSettings.allowedRequestors)
             {
                 if (-not $setting.ContainsKey('odataType'))
                 {
-                    $setting.add('odataType', $setting.AdditionalProperties.'@odata.type')
+                    $setting.Add('odataType', $setting.AdditionalProperties.'@odata.type')
                 }
                 if (-not [String]::isNullOrEmpty($setting.AdditionalProperties.id))
                 {
-                    $user = Get-MgUser -UserId $setting.AdditionalProperties.id -ErrorAction SilentlyContinue
-                    if ($null -ne $user)
+                    # Check the @odata.type to determine if this is a user or group
+                    $odataType = $setting.AdditionalProperties.'@odata.type'
+
+                    if ($odataType -eq '#microsoft.graph.singleUser')
                     {
-                        $setting.add('Id', $user.UserPrincipalName)
+                        # Handle single user - try to resolve to UserPrincipalName
+                        $user = Get-MgUser -UserId $setting.AdditionalProperties.id -ErrorAction SilentlyContinue
+                        if ($null -ne $user)
+                        {
+                            $setting.Add('Id', $user.UserPrincipalName)
+                        }
+                        else
+                        {
+                            # If user not found, keep the original ID (could be UPN already)
+                            $setting.Add('Id', $setting.AdditionalProperties.id)
+                        }
+                    }
+                    elseif ($odataType -eq '#microsoft.graph.groupMembers')
+                    {
+                        # Handle group members - try to resolve group to DisplayName, fallback to GUID
+                        $group = Get-MgGroup -GroupId $setting.AdditionalProperties.id -ErrorAction SilentlyContinue
+                        if ($null -ne $group)
+                        {
+                            $setting.Add('Id', $group.DisplayName)
+                        }
+                        else
+                        {
+                            # If group not found, keep the GUID
+                            $setting.Add('Id', $setting.AdditionalProperties.id)
+                        }
+                    }
+                    else
+                    {
+                        # For other types (requestorManager, etc.), keep the original ID
+                        $setting.Add('Id', $setting.AdditionalProperties.id)
                     }
                 }
                 if (-not [String]::isNullOrEmpty($setting.AdditionalProperties.managerLevel))
                 {
-                    $setting.add('ManagerLevel', $setting.AdditionalProperties.managerLevel)
+                    $setting.Add('ManagerLevel', $setting.AdditionalProperties.managerLevel)
                 }
-                $setting.remove('additionalProperties') | Out-Null
+                $setting.Remove('additionalProperties') | Out-Null
             }
         }
         #endregion
@@ -259,31 +292,31 @@ function Get-TargetResource
         {
             if (-not $question.ContainsKey('odataType'))
             {
-                $question.add('odataType', $question.AdditionalProperties.'@odata.type')
+                $question.Add('odataType', $question.AdditionalProperties.'@odata.type')
             }
             if ($null -ne $question.Text)
             {
-                $question.add('QuestionText', $question.Text)
-                $question.remove('Text') | Out-Null
-                $question.QuestionText.remove('additionalProperties') | Out-Null
+                $question.Add('QuestionText', $question.Text)
+                $question.Remove('Text') | Out-Null
+                $question.QuestionText.Remove('additionalProperties') | Out-Null
                 foreach ($localizedText in $question.QuestionText.localizedTexts)
                 {
-                    $localizedText.remove('additionalProperties') | Out-Null
+                    $localizedText.Remove('additionalProperties') | Out-Null
                 }
             }
             if ($null -ne $question.AdditionalProperties.isSingleLineQuestion)
             {
-                $question.add('IsSingleLineQuestion', $question.AdditionalProperties.isSingleLineQuestion)
+                $question.Add('IsSingleLineQuestion', $question.AdditionalProperties.isSingleLineQuestion)
             }
             if ($null -ne $question.AdditionalProperties.choices)
             {
-                $question.add('Choices', [Array]$question.AdditionalProperties.choices)
+                $question.Add('Choices', [Array]$question.AdditionalProperties.choices)
             }
             if ($null -ne $question.AdditionalProperties.allowsMultipleSelection)
             {
-                $question.add('AllowsMultipleSelection', $question.AdditionalProperties.allowsMultipleSelection)
+                $question.Add('AllowsMultipleSelection', $question.AdditionalProperties.allowsMultipleSelection)
             }
-            $question.remove('additionalProperties') | Out-Null
+            $question.Remove('additionalProperties') | Out-Null
         }
         #endregion
 
@@ -332,7 +365,7 @@ function Get-TargetResource
             AccessTokens            = $AccessTokens
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -342,7 +375,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -433,8 +466,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
+    Write-Verbose -Message "Setting configuration of AzureAD Entitlement Management Access Package Assignment Policy for DisplayName {$DisplayName}"
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -450,16 +482,6 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    $PSBoundParameters.Remove('Ensure') | Out-Null
-    $PSBoundParameters.Remove('Credential') | Out-Null
-    $PSBoundParameters.Remove('ApplicationId') | Out-Null
-    $PSBoundParameters.Remove('ApplicationSecret') | Out-Null
-    $PSBoundParameters.Remove('TenantId') | Out-Null
-    $PSBoundParameters.Remove('CertificateThumbprint') | Out-Null
-    $PSBoundParameters.Remove('ManagedIdentity') | Out-Null
-    $PSBoundParameters.Remove('Verbose') | Out-Null
-    $PSBoundParameters.Remove('AccessTokens') | Out-Null
-
     $keyToRename = @{
         'odataType'    = '@odata.type'
         'QuestionText' = 'text'
@@ -468,17 +490,17 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Creating a new access package assignment policy {$DisplayName}"
 
-        $CreateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $CreateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters -KeyMapping $keyToRename
 
         $CreateParameters.Remove('Id') | Out-Null
         $CreateParameters.Remove('Verbose') | Out-Null
 
-        $keys = (([Hashtable]$CreateParameters).clone()).Keys
+        $keys = (([Hashtable]$CreateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
             $keyValue = $CreateParameters.$key
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $keyValue = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
                 $CreateParameters.$key = $keyValue
@@ -533,14 +555,42 @@ function Set-TargetResource
             for ($i = 0; $i -lt $CreateParameters.RequestorSettings.AllowedRequestors.Length; $i++)
             {
                 $requestor = $CreateParameters.RequestorSettings.AllowedRequestors[$i]
-                $user = Get-MgUser -Filter "startswith(UserPrincipalName, '$($requestor.Id.Split('@')[0])')" -ErrorAction SilentlyContinue
-                if ($null -ne $user)
+                $odataType = $requestor.'@odata.type'
+
+                if ($odataType -eq '#microsoft.graph.singleUser')
                 {
-                    $CreateParameters.RequestorSettings.AllowedRequestors[$i].Id = $user.Id
+                    # Handle single user - convert UPN to GUID
+                    if ($requestor.Id -like '*@*')
+                    {
+                        $user = Get-MgUser -Filter "startswith(UserPrincipalName, '$($requestor.Id.Split('@')[0])')" -ErrorAction SilentlyContinue
+                        if ($null -ne $user)
+                        {
+                            $CreateParameters.RequestorSettings.AllowedRequestors[$i].Id = $user.Id
+                        }
+                    }
+                    # If already a GUID, leave as-is
                 }
+                elseif ($odataType -eq '#microsoft.graph.groupMembers')
+                {
+                    # Handle group members - convert DisplayName to GUID if needed
+                    $ObjectGuid = [System.Guid]::empty
+                    $isGUID = [System.Guid]::TryParse($requestor.Id, [System.Management.Automation.PSReference]$ObjectGuid)
+
+                    if (-not $isGUID)
+                    {
+                        # Try to resolve by DisplayName
+                        $group = Get-MgGroup -Filter "displayName eq '$($requestor.Id.Replace("'", "''"))'" -ErrorAction SilentlyContinue
+                        if ($null -ne $group)
+                        {
+                            $CreateParameters.RequestorSettings.AllowedRequestors[$i].Id = $group.Id
+                        }
+                    }
+                    # If already a GUID, leave as-is
+                }
+                # For other types (requestorManager, etc.), leave ID as-is
             }
         }
-        If ($null -ne $CreateParameters.CustomExtensionHandlers -and $CreateParameters.CustomExtensionHandlers.count -gt 0 )
+        If ($null -ne $CreateParameters.CustomExtensionHandlers -and $CreateParameters.CustomExtensionHandlers.Count -gt 0 )
         {
             $formattedCustomExtensionHandlers = @()
             foreach ($customExtensionHandler in $CreateParameters.CustomExtensionHandlers)
@@ -586,17 +636,17 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Updating the access package assignment policy {$DisplayName}"
 
-        $UpdateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters -KeyMapping $keyToRename
 
         $UpdateParameters.Remove('Id') | Out-Null
         $UpdateParameters.Remove('Verbose') | Out-Null
 
-        $keys = (([Hashtable]$UpdateParameters).clone()).Keys
+        $keys = (([Hashtable]$UpdateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
             $keyValue = $UpdateParameters.$key
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $keyValue = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
                 $UpdateParameters.$key = $keyValue
@@ -654,14 +704,42 @@ function Set-TargetResource
             {
                 #Write-Verbose -Message "Requestor: $($UpdateParameters.RequestorSettings.AllowedRequestors[$i].Id)"
                 $requestor = $UpdateParameters.RequestorSettings.AllowedRequestors[$i]
-                $user = Get-MgUser -Filter "startswith(UserPrincipalName, '$($requestor.Id.Split('@')[0])')" -ErrorAction SilentlyContinue
-                if ($null -ne $user)
+                $odataType = $requestor.'@odata.type'
+
+                if ($odataType -eq '#microsoft.graph.singleUser')
                 {
-                    $UpdateParameters.RequestorSettings.AllowedRequestors[$i].Id = $user.Id
+                    # Handle single user - convert UPN to GUID
+                    if ($requestor.Id -like '*@*')
+                    {
+                        $user = Get-MgUser -Filter "startswith(UserPrincipalName, '$($requestor.Id.Split('@')[0])')" -ErrorAction SilentlyContinue
+                        if ($null -ne $user)
+                        {
+                            $UpdateParameters.RequestorSettings.AllowedRequestors[$i].Id = $user.Id
+                        }
+                    }
+                    # If already a GUID, leave as-is
                 }
+                elseif ($odataType -eq '#microsoft.graph.groupMembers')
+                {
+                    # Handle group members - convert DisplayName to GUID if needed
+                    $ObjectGuid = [System.Guid]::empty
+                    $isGUID = [System.Guid]::TryParse($requestor.Id, [System.Management.Automation.PSReference]$ObjectGuid)
+
+                    if (-not $isGUID)
+                    {
+                        # Try to resolve by DisplayName
+                        $group = Get-MgGroup -Filter "displayName eq '$($requestor.Id.Replace("'", "''"))'" -ErrorAction SilentlyContinue
+                        if ($null -ne $group)
+                        {
+                            $UpdateParameters.RequestorSettings.AllowedRequestors[$i].Id = $group.Id
+                        }
+                    }
+                    # If already a GUID, leave as-is
+                }
+                # For other types (requestorManager, etc.), leave ID as-is
             }
         }
-        If ($null -ne $UpdateParameters.CustomExtensionHandlers -and $UpdateParameters.CustomExtensionHandlers.count -gt 0 )
+        If ($null -ne $UpdateParameters.CustomExtensionHandlers -and $UpdateParameters.CustomExtensionHandlers.Count -gt 0 )
         {
             $formattedCustomExtensionHandlers = @()
             foreach ($customExtensionHandler in $UpdateParameters.CustomExtensionHandlers)
@@ -798,9 +876,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -810,50 +885,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing the configuration of the access package policy assignment with {$id}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-    $testResult = $true
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            $source = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $source
-
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-    $ValuesToCheck.Remove('Id') | Out-Null
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $ResourceName
+    return $result
 }
 
 function Export-TargetResource
@@ -944,7 +978,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -1102,19 +1136,18 @@ function Export-TargetResource
         if ($_.ErrorDetails.Message -like '*User is not authorized to perform the operation.*')
         {
             Write-M365DSCHost -Message "`r`n    $($Global:M365DSCEmojiYellowCircle) Tenant does not meet license requirement to extract this component."
+            return ''
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 

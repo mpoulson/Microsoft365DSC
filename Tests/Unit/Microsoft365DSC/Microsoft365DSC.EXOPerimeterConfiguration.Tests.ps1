@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -39,6 +39,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Set-PerimeterConfig -MockWith {
             }
 
+            Mock -CommandName Get-PerimeterConfig -MockWith {
+                return @{
+                    Credential         = $Credential
+                    Ensure             = 'Present'
+                    GatewayIPAddresses = @('127.0.0.1')
+                    Identity           = 'Tenant Perimeter Settings'
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -52,17 +61,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential         = $Credential
                     Ensure             = 'Present'
-                    GatewayIPAddresses = @('127.0.0.1')
+                    GatewayIPAddresses = @('127.0.0.2') # Drift
                     IsSingleInstance   = 'Yes'
-                }
-
-                Mock -CommandName Get-PerimeterConfig -MockWith {
-                    return @{
-                        Credential         = $Credential
-                        Ensure             = 'Present'
-                        GatewayIPAddresses = @('127.0.0.2'); #Drift
-                        Identity           = 'Tenant Perimeter Settings'
-                    }
                 }
             }
 
@@ -84,15 +84,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     GatewayIPAddresses = @('127.0.0.1')
                     IsSingleInstance   = 'Yes'
                 }
-
-                Mock -CommandName Get-PerimeterConfig -MockWith {
-                    return @{
-                        Credential         = $Credential
-                        Ensure             = 'Present'
-                        GatewayIPAddresses = @('127.0.0.1')
-                        Identity           = 'Tenant Perimeter Settings'
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -106,15 +97,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-PerimeterConfig -MockWith {
-                    return @{
-                        Credential         = $Credential
-                        Ensure             = 'Present'
-                        GatewayIPAddresses = @('127.0.0.1')
-                        Identity           = 'Tenant Perimeter Settings'
-                    }
                 }
             }
 

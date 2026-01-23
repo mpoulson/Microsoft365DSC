@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -39,6 +39,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Set-ArcConfig -MockWith {
             }
 
+            Mock -CommandName Get-ArcConfig -MockWith {
+                return @{
+                    ArcTrustedSealers = "abc.com,cohovineyard.com,tailspintoys.com";
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -50,17 +56,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Configuration needs updating' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance                           = 'Yes'
-                    ArcTrustedSealers                          = "cohovineyard.com,tailspintoys.com";
-                    Credential                                 = $Credential
+                    IsSingleInstance  = 'Yes'
+                    ArcTrustedSealers = "cohovineyard.com,tailspintoys.com"; # Drift
+                    Credential        = $Credential
                 }
-
-                Mock -CommandName Get-ArcConfig -MockWith {
-                    return @{
-                        ArcTrustedSealers                      = "abc.com,cohovineyard.com,tailspintoys.com";
-                    }
-                }
-                
             }
 
             It 'Should return false from the Test method' {
@@ -76,15 +75,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Update not required.' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance                           = 'Yes'
-                    ArcTrustedSealers                          = "abc.com,cohovineyard.com,tailspintoys.com";
-                    Credential                                 = $Credential
-                }
-
-                Mock -CommandName Get-ArcConfig -MockWith {
-                    return @{
-                        ArcTrustedSealers                     = "abc.com,cohovineyard.com,tailspintoys.com";
-                    }
+                    IsSingleInstance  = 'Yes'
+                    ArcTrustedSealers = "abc.com,cohovineyard.com,tailspintoys.com";
+                    Credential        = $Credential
                 }
             }
 
@@ -99,12 +92,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-ArcConfig -MockWith {
-                    return @{
-                        ArcTrustedSealers                          = "abc.com,cohovineyard.com,tailspintoys.com";
-                    }
                 }
             }
 

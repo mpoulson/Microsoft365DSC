@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -43,6 +43,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-DkimSigningConfig -MockWith {
+            }
+
+            Mock -CommandName Get-DkimSigningConfig -MockWith {
+                return @{
+                    Ensure                 = 'Present'
+                    Identity               = 'contoso.com'
+                    Credential             = $Credential
+                    AdminDisplayName       = 'contoso.com DKIM Config'
+                    BodyCanonicalization   = 'Relaxed'
+                    Enabled                = $false
+                    HeaderCanonicalization = 'Relaxed'
+                    Selector1KeySize       = 1024
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -67,9 +80,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-DkimSigningConfig -MockWith {
-                    return @{
-                        Identity = 'SomeOtherPolicy'
-                    }
+                    return $null
                 }
             }
 
@@ -79,6 +90,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName 'New-DkimSigningConfig' -Exactly 1
             }
         }
 
@@ -93,19 +105,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Enabled                = $false
                     HeaderCanonicalization = 'Relaxed'
                     KeySize                = 1024
-                }
-
-                Mock -CommandName Get-DkimSigningConfig -MockWith {
-                    return @{
-                        Ensure                 = 'Present'
-                        Identity               = 'contoso.com'
-                        Credential             = $Credential
-                        AdminDisplayName       = 'contoso.com DKIM Config'
-                        BodyCanonicalization   = 'Relaxed'
-                        Enabled                = $false
-                        HeaderCanonicalization = 'Relaxed'
-                        Selector1KeySize       = 1024
-                    }
                 }
             }
 
@@ -122,22 +121,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential             = $Credential
                     AdminDisplayName       = 'contoso.com DKIM Config'
                     BodyCanonicalization   = 'Relaxed'
-                    Enabled                = $true
+                    Enabled                = $true # Drift
                     HeaderCanonicalization = 'Relaxed'
                     KeySize                = 1024
-                }
-
-                Mock -CommandName Get-DkimSigningConfig -MockWith {
-                    return @{
-                        Ensure                 = 'Present'
-                        Identity               = 'contoso.com'
-                        Credential             = $Credential
-                        AdminDisplayName       = 'contoso.com DKIM Config'
-                        BodyCanonicalization   = 'Simple'
-                        Enabled                = $false
-                        HeaderCanonicalization = 'Simple'
-                        Selector1KeySize       = 1024
-                    }
                 }
             }
 
@@ -147,6 +133,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName 'Set-DkimSigningConfig' -Exactly 1
             }
         }
 
@@ -157,12 +144,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity   = 'contoso.com'
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-DkimSigningConfig -MockWith {
-                    return @{
-                        Identity = 'contoso.com'
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -171,6 +152,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName 'Set-DkimSigningConfig' -Exactly 1
             }
         }
 
@@ -184,12 +166,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Confirm-ImportedCmdletIsAvailable -MockWith {
                     return $true
-                }
-
-                Mock -CommandName Get-DkimSigningConfig -MockWith {
-                    return @{
-                        Identity = 'contoso.com'
-                    }
                 }
             }
 

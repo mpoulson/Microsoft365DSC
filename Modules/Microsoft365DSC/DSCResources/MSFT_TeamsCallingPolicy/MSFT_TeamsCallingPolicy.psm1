@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_TeamsCallingPolicy'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -11,6 +13,66 @@ function Get-TargetResource
         [Parameter()]
         [System.String]
         $Description,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $AIInterpreter,
+
+        [Parameter()]
+        [System.UInt32]
+        $CallingSpendUserLimit,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'EnabledWithTranscript', 'Disabled')]
+        [System.String]
+        $Copilot,
+
+        [Parameter()]
+        [System.Boolean]
+        $EnableSpendLimits,
+
+        [Parameter()]
+        [System.Boolean]
+        $EnableWebPstnMediaBypass,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $ExplicitRecordingConsent,
+
+        [Parameter()]
+        [ValidateSet('RegularIncoming', 'Unanswered', 'Voicemail')]
+        [System.String]
+        $InboundFederatedCallRoutingTreatment,
+
+        [Parameter()]
+        [ValidateSet('RegularIncoming', 'Unanswered', 'Voicemail', 'UserOverride')]
+        [System.String]
+        $InboundPstnCallRoutingTreatment,
+
+        [Parameter()]
+        [System.String]
+        $PopoutAppPathForIncomingPstnCalls,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $PopoutForIncomingPstnCalls,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $RealTimeText,
+
+        [Parameter()]
+        [System.Boolean]
+        $ShowTeamsCallsInCallLog,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $VoiceSimulationInInterpreter,
 
         [Parameter()]
         [System.Boolean]
@@ -132,7 +194,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftTeams' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -165,34 +227,47 @@ function Get-TargetResource
 
         Write-Verbose -Message "Found Teams Calling Policy {$Identity}"
         return @{
-            Identity                          = $Identity
-            AllowPrivateCalling               = $policy.AllowPrivateCalling
-            AllowWebPSTNCalling               = $policy.AllowWebPSTNCalling
-            AllowVoicemail                    = $policy.AllowVoicemail
-            AllowCallGroups                   = $policy.AllowCallGroups
-            AllowDelegation                   = $policy.AllowDelegation
-            AllowCallForwardingToUser         = $policy.AllowCallForwardingToUser
-            AllowCallForwardingToPhone        = $policy.AllowCallForwardingToPhone
-            AllowCallRedirect                 = $policy.AllowCallRedirect
-            AllowSIPDevicesCalling            = $policy.AllowSIPDevicesCalling
-            Description                       = $policy.Description
-            PreventTollBypass                 = $policy.PreventTollBypass
-            BusyOnBusyEnabledType             = $policy.BusyOnBusyEnabledType
-            CallRecordingExpirationDays       = $policy.CallRecordingExpirationDays
-            MusicOnHoldEnabledType            = $policy.MusicOnHoldEnabledType
-            SafeTransferEnabled               = $policy.SafeTransferEnabled
-            AllowCloudRecordingForCalls       = $policy.AllowCloudRecordingForCalls
-            AllowTranscriptionForCalling      = $policy.AllowTranscriptionForCalling
-            LiveCaptionsEnabledTypeForCalling = $policy.LiveCaptionsEnabledTypeForCalling
-            AutoAnswerEnabledType             = $policy.AutoAnswerEnabledType
-            SpamFilteringEnabledType          = $policy.SpamFilteringEnabledType
-            Ensure                            = 'Present'
-            Credential                        = $Credential
-            ApplicationId                     = $ApplicationId
-            TenantId                          = $TenantId
-            CertificateThumbprint             = $CertificateThumbprint
-            ManagedIdentity                   = $ManagedIdentity.IsPresent
-            AccessTokens                      = $AccessTokens
+            Identity                             = $Identity
+            AIInterpreter                        = $policy.AIInterpreter
+            AllowPrivateCalling                  = $policy.AllowPrivateCalling
+            AllowWebPSTNCalling                  = $policy.AllowWebPSTNCalling
+            AllowVoicemail                       = $policy.AllowVoicemail
+            AllowCallGroups                      = $policy.AllowCallGroups
+            AllowDelegation                      = $policy.AllowDelegation
+            AllowCallForwardingToUser            = $policy.AllowCallForwardingToUser
+            AllowCallForwardingToPhone           = $policy.AllowCallForwardingToPhone
+            AllowCallRedirect                    = $policy.AllowCallRedirect
+            AllowSIPDevicesCalling               = $policy.AllowSIPDevicesCalling
+            CallingSpendUserLimit                = $policy.CallingSpendUserLimit
+            Copilot                              = $policy.Copilot
+            Description                          = $policy.Description
+            EnableSpendLimits                    = $policy.EnableSpendLimits
+            EnableWebPstnMediaBypass             = $policy.EnableWebPstnMediaBypass
+            ExplicitRecordingConsent             = $policy.ExplicitRecordingConsent
+            InboundFederatedCallRoutingTreatment = $policy.InboundFederatedCallRoutingTreatment
+            InboundPstnCallRoutingTreatment      = $policy.InboundPstnCallRoutingTreatment
+            PopoutAppPathForIncomingPstnCalls    = $policy.PopoutAppPathForIncomingPstnCalls
+            PopoutForIncomingPstnCalls           = $policy.PopoutForIncomingPstnCalls
+            PreventTollBypass                    = $policy.PreventTollBypass
+            RealTimeText                         = $policy.RealTimeText
+            ShowTeamsCallsInCallLog              = $policy.ShowTeamsCallsInCallLog
+            BusyOnBusyEnabledType                = $policy.BusyOnBusyEnabledType
+            CallRecordingExpirationDays          = $policy.CallRecordingExpirationDays
+            MusicOnHoldEnabledType               = $policy.MusicOnHoldEnabledType
+            SafeTransferEnabled                  = $policy.SafeTransferEnabled
+            AllowCloudRecordingForCalls          = $policy.AllowCloudRecordingForCalls
+            AllowTranscriptionForCalling         = $policy.AllowTranscriptionForCalling
+            LiveCaptionsEnabledTypeForCalling    = $policy.LiveCaptionsEnabledTypeForCalling
+            AutoAnswerEnabledType                = $policy.AutoAnswerEnabledType
+            SpamFilteringEnabledType             = $policy.SpamFilteringEnabledType
+            VoiceSimulationInInterpreter         = $policy.VoiceSimulationInInterpreter
+            Ensure                               = 'Present'
+            Credential                           = $Credential
+            ApplicationId                        = $ApplicationId
+            TenantId                             = $TenantId
+            CertificateThumbprint                = $CertificateThumbprint
+            ManagedIdentity                      = $ManagedIdentity.IsPresent
+            AccessTokens                         = $AccessTokens
         }
     }
     catch
@@ -203,7 +278,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -219,6 +294,66 @@ function Set-TargetResource
         [Parameter()]
         [System.String]
         $Description,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $AIInterpreter,
+
+        [Parameter()]
+        [System.UInt32]
+        $CallingSpendUserLimit,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'EnabledWithTranscript', 'Disabled')]
+        [System.String]
+        $Copilot,
+
+        [Parameter()]
+        [System.Boolean]
+        $EnableSpendLimits,
+
+        [Parameter()]
+        [System.Boolean]
+        $EnableWebPstnMediaBypass,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $ExplicitRecordingConsent,
+
+        [Parameter()]
+        [ValidateSet('RegularIncoming', 'Unanswered', 'Voicemail')]
+        [System.String]
+        $InboundFederatedCallRoutingTreatment,
+
+        [Parameter()]
+        [ValidateSet('RegularIncoming', 'Unanswered', 'Voicemail', 'UserOverride')]
+        [System.String]
+        $InboundPstnCallRoutingTreatment,
+
+        [Parameter()]
+        [System.String]
+        $PopoutAppPathForIncomingPstnCalls,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $PopoutForIncomingPstnCalls,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $RealTimeText,
+
+        [Parameter()]
+        [System.Boolean]
+        $ShowTeamsCallsInCallLog,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $VoiceSimulationInInterpreter,
 
         [Parameter()]
         [System.Boolean]
@@ -348,19 +483,9 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
-        -InboundParameters $PSBoundParameters
-
     $CurrentValues = Get-TargetResource @PSBoundParameters
 
-    $SetParameters = $PSBoundParameters
-    $SetParameters.Remove('Ensure') | Out-Null
-    $SetParameters.Remove('Credential') | Out-Null
-    $SetParameters.Remove('ApplicationId') | Out-Null
-    $SetParameters.Remove('TenantId') | Out-Null
-    $SetParameters.Remove('CertificateThumbprint') | Out-Null
-    $SetParameters.Remove('ManagedIdentity') | Out-Null
-    $SetParameters.Remove('AccessTokens') | Out-Null
+    $SetParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present' -and $CurrentValues.Ensure -eq 'Absent')
     {
@@ -394,6 +519,66 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $Description,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $AIInterpreter,
+
+        [Parameter()]
+        [System.UInt32]
+        $CallingSpendUserLimit,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'EnabledWithTranscript', 'Disabled')]
+        [System.String]
+        $Copilot,
+
+        [Parameter()]
+        [System.Boolean]
+        $EnableSpendLimits,
+
+        [Parameter()]
+        [System.Boolean]
+        $EnableWebPstnMediaBypass,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $ExplicitRecordingConsent,
+
+        [Parameter()]
+        [ValidateSet('RegularIncoming', 'Unanswered', 'Voicemail')]
+        [System.String]
+        $InboundFederatedCallRoutingTreatment,
+
+        [Parameter()]
+        [ValidateSet('RegularIncoming', 'Unanswered', 'Voicemail', 'UserOverride')]
+        [System.String]
+        $InboundPstnCallRoutingTreatment,
+
+        [Parameter()]
+        [System.String]
+        $PopoutAppPathForIncomingPstnCalls,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $PopoutForIncomingPstnCalls,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $RealTimeText,
+
+        [Parameter()]
+        [System.Boolean]
+        $ShowTeamsCallsInCallLog,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $VoiceSimulationInInterpreter,
 
         [Parameter()]
         [System.Boolean]
@@ -508,11 +693,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -520,23 +703,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Team Calling Policy {$Identity}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -626,15 +795,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

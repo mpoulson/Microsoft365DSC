@@ -27,10 +27,47 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
+
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
             }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
+            }
+
+            Mock -Command Get-TeamUser -MockWith {
+                return @(
+                    @{
+                        User = 'owner@contoso.com'
+                        Role = 'owner'
+                    }
+                )
+            }
+
+            Mock -CommandName Get-Team -MockWith {
+                return @(
+                    @{
+                        DisplayName  = 'TestTeam'
+                        GroupID      = '1234-1234-1234-1234'
+                        MailNickName = 'testteam'
+                        Visibility   = 'Private'
+                        Archived     = $false
+                    }
+                )
+            }
+
+            Mock -CommandName Set-Team -MockWith {
+                return @{
+                    DisplayName = 'Test Team'
+                    Visibility  = 'Private'
+                }
+            }
+
+            Mock -CommandName New-Team -MockWith {
+                return @{
+                    DisplayName = 'TestTeam'
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -76,16 +113,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential                        = $Credential
                 }
 
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
                 Mock -CommandName Get-Team -MockWith {
                     return $null
-                }
-
-                Mock -CommandName New-Team -MockWith {
-                    return @{DisplayName = 'TestTeam' }
                 }
             }
 
@@ -110,24 +139,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Visibility  = 'Private'
                     Owner       = @('owner@contoso.com')
                     Credential  = $Credential
-                }
-
-                Mock -Command Get-TeamUser -MockWith {
-                    return @(
-                        @{
-                            User = 'owner@contoso.com'
-                            Role = 'owner'
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-Team -MockWith {
-                    return @(@{
-                            DisplayName = 'TestTeam'
-                            GroupID     = '1234-1234-1234-1234'
-                            Visibility  = 'Private'
-                            Archived    = $false
-                        })
                 }
             }
 
@@ -155,24 +166,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName New-M365DSCConnection -MockWith {
                     return 'ServicePrincipal'
                 }
-
-                Mock -Command Get-TeamUser -MockWith {
-                    return @(
-                        @{
-                            User = 'owner@contoso.com'
-                            Role = 'owner'
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-Team -MockWith {
-                    return @(@{
-                            DisplayName = 'TestTeam'
-                            GroupID     = '1234-1234-1234-1234'
-                            Visibility  = 'Private'
-                            Archived    = $false
-                        })
-                }
             }
 
             It 'Should return present from the Get method' {
@@ -199,30 +192,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName New-M365DSCConnection -MockWith {
                     return 'ServicePrincipal'
                 }
-
-                Mock -Command Get-TeamUser -MockWith {
-                    return @(
-                        @{
-                            User = 'owner@contoso.com'
-                            Role = 'owner'
-                        }
-                    )
-                }
-
-                Mock -CommandName Set-Team -MockWith {
-                    return @{
-                        DisplayName = 'Test Team'
-                    }
-                }
-
-                Mock -CommandName Get-Team -MockWith {
-                    return @(@{
-                            DisplayName = 'TestTeam'
-                            GroupID     = '1234-1234-1234-1234'
-                            Visibility  = 'Private'
-                            Archived    = $false
-                        })
-                }
             }
 
             It 'Should return present from the Get method' {
@@ -242,38 +211,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Update existing team access type' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    DisplayName = 'Test Team'
+                    DisplayName = 'TestTeam'
                     Ensure      = 'Present'
-                    Description = 'Test Team'
-                    Visibility  = 'Private'
+                    Visibility  = 'Public' # Drift
                     Owner       = @('owner@contoso.com')
                     Credential  = $Credential
-                }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Set-Team -MockWith {
-                    return @{
-                        DisplayName = 'Test Team'
-                    }
                 }
 
                 Mock -Command Get-TeamUser -MockWith {
                     return @{
                         User = 'owner@contoso.com'
                         Role = 'owner'
-                    }
-                }
-
-                Mock -CommandName Get-Team -MockWith {
-                    return @{
-                        DisplayName = 'Test Team'
-                        GroupID     = '1234-1234-1234-1234'
-                        Description = 'Different Description'
-                        Visibility  = 'Private'
-                        Archived    = $false
                     }
                 }
             }
@@ -294,42 +242,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Update team visibility' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    DisplayName  = 'Test Team'
+                    DisplayName  = 'TestTeam'
                     Ensure       = 'Present'
                     MailNickName = 'testteam'
                     Visibility   = 'Public'
                     Description  = 'Update description'
                     Credential   = $Credential
-                }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -Command Get-TeamUser -MockWith {
-                    return @(
-                        @{
-                            User = 'owner@contoso.com'
-                            Role = 'owner'
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-Team -MockWith {
-                    return @{
-                        DisplayName  = 'Test Team'
-                        GroupID      = '1234-1234-1234-1234'
-                        MailNickName = 'testteam'
-                        Visibility   = 'Private'
-                        Archived     = $false
-                    }
-                }
-
-                Mock -CommandName Set-Team -MockWith {
-                    return @{
-                        DisplayName = 'Test Team'
-                        Visibility  = 'Private'
-                    }
                 }
             }
 
@@ -345,36 +263,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Remove the Team' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    DisplayName = 'Test Team'
+                    DisplayName = 'TestTeam'
                     Ensure      = 'Absent'
                     Credential  = $Credential
                 }
 
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
                 Mock -CommandName Remove-Team -MockWith {
                     return $null
-                }
-
-                Mock -CommandName Get-Team -MockWith {
-                    return @{
-                        DisplayName  = 'Test Team'
-                        GroupID      = '1234-1234-1234-1234'
-                        MailNickName = 'testteam'
-                        Visibility   = 'Private'
-                        Archived     = $false
-                    }
-                }
-
-                Mock -Command Get-TeamUser -MockWith {
-                    return @(
-                        @{
-                            User = 'owner@contoso.com'
-                            Role = 'owner'
-                        }
-                    )
                 }
             }
 
@@ -387,23 +282,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName New-M365DSCConnection -MockWith {
-                    return 'Credentials'
-                }
-
-                Mock -CommandName Get-Team -MockWith {
-                    return @{
-                        DisplayName = 'Test Team'
-                    }
                 }
             }
 

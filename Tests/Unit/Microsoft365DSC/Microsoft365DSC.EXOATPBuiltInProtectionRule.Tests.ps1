@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -36,7 +36,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Set-ATPBuiltInProtectionRule -MockWith {
+            }
 
+            Mock -CommandName Get-ATPBuiltInProtectionRule -MockWith {
+                return @{
+                    ExceptIfRecipientDomainIs = @("contoso.com","fabrikam.com");
+                    Identity                  = "ATP Built-In Protection Rule";
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -54,13 +60,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                  = "ATP Built-In Protection Rule";
                     Credential                = $Credential;
                 }
-
-                Mock -CommandName Get-ATPBuiltInProtectionRule -MockWith {
-                    return @{
-                        ExceptIfRecipientDomainIs = @("contoso.com","fabrikam.com");
-                        Identity                  = "ATP Built-In Protection Rule";
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -75,15 +74,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                  = "ATP Built-In Protection Rule";
                     Credential                = $Credential;
                 }
-
-                Mock -CommandName Get-ATPBuiltInProtectionRule -MockWith {
-                    return @{
-                        ExceptIfRecipientDomainIs = @("contoso.com","fabrikam.com");
-                        Identity                  = "ATP Built-In Protection Rule";
-                    }
-                }
             }
-
 
             It 'Should return false from the Test method' {
                 Test-TargetResource @testParams | Should -Be $false
@@ -101,13 +92,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-ATPBuiltInProtectionRule -MockWith {
-                    return @{
-                        ExceptIfRecipientDomainIs = @("contoso.com","fabrikam.com");
-                        Identity                  = "ATP Built-In Protection Rule";
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

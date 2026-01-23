@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -42,6 +42,26 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-AuthenticationPolicy {
+            }
+
+            Mock -CommandName Get-AuthenticationPolicy -MockWith {
+                return @{
+                    Identity                           = 'Contoso Auth Policy'
+                    AllowBasicAuthActiveSync           = $False
+                    AllowBasicAuthAutodiscover         = $False
+                    AllowBasicAuthImap                 = $False
+                    AllowBasicAuthMapi                 = $False
+                    AllowBasicAuthOfflineAddressBook   = $False
+                    AllowBasicAuthOutlookService       = $False
+                    AllowBasicAuthPop                  = $False
+                    AllowBasicAuthPowerShell           = $False
+                    AllowBasicAuthReportingWebServices = $False
+                    AllowBasicAuthRpc                  = $False
+                    AllowBasicAuthSmtp                 = $False
+                    AllowBasicAuthWebServices          = $False
+                    Ensure                             = 'Present'
+                    Credential                         = $Credential
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -110,26 +130,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                             = 'Present'
                     Credential                         = $Credential
                 }
-
-                Mock -CommandName Get-AuthenticationPolicy -MockWith {
-                    return @{
-                        Identity                           = 'Contoso Auth Policy'
-                        AllowBasicAuthActiveSync           = $False
-                        AllowBasicAuthAutodiscover         = $False
-                        AllowBasicAuthImap                 = $False
-                        AllowBasicAuthMapi                 = $False
-                        AllowBasicAuthOfflineAddressBook   = $False
-                        AllowBasicAuthOutlookService       = $False
-                        AllowBasicAuthPop                  = $False
-                        AllowBasicAuthPowerShell           = $False
-                        AllowBasicAuthReportingWebServices = $False
-                        AllowBasicAuthRpc                  = $False
-                        AllowBasicAuthSmtp                 = $False
-                        AllowBasicAuthWebServices          = $False
-                        Ensure                             = 'Present'
-                        Credential                         = $Credential
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -145,7 +145,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Identity                           = 'Contoso Auth Policy'
-                    AllowBasicAuthActiveSync           = $False
+                    AllowBasicAuthActiveSync           = $True # Drift
                     AllowBasicAuthAutodiscover         = $False
                     AllowBasicAuthImap                 = $False
                     AllowBasicAuthMapi                 = $False
@@ -159,26 +159,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowBasicAuthWebServices          = $False
                     Ensure                             = 'Present'
                     Credential                         = $Credential
-                }
-
-                Mock -CommandName Get-AuthenticationPolicy -MockWith {
-                    return @{
-                        Identity                           = 'Contoso Auth Policy'
-                        AllowBasicAuthActiveSync           = $False
-                        AllowBasicAuthAutodiscover         = $False
-                        AllowBasicAuthImap                 = $False
-                        AllowBasicAuthMapi                 = $False
-                        AllowBasicAuthOfflineAddressBook   = $False
-                        AllowBasicAuthOutlookService       = $False
-                        AllowBasicAuthPop                  = $True
-                        AllowBasicAuthPowerShell           = $False
-                        AllowBasicAuthReportingWebServices = $False
-                        AllowBasicAuthRpc                  = $False
-                        AllowBasicAuthSmtp                 = $False
-                        AllowBasicAuthWebServices          = $False
-                        Ensure                             = 'Present'
-                        Credential                         = $Credential
-                    }
                 }
             }
 
@@ -203,12 +183,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity = 'Contoso Auth Policy'
                     Ensure   = 'Absent'
                 }
-
-                Mock -CommandName Get-AuthenticationPolicy -MockWith {
-                    return @{
-                        Identity = 'Contoso Auth Policy'
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -231,25 +205,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                $AuthPolicy = @{
-                    Identity                           = 'Contoso Auth Policy'
-                    AllowBasicAuthActiveSync           = $False
-                    AllowBasicAuthAutodiscover         = $False
-                    AllowBasicAuthImap                 = $False
-                    AllowBasicAuthMapi                 = $False
-                    AllowBasicAuthOfflineAddressBook   = $False
-                    AllowBasicAuthOutlookService       = $False
-                    AllowBasicAuthPop                  = $False
-                    AllowBasicAuthPowerShell           = $False
-                    AllowBasicAuthReportingWebServices = $False
-                    AllowBasicAuthRpc                  = $False
-                    AllowBasicAuthSmtp                 = $False
-                    AllowBasicAuthWebServices          = $False
-                }
-                Mock -CommandName Get-AuthenticationPolicy -MockWith {
-                    return $AuthPolicy
                 }
             }
 

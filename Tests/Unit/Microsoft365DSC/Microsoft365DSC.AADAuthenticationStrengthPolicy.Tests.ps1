@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaPolicyAuthenticationStrengthPolicy -MockWith {
@@ -34,6 +34,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Update-MgBetaPolicyAuthenticationStrengthPolicyAllowedCombination -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyAuthenticationStrengthPolicy -MockWith {
+                return @{
+                    AllowedCombinations  = @("windowsHelloForBusiness","fido2","x509CertificateMultiFactor","deviceBasedPush");
+                    Description          = "This is an example";
+                    DisplayName          = "Example";
+                    Id                   = '12345-12345-12345-12345-12345'
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -78,15 +87,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure               = "Absent"
                     Credential           = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationStrengthPolicy -MockWith {
-                    return @{
-                        AllowedCombinations  = @("windowsHelloForBusiness","fido2","x509CertificateMultiFactor","deviceBasedPush");
-                        Description          = "This is an example";
-                        DisplayName          = "Example";
-                        Id                   = '12345-12345-12345-12345-12345'
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -111,15 +111,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure               = "Present"
                     Credential           = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationStrengthPolicy -MockWith {
-                    return @{
-                        AllowedCombinations  = @("windowsHelloForBusiness","fido2","x509CertificateMultiFactor","deviceBasedPush");
-                        Description          = "This is an example";
-                        DisplayName          = "Example";
-                        Id                   = '12345-12345-12345-12345-12345'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -130,20 +121,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The AADAuthenticationMethodPolicy exists and values are NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    AllowedCombinations  = @("windowsHelloForBusiness","fido2","x509CertificateMultiFactor","deviceBasedPush");
+                    AllowedCombinations  = @("windowsHelloForBusiness","fido2","x509CertificateMultiFactor"); # Drift
                     Description          = "This is an example";
                     DisplayName          = "Example";
                     Ensure               = "Present"
                     Credential           = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationStrengthPolicy -MockWith {
-                    return @{
-                        AllowedCombinations  = @("windowsHelloForBusiness","fido2","x509CertificateMultiFactor"); # Drift
-                        Description          = "This is an example";
-                        DisplayName          = "Example";
-                        Id                   = '12345-12345-12345-12345-12345'
-                    }
                 }
             }
 
@@ -171,15 +153,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 $testParams = @{
                     Credential           = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationStrengthPolicy -MockWith {
-                    return @{
-                        AllowedCombinations  = @("windowsHelloForBusiness","fido2","x509CertificateMultiFactor","deviceBasedPush");
-                        Description          = "This is an example";
-                        DisplayName          = "Example";
-                        Id                   = '12345-12345-12345-12345-12345'
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

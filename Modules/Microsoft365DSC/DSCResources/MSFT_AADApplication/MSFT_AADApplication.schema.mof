@@ -104,12 +104,11 @@ class MSFT_MicrosoftGraphApiApplication
 
 };
 
-[ClassVersion("1.0.0")]
+[ClassVersion("1.0.0.1")]
 class MSFT_MicrosoftGraphAuthenticationBehaviors
 {
     [Write, Description("If false, allows the app to have extended access to Azure AD Graph until June 30, 2025 when Azure AD Graph is fully retired. For more information on Azure AD retirement updates, see June 2024 update on Azure AD Graph API retirement. Use 'Null' to ensure the value is not configured."), ValueMap{"True", "False", "Null"}, Values{"True", "False", "Null"}] String BlockAzureADGraphAccess;
     [Write, Description("If true, removes the email claim from tokens sent to an application when the email address's domain can't be verified. Use 'Null' to ensure the value is not configured."), ValueMap{"True", "False", "Null"}, Values{"True", "False", "Null"}] String RemoveUnverifiedEmailClaim;
-    [Write, Description("DEPRECATED")] String RequireClientServicePrincipal;
 };
 
 [ClassVersion("1.0.0")]
@@ -153,13 +152,12 @@ class MSFT_AADApplicationSPA
     [Write, Description("Single page application redirect URIs.")] String RedirectUris[];
 };
 
-[ClassVersion("1.0.0.0"), FriendlyName("AADApplication")]
+[ClassVersion("1.0.0.1"), FriendlyName("AADApplication")]
 class MSFT_AADApplication : OMI_BaseResource
 {
     [Key, Description("DisplayName of the app")] string DisplayName;
     [Write, Description("ObjectID of the app.")] String ObjectId;
     [Write, Description("AppId for the app.")] String AppId;
-    [Write, Description("DEPRECATED: Indicates whether this application is available in other tenants.")] Boolean AvailableToOtherTenants;
     [Write, Description("A free text field to provide a description of the application object to end users. The maximum allowed size is 1024 characters.")] String Description;
     [Write, Description("A bitmask that configures the groups claim issued in a user or OAuth 2.0 access token that the application expects.")] String GroupMembershipClaims;
     [Write, Description("The URL to the application's homepage.")] String Homepage;
@@ -181,6 +179,7 @@ class MSFT_AADApplication : OMI_BaseResource
     [Write, Description("List of public clients redirect URIs.")] String PublicClientRedirectUris[];
     [Write, Description("List of single page application settings."), EmbeddedInstance("MSFT_AADApplicationSpa")] String Spa;
     [Write, Description("Specifies the Microsoft accounts that are supported for the current application. The possible values are: AzureADMyOrg (default), AzureADMultipleOrgs, AzureADandPersonalMicrosoftAccount, and PersonalMicrosoftAccount"), ValueMap{"AzureADandPersonalMicrosoftAccount", "AzureADMultipleOrgs", "AzureADMyOrg", "PersonalMicrosoftAccount"}, Values{"AzureADandPersonalMicrosoftAccount", "AzureADMultipleOrgs", "AzureADMyOrg", "PersonalMicrosoftAccount"}] String SignInAudience;
+    [Write, Description("The Token Lifetime Policy assigned to the application with its DisplayName.")] String TokenLifetimePolicy;
     [Write, Description("Specify if the Azure AD App should exist or not."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] String Ensure;
     [Write, Description("Credentials for the Microsoft Graph delegated permissions."), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;

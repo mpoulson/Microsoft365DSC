@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -44,6 +44,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MailContact -MockWith {
+            }
+
+            Mock -CommandName Get-MailContact -MockWith {
+                return @{
+                    Alias                       = 'TestMailContact'
+                    DisplayName                 = 'My Test Contact'
+                    ExternalEmailAddress        = 'SMTP:test@tailspintoys.com'
+                    MacAttachmentFormat         = 'BinHex'
+                    MessageBodyFormat           = 'TextAndHtml'
+                    MessageFormat               = 'Mime'
+                    ModeratedBy                 = @()
+                    ModerationEnabled           = $False
+                    Name                        = 'My Test Contact'
+                    OrganizationalUnit          = 'nampr03a010.prod.outlook.com/Microsoft Exchange Hosted Organizations/tailspintoys.com'
+                    SendModerationNotifications = 'Always'
+                    UsePreferMessageFormat      = $True
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -84,7 +101,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create from the Set method' {
                 Set-TargetResource @testParams
-                Assert-MockCalled -CommandName New-MailContact -Exactly 1
+                Should -Invoke -CommandName New-MailContact -Exactly 1
             }
 
             It 'Should return Absent from the Get method' {
@@ -101,7 +118,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                      = 'Present'
                     ExternalEmailAddress        = 'SMTP:test@tailspintoys.com'
                     MacAttachmentFormat         = 'BinHex'
-                    MessageBodyFormat           = 'TextAndHtml'
+                    MessageBodyFormat           = 'Text' # Drift
                     MessageFormat               = 'Mime'
                     ModeratedBy                 = @()
                     ModerationEnabled           = $False
@@ -109,23 +126,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     OrganizationalUnit          = 'nampr03a010.prod.outlook.com/Microsoft Exchange Hosted Organizations/tailspintoys.com'
                     SendModerationNotifications = 'Always'
                     UsePreferMessageFormat      = $True
-                }
-
-                Mock -CommandName Get-MailContact -MockWith {
-                    return @{
-                        Alias                       = 'TestMailContact'
-                        DisplayName                 = 'My Test Contact'
-                        ExternalEmailAddress        = 'SMTP:test@tailspintoys.com'
-                        MacAttachmentFormat         = 'BinHex'
-                        MessageBodyFormat           = 'Text'; #Drift
-                        MessageFormat               = 'Text'; #Drift
-                        ModeratedBy                 = @()
-                        ModerationEnabled           = $False
-                        Name                        = 'My Test Contact'
-                        OrganizationalUnit          = 'nampr03a010.prod.outlook.com/Microsoft Exchange Hosted Organizations/tailspintoys.com'
-                        SendModerationNotifications = 'Always'
-                        UsePreferMessageFormat      = $True
-                    }
                 }
             }
 
@@ -139,7 +139,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should update from the Set method' {
                 Set-TargetResource @testParams
-                Assert-MockCalled -CommandName Set-MailContact -Exactly 1
+                Should -Invoke -CommandName Set-MailContact -Exactly 1
             }
         }
 
@@ -160,23 +160,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     OrganizationalUnit          = 'nampr03a010.prod.outlook.com/Microsoft Exchange Hosted Organizations/tailspintoys.com'
                     SendModerationNotifications = 'Always'
                     UsePreferMessageFormat      = $True
-                }
-
-                Mock -CommandName Get-MailContact -MockWith {
-                    return @{
-                        Alias                       = 'TestMailContact'
-                        DisplayName                 = 'My Test Contact'
-                        ExternalEmailAddress        = 'SMTP:test@tailspintoys.com'
-                        MacAttachmentFormat         = 'BinHex'
-                        MessageBodyFormat           = 'TextAndHtml'
-                        MessageFormat               = 'Mime'
-                        ModeratedBy                 = @()
-                        ModerationEnabled           = $False
-                        Name                        = 'My Test Contact'
-                        OrganizationalUnit          = 'nampr03a010.prod.outlook.com/Microsoft Exchange Hosted Organizations/tailspintoys.com'
-                        SendModerationNotifications = 'Always'
-                        UsePreferMessageFormat      = $True
-                    }
                 }
             }
 
@@ -207,23 +190,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SendModerationNotifications = 'Always'
                     UsePreferMessageFormat      = $True
                 }
-
-                Mock -CommandName Get-MailContact -MockWith {
-                    return @{
-                        Alias                       = 'TestMailContact'
-                        DisplayName                 = 'My Test Contact'
-                        ExternalEmailAddress        = 'SMTP:test@tailspintoys.com'
-                        MacAttachmentFormat         = 'BinHex'
-                        MessageBodyFormat           = 'TextAndHtml'
-                        MessageFormat               = 'Mime'
-                        ModeratedBy                 = @()
-                        ModerationEnabled           = $False
-                        Name                        = 'My Test Contact'
-                        OrganizationalUnit          = 'nampr03a010.prod.outlook.com/Microsoft Exchange Hosted Organizations/tailspintoys.com'
-                        SendModerationNotifications = 'Always'
-                        UsePreferMessageFormat      = $True
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -236,7 +202,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should remove from the Set method' {
                 Set-TargetResource @testParams
-                Assert-MockCalled -CommandName Remove-MailContact -Exactly 1
+                Should -Invoke -CommandName Remove-MailContact -Exactly 1
             }
         }
 
@@ -246,23 +212,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MailContact -MockWith {
-                    return @{
-                        Alias                       = 'TestMailContact'
-                        DisplayName                 = 'My Test Contact'
-                        ExternalEmailAddress        = 'SMTP:test@tailspintoys.com'
-                        MacAttachmentFormat         = 'BinHex'
-                        MessageBodyFormat           = 'TextAndHtml'
-                        MessageFormat               = 'Mime'
-                        ModeratedBy                 = @()
-                        ModerationEnabled           = $False
-                        Name                        = 'My Test Contact'
-                        OrganizationalUnit          = 'nampr03a010.prod.outlook.com/Microsoft Exchange Hosted Organizations/tailspintoys.com'
-                        SendModerationNotifications = 'Always'
-                        UsePreferMessageFormat      = $True
-                    }
                 }
             }
 

@@ -27,6 +27,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
+
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
 
@@ -34,7 +37,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return 'Credentials'
             }
 
-            Mock -CommandName get-mgUser -MockWith {
+            Mock -CommandName Get-MgUser -MockWith {
                 return @(
                     @{
                         UserPrincipalName = 'john.smith@contoso.com'

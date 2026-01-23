@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -46,6 +46,73 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
             }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties                            = @{
+                        '@odata.type' = '#microsoft.graph.macosGeneralDeviceConfiguration'
+                        TouchIdTimeoutInHours                           = 25
+                        AirDropBlocked                                  = $True
+                        ClassroomAppForceUnpromptedScreenObservation    = $True
+                        KeychainBlockCloudSync                          = $True
+                        AppleWatchBlockAutoUnlock                       = $True
+                        ScreenCaptureBlocked                            = $True
+                        MultiplayerGamingBlocked                        = $True
+                        WallpaperModificationBlocked                    = $True
+                        CameraBlocked                                   = $True
+                        ICloudBlockActivityContinuation                 = $True
+                        SpotlightBlockInternetResults                   = $True
+                        SafariBlockAutofill                             = $True
+                        PasswordBlockAutoFill                           = $True
+                        PasswordRequiredType                            = 'deviceDefault'
+                        PasswordMaximumAttemptCount                     = 25
+                        ClassroomForceAutomaticallyJoinClasses          = $True
+                        ICloudPrivateRelayBlocked                       = $True
+                        PasswordBlockModification                       = $True
+                        ICloudBlockCalendar                             = $True
+                        ICloudBlockAddressBook                          = $True
+                        SoftwareUpdatesEnforcedDelayInDays              = 25
+                        ICloudBlockReminders                            = $True
+                        PasswordBlockSimple                             = $True
+                        PasswordBlockAirDropSharing                     = $True
+                        ICloudBlockBookmarks                            = $True
+                        PasswordRequired                                = $True
+                        KeyboardBlockDictation                          = $True
+                        SoftwareUpdateMajorOSDeferredInstallDelayInDays = 25
+                        ContentCachingBlocked                           = $True
+                        ICloudDesktopAndDocumentsBlocked                = $True
+                        UpdateDelayPolicy                               = 'delayMajorOsUpdateVisibility'
+                        PasswordPreviousPasswordBlockCount              = 25
+                        AddingGameCenterFriendsBlocked                  = $True
+                        PasswordMinimumLength                           = 25
+                        EraseContentAndSettingsBlocked                  = $True
+                        ICloudBlockNotes                                = $True
+                        ICloudBlockPhotoLibrary                         = $True
+                        ICloudBlockMail                                 = $True
+                        PasswordMinutesOfInactivityBeforeScreenTimeout  = 25
+                        PasswordExpirationDays                          = 25
+                        PasswordBlockFingerprintUnlock                  = $True
+                        PasswordBlockProximityRequests                  = $True
+                        SoftwareUpdateNonOSDeferredInstallDelayInDays   = 25
+                        ITunesBlockMusicService                         = $True
+                        DefinitionLookupBlocked                         = $True
+                        ClassroomForceRequestPermissionToLeaveClasses   = $True
+                        ClassroomAppBlockRemoteScreenObservation        = $True
+                        SoftwareUpdateMinorOSDeferredInstallDelayInDays = 25
+                        ITunesBlockFileSharing                          = $True
+                        GameCenterBlocked                               = $True
+                        ICloudBlockDocumentSync                         = $True
+                        PasswordMinimumCharacterSetCount                = 25
+                        PasswordMinutesOfInactivityBeforeLock           = 25
+                        ClassroomForceUnpromptedAppAndDeviceLock        = $True
+                        PasswordMinutesUntilFailedLoginReset            = 25
+                    }
+                    Description                                     = 'FakeStringValue'
+                    DisplayName                                     = 'FakeStringValue'
+                    Id                                              = 'FakeStringValue'
+                }
+            }
+
             Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
             }
             # Mock Write-M365DSCHost to hide output during the tests
@@ -117,7 +184,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PasswordMinutesOfInactivityBeforeLock           = 25
                     ClassroomForceUnpromptedAppAndDeviceLock        = $True
                     PasswordMinutesUntilFailedLoginReset            = 25
-
                     Ensure                                          = 'Present'
                     Credential                                      = $Credential
                 }
@@ -200,74 +266,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PasswordMinutesOfInactivityBeforeLock           = 25
                     ClassroomForceUnpromptedAppAndDeviceLock        = $True
                     PasswordMinutesUntilFailedLoginReset            = 25
-
                     Ensure                                          = 'Absent'
                     Credential                                      = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties                            = @{'@odata.type' = '#microsoft.graph.macosGeneralDeviceConfiguration' }
-                        TouchIdTimeoutInHours                           = 25
-                        Description                                     = 'FakeStringValue'
-                        AirDropBlocked                                  = $True
-                        ClassroomAppForceUnpromptedScreenObservation    = $True
-                        KeychainBlockCloudSync                          = $True
-                        DisplayName                                     = 'FakeStringValue'
-                        AppleWatchBlockAutoUnlock                       = $True
-                        ScreenCaptureBlocked                            = $True
-                        MultiplayerGamingBlocked                        = $True
-                        WallpaperModificationBlocked                    = $True
-                        CameraBlocked                                   = $True
-                        ICloudBlockActivityContinuation                 = $True
-                        SpotlightBlockInternetResults                   = $True
-                        SafariBlockAutofill                             = $True
-                        PasswordBlockAutoFill                           = $True
-                        PasswordRequiredType                            = 'deviceDefault'
-                        PasswordMaximumAttemptCount                     = 25
-                        ClassroomForceAutomaticallyJoinClasses          = $True
-                        ICloudPrivateRelayBlocked                       = $True
-                        PasswordBlockModification                       = $True
-                        ICloudBlockCalendar                             = $True
-                        ICloudBlockAddressBook                          = $True
-                        SoftwareUpdatesEnforcedDelayInDays              = 25
-                        ICloudBlockReminders                            = $True
-                        PasswordBlockSimple                             = $True
-                        PasswordBlockAirDropSharing                     = $True
-                        ICloudBlockBookmarks                            = $True
-                        PasswordRequired                                = $True
-                        KeyboardBlockDictation                          = $True
-                        SoftwareUpdateMajorOSDeferredInstallDelayInDays = 25
-                        ContentCachingBlocked                           = $True
-                        ICloudDesktopAndDocumentsBlocked                = $True
-                        UpdateDelayPolicy                               = 'delayMajorOsUpdateVisibility'
-                        PasswordPreviousPasswordBlockCount              = 25
-                        AddingGameCenterFriendsBlocked                  = $True
-                        Id                                              = 'FakeStringValue'
-                        PasswordMinimumLength                           = 25
-                        EraseContentAndSettingsBlocked                  = $True
-                        ICloudBlockNotes                                = $True
-                        ICloudBlockPhotoLibrary                         = $True
-                        ICloudBlockMail                                 = $True
-                        PasswordMinutesOfInactivityBeforeScreenTimeout  = 25
-                        PasswordExpirationDays                          = 25
-                        PasswordBlockFingerprintUnlock                  = $True
-                        PasswordBlockProximityRequests                  = $True
-                        SoftwareUpdateNonOSDeferredInstallDelayInDays   = 25
-                        ITunesBlockMusicService                         = $True
-                        DefinitionLookupBlocked                         = $True
-                        ClassroomForceRequestPermissionToLeaveClasses   = $True
-                        ClassroomAppBlockRemoteScreenObservation        = $True
-                        SoftwareUpdateMinorOSDeferredInstallDelayInDays = 25
-                        ITunesBlockFileSharing                          = $True
-                        GameCenterBlocked                               = $True
-                        ICloudBlockDocumentSync                         = $True
-                        PasswordMinimumCharacterSetCount                = 25
-                        PasswordMinutesOfInactivityBeforeLock           = 25
-                        ClassroomForceUnpromptedAppAndDeviceLock        = $True
-                        PasswordMinutesUntilFailedLoginReset            = 25
-
-                    }
                 }
             }
 
@@ -346,83 +346,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PasswordMinutesOfInactivityBeforeLock           = 25
                     ClassroomForceUnpromptedAppAndDeviceLock        = $True
                     PasswordMinutesUntilFailedLoginReset            = 25
-
                     Ensure                                          = 'Present'
                     Credential                                      = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        Id                   = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Description          = 'FakeStringValue'
-                        Credential           = $Credential
-                        Ensure               = 'Present'
-                        AdditionalProperties = @{
-                            '@odata.type'                                   = '#microsoft.graph.iosGeneralDeviceConfiguration'
-                            TouchIdTimeoutInHours                           = 25
-                            AirDropBlocked                                  = $True
-                            ClassroomAppForceUnpromptedScreenObservation    = $True
-                            KeychainBlockCloudSync                          = $True
-                            AppleWatchBlockAutoUnlock                       = $True
-                            ScreenCaptureBlocked                            = $True
-                            MultiplayerGamingBlocked                        = $True
-                            WallpaperModificationBlocked                    = $True
-                            CameraBlocked                                   = $True
-                            ICloudBlockActivityContinuation                 = $True
-                            SpotlightBlockInternetResults                   = $True
-                            SafariBlockAutofill                             = $True
-                            PasswordBlockAutoFill                           = $True
-                            PasswordRequiredType                            = 'deviceDefault'
-                            PasswordMaximumAttemptCount                     = 25
-                            ClassroomForceAutomaticallyJoinClasses          = $True
-                            ICloudPrivateRelayBlocked                       = $True
-                            PasswordBlockModification                       = $True
-                            ICloudBlockCalendar                             = $True
-                            ICloudBlockAddressBook                          = $True
-                            SoftwareUpdatesEnforcedDelayInDays              = 25
-                            ICloudBlockReminders                            = $True
-                            PasswordBlockSimple                             = $True
-                            PasswordBlockAirDropSharing                     = $True
-                            ICloudBlockBookmarks                            = $True
-                            PasswordRequired                                = $True
-                            KeyboardBlockDictation                          = $True
-                            SoftwareUpdateMajorOSDeferredInstallDelayInDays = 25
-                            ContentCachingBlocked                           = $True
-                            ICloudDesktopAndDocumentsBlocked                = $True
-                            UpdateDelayPolicy                               = 'delayMajorOsUpdateVisibility'
-                            PasswordPreviousPasswordBlockCount              = 25
-                            AddingGameCenterFriendsBlocked                  = $True
-                            PasswordMinimumLength                           = 25
-                            EraseContentAndSettingsBlocked                  = $True
-                            ICloudBlockNotes                                = $True
-                            ICloudBlockPhotoLibrary                         = $True
-                            ICloudBlockMail                                 = $True
-                            PasswordMinutesOfInactivityBeforeScreenTimeout  = 25
-                            PasswordExpirationDays                          = 25
-                            PasswordBlockFingerprintUnlock                  = $True
-                            PasswordBlockProximityRequests                  = $True
-                            SoftwareUpdateNonOSDeferredInstallDelayInDays   = 25
-                            ITunesBlockMusicService                         = $True
-                            DefinitionLookupBlocked                         = $True
-                            ClassroomForceRequestPermissionToLeaveClasses   = $True
-                            ClassroomAppBlockRemoteScreenObservation        = $True
-                            SoftwareUpdateMinorOSDeferredInstallDelayInDays = 25
-                            ITunesBlockFileSharing                          = $True
-                            GameCenterBlocked                               = $True
-                            ICloudBlockDocumentSync                         = $True
-                            PasswordMinimumCharacterSetCount                = 25
-                            PasswordMinutesOfInactivityBeforeLock           = 25
-                            ClassroomForceUnpromptedAppAndDeviceLock        = $True
-                            PasswordMinutesUntilFailedLoginReset            = 25
-                        }
-                    }
-                }
             }
 
-            #It "Should return Values from the Get method" {
-            #Get-TargetResource @testParams
-            #}
+            It 'Should return Values from the Get method' {
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
+            }
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -432,7 +363,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The IntuneDeviceConfigurationPolicyMacOS exists and values are NOT in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    TouchIdTimeoutInHours                           = 25
+                    TouchIdTimeoutInHours                           = 7 # Updated property
                     Description                                     = 'FakeStringValue'
                     AirDropBlocked                                  = $True
                     ClassroomAppForceUnpromptedScreenObservation    = $True
@@ -490,76 +421,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PasswordMinutesOfInactivityBeforeLock           = 25
                     ClassroomForceUnpromptedAppAndDeviceLock        = $True
                     PasswordMinutesUntilFailedLoginReset            = 25
-
                     Ensure                                          = 'Present'
                     Credential                                      = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        Id                                              = 'FakeStringValue'
-                        DisplayName                                     = 'FakeStringValue'
-                        Description                                     = 'FakeStringValue'
-                        AdditionalProperties                            = @{
-                            '@odata.type' = '#microsoft.graph.iosGeneralDeviceConfiguration'
-                        }
-                        TouchIdTimeoutInHours                           = 7
-                        AirDropBlocked                                  = $False
-                        ClassroomAppForceUnpromptedScreenObservation    = $False
-                        KeychainBlockCloudSync                          = $False
-                        AppleWatchBlockAutoUnlock                       = $False
-                        ScreenCaptureBlocked                            = $False
-                        MultiplayerGamingBlocked                        = $False
-                        WallpaperModificationBlocked                    = $False
-                        CameraBlocked                                   = $False
-                        ICloudBlockActivityContinuation                 = $False
-                        SpotlightBlockInternetResults                   = $False
-                        SafariBlockAutofill                             = $False
-                        PasswordBlockAutoFill                           = $False
-                        PasswordRequiredType                            = 'deviceDefault'
-                        PasswordMaximumAttemptCount                     = 7
-                        ClassroomForceAutomaticallyJoinClasses          = $False
-                        ICloudPrivateRelayBlocked                       = $False
-                        PasswordBlockModification                       = $False
-                        ICloudBlockCalendar                             = $False
-                        ICloudBlockAddressBook                          = $False
-                        SoftwareUpdatesEnforcedDelayInDays              = 7
-                        ICloudBlockReminders                            = $False
-                        PasswordBlockSimple                             = $False
-                        PasswordBlockAirDropSharing                     = $False
-                        ICloudBlockBookmarks                            = $False
-                        PasswordRequired                                = $False
-                        KeyboardBlockDictation                          = $False
-                        SoftwareUpdateMajorOSDeferredInstallDelayInDays = 7
-                        ContentCachingBlocked                           = $False
-                        ICloudDesktopAndDocumentsBlocked                = $False
-                        UpdateDelayPolicy                               = 'delayMajorOsUpdateVisibility'
-                        PasswordPreviousPasswordBlockCount              = 7
-                        AddingGameCenterFriendsBlocked                  = $False
-                        PasswordMinimumLength                           = 7
-                        EraseContentAndSettingsBlocked                  = $False
-                        ICloudBlockNotes                                = $False
-                        ICloudBlockPhotoLibrary                         = $False
-                        ICloudBlockMail                                 = $False
-                        PasswordMinutesOfInactivityBeforeScreenTimeout  = 7
-                        PasswordExpirationDays                          = 7
-                        PasswordBlockFingerprintUnlock                  = $False
-                        PasswordBlockProximityRequests                  = $False
-                        SoftwareUpdateNonOSDeferredInstallDelayInDays   = 7
-                        ITunesBlockMusicService                         = $False
-                        DefinitionLookupBlocked                         = $False
-                        ClassroomForceRequestPermissionToLeaveClasses   = $False
-                        ClassroomAppBlockRemoteScreenObservation        = $False
-                        SoftwareUpdateMinorOSDeferredInstallDelayInDays = 7
-                        ITunesBlockFileSharing                          = $False
-                        GameCenterBlocked                               = $False
-                        ICloudBlockDocumentSync                         = $False
-                        PasswordMinimumCharacterSetCount                = 7
-                        PasswordMinutesOfInactivityBeforeLock           = 7
-                        ClassroomForceUnpromptedAppAndDeviceLock        = $False
-                        PasswordMinutesUntilFailedLoginReset            = 7
-
-                    }
                 }
             }
 
@@ -584,72 +447,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties                            = @{'@odata.type' = '#microsoft.graph.macosGeneralDeviceConfiguration' }
-                        TouchIdTimeoutInHours                           = 25
-                        Description                                     = 'FakeStringValue'
-                        AirDropBlocked                                  = $True
-                        ClassroomAppForceUnpromptedScreenObservation    = $True
-                        KeychainBlockCloudSync                          = $True
-                        DisplayName                                     = 'FakeStringValue'
-                        AppleWatchBlockAutoUnlock                       = $True
-                        ScreenCaptureBlocked                            = $True
-                        MultiplayerGamingBlocked                        = $True
-                        WallpaperModificationBlocked                    = $True
-                        CameraBlocked                                   = $True
-                        ICloudBlockActivityContinuation                 = $True
-                        SpotlightBlockInternetResults                   = $True
-                        SafariBlockAutofill                             = $True
-                        PasswordBlockAutoFill                           = $True
-                        PasswordRequiredType                            = 'deviceDefault'
-                        PasswordMaximumAttemptCount                     = 25
-                        ClassroomForceAutomaticallyJoinClasses          = $True
-                        ICloudPrivateRelayBlocked                       = $True
-                        PasswordBlockModification                       = $True
-                        ICloudBlockCalendar                             = $True
-                        ICloudBlockAddressBook                          = $True
-                        SoftwareUpdatesEnforcedDelayInDays              = 25
-                        ICloudBlockReminders                            = $True
-                        PasswordBlockSimple                             = $True
-                        PasswordBlockAirDropSharing                     = $True
-                        ICloudBlockBookmarks                            = $True
-                        PasswordRequired                                = $True
-                        KeyboardBlockDictation                          = $True
-                        SoftwareUpdateMajorOSDeferredInstallDelayInDays = 25
-                        ContentCachingBlocked                           = $True
-                        ICloudDesktopAndDocumentsBlocked                = $True
-                        UpdateDelayPolicy                               = 'delayMajorOsUpdateVisibility'
-                        PasswordPreviousPasswordBlockCount              = 25
-                        AddingGameCenterFriendsBlocked                  = $True
-                        Id                                              = 'FakeStringValue'
-                        PasswordMinimumLength                           = 25
-                        EraseContentAndSettingsBlocked                  = $True
-                        ICloudBlockNotes                                = $True
-                        ICloudBlockPhotoLibrary                         = $True
-                        ICloudBlockMail                                 = $True
-                        PasswordMinutesOfInactivityBeforeScreenTimeout  = 25
-                        PasswordExpirationDays                          = 25
-                        PasswordBlockFingerprintUnlock                  = $True
-                        PasswordBlockProximityRequests                  = $True
-                        SoftwareUpdateNonOSDeferredInstallDelayInDays   = 25
-                        ITunesBlockMusicService                         = $True
-                        DefinitionLookupBlocked                         = $True
-                        ClassroomForceRequestPermissionToLeaveClasses   = $True
-                        ClassroomAppBlockRemoteScreenObservation        = $True
-                        SoftwareUpdateMinorOSDeferredInstallDelayInDays = 25
-                        ITunesBlockFileSharing                          = $True
-                        GameCenterBlocked                               = $True
-                        ICloudBlockDocumentSync                         = $True
-                        PasswordMinimumCharacterSetCount                = 25
-                        PasswordMinutesOfInactivityBeforeLock           = 25
-                        ClassroomForceUnpromptedAppAndDeviceLock        = $True
-                        PasswordMinutesUntilFailedLoginReset            = 25
-
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

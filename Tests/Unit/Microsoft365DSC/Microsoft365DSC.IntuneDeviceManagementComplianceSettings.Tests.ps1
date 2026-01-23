@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -36,6 +36,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Update-MgBetaDeviceManagement -MockWith {
+            }
+
+            Mock -CommandName Invoke-MgGraphRequest -MockWith {
+                return @{
+                    deviceComplianceCheckinThresholdDays = 22
+                    secureByDefault = $true
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -57,13 +64,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SecureByDefault                      = $True;
                     Credential                           = $Credential
                 }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        deviceComplianceCheckinThresholdDays = 22
-                        secureByDefault = $true
-                    }
-                }
             }
 
             It 'Should return Yes from the Get method' {
@@ -78,17 +78,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The settings are NOT in the desired state." -Fixture {
             BeforeAll {
                 $testParams = @{
-                    DeviceComplianceCheckinThresholdDays = 40; #Drift
+                    DeviceComplianceCheckinThresholdDays = 40; # Updated property
                     IsSingleInstance                     = "Yes";
                     SecureByDefault                      = $True;
                     Credential                           = $Credential
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        deviceComplianceCheckinThresholdDays = 22
-                        secureByDefault = $true
-                    }
                 }
             }
 
@@ -113,13 +106,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 $testParams = @{
                     Credential                           = $Credential
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        deviceComplianceCheckinThresholdDays = 22
-                        secureByDefault = $true
-                    }
                 }
             }
 

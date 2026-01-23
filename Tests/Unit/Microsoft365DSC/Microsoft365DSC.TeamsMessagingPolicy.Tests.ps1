@@ -27,12 +27,37 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-CsTeamsMessagingPolicy -MockWith {
+                return @{
+                    Identity                = 'Tag:TestPolicy'
+                    Description             = 'My sample policy'
+                    ReadReceiptsEnabledType = 'UserPreference'
+                    AllowImmersiveReader    = $True
+                    AllowGiphy              = $True
+                    AllowStickers           = $True
+                    AllowUrlPreviews        = $false
+                    AllowUserChat           = $True
+                    AllowUserDeleteMessage  = $false
+                    AllowUserTranslation    = $True
+                    AllowRemoveUser         = $false
+                    AllowPriorityMessages   = $True
+                    GiphyRatingType         = 'MODERATE'
+                    AllowMemes              = $False
+                    AudioMessageEnabledType = 'ChatsOnly'
+                    AllowOwnerDeleteMessage = $False
+                    Credential              = $Credential
+                    Ensure                  = 'Present'
+                }
             }
 
             Mock -CommandName New-CsTeamsMessagingPolicy -MockWith {
@@ -100,7 +125,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                = 'TestPolicy'
                     Description             = 'My sample policy'
                     ReadReceiptsEnabledType = 'UserPreference'
-                    AllowImmersiveReader    = $True
+                    AllowImmersiveReader    = $False # Drift
                     AllowGiphy              = $True
                     AllowStickers           = $True
                     AllowUrlPreviews        = $false
@@ -115,29 +140,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowOwnerDeleteMessage = $False
                     Credential              = $Credential
                     Ensure                  = 'Present'
-                }
-
-                Mock -CommandName Get-CsTeamsMessagingPolicy -MockWith {
-                    return @{
-                        Identity                = 'TestPolicy'
-                        Description             = 'Updated Sample policy'
-                        ReadReceiptsEnabledType = 'UserPreference'
-                        AllowImmersiveReader    = $True
-                        AllowGiphy              = $True
-                        AllowStickers           = $false
-                        AllowUrlPreviews        = $false
-                        AllowUserChat           = $True
-                        AllowUserDeleteMessage  = $false
-                        AllowUserTranslation    = $True
-                        AllowRemoveUser         = $false
-                        AllowPriorityMessages   = $True
-                        GiphyRatingType         = 'MODERATE'
-                        AllowMemes              = $False
-                        AudioMessageEnabledType = 'ChatsOnly'
-                        AllowOwnerDeleteMessage = $False
-                        Credential              = $Credential
-                        Ensure                  = 'Present'
-                    }
                 }
             }
 
@@ -177,29 +179,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential              = $Credential
                     Ensure                  = 'Present'
                 }
-
-                Mock -CommandName Get-CsTeamsMessagingPolicy -MockWith {
-                    return @{
-                        Identity                = 'Tag:TestPolicy'
-                        Description             = 'My sample policy'
-                        ReadReceiptsEnabledType = 'UserPreference'
-                        AllowImmersiveReader    = $True
-                        AllowGiphy              = $True
-                        AllowStickers           = $True
-                        AllowUrlPreviews        = $false
-                        AllowUserChat           = $True
-                        AllowUserDeleteMessage  = $false
-                        AllowUserTranslation    = $True
-                        AllowRemoveUser         = $false
-                        AllowPriorityMessages   = $True
-                        GiphyRatingType         = 'MODERATE'
-                        AllowMemes              = $False
-                        AudioMessageEnabledType = 'ChatsOnly'
-                        AllowOwnerDeleteMessage = $False
-                        Credential              = $Credential
-                        Ensure                  = 'Present'
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -217,22 +196,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity   = 'SamplePolicy'
                     Credential = $Credential
                     Ensure     = 'Absent'
-                }
-
-                Mock -CommandName Get-CsTeamsMessagingPolicy -MockWith {
-                    return @{
-                        Identity                      = 'Tag:SamplePolicy'
-                        Description                   = 'My sample policy'
-                        ReadReceiptsEnabledType       = 'UserPreference'
-                        AllowImmersiveReader          = $True
-                        AllowGiphy                    = $True
-                        AllowMemes                    = $False
-                        AudioMessageEnabledType       = 'ChatsOnly'
-                        AllowOwnerDeleteMessage       = $False
-                        ChannelsInChatListEnabledType = 'EnabledUserOverride'
-                        Ensure                        = 'Present'
-                        Credential                    = $Credential
-                    }
                 }
             }
 
@@ -256,28 +219,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsMessagingPolicy -MockWith {
-                    return @{
-                        Identity                = 'TestPolicy'
-                        Description             = 'My sample policy'
-                        ReadReceiptsEnabledType = 'UserPreference'
-                        AllowImmersiveReader    = $True
-                        AllowGiphy              = $True
-                        AllowStickers           = $True
-                        AllowUrlPreviews        = $false
-                        AllowUserChat           = $True
-                        AllowUserDeleteMessage  = $false
-                        AllowUserTranslation    = $True
-                        AllowRemoveUser         = $false
-                        AllowPriorityMessages   = $True
-                        GiphyRatingType         = 'MODERATE'
-                        AllowMemes              = $False
-                        AudioMessageEnabledType = 'ChatsOnly'
-                        AllowOwnerDeleteMessage = $False
-                        Credential              = $Credential
-                    }
                 }
             }
 

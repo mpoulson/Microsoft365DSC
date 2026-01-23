@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOMailboxPermission'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -68,13 +70,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting permissions for Mailbox {$Identity}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            Write-Verbose -Message "Getting permissions for Mailbox {$Identity}"
-
-            $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -94,8 +96,7 @@ function Get-TargetResource
                 Ensure   = 'Absent'
             }
 
-            [Array]$permissions = Get-MailboxPermission -Identity $Identity -ErrorAction Stop
-
+            [Array]$permissions = Get-MailboxPermission -Identity $Identity -ErrorAction SilentlyContinue
             $permission = $permissions | Where-Object -FilterScript { $_.User -eq $User -and (Compare-Object -ReferenceObject $_.AccessRights.Replace(' ', '').Split(',') -DifferenceObject $AccessRights).Count -eq 0 }
 
             if ($null -eq $permission)
@@ -103,16 +104,17 @@ function Get-TargetResource
                 Write-Verbose -Message "Permission for mailbox {$($Identity)} do not exist."
                 return $nullResult
             }
+
+            $userInfo = (Get-User -Identity $permission.Identity).UserPrincipalName
         }
         else
         {
             $permission = $Script:exportedInstance
+            $userInfo = $Script:UsersCache[$permission.Identity]
         }
 
-        $userInfo = Get-User -Identity $permission.Identity
-
         $result = @{
-            Identity              = $userInfo.UserPrincipalName
+            Identity              = $userInfo
             AccessRights          = [Array]$permission.AccessRights.Replace(' ', '').Split(',')
             InheritanceType       = $permission.InheritanceType
             Owner                 = $permission.Owner
@@ -124,7 +126,7 @@ function Get-TargetResource
             CertificateThumbprint = $CertificateThumbprint
             CertificatePath       = $CertificatePath
             CertificatePassword   = $CertificatePassword
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             TenantId              = $TenantId
             AccessTokens          = $AccessTokens
         }
@@ -140,7 +142,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -227,20 +229,8 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters
-
     $currentValues = Get-TargetResource @PSBoundParameters
-    $instanceParams = [System.Collections.Hashtable]($PSBoundParameters)
-    $instanceParams.Remove('Ensure') | Out-Null
-    $instanceParams.Remove('Credential') | Out-Null
-    $instanceParams.Remove('ApplicationId') | Out-Null
-    $instanceParams.Remove('TenantId') | Out-Null
-    $instanceParams.Remove('CertificateThumbprint') | Out-Null
-    $instanceParams.Remove('CertificatePath') | Out-Null
-    $instanceParams.Remove('CertificatePassword') | Out-Null
-    $instanceParams.Remove('ManagedIdentity') | Out-Null
-    $instanceParams.Remove('AccessTokens') | Out-Null
+    $instanceParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present' -and $currentValues.Ensure -eq 'Absent')
     {
@@ -323,11 +313,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -335,23 +323,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Mailbox Permission for {$Identity}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -392,6 +366,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters `
         -SkipModuleReload $true
@@ -411,8 +386,7 @@ function Export-TargetResource
     try
     {
         [array]$mailboxes = Get-Mailbox -ResultSize 'Unlimited' -ErrorAction Stop
-
-        if ($mailboxes.Length -eq 0)
+        if ($mailboxes.Count -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
@@ -422,6 +396,13 @@ function Export-TargetResource
         }
         $dscContent = ''
         $i = 1
+        if ($null -eq $Script:UsersCache)
+        {
+            $Script:UsersCache = [System.Collections.Generic.Dictionary[System.String, System.String]]::new()
+            Get-User -ResultSize Unlimited | ForEach-Object {
+                $Script:UsersCache[$_.Identity] = $_.UserPrincipalName
+            }
+        }
         foreach ($mailbox in $mailboxes)
         {
             Write-M365DSCHost -Message "    |---[$i/$($mailboxes.Count)] $($mailbox.UserPrincipalName)" -DeferWrite
@@ -448,7 +429,7 @@ function Export-TargetResource
                     TenantId              = $TenantId
                     CertificateThumbprint = $CertificateThumbprint
                     CertificatePassword   = $CertificatePassword
-                    Managedidentity       = $ManagedIdentity.IsPresent
+                    ManagedIdentity       = $ManagedIdentity.IsPresent
                     CertificatePath       = $CertificatePath
                     AccessTokens          = $AccessTokens
                 }
@@ -482,15 +463,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

@@ -26,6 +26,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Get-PSSession -MockWith {
             }
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
+
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
             }
 
@@ -50,6 +53,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AppId = "b4f08c68-7276-4cb8-b9ae-e75fca5ff834"
                     DisplayName = "App1"
                 }
+            }
+
+            Mock -CommandName Invoke-M365DSCGraphBatchRequest -MockWith {
+                return @()
             }
 
             # Mock Write-M365DSCHost to hide output during the tests

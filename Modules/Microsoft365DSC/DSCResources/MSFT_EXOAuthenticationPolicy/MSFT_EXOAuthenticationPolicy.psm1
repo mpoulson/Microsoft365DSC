@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOAuthenticationPolicy'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -95,85 +97,68 @@ function Get-TargetResource
     )
 
     Write-Verbose -Message "Getting Authentication Policy configuration for $Identity"
-    if ($Global:CurrentModeIsExport)
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = $PSBoundParameters
-    $nullReturn.Ensure = 'Absent'
 
     try
     {
-        try
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $AllAuthenticationPolicies = Get-AuthenticationPolicy -ErrorAction Stop
-        }
-        catch
-        {
-            if ($_.Exception -like "The operation couldn't be performed because object*")
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = $PSBoundParameters
+            $nullReturn.Ensure = 'Absent'
+
+            $AuthenticationPolicy = Get-AuthenticationPolicy -Identity $Identity -ErrorAction SilentlyContinue
+            if ($null -eq $AuthenticationPolicy)
             {
-                Write-Verbose 'Could not obtain Authentication Policies for Tenant'
+                Write-Verbose -Message "Authentication Policy $($Identity) does not exist."
                 return $nullReturn
             }
         }
-
-        $AuthenticationPolicy = $AllAuthenticationPolicies | Where-Object -FilterScript { $_.Identity -eq $Identity }
-
-        if ($null -eq $AuthenticationPolicy)
-        {
-            Write-Verbose -Message "Authentication Policy $($Identity) does not exist."
-            return $nullReturn
-        }
         else
         {
-            $result = @{
-                Identity                           = $AuthenticationPolicy.Identity
-                AllowBasicAuthActiveSync           = $AuthenticationPolicy.AllowBasicAuthActiveSync
-                AllowBasicAuthAutodiscover         = $AuthenticationPolicy.AllowBasicAuthAutodiscover
-                AllowBasicAuthImap                 = $AuthenticationPolicy.AllowBasicAuthImap
-                AllowBasicAuthMapi                 = $AuthenticationPolicy.AllowBasicAuthMapi
-                AllowBasicAuthOfflineAddressBook   = $AuthenticationPolicy.AllowBasicAuthOfflineAddressBook
-                AllowBasicAuthOutlookService       = $AuthenticationPolicy.AllowBasicAuthOutlookService
-                AllowBasicAuthPop                  = $AuthenticationPolicy.AllowBasicAuthPop
-                AllowBasicAuthPowerShell           = $AuthenticationPolicy.AllowBasicAuthPowerShell
-                AllowBasicAuthReportingWebServices = $AuthenticationPolicy.AllowBasicAuthReportingWebServices
-                AllowBasicAuthRpc                  = $AuthenticationPolicy.AllowBasicAuthRpc
-                AllowBasicAuthSmtp                 = $AuthenticationPolicy.AllowBasicAuthSmtp
-                AllowBasicAuthWebServices          = $AuthenticationPolicy.AllowBasicAuthWebServices
-                Ensure                             = 'Present'
-                Credential                         = $Credential
-                ApplicationId                      = $ApplicationId
-                CertificateThumbprint              = $CertificateThumbprint
-                CertificatePath                    = $CertificatePath
-                CertificatePassword                = $CertificatePassword
-                Managedidentity                    = $ManagedIdentity.IsPresent
-                TenantId                           = $TenantId
-                AccessTokens                       = $AccessTokens
-            }
-
-            Write-Verbose -Message "Found Authentication Policy $($Identity)"
-            return $result
+            $AuthenticationPolicy = $Script:exportedInstance
         }
+
+        $result = @{
+            Identity                           = $AuthenticationPolicy.Identity
+            AllowBasicAuthActiveSync           = $AuthenticationPolicy.AllowBasicAuthActiveSync
+            AllowBasicAuthAutodiscover         = $AuthenticationPolicy.AllowBasicAuthAutodiscover
+            AllowBasicAuthImap                 = $AuthenticationPolicy.AllowBasicAuthImap
+            AllowBasicAuthMapi                 = $AuthenticationPolicy.AllowBasicAuthMapi
+            AllowBasicAuthOfflineAddressBook   = $AuthenticationPolicy.AllowBasicAuthOfflineAddressBook
+            AllowBasicAuthOutlookService       = $AuthenticationPolicy.AllowBasicAuthOutlookService
+            AllowBasicAuthPop                  = $AuthenticationPolicy.AllowBasicAuthPop
+            AllowBasicAuthPowerShell           = $AuthenticationPolicy.AllowBasicAuthPowerShell
+            AllowBasicAuthReportingWebServices = $AuthenticationPolicy.AllowBasicAuthReportingWebServices
+            AllowBasicAuthRpc                  = $AuthenticationPolicy.AllowBasicAuthRpc
+            AllowBasicAuthSmtp                 = $AuthenticationPolicy.AllowBasicAuthSmtp
+            AllowBasicAuthWebServices          = $AuthenticationPolicy.AllowBasicAuthWebServices
+            Ensure                             = 'Present'
+            Credential                         = $Credential
+            ApplicationId                      = $ApplicationId
+            CertificateThumbprint              = $CertificateThumbprint
+            CertificatePath                    = $CertificatePath
+            CertificatePassword                = $CertificatePassword
+            ManagedIdentity                    = $ManagedIdentity.IsPresent
+            TenantId                           = $TenantId
+            AccessTokens                       = $AccessTokens
+        }
+
+        Write-Verbose -Message "Found Authentication Policy $($Identity)"
+        return $result
     }
     catch
     {
@@ -183,7 +168,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -298,7 +283,7 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+    $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters
 
     $NewAuthenticationPolicyParams = @{
@@ -433,11 +418,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -445,23 +428,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing Authentication Policy configuration for $Identity"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -502,6 +471,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters `
         -SkipModuleReload $true
@@ -560,10 +530,11 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
                 CertificatePassword   = $CertificatePassword
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 CertificatePath       = $CertificatePath
                 AccessTokens          = $AccessTokens
             }
+            $Script:exportedInstance = $AuthenticationPolicy
             $Results = Get-TargetResource @Params
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
@@ -581,15 +552,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

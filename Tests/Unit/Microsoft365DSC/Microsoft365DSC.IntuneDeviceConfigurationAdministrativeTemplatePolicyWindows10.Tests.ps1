@@ -49,6 +49,59 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return 'Credentials'
             }
 
+            Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfiguration -MockWith {
+                return @{
+                    AdditionalProperties             = @{
+                        '@odata.type' = '#microsoft.graph.GroupPolicyConfiguration'
+                    }
+                    Description                      = 'FakeStringValue'
+                    DisplayName                      = 'FakeStringValue'
+                    Id                               = 'FakeStringValue'
+                    PolicyConfigurationIngestionType = 'unknown'
+                }
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValue -MockWith {
+                return @(
+                    @{
+                        ConfigurationType                = 'policy'
+                        Enabled                          = $true
+                        Id                               = 'fakeDefinitionValueId'
+                        PolicyConfigurationIngestionType = 'unknown'
+                    }
+                )
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValueDefinition -MockWith {
+                return @{
+                    Id           = '37ab8b81-47d7-46d8-8b99-81d9cecdcce9'
+                    DisplayName  = 'Configure allowed app/extension types'
+                    CategoryPath = '\Google\Google Chrome\Extensions'
+                    PolicyType   = 'admxIngested'
+                    SupportedOn  = 'Microsoft Windows 7 or later'
+                    ClassType    = 'machine'
+                }
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValuePresentationValue -MockWith {
+                return @{
+                    AdditionalProperties             = @{
+                        '@odata.type' = '#microsoft.graph.groupPolicyPresentationValueList'
+                        values        = @(
+                            @{
+                                name = "`"hosted_app`""
+                            }
+                        )
+                    }
+                    Id                               = 'fakePresentationId'
+                    Presentation                     = @{
+                        Id    = 'fakePresentationDefinitionId'
+                        Label = 'fakePresentationLabel'
+                    }
+                    PolicyConfigurationIngestionType = 'unknown'
+                }
+            }
+
             Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationAssignment -MockWith {
                 return @(@{
                         target = @{
@@ -62,7 +115,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Update-DeviceConfigurationGroupPolicyDefinitionValue -MockWith {
             }
 
-            $Script:exportedInstances = $null
             $Script:exportedInstance = $null
             $Script:ExportMode = $false
         }
@@ -180,59 +232,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         } -ClientOnly)
                     )
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties             = @{
-                            '@odata.type' = '#microsoft.graph.GroupPolicyConfiguration'
-                        }
-                        Description                      = 'FakeStringValue'
-                        DisplayName                      = 'FakeStringValue'
-                        Id                               = 'FakeStringValue'
-                        PolicyConfigurationIngestionType = 'unknown'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValue -MockWith {
-                    return @(
-                        @{
-                            ConfigurationType                = 'fakeConfigurationType'
-                            Enabled                          = $true
-                            Id                               = 'fakeDefinitionValueId'
-                            PolicyConfigurationIngestionType = 'unknown'
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValueDefinition -MockWith {
-                    return @{
-                        Id           = '37ab8b81-47d7-46d8-8b99-81d9cecdcce9'
-                        DisplayName  = 'Configure allowed app/extension types'
-                        CategoryPath = '\Google\Google Chrome\Extensions'
-                        PolicyType   = 'admxIngested'
-                        SupportedOn  = 'Microsoft Windows 7 or later'
-                        ClassType    = 'machine'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValuePresentationValue -MockWith {
-                    return @{
-                        AdditionalProperties             = @{
-                            '@odata.type' = '#microsoft.graph.groupPolicyPresentationValueList'
-                            values        = @(
-                                @{
-                                    name = "`"hosted_app`""
-                                }
-                            )
-                        }
-                        Id                               = 'fakePresentationId'
-                        Presentation                     = @{
-                            Id    = 'fakePresentationDefinitionId'
-                            Label = 'fakePresentationLabel'
-                        }
-                        PolicyConfigurationIngestionType = 'unknown'
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -248,6 +247,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Should -Invoke -CommandName Remove-MgBetaDeviceManagementGroupPolicyConfiguration -Exactly 1
             }
         }
+
         Context -Name 'The IntuneDeviceConfigurationAdministrativeTemplatePolicyWindows10 Exists and Values are already in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
@@ -292,57 +292,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         } -ClientOnly)
                     )
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties             = @{
-                            '@odata.type' = '#microsoft.graph.GroupPolicyConfiguration'
-                        }
-                        Description                      = 'FakeStringValue'
-                        DisplayName                      = 'FakeStringValue'
-                        Id                               = 'FakeStringValue'
-                        PolicyConfigurationIngestionType = 'unknown'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValue -MockWith {
-                    return @(
-                        @{
-                            Enabled           = $true
-                            Id                = 'fakeDefinitionValueId'
-                            ConfigurationType = 'policy'
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValueDefinition -MockWith {
-                    return @{
-                        Id           = '37ab8b81-47d7-46d8-8b99-81d9cecdcce9'
-                        DisplayName  = 'Configure allowed app/extension types'
-                        CategoryPath = '\Google\Google Chrome\Extensions'
-                        PolicyType   = 'admxIngested'
-                        SupportedOn  = 'Microsoft Windows 7 or later'
-                        ClassType    = 'machine'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValuePresentationValue -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.groupPolicyPresentationValueList'
-                            values        = @(
-                                @{
-                                    name = "`"hosted_app`""
-                                }
-                            )
-                        }
-                        Id                   = 'fakePresentationId'
-                        Presentation         = @{
-                            Id    = 'fakePresentationDefinitionId'
-                            Label = 'fakePresentationDefinitionLabel'
-                        }
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -374,7 +323,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     presentationDefinitionLabel = 'fakePresentationDefinitionLabel'
                                     KeyValuePairValues          = [CimInstance[]]@(
                                         (New-CimInstance -ClassName MSFT_IntuneGroupPolicyDefinitionValuePresentationValueKeyValuePair -Property @{
-                                            Name = 'hosted_app'
+                                            Name = 'hosted_app_new' # Updated property
                                         } -ClientOnly)
                                     )
                                     Id                          = 'fakePresentationId'
@@ -393,57 +342,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             Enabled            = $True
                         } -ClientOnly)
                     )
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties             = @{
-                            '@odata.type' = '#microsoft.graph.GroupPolicyConfiguration'
-                        }
-                        Description                      = 'FakeStringValue'
-                        DisplayName                      = 'FakeStringValue'
-                        Id                               = 'FakeStringValue'
-                        PolicyConfigurationIngestionType = 'unknown'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValue -MockWith {
-                    return @(
-                        @{
-                            Enabled           = $true
-                            Id                = 'fakeDefinitionValueId'
-                            ConfigurationType = 'policy'
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValueDefinition -MockWith {
-                    return @{
-                        Id           = '37ab8b81-47d7-46d8-8b99-81d9cecdcce9'
-                        DisplayName  = 'Configure allowed app/extension types'
-                        CategoryPath = '\Google\Google Chrome\Extensions'
-                        PolicyType   = 'admxIngested'
-                        SupportedOn  = 'Microsoft Windows 7 or later'
-                        ClassType    = 'machine'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValuePresentationValue -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = '#microsoft.graph.groupPolicyPresentationValueList'
-                            values        = @(
-                                @{
-                                    name = "`"user_script`""
-                                }
-                            )
-                        }
-                        Id                   = 'fakePresentationId'
-                        Presentation         = @{
-                            Id    = 'fakePresentationDefinitionId'
-                            Label = 'fakePresentationDefinitionLabel'
-                        }
-                    }
                 }
             }
 
@@ -469,59 +367,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfiguration -MockWith {
-                    return @(@{
-                            AdditionalProperties             = @{
-                                '@odata.type' = '#microsoft.graph.GroupPolicyConfiguration'
-                            }
-                            Description                      = 'FakeStringValue'
-                            DisplayName                      = 'AdministrativeTemplatePolicyWindows10'
-                            Id                               = 'FakeStringValue'
-                            PolicyConfigurationIngestionType = 'unknown'
-                        })
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValue -MockWith {
-                    return @(
-                        @{
-                            ConfigurationType                = 'fakeConfigurationType'
-                            Enabled                          = $true
-                            Id                               = 'fakeDefinitionValueId'
-                            PolicyConfigurationIngestionType = 'unknown'
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValueDefinition -MockWith {
-                    return @{
-                        Id           = '37ab8b81-47d7-46d8-8b99-81d9cecdcce9'
-                        DisplayName  = 'Configure allowed app/extension types'
-                        CategoryPath = '\Google\Google Chrome\Extensions'
-                        PolicyType   = 'admxIngested'
-                        SupportedOn  = 'Microsoft Windows 7 or later'
-                        ClassType    = 'machine'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValuePresentationValue -MockWith {
-                    return @{
-                        AdditionalProperties             = @{
-                            '@odata.type' = '#microsoft.graph.groupPolicyPresentationValueList'
-                            values        = @(
-                                @{
-                                    name = "`"hosted_app`""
-                                }
-                            )
-                        }
-                        Id                               = 'fakePresentationId'
-                        Presentation                     = @{
-                            Id    = 'fakePresentationDefinitionId'
-                            Label = 'fakePresentationLabel'
-                        }
-                        PolicyConfigurationIngestionType = 'unknown'
-                    }
                 }
             }
 

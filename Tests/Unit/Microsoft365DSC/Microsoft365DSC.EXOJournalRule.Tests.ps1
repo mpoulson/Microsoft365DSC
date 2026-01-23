@@ -24,11 +24,30 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@contoso.onmicrosoft.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName New-JournalRule -MockWith {
+            }
+
+            Mock -CommandName Set-JournalRule -MockWith {
+            }
+
+            Mock -CommandName Remove-JournalRule -MockWith {
+            }
+
+            Mock -CommandName Get-JournalRule -MockWith {
+                return @{
+                    Name                = 'TestRule'
+                    JournalEmailAddress = 'test@contoso.com'
+                    Enabled             = $False
+                    Scope               = 'Global'
+                    Recipient           = 'JohnSmith@contoso.com'
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -54,10 +73,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-JournalRule -MockWith {
                     return $null
                 }
-
-                Mock -CommandName New-JournalRule -MockWith {
-
-                }
             }
 
             It 'Should return False from the Get method' {
@@ -77,23 +92,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     JournalEmailAddress = 'test@contoso.com'
                     Enabled             = $True
                     RuleScope           = 'Global'
-                    Recipient           = 'bob.houle@contoso.com'
+                    Recipient           = 'john.smith@contoso.com' # Drift
                     Ensure              = 'Present'
                     Credential          = $Credential
-                }
-
-                Mock -CommandName Get-JournalRule -MockWith {
-                    return @{
-                        Name                = 'TestRule'
-                        JournalEmailAddress = 'test@contoso.com'
-                        Enabled             = $False #Drift
-                        Scope               = 'Global'
-                        Recipient           = 'JohnSmith@contoso.com' #Drift
-                    }
-                }
-
-                Mock -CommandName Set-JournalRule -MockWith {
-
                 }
             }
 
@@ -115,20 +116,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Absent'
                     Credential          = $Credential
                 }
-
-                Mock -CommandName Get-JournalRule -MockWith {
-                    return @{
-                        Name                = 'TestRule'
-                        JournalEmailAddress = 'test@contoso.com'
-                        Enabled             = $False
-                        Scope               = 'Global'
-                        Recipient           = 'JohnSmith@contoso.com'
-                    }
-                }
-
-                Mock -CommandName Remove-JournalRule -MockWith {
-
-                }
             }
 
             It 'Should return present from the Get-TargetResource function' {
@@ -147,16 +134,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-JournalRule -MockWith {
-                    return @{
-                        Name                = 'TestRule'
-                        JournalEmailAddress = 'test@contoso.com'
-                        Enabled             = $False
-                        Scope               = 'Global'
-                        Recipient           = 'JohnSmith@contoso.com'
-                    }
                 }
             }
 

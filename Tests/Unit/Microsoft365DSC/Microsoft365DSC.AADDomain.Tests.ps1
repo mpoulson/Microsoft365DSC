@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -44,6 +44,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Update-MgBetaDomain -MockWith {
             }
 
+            Mock -CommandName Get-MgBetaDomain -MockWith {
+                return @{
+                    AuthenticationType               = "Managed";
+                    Id                               = "contoso.com";
+                    IsAdminManaged                   = $True;
+                    IsDefault                        = $True;
+                    IsRoot                           = $True;
+                    IsVerified                       = $True;
+                    PasswordNotificationWindowInDays = 14;
+                    PasswordValidityPeriodInDays     = 2147483647;
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -57,10 +70,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AuthenticationType               = "Managed";
                     Ensure                           = "Present";
                     Id                               = "contoso.com";
-                    IsAdminManaged                   = $True;
-                    IsDefault                        = $True;
-                    IsRoot                           = $True;
-                    IsVerified                       = $True;
+                    IsAdminManaged                   = $true;
+                    IsDefault                        = $true;
+                    IsRoot                           = $true;
+                    IsVerified                       = $true;
                     PasswordNotificationWindowInDays = 14;
                     PasswordValidityPeriodInDays     = 2147483647;
                     Credential                       = $Credential;
@@ -89,25 +102,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AuthenticationType               = "Managed";
                     Ensure                           = "Absent";
                     Id                               = "contoso.com";
-                    IsAdminManaged                   = $True;
-                    IsDefault                        = $True;
-                    IsRoot                           = $True;
-                    IsVerified                       = $True;
+                    IsAdminManaged                   = $true;
+                    IsDefault                        = $true;
+                    IsRoot                           = $true;
+                    IsVerified                       = $true;
                     PasswordNotificationWindowInDays = 14;
                     PasswordValidityPeriodInDays     = 2147483647;
                     Credential                       = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDomain -MockWith {
-                    return @{
-                        Id                               = "contoso.com";
-                        IsAdminManaged                   = $True;
-                        IsDefault                        = $True;
-                        IsRoot                           = $True;
-                        IsVerified                       = $True;
-                        PasswordNotificationWindowInDays = 14;
-                        PasswordValidityPeriodInDays     = 2147483647;
-                    }
                 }
             }
             It 'Should return Values from the Get method' {
@@ -129,26 +130,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AuthenticationType               = "Managed";
                     Ensure                           = "Present";
                     Id                               = "contoso.com";
-                    IsAdminManaged                   = $True;
-                    IsDefault                        = $True;
-                    IsRoot                           = $True;
-                    IsVerified                       = $True;
+                    IsAdminManaged                   = $true;
+                    IsDefault                        = $true;
+                    IsRoot                           = $true;
+                    IsVerified                       = $true;
                     PasswordNotificationWindowInDays = 14;
                     PasswordValidityPeriodInDays     = 2147483647;
                     Credential                       = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDomain -MockWith {
-                    return @{
-                        Id                               = "contoso.com";
-                        AuthenticationType               = "Managed";
-                        IsAdminManaged                   = $True;
-                        IsDefault                        = $True;
-                        IsRoot                           = $True;
-                        IsVerified                       = $True;
-                        PasswordNotificationWindowInDays = 14;
-                        PasswordValidityPeriodInDays     = 2147483647;
-                    }
                 }
             }
 
@@ -163,25 +151,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AuthenticationType               = "Managed";
                     Ensure                           = "Present";
                     Id                               = "contoso.com";
-                    IsAdminManaged                   = $True;
-                    IsDefault                        = $True;
-                    IsRoot                           = $True;
-                    IsVerified                       = $True;
+                    IsAdminManaged                   = $true;
+                    IsDefault                        = $true;
+                    IsRoot                           = $false; # Drift
+                    IsVerified                       = $true;
                     PasswordNotificationWindowInDays = 14;
                     PasswordValidityPeriodInDays     = 2147483647;
                     Credential                       = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDomain -MockWith {
-                    return @{
-                        Id                               = "contoso.com";
-                        IsAdminManaged                   = $True;
-                        IsDefault                        = $True;
-                        IsRoot                           = $False; #Drift
-                        IsVerified                       = $True;
-                        PasswordNotificationWindowInDays = 14;
-                        PasswordValidityPeriodInDays     = 2147483647;
-                    }
                 }
             }
 
@@ -205,18 +181,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDomain -MockWith {
-                    return @{
-                        Id                               = "contoso.com";
-                        IsAdminManaged                   = $True;
-                        IsDefault                        = $True;
-                        IsRoot                           = $False; #Drift
-                        IsVerified                       = $True;
-                        PasswordNotificationWindowInDays = 14;
-                        PasswordValidityPeriodInDays     = 2147483647;
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

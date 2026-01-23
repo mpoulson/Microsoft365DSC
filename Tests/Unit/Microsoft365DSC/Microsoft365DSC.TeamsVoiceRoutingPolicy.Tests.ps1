@@ -27,6 +27,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
@@ -42,6 +44,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-CsOnlineVoiceRoutingPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-CsOnlineVoiceRoutingPolicy -MockWith {
+                return @{
+                    Identity         = 'Test Policy'
+                    OnlinePstnUsages = @('Local', 'Long Distance')
+                    Description      = 'My Test Policy'
+                }
             }
 
             Mock -CommandName Get-CsOnlinePstnUsage -MockWith {
@@ -92,18 +102,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Identity         = 'Test Policy'
-                    OnlinePstnUsages = @('Local', 'Long Distance')
+                    OnlinePstnUsages = @('Local') # Drift
                     Description      = 'My Test Policy'
                     Ensure           = 'Present'
                     Credential       = $Credential
-                }
-
-                Mock -CommandName Get-CsOnlineVoiceRoutingPolicy -MockWith {
-                    return @{
-                        Identity         = 'Test Policy'
-                        OnlinePstnUsages = @('Local') #Drift
-                        Description      = 'My Test Policy'
-                    }
                 }
             }
 
@@ -126,14 +128,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure           = 'Present'
                     Credential       = $Credential
                 }
-
-                Mock -CommandName Get-CsOnlineVoiceRoutingPolicy -MockWith {
-                    return @{
-                        Identity         = 'Test Policy'
-                        OnlinePstnUsages = @('Local', 'Long Distance')
-                        Description      = 'My Test Policy'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -147,14 +141,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity   = 'Test Policy'
                     Ensure     = 'Absent'
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsOnlineVoiceRoutingPolicy -MockWith {
-                    return @{
-                        Identity         = 'Test Policy'
-                        OnlinePstnUsages = @('Local')
-                        Description      = 'My Test Policy'
-                    }
                 }
             }
 
@@ -178,14 +164,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsOnlineVoiceRoutingPolicy -MockWith {
-                    return @{
-                        Identity         = 'Test Policy'
-                        OnlinePstnUsages = @('Local')
-                        Description      = 'My Test Policy'
-                    }
                 }
             }
 

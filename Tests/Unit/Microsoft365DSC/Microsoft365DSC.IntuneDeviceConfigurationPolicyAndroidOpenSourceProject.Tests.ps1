@@ -24,8 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -41,6 +40,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        ScreenCaptureBlocked                           = $True
+                        PasswordMinimumLength                          = 25
+                        BluetoothBlocked                               = $True
+                        '@odata.type'                                  = '#microsoft.graph.aospDeviceOwnerDeviceConfiguration'
+                        AppsBlockInstallFromUnknownSources             = $True
+                        FactoryResetBlocked                            = $True
+                        CameraBlocked                                  = $True
+                        PasswordRequiredType                           = 'deviceDefault'
+                        PasswordMinutesOfInactivityBeforeScreenTimeout = 25
+                        StorageBlockUsbFileTransfer                    = $True
+                        WifiBlockEditConfigurations                    = $True
+                        PasswordSignInFailureCountBeforeFactoryReset   = 25
+                        SecurityAllowDebuggingFeatures                 = $True
+                        StorageBlockExternalMedia                      = $True
+                        BluetoothBlockConfiguration                    = $True
+                    }
+                    Description          = 'FakeStringValue'
+                    DisplayName          = 'FakeStringValue'
+                    Id                   = 'FakeStringValue'
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -76,7 +100,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     StorageBlockExternalMedia                      = $True
                     StorageBlockUsbFileTransfer                    = $True
                     WifiBlockEditConfigurations                    = $True
-
                     Ensure                                         = 'Present'
                     Credential                                     = $Credential
                 }
@@ -117,36 +140,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     StorageBlockExternalMedia                      = $True
                     StorageBlockUsbFileTransfer                    = $True
                     WifiBlockEditConfigurations                    = $True
-
                     Ensure                                         = 'Absent'
                     Credential                                     = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            ScreenCaptureBlocked                           = $True
-                            PasswordMinimumLength                          = 25
-                            BluetoothBlocked                               = $True
-                            '@odata.type'                                  = '#microsoft.graph.'
-                            AppsBlockInstallFromUnknownSources             = $True
-                            FactoryResetBlocked                            = $True
-                            CameraBlocked                                  = $True
-                            PasswordRequiredType                           = 'deviceDefault'
-                            PasswordMinutesOfInactivityBeforeScreenTimeout = 25
-                            StorageBlockUsbFileTransfer                    = $True
-                            WifiBlockEditConfigurations                    = $True
-                            PasswordSignInFailureCountBeforeFactoryReset   = 25
-                            SecurityAllowDebuggingFeatures                 = $True
-                            StorageBlockExternalMedia                      = $True
-                            BluetoothBlockConfiguration                    = $True
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
                 }
             }
 
@@ -183,35 +178,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     StorageBlockExternalMedia                      = $True
                     StorageBlockUsbFileTransfer                    = $True
                     WifiBlockEditConfigurations                    = $True
-
                     Ensure                                         = 'Present'
                     Credential                                     = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            ScreenCaptureBlocked                           = $True
-                            PasswordMinimumLength                          = 25
-                            BluetoothBlocked                               = $True
-                            '@odata.type'                                  = '#microsoft.graph.'
-                            AppsBlockInstallFromUnknownSources             = $True
-                            FactoryResetBlocked                            = $True
-                            CameraBlocked                                  = $True
-                            PasswordRequiredType                           = 'deviceDefault'
-                            PasswordMinutesOfInactivityBeforeScreenTimeout = 25
-                            StorageBlockUsbFileTransfer                    = $True
-                            WifiBlockEditConfigurations                    = $True
-                            PasswordSignInFailureCountBeforeFactoryReset   = 25
-                            SecurityAllowDebuggingFeatures                 = $True
-                            StorageBlockExternalMedia                      = $True
-                            BluetoothBlockConfiguration                    = $True
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                    }
                 }
             }
 
@@ -231,7 +199,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName                                    = 'FakeStringValue'
                     FactoryResetBlocked                            = $True
                     Id                                             = 'FakeStringValue'
-                    PasswordMinimumLength                          = 25
+                    PasswordMinimumLength                          = 7 # Updated property
                     PasswordMinutesOfInactivityBeforeScreenTimeout = 25
                     PasswordRequiredType                           = 'deviceDefault'
                     PasswordSignInFailureCountBeforeFactoryReset   = 25
@@ -240,26 +208,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     StorageBlockExternalMedia                      = $True
                     StorageBlockUsbFileTransfer                    = $True
                     WifiBlockEditConfigurations                    = $True
-
                     Ensure                                         = 'Present'
                     Credential                                     = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            PasswordMinimumLength                          = 7
-                            PasswordRequiredType                           = 'deviceDefault'
-                            PasswordSignInFailureCountBeforeFactoryReset   = 7
-                            PasswordMinutesOfInactivityBeforeScreenTimeout = 7
-                            '@odata.type'                                  = '#microsoft.graph.'
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-
-                    }
                 }
             }
 
@@ -284,33 +234,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            ScreenCaptureBlocked                           = $True
-                            PasswordMinimumLength                          = 25
-                            BluetoothBlocked                               = $True
-                            '@odata.type'                                  = '#microsoft.graph.aospDeviceOwnerDeviceConfiguration'
-                            AppsBlockInstallFromUnknownSources             = $True
-                            FactoryResetBlocked                            = $True
-                            CameraBlocked                                  = $True
-                            PasswordRequiredType                           = 'deviceDefault'
-                            PasswordMinutesOfInactivityBeforeScreenTimeout = 25
-                            StorageBlockUsbFileTransfer                    = $True
-                            WifiBlockEditConfigurations                    = $True
-                            PasswordSignInFailureCountBeforeFactoryReset   = 25
-                            SecurityAllowDebuggingFeatures                 = $True
-                            StorageBlockExternalMedia                      = $True
-                            BluetoothBlockConfiguration                    = $True
-
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

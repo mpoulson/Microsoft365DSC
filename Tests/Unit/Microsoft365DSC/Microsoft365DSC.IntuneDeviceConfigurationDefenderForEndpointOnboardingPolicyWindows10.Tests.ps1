@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaDeviceManagementDeviceConfiguration -MockWith {
@@ -34,6 +34,25 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        '@odata.type' = "#microsoft.graph.windowsDefenderAdvancedThreatProtectionConfiguration"
+                        advancedThreatProtectionOffboardingBlob = "FakeStringValue"
+                        allowSampleSharing = $True
+                        advancedThreatProtectionOffboardingFilename = "FakeStringValue"
+                        enableExpeditedTelemetryReporting = $True
+                        advancedThreatProtectionAutoPopulateOnboardingBlob = $True
+                        advancedThreatProtectionOnboardingBlob = "FakeStringValue"
+                        advancedThreatProtectionOnboardingFilename = "FakeStringValue"
+                    }
+                    Description = "FakeStringValue"
+                    DisplayName = "FakeStringValue"
+                    Id = "FakeStringValue"
+
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -101,25 +120,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.windowsDefenderAdvancedThreatProtectionConfiguration"
-                            advancedThreatProtectionOffboardingBlob = "FakeStringValue"
-                            allowSampleSharing = $True
-                            advancedThreatProtectionOffboardingFilename = "FakeStringValue"
-                            enableExpeditedTelemetryReporting = $True
-                            advancedThreatProtectionAutoPopulateOnboardingBlob = $True
-                            advancedThreatProtectionOnboardingBlob = "FakeStringValue"
-                            advancedThreatProtectionOnboardingFilename = "FakeStringValue"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -151,25 +151,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.windowsDefenderAdvancedThreatProtectionConfiguration"
-                            advancedThreatProtectionOffboardingBlob = "FakeStringValue"
-                            allowSampleSharing = $True
-                            advancedThreatProtectionOffboardingFilename = "FakeStringValue"
-                            enableExpeditedTelemetryReporting = $True
-                            advancedThreatProtectionAutoPopulateOnboardingBlob = $True
-                            advancedThreatProtectionOnboardingBlob = "FakeStringValue"
-                            advancedThreatProtectionOnboardingFilename = "FakeStringValue"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-
-                    }
-                }
             }
 
 
@@ -186,28 +167,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AdvancedThreatProtectionOffboardingFilename = "FakeStringValue"
                     AdvancedThreatProtectionOnboardingBlob = "FakeStringValue"
                     AdvancedThreatProtectionOnboardingFilename = "FakeStringValue"
-                    AllowSampleSharing = $True
+                    AllowSampleSharing = $False # Updated property
                     Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     EnableExpeditedTelemetryReporting = $True
                     Id = "FakeStringValue"
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            advancedThreatProtectionOffboardingBlob = "FakeStringValue"
-                            '@odata.type' = "#microsoft.graph.windowsDefenderAdvancedThreatProtectionConfiguration"
-                            advancedThreatProtectionOffboardingFilename = "FakeStringValue"
-                            advancedThreatProtectionOnboardingBlob = "FakeStringValue"
-                            advancedThreatProtectionOnboardingFilename = "FakeStringValue"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-                    }
                 }
             }
 
@@ -232,26 +198,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.windowsDefenderAdvancedThreatProtectionConfiguration"
-                            advancedThreatProtectionOffboardingBlob = "FakeStringValue"
-                            allowSampleSharing = $True
-                            advancedThreatProtectionOffboardingFilename = "FakeStringValue"
-                            enableExpeditedTelemetryReporting = $True
-                            advancedThreatProtectionAutoPopulateOnboardingBlob = $True
-                            advancedThreatProtectionOnboardingBlob = "FakeStringValue"
-                            advancedThreatProtectionOnboardingFilename = "FakeStringValue"
-                        }
-                        Description = "FakeStringValue"
-                        DisplayName = "FakeStringValue"
-                        Id = "FakeStringValue"
-
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

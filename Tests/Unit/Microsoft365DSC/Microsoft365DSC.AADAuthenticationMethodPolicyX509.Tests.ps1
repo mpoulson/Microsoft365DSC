@@ -24,13 +24,59 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
             }
 
             Mock -CommandName Remove-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        IncludeTargets        = @(
+                            @{
+                                TargetType = 'group'
+                                Id         = '00000000-0000-0000-0000-000000000000'
+                            }
+                        )
+                        '@odata.type' = "#microsoft.graph.x509CertificateAuthenticationMethodConfiguration"
+                        certificateUserBindings = @(
+                            @{
+                                x509CertificateField = "FakeStringValue"
+                                userProperty = "FakeStringValue"
+                                priority = 25
+                            }
+                        )
+                        authenticationModeConfiguration = @{
+                            x509CertificateAuthenticationDefaultMode = "x509CertificateSingleFactor"
+                            rules = @(
+                                @{
+                                    x509CertificateRuleType = "issuerSubject"
+                                    identifier = "FakeStringValue"
+                                    x509CertificateAuthenticationMode = "x509CertificateSingleFactor"
+                                }
+                            )
+                        }
+                    }
+                    ExcludeTargets = @(
+                        @{
+                            TargetType = "group"
+                            Id = "00000000-0000-0000-0000-000000000000"
+                        }
+                    )
+                    Id = "X509Certificate0"
+                    State = "enabled"
+                }
+            }
+
+            Mock -CommandName Get-MgGroup -MockWith {
+                return @{
+                    Id = "00000000-0000-0000-0000-000000000001"
+                    DisplayName = "Fakegroup"
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -135,46 +181,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = '00000000-0000-0000-0000-000000000000'
-                                }
-                            )
-                            '@odata.type' = "#microsoft.graph.x509CertificateAuthenticationMethodConfiguration"
-                            certificateUserBindings = @(
-                                @{
-                                    x509CertificateField = "FakeStringValue"
-                                    userProperty = "FakeStringValue"
-                                    priority = 25
-                                }
-                            )
-                            authenticationModeConfiguration = @{
-                                x509CertificateAuthenticationDefaultMode = "x509CertificateSingleFactor"
-                                rules = @(
-                                    @{
-                                        x509CertificateRuleType = "issuerSubject"
-                                        identifier = "FakeStringValue"
-                                        x509CertificateAuthenticationMode = "x509CertificateSingleFactor"
-                                    }
-                                )
-                            }
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "00000000-0000-0000-0000-000000000000"
-                            }
-                        )
-                        Id = "X509Certificate0"
-                        State = "enabled"
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -227,53 +233,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000001"
-                        DisplayName = "Fakegroup"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = '00000000-0000-0000-0000-000000000000'
-                                }
-                            )
-                            '@odata.type' = "#microsoft.graph.x509CertificateAuthenticationMethodConfiguration"
-                            certificateUserBindings = @(
-                                @{
-                                    x509CertificateField = "FakeStringValue"
-                                    userProperty = "FakeStringValue"
-                                    priority = 25
-                                }
-                            )
-                            authenticationModeConfiguration = @{
-                                x509CertificateAuthenticationDefaultMode = "x509CertificateSingleFactor"
-                                rules = @(
-                                    @{
-                                        x509CertificateRuleType = "issuerSubject"
-                                        identifier = "FakeStringValue"
-                                        x509CertificateAuthenticationMode = "x509CertificateSingleFactor"
-                                    }
-                                )
-                            }
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "00000000-0000-0000-0000-000000000001"
-                            }
-                        )
-                        Id = "X509Certificate"
-                        State = "enabled"
-
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -298,7 +257,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphx509CertificateUserBinding -Property @{
                             x509CertificateField = "FakeStringValue"
                             userProperty = "FakeStringValue"
-                            priority = 25
+                            priority = 7 # Drift
                         } -ClientOnly)
                     )
                     ExcludeTargets = [CimInstance[]]@(
@@ -317,52 +276,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     State = "enabled"
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id = "00000000-0000-0000-0000-000000000001"
-                        DisplayName = "Fakegroup"
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = '00000000-0000-0000-0000-000000000000'
-                                }
-                            )
-                            '@odata.type' = "#microsoft.graph.x509CertificateAuthenticationMethodConfiguration"
-                            certificateUserBindings = @(
-                                @{
-                                    x509CertificateField = "FakeStringValue"
-                                    userProperty = "FakeStringValue"
-                                    priority = 7
-                                }
-                            )
-                            authenticationModeConfiguration = @{
-                                x509CertificateAuthenticationDefaultMode = "x509CertificateSingleFactor"
-                                rules = @(
-                                    @{
-                                        x509CertificateRuleType = "issuerSubject"
-                                        identifier = "FakeStringValue"
-                                        x509CertificateAuthenticationMode = "x509CertificateSingleFactor"
-                                    }
-                                )
-                            }
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "00000000-0000-0000-0000-000000000000"
-                            }
-                        )
-                        Id = "X509Certificate"
-                        State = "disabled" #drift
-                    }
                 }
             }
 
@@ -386,46 +299,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = '00000000-0000-0000-0000-000000000000'
-                                }
-                            )
-                            '@odata.type' = "#microsoft.graph.x509CertificateAuthenticationMethodConfiguration"
-                            certificateUserBindings = @(
-                                @{
-                                    x509CertificateField = "FakeStringValue"
-                                    userProperty = "FakeStringValue"
-                                    priority = 25
-                                }
-                            )
-                            authenticationModeConfiguration = @{
-                                x509CertificateAuthenticationDefaultMode = "x509CertificateSingleFactor"
-                                rules = @(
-                                    @{
-                                        x509CertificateRuleType = "issuerSubject"
-                                        identifier = "FakeStringValue"
-                                        x509CertificateAuthenticationMode = "x509CertificateSingleFactor"
-                                    }
-                                )
-                            }
-                        }
-                        ExcludeTargets = @(
-                            @{
-                                TargetType = "group"
-                                Id = "00000000-0000-0000-0000-000000000000"
-                            }
-                        )
-                        Id = "X509Certificate"
-                        State = "enabled"
-
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

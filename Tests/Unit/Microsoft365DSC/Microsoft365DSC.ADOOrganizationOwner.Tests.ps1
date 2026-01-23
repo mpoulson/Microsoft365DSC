@@ -28,11 +28,45 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Invoke-M365DSCAzureDevOPSWebRequest -MockWith {
+                if ($Script:callCount -eq 0)
+                {
+                    $Script:callCount++
+                    return @{
+                        owner = '12345-12345-12345-12345-12345'
+                    }
+                }
+                elseif ($Script:callCount -eq 1)
+                {
+                    $Script:callCount++
+                    return @{
+                        items = @(
+                            @{
+                                id = '12345-12345-12345-12345-12345'
+                                user = @{
+                                    principalName = 'john.smith@contoso.com'
+                                }
+                            }
+                            @{
+                                id = '12345-12345-12345-12345-12346'
+                                user = @{
+                                    principalName = 'bob.houle@contoso.com'
+                                }
+                            }
+                        )
+                    }
+                }
+                else
+                {
+                    return $null
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -51,33 +85,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 $Script:callCount = 0
-                Mock -CommandName Invoke-M365DSCAzureDevOPSWebRequest -MockWith {
-                    if ($Script:callCount -eq 0)
-                    {
-                        $Script:callCount++
-                        return @{
-                            owner = '12345-12345-12345-12345-12345'
-                        }
-                    }
-                    elseif ($Script:callCount -eq 1)
-                    {
-                        $Script:callCount++
-                        return @{
-                            items = @(
-                                @{
-                                    id = '12345-12345-12345-12345-12345'
-                                    user = @{
-                                        principalName = 'john.smith@contoso.com'
-                                    }
-                                }
-                            )
-                        }
-                    }
-                    else
-                    {
-                        return $null
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -89,65 +96,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     OrganizationName = 'MyOrg'
-                    Owner            = "john.smith@contoso.com"
+                    Owner            = "bob.houle@contoso.com"
                     Credential       = $Credential;
                 }
 
                 $Script:callCount = 0
-                Mock -CommandName Invoke-M365DSCAzureDevOPSWebRequest -MockWith {
-                    if ($Script:callCount -eq 0)
-                    {
-                        $Script:callCount++
-                        return @{
-                            owner = '12345-12345-12345-12345-12346'
-                        }
-                    }
-                    elseif ($Script:callCount -eq 1)
-                    {
-                        $Script:callCount++
-                        return @{
-                            items = @(
-                                @{
-                                    id = '12345-12345-12345-12345-12345'
-                                    user = @{
-                                        principalName = 'john.smith@contoso.com'
-                                    }
-                                },
-                                @{
-                                    id = '12345-12345-12345-12345-12346'
-                                    user = @{
-                                        principalName = 'bob.houle@contoso.com'
-                                    }
-                                }
-                            )
-                        }
-                    }
-                    elseif ($Script:callCount -eq 2)
-                    {
-                        $Script:callCount++
-                        return @{
-                            items = @(
-                                @{
-                                    id = '12345-12345-12345-12345-12345'
-                                    user = @{
-                                        principalName = 'john.smith@contoso.com'
-                                    }
-                                }
-                            )
-                        }
-                    }
-                    if ($Script:callCount -eq 3)
-                    {
-                        $Script:callCount++
-                        return @{
-                            owner = '12345-12345-12345-12345-12345'
-                        }
-                    }
-                    else
-                    {
-                        return $null
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -155,6 +108,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should call the Set method' {
+                $Script:callCount = 1
                 Set-TargetResource @testParams
                 Should -Invoke -CommandName Invoke-M365DSCAzureDevOPSWebRequest -Exactly 2
             }
@@ -178,7 +132,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     {
                         $Script:callCount++
                         return @{
-                            id = '12345-12345-12345-12345-12346'
+                            id = '12345-12345-12345-12345-12345'
                         }
                     }
                     elseif ($Script:callCount -eq 1)
@@ -196,7 +150,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     {
                         $Script:callCount++
                         return @{
-                            owner = '12345-12345-12345-12345-12346'
+                            owner = '12345-12345-12345-12345-12345'
                         }
                     }
                     elseif ($Script:callCount -eq 3)
@@ -208,12 +162,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     id = '12345-12345-12345-12345-12345'
                                     user = @{
                                         principalName = 'john.smith@contoso.com'
-                                    }
-                                },
-                                @{
-                                    id = '12345-12345-12345-12345-12346'
-                                    user = @{
-                                        principalName = 'bob.houle@contoso.com'
                                     }
                                 }
                             )

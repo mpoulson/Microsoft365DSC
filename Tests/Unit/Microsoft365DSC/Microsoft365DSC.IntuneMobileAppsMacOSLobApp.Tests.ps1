@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -44,13 +44,66 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
 
+            Mock -CommandName Update-DeviceAppManagementAppCategory -MockWith {
+            }
+
             Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
             }
             Mock -CommandName New-MgBetaDeviceAppManagementMobileApp -MockWith {
+                return @{
+                    Id                    = "ad027f94-0682-431e-97c1-827d1879fa79"
+                    Categories            = @()
+                    Description           = "TeamsForBusinessInstaller"
+                    Developer             = "Contoso"
+                    DisplayName           = "TeamsForBusinessInstaller"
+                    InformationUrl        = ""
+                    IsFeatured            = $False
+                    Notes                 = ""
+                    Owner                 = ""
+                    PrivacyInformationUrl = ""
+                    Publisher             = "Contoso"
+                    RoleScopeTagIds       = @()
+                    IgnoreVersionDetection = $True
+                    AdditionalProperties   = @{
+                        '@odata.type' = '#microsoft.graph.macOSLobApp'
+                        minimumSupportedOperatingSystem = @{
+                            v11_0 = $true
+                        }
+                    }
+                }
             }
             Mock -CommandName Update-MgBetaDeviceAppManagementMobileApp -MockWith {
             }
             Mock -CommandName Remove-MgBetaDeviceAppManagementMobileApp -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
+                return @{
+                    Id                    = "ad027f94-0682-431e-97c1-827d1879fa79"
+                    Categories            = @()
+                    Description           = "TeamsForBusinessInstaller"
+                    Developer             = "Contoso"
+                    DisplayName           = "TeamsForBusinessInstaller"
+                    InformationUrl        = ""
+                    IsFeatured            = $False
+                    Notes                 = ""
+                    Owner                 = ""
+                    PrivacyInformationUrl = ""
+                    Publisher             = "Contoso"
+                    RoleScopeTagIds       = @()
+                    IgnoreVersionDetection = $True
+                    AdditionalProperties   = @{
+                        '@odata.type' = '#microsoft.graph.macOSLobApp'
+                        minimumSupportedOperatingSystem = @{
+                            v11_0 = $true
+                        }
+                    }
+                    Ensure                = 'Present'
+                }
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{
+                return @()
             }
 
             Mock -CommandName Update-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{}
@@ -59,7 +112,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
 
-            $Script:exportedInstances =$null
+            $Script:exportedInstance = $null
             $Script:ExportMode = $false
         }
 
@@ -127,35 +180,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = 'Absent'
                     Credential            = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                    return @{
-                        Id                    = "ad027f94-0682-431e-97c1-827d1879fa79"
-                        Categories            = @()
-                        Description           = "TeamsForBusinessInstaller"
-                        Developer             = "Contoso"
-                        DisplayName           = "TeamsForBusinessInstaller"
-                        InformationUrl        = ""
-                        IsFeatured            = $False
-                        Notes                 = ""
-                        Owner                 = ""
-                        PrivacyInformationUrl = ""
-                        Publisher             = "Contoso"
-                        RoleScopeTagIds       = @()
-                        IgnoreVersionDetection = $True
-                        AdditionalProperties   = @{
-                            '@odata.type' = '#microsoft.graph.macOSLobApp'
-                            minimumSupportedOperatingSystem = @{
-                                v11_0 = $true
-                            }
-                        }
-                        Ensure                = 'Present'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{
-                    return $null
-                }
             }
 
             It '2.1 Should return Values from the Get method' {
@@ -192,32 +216,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = 'Present'
                     Credential            = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                    return @{
-                        Id                    = "8d027f94-0682-431e-97c1-827d1879fa79"
-                        Categories            = @()
-                        Description           = "TeamsForBusinessInstaller"
-                        Developer             = "Contoso"
-                        DisplayName           = "TeamsForBusinessInstaller"
-                        InformationUrl        = ""
-                        IsFeatured            = $False
-                        Notes                 = ""
-                        Owner                 = ""
-                        PrivacyInformationUrl = ""
-                        Publisher             = "Contoso"
-                        RoleScopeTagIds       = @()
-                        AdditionalProperties   = @{
-                            '@odata.type' = '#microsoft.graph.macOSLobApp'
-                            minimumSupportedOperatingSystem = @{
-                                v11_0 = $true
-                            }
-                        }
-                    }
-                }
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{
-                    return $null
-                }
             }
 
             It '3.0 Should return true from the Test method' {
@@ -234,7 +232,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Developer             = "Contoso"
                     DisplayName           = "TeamsForBusinessInstaller"
                     InformationUrl        = ""
-                    IsFeatured            = $False
+                    IsFeatured            = $True # Updated property
                     MinimumSupportedOperatingSystem = [CimInstance](
                         New-CimInstance -ClassName MSFT_DeviceManagementMinimumOperatingSystem -Property @{
                         v11_0 = $true
@@ -246,31 +244,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds       = @()
                     Ensure                = 'Present'
                     Credential            = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                    return @{
-                        Id                    = "8d027f94-0682-431e-97c1-827d1879fa79"
-                        Categories            = @()
-                        Description           = "TeamsForBusinessInstaller"
-                        Developer             = "Contoso"
-                        DisplayName           = "TeamsForBusinessInstaller drift"
-                        InformationUrl        = ""
-                        IsFeatured            = $False
-                        Notes                 = ""
-                        Owner                 = ""
-                        PrivacyInformationUrl = ""
-                        Publisher             = "Contoso"
-                        AdditionalProperties   = @{
-                            '@odata.type' = '#microsoft.graph.macOSLobApp'
-                            minimumSupportedOperatingSystem = @{
-                                v11_0 = $true
-                            }
-                        }
-                    }
-                }
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{
-                    return $null
                 }
             }
 
@@ -292,32 +265,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                    return @{
-                        Id                    = "8d027f94-0682-431e-97c1-827d1879fa79"
-                        Categories            = @()
-                        Description           = "TeamsForBusinessInstaller"
-                        Developer             = "Contoso"
-                        DisplayName           = "TeamsForBusinessInstaller drift"
-                        InformationUrl        = ""
-                        IsFeatured            = $False
-                        Notes                 = ""
-                        Owner                 = ""
-                        PrivacyInformationUrl = ""
-                        Publisher             = "Contoso"
-                        RoleScopeTagIds       = @()
-                        AdditionalProperties   = @{
-                            '@odata.type' = '#microsoft.graph.macOSLobApp'
-                            minimumSupportedOperatingSystem = @{
-                                v11_0 = $true
-                            }
-                        }
-                    }
-                }
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{
-                    return $null
                 }
             }
 

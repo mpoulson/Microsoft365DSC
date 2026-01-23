@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -44,6 +44,25 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-ReportSubmissionPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-ReportSubmissionPolicy -MockWith {
+                return @{
+                    Ensure                                 = 'Present'
+                    Credential                             = $Credential
+                    IsSingleInstance                       = 'Yes'
+                    DisableQuarantineReportingOption       = $False
+                    EnableCustomNotificationSender         = $False
+                    EnableOrganizationBranding             = $False
+                    EnableReportToMicrosoft                = $True
+                    EnableThirdPartyAddress                = $False
+                    EnableUserEmailNotification            = $False
+                    PostSubmitMessageEnabled               = $True
+                    PreSubmitMessageEnabled                = $True
+                    ReportJunkToCustomizedAddress          = $False
+                    ReportNotJunkToCustomizedAddress       = $False
+                    ReportPhishToCustomizedAddress         = $False
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -76,7 +95,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ReportPhishToCustomizedAddress         = $False
                 }
 
-
                 Mock -CommandName Get-ReportSubmissionPolicy -MockWith {
                     return $null
                 }
@@ -94,7 +112,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Set-TargetResource @testParams
                 Should -Invoke -CommandName 'New-ReportSubmissionPolicy' -Exactly 1
             }
-
         }
 
         Context -Name 'ReportSubmissionPolicy update not required.' -Fixture {
@@ -115,25 +132,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ReportNotJunkToCustomizedAddress       = $False
                     ReportPhishToCustomizedAddress         = $False
                 }
-
-                Mock -CommandName Get-ReportSubmissionPolicy -MockWith {
-                    return @{
-                        Ensure                                 = 'Present'
-                        Credential                             = $Credential
-                        IsSingleInstance                       = 'Yes'
-                        DisableQuarantineReportingOption       = $False
-                        EnableCustomNotificationSender         = $False
-                        EnableOrganizationBranding             = $False
-                        EnableReportToMicrosoft                = $True
-                        EnableThirdPartyAddress                = $False
-                        EnableUserEmailNotification            = $False
-                        PostSubmitMessageEnabled               = $True
-                        PreSubmitMessageEnabled                = $True
-                        ReportJunkToCustomizedAddress          = $False
-                        ReportNotJunkToCustomizedAddress       = $False
-                        ReportPhishToCustomizedAddress         = $False
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -150,7 +148,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisableQuarantineReportingOption       = $False
                     EnableCustomNotificationSender         = $False
                     EnableOrganizationBranding             = $False
-                    EnableReportToMicrosoft                = $True
+                    EnableReportToMicrosoft                = $False # Drift
                     EnableThirdPartyAddress                = $False
                     EnableUserEmailNotification            = $False
                     PostSubmitMessageEnabled               = $True
@@ -158,31 +156,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ReportJunkToCustomizedAddress          = $False
                     ReportNotJunkToCustomizedAddress       = $False
                     ReportPhishToCustomizedAddress         = $False
-                }
-
-                Mock -CommandName Get-ReportSubmissionPolicy -MockWith {
-                    return @{
-                        Ensure                                 = 'Present'
-                        Credential                             = $Credential
-                        IsSingleInstance                       = 'Yes'
-                        DisableQuarantineReportingOption       = $False
-                        EnableCustomNotificationSender         = $False
-                        EnableOrganizationBranding             = $False
-                        EnableReportToMicrosoft                = $False
-                        EnableThirdPartyAddress                = $False
-                        EnableUserEmailNotification            = $False
-                        PostSubmitMessageEnabled               = $False
-                        PreSubmitMessageEnabled                = $False
-                        ReportJunkToCustomizedAddress          = $False
-                        ReportNotJunkToCustomizedAddress       = $False
-                        ReportPhishToCustomizedAddress         = $False
-                    }
-                }
-
-                Mock -CommandName Set-ReportSubmissionPolicy -MockWith {
-                    return @{
-
-                    }
                 }
             }
 
@@ -204,18 +177,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsSingleInstance        = 'Yes'
                     EnableReportToMicrosoft = $True
                 }
-
-                Mock -CommandName Get-ReportSubmissionPolicy -MockWith {
-                    return @{
-                        EnableReportToMicrosoft = $True
-                    }
-                }
-
-                Mock -CommandName Remove-ReportSubmissionPolicy -MockWith {
-                    return @{
-
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -234,22 +195,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-ReportSubmissionPolicy -MockWith {
-                    return @{
-                        DisableQuarantineReportingOption       = $False
-                        EnableCustomNotificationSender         = $False
-                        EnableOrganizationBranding             = $False
-                        EnableReportToMicrosoft                = $True
-                        EnableThirdPartyAddress                = $False
-                        EnableUserEmailNotification            = $False
-                        PostSubmitMessageEnabled               = $True
-                        PreSubmitMessageEnabled                = $True
-                        ReportJunkToCustomizedAddress          = $False
-                        ReportNotJunkToCustomizedAddress       = $False
-                        ReportPhishToCustomizedAddress         = $False
-                    }
                 }
             }
 

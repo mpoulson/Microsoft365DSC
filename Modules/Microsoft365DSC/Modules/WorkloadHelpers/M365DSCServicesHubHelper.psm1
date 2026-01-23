@@ -37,7 +37,6 @@ function Invoke-M365DSCServicesHubWebRequest
     }
     catch
     {
-        $statusCode = $_.Exception.Response.StatusCode
         $streamReader = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
         $ErrResp = $streamReader.ReadToEnd() | ConvertFrom-Json
         $streamReader.Close()

@@ -27,10 +27,27 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
+
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
+
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-CsTeamsChannelsPolicy -MockWith {
+                return @{
+                    Identity                                      = 'Test Channels Policy'
+                    Description                                   = 'Test Description'
+                    AllowChannelSharingToExternalUser             = $True
+                    AllowOrgWideTeamCreation                      = $True
+                    AllowPrivateChannelCreation                   = $True
+                    EnablePrivateTeamDiscovery                    = $True
+                    AllowSharedChannelCreation                    = $True
+                    AllowUserToParticipateInExternalSharedChannel = $True
+                }
             }
 
             Mock -CommandName New-CsTeamsChannelsPolicy -MockWith {
@@ -58,7 +75,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowChannelSharingToExternalUser             = $True
                     AllowOrgWideTeamCreation                      = $True
                     AllowPrivateChannelCreation                   = $True
-                    EnablePrivateTeamDiscovery                     = $True
+                    EnablePrivateTeamDiscovery                    = $True
                     AllowSharedChannelCreation                    = $True
                     AllowUserToParticipateInExternalSharedChannel = $True
                     Ensure                                        = 'Present'
@@ -92,24 +109,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowChannelSharingToExternalUser             = $True
                     AllowOrgWideTeamCreation                      = $True
                     AllowPrivateChannelCreation                   = $True
-                    EnablePrivateTeamDiscovery                     = $True
+                    EnablePrivateTeamDiscovery                    = $False # Drift
                     AllowSharedChannelCreation                    = $True
                     AllowUserToParticipateInExternalSharedChannel = $True
                     Ensure                                        = 'Present'
                     Credential                                    = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsChannelsPolicy -MockWith {
-                    return @{
-                        Identity                                      = 'Test Channels Policy'
-                        Description                                   = 'Test Description'
-                        AllowChannelSharingToExternalUser             = $True
-                        AllowOrgWideTeamCreation                      = $False
-                        AllowPrivateChannelCreation                   = $True
-                        EnablePrivateTeamDiscovery                     = $True
-                        AllowSharedChannelCreation                    = $True
-                        AllowUserToParticipateInExternalSharedChannel = $True
-                    }
                 }
             }
 
@@ -136,24 +140,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowChannelSharingToExternalUser             = $True
                     AllowOrgWideTeamCreation                      = $True
                     AllowPrivateChannelCreation                   = $True
-                    EnablePrivateTeamDiscovery                     = $True
+                    EnablePrivateTeamDiscovery                    = $True
                     AllowSharedChannelCreation                    = $True
                     AllowUserToParticipateInExternalSharedChannel = $True
                     Ensure                                        = 'Present'
                     Credential                                    = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsChannelsPolicy -MockWith {
-                    return @{
-                        Identity                                      = 'Test Channels Policy'
-                        Description                                   = 'Test Description'
-                        AllowChannelSharingToExternalUser             = $True
-                        AllowOrgWideTeamCreation                      = $True
-                        AllowPrivateChannelCreation                   = $True
-                        EnablePrivateTeamDiscovery                     = $True
-                        AllowSharedChannelCreation                    = $True
-                        AllowUserToParticipateInExternalSharedChannel = $True
-                    }
                 }
             }
 
@@ -180,19 +171,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                        = 'Absent'
                     Credential                                    = $Credential
                 }
-
-                Mock -CommandName Get-CsTeamsChannelsPolicy -MockWith {
-                    return @{
-                        Identity                                      = 'Test Channels Policy'
-                        Description                                   = 'Test Description'
-                        AllowChannelSharingToExternalUser             = $True
-                        AllowOrgWideTeamCreation                      = $True
-                        AllowPrivateChannelCreation                   = $True
-                        EnablePrivateTeamDiscovery                     = $True
-                        AllowSharedChannelCreation                    = $True
-                        AllowUserToParticipateInExternalSharedChannel = $True
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -213,19 +191,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsChannelsPolicy -MockWith {
-                    return @{
-                        Identity                                      = 'Test Channels Policy'
-                        Description                                   = 'Test Description'
-                        AllowChannelSharingToExternalUser             = $True
-                        AllowOrgWideTeamCreation                      = $True
-                        AllowPrivateChannelCreation                   = $True
-                        EnablePrivateTeamDiscovery                     = $True
-                        AllowSharedChannelCreation                    = $True
-                        AllowUserToParticipateInExternalSharedChannel = $True
-                    }
                 }
             }
 

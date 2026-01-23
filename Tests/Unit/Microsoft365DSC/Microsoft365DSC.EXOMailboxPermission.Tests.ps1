@@ -24,11 +24,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-Mailbox -MockWith {
+                return @{
+                    UserPrincipalName = "john.smith@contoso.com";
+                }
             }
 
             Mock -CommandName Add-MailboxPermission -MockWith {
@@ -37,12 +43,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MailboxPermission -MockWith {
             }
 
+            Mock -CommandName Get-MailboxPermission -MockWith {
+                return @{
+                    AccessRights         = @("FullAccess","ReadPermission");
+                    Deny                 = $False;
+                    Identity             = "john.smith";
+                    InheritanceType      = "None";
+                    User                 = "NT AUTHORITY\SELF";
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
 
             Mock -CommandName Get-User -MockWith {
                 return @{
+                    Identity          = 'john.smith'
                     UserPrincipalName = 'john.smith'
                 }
             }
@@ -81,33 +98,43 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Should -Invoke -CommandName Add-MailboxPermission -Exactly 1
             }
         }
-        Context -Name 'Permission exists and is not the Desired State' -Fixture {
+        Context -Name 'Permission exists and is in the Desired State' -Fixture {
             BeforeAll {
                 $testParams = @{
                     Ensure               = 'Present'
                     Credential           = $Credential
                     AccessRights         = @("FullAccess","ReadPermission");
-                    Deny                 = $False;
+                    Deny                 = $false;
                     Identity             = "john.smith";
                     InheritanceType      = "None";
                     User                 = "NT AUTHORITY\SELF";
-                }
-
-                Mock -CommandName Get-MailboxPermission -MockWith {
-                    return @{
-                        Ensure                   = 'Present'
-                        Credential               = $Credential
-                        AccessRights         = @("FullAccess","ReadPermission");
-                        Deny                 = $False;
-                        Identity             = "john.smith";
-                        InheritanceType      = "None";
-                        User                 = "NT AUTHORITY\SELF";
-                    }
                 }
             }
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
+            }
+
+            It 'Should return present from the Get Method' {
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
+            }
+        }
+
+        Context -Name 'Permission exists and is not in the Desired State' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Ensure               = 'Present'
+                    Credential           = $Credential
+                    AccessRights         = @("FullAccess","ReadPermission");
+                    Deny                 = $true; # Drift
+                    Identity             = "john.smith";
+                    InheritanceType      = "None";
+                    User                 = "NT AUTHORITY\SELF";
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                Test-TargetResource @testParams | Should -Be $false
             }
 
             It 'Should return present from the Get Method' {
@@ -125,16 +152,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity             = "john.smith";
                     InheritanceType      = "None";
                     User                 = "NT AUTHORITY\SELF";
-                }
-
-                Mock -CommandName Get-MailboxPermission -MockWith {
-                    return @{
-                        AccessRights         = @("FullAccess","ReadPermission");
-                        Deny                 = $False;
-                        Identity             = "john.smith";
-                        InheritanceType      = "None";
-                        User                 = "NT AUTHORITY\SELF";
-                    }
                 }
             }
 
@@ -158,21 +175,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MailboxPermission -MockWith {
-                    return @{
-                        AccessRights         = @("FullAccess","ReadPermission");
-                        Deny                 = $False;
-                        Identity             = "john.smith";
-                        InheritanceType      = "None";
-                        User                 = "NT AUTHORITY\SELF";
-                    }
-                }
-                Mock -CommandName Get-Mailbox -MockWith {
-                    return @{
-                        UserPrincipalName = "john.smith@contoso.com";
-                    }
                 }
             }
 

@@ -26,16 +26,6 @@ export const GeneratorPage: React.FunctionComponent = () => {
 
       if (workload !== undefined) {
         switch (extractionType) {
-          case ExtractionType.Lite:
-            if (
-              workload.extractionModes?.default?.includes(resource.name) ||
-              workload.extractionModes?.full?.includes(resource.name)
-            ) {
-              return false;
-            }
-
-            return true;
-
           case ExtractionType.Default:
             if (workload.extractionModes?.full?.includes(resource.name)) {
               return false;

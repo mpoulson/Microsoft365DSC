@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -39,8 +39,75 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MgBetaDeviceManagementDeviceConfiguration -MockWith {
             }
 
-            Mock -CommandName Get-MgBetaDeviceManagementDeviceCompliancePolicyAssignment -MockWith {
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return  @{
+                    Id                                          = 'FakeStringValue'
+                    DisplayName                                 = 'FakeStringValue'
+                    Description                                 = 'FakeStringValue'
+                    AdditionalProperties                        = @{
+                        '@odata.type'                           = '#microsoft.graph.iosVpnConfiguration'
+                        authenticationMethod                    = 'usernameAndPassword'
+                        connectionName                          = 'FakeStringValue'
+                        connectionType                          = 'ciscoAnyConnectV2'
+                        enableSplitTunneling                    = $False
+                        enablePerApp                            = $False
+                        optInToDeviceIdSharing                  = $True
+                        proxyServer                             = @(
+                            @{
+                                port                            = 80
+                                automaticConfigurationScriptUrl = 'https://www.test.com'
+                                address                         = 'proxy.test.com'
+                            }
+                        )
+                        server                                  = @(
+                            @{
+                                isDefaultServer                 = $True
+                                description                     = 'server'
+                                address                         = 'vpn.test.com'
+                            }
+                        )
+                        customData                              = @(
+                            @{
+                                key                             = 'FakeStringValue'
+                                value                           = 'FakeStringValue'
+                            }
+                        )
+                        customKeyValueData                      = @(
+                            @{
+                                name                            = 'FakeStringValue'
+                                value                           = 'FakeStringValue'
+                            }
+                        )
+                        onDemandRules                           = @(
+                            @{
+                                ssids                           = 'FakeStringValue'
+                                dnsSearchDomains                = 'FakeStringValue'
+                                probeUrl                        = 'FakeStringValue'
+                                action                          = 'ignore'
+                                domainAction                    = 'neverConnect'
+                                domains                         = 'FakeStringValue'
+                                probeRequiredUrl                = 'FakeStringValue'
+                                interfaceTypeMatch              = 'notConfigured'
+                                dnsServerAddressMatch           = 'FakeStringValue'
+                            }
+                        )
+                        targetedMobileApps                    = @(
+                            @{
+                                name                            = 'FakeStringValue'
+                                publisher                       = 'FakeStringValue'
+                                appStoreUrl                     = 'FakeStringValue'
+                                appId                           = 'FakeStringValue'
+                            }
+                        )
+                        safariDomains                           = @{}
+                        associatedDomains                       = @{}
+                        excludedDomains                         = @{}
+                        excludeList                             = @{}
+                    }
+                }
+            }
 
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceCompliancePolicyAssignment -MockWith {
                 return @()
             }
             Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
@@ -117,7 +184,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             dnsServerAddressMatch              = 'FakeStringValue'
                         } -ClientOnly)
                     )
-                     targetedMobileApps                      = [CimInstance[]]@(
+                    targetedMobileApps                      = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_targetedMobileApps `
                         -Property @{
@@ -166,7 +233,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         (New-CimInstance `
                         -ClassName MSFT_MicrosoftvpnProxyServer `
                         -Property @{
-                            port                              = 80
+                            port                              = 443 # Updated property
                             automaticConfigurationScriptUrl   = 'https://www.test.com'
                             address                           = 'proxy.test.com'
                         } -ClientOnly)
@@ -228,76 +295,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                   = 'Present'
                     Credential                               = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                   return  @{
-                        DisplayName                                 = 'FakeStringValue'
-                        Description                                 = 'FakeStringValue'
-                        Id                              = 'FakeStringValue'
-                        AdditionalProperties                        = @{
-                            '@odata.type'                           = '#microsoft.graph.iosVpnConfiguration'
-                            authenticationMethod                    = 'usernameAndPassword'
-                            connectionName                          = 'FakeStringValue'
-                            connectionType                          = 'ciscoAnyConnectV2'
-                            customData             = @(
-                                @{
-                                    key                  = 'FakeStringValue'
-                                    value                = 'FakeStringValue'
-                                }
-                            )
-                            customKeyValueData      = @(
-                                @{
-                                    name                  = 'FakeStringValue'
-                                    value                = 'FakeStringValue'
-                                }
-                            )
-                            enableSplitTunneling                    = $False
-                            enablePerApp                            = $False
-                            disableOnDemandUserOverride             = $True
-                            disconnectOnIdle                        = $True
-                            optInToDeviceIdSharing                  = $True
-                            onDemandRules      = @(`
-                                @{
-                                    ssids                    = 'FakeStringValue'
-                                    dnsSearchDomains         = 'FakeStringValue'
-                                    probeUrl                 = 'FakeStringValue'
-                                    action                   = 'ignore'
-                                    domainAction             = 'neverConnect'
-                                    domains                  = 'FakeStringValue'
-                                    probeRequiredUrl         = 'FakeStringValue'
-                                    interfaceTypeMatch       = 'notConfigured'
-                                    dnsServerAddressMatch    = 'FakeStringValue'
-                                }
-                            )
-                            server                                   = @(
-                                @{
-                                    isDefaultServer                  = $True
-                                    description                      = 'server'
-                                    address                          = 'vpn.CHANGED.com' #changed value
-                                }
-                            )
-                            proxyServer                              = @(
-                                 @{
-                                    port                             = 80
-                                    automaticConfigurationScriptUrl  = 'https://www.test.com'
-                                    address                          = 'proxy.test.com'
-                                 }
-                            )
-                            targetedMobileApps                      = @(
-                                @{
-                                    name                            = 'FakeStringValue'
-                                    publisher                       = 'FakeStringValue'
-                                    appStoreUrl                     = 'FakeStringValue'
-                                    appId                           = 'FakeStringValue'
-                                }
-                            )
-                        }
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
-                    (Get-TargetResource @testParams).Ensure | Should -Be 'Present' #-Displayname 'FakeStringValue').Ensure | Should -Be 'Present' #
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
             }
 
             It 'Should return false from the Test method' {
@@ -388,73 +389,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                  = 'Present'
                     Credential                              = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                   return  @{
-                        DisplayName                                 = 'FakeStringValue'
-                        Description                                 = 'FakeStringValue'
-                        AdditionalProperties                        = @{
-                            '@odata.type'                           = '#microsoft.graph.iosVpnConfiguration'
-                            authenticationMethod                    = 'usernameAndPassword'
-                            connectionName                          = 'FakeStringValue'
-                            connectionType                          = 'ciscoAnyConnectV2'
-                            enableSplitTunneling                    = $False
-                            enablePerApp                            = $False
-                            optInToDeviceIdSharing                  = $True
-                            proxyServer                             = @(
-                                @{
-                                    port                            = 80
-                                    automaticConfigurationScriptUrl = 'https://www.test.com'
-                                    address                         = 'proxy.test.com'
-                                }
-                            )
-                            server                                  = @(
-                                @{
-                                    isDefaultServer                 = $True
-                                    description                     = 'server'
-                                    address                         = 'vpn.test.com'
-                                }
-                            )
-                            customData                              = @(
-                                @{
-                                    key                             = 'FakeStringValue'
-                                    value                           = 'FakeStringValue'
-                                }
-                            )
-                            customKeyValueData                      = @(
-                                @{
-                                    name                            = 'FakeStringValue'
-                                    value                           = 'FakeStringValue'
-                                }
-                            )
-                            onDemandRules                           = @(
-                                @{
-                                    ssids                           = 'FakeStringValue'
-                                    dnsSearchDomains                = 'FakeStringValue'
-                                    probeUrl                        = 'FakeStringValue'
-                                    action                          = 'ignore'
-                                    domainAction                    = 'neverConnect'
-                                    domains                         = 'FakeStringValue'
-                                    probeRequiredUrl                = 'FakeStringValue'
-                                    interfaceTypeMatch              = 'notConfigured'
-                                    dnsServerAddressMatch           = 'FakeStringValue'
-                                }
-                            )
-                            targetedMobileApps                    = @(
-                                @{
-                                    name                            = 'FakeStringValue'
-                                    publisher                       = 'FakeStringValue'
-                                    appStoreUrl                     = 'FakeStringValue'
-                                    appId                           = 'FakeStringValue'
-                                }
-                            )
-                            safariDomains                           = @{}
-                            associatedDomains                       = @{}
-                            excludedDomains                         = @{}
-                            excludeList                             = @{}
-                        }
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -494,36 +428,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                  = 'Absent'
                     Credential                              = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                   return @{
-                        DisplayName                                  = 'FakeStringValue'
-                        Description                                  = 'FakeStringValue'
-                        AdditionalProperties                         = @{
-                            '@odata.type'                           = '#microsoft.graph.iosVpnConfiguration'
-                            authenticationMethod                     = 'usernameAndPassword'
-                            connectionName                           = 'FakeStringValue'
-                            connectionType                           = 'ciscoAnyConnectV2'
-                            enableSplitTunneling                     = $False
-                            enablePerApp                             = $False
-                            optInToDeviceIdSharing                   = $True
-                            proxyServer                              = @(
-                                @{
-                                    port                             = 80
-                                    automaticConfigurationScriptUrl  = 'https://www.test.com'
-                                    address                          = 'proxy.test.com'
-                                }
-                            )
-                            server                                   = @(
-                                @{
-                                    isDefaultServer                  = $True
-                                    description                      = 'server'
-                                    address                          = 'vpn.test.com'
-                                }
-                            )
-                        }
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -546,36 +450,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                   return @{
-                        DisplayName                                 = 'FakeStringValue'
-                        Description                                 = 'FakeStringValue'
-                        AdditionalProperties                        = @{
-                            '@odata.type'                           = '#microsoft.graph.iosVpnConfiguration'
-                            authenticationMethod                    = 'usernameAndPassword'
-                            connectionName                          = 'FakeStringValue'
-                            connectionType                          = 'ciscoAnyConnectV2'
-                            enableSplitTunneling                    = $False
-                            enablePerApp                            = $False
-                            optInToDeviceIdSharing                  = $True
-                            proxyServer                             = @(
-                                @{
-                                    port                            = 80
-                                    automaticConfigurationScriptUrl = 'https://www.test.com'
-                                    address                         = 'proxy.test.com'
-                                }
-                            )
-                            server                                  = @(
-                                @{
-                                    isDefaultServer                 = $True
-                                    description                     = 'server'
-                                    address                         = 'vpn.test.com'
-                                }
-                            )
-                        }
-                    }
                 }
             }
 

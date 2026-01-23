@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -39,8 +39,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MgBetaDeviceManagementDeviceConfiguration -MockWith {
             }
 
-            Mock -CommandName Get-MgBetaDeviceManagementDeviceCompliancePolicyAssignment -MockWith {
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    DisplayName                             = 'Test IntuneTrustedRootCertificateAndroidWork'
+                    Description                             = 'Test IntuneTrustedRootCertificateAndroidWork Description'
+                    Id                                      = 'e30954ac-a65e-4dcb-ab79-91d45f3c52b4'
+                    AdditionalProperties                    = @{
+                        certFileName                        = "FakeStringValue"
+                        trustedRootCertificate              = "fakestringvalue0"
+                        '@odata.type'                       = '#microsoft.graph.androidWorkProfileTrustedRootCertificate'
+                    }
+                }
+            }
 
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceCompliancePolicyAssignment -MockWith {
                 return @()
             }
             Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
@@ -89,22 +101,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName                = 'Test IntuneTrustedRootCertificateAndroidWork'
                     Description                = 'Test IntuneTrustedRootCertificateAndroidWork Description'
                     certFileName               = "FakeStringValue"
-                    trustedRootCertificate     = "fakestringvalue0"
+                    trustedRootCertificate     = "OtherCertificate" # Updated property
                     Ensure                     = 'Present'
                     Credential                 = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        DisplayName                      = 'Test IntuneTrustedRootCertificateAndroidWork'
-                        Description                      = 'Different Value'
-                        Id                               = 'e30954ac-a65e-4dcb-ab79-91d45f3c52b4'
-                        AdditionalProperties             = @{
-                            certFileName                 = "FakeStringValue"
-                            trustedRootCertificate       = "fakestringvalue0"
-                            '@odata.type'             = '#microsoft.graph.androidWorkProfileTrustedRootCertificate'
-                        }
-                    }
                 }
             }
 
@@ -119,7 +118,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should update the IntuneTrustedRootCertificateAndroidWork from the Set method' {
                 Set-TargetResource @testParams
                 Should -Invoke -CommandName Update-MgBetaDeviceManagementDeviceConfiguration -Exactly 1
-
             }
         }
 
@@ -132,19 +130,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     trustedRootCertificate                      = "fakestringvalue0"
                     Ensure                                      = 'Present'
                     Credential                                  = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        DisplayName                             = 'Test IntuneTrustedRootCertificateAndroidWork'
-                        Description                             = 'Test IntuneTrustedRootCertificateAndroidWork Description'
-                        Id                                      = 'e30954ac-a65e-4dcb-ab79-91d45f3c52b4'
-                        AdditionalProperties                    = @{
-                            certFileName                        = "FakeStringValue"
-                            trustedRootCertificate              = "fakestringvalue0"
-                            '@odata.type'                       = '#microsoft.graph.androidWorkProfileTrustedRootCertificate'
-                        }
-                    }
                 }
             }
 
@@ -198,19 +183,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        DisplayName                      = 'Test IntuneTrustedRootCertificateAndroidWork'
-                        Description                      = 'Test IntuneTrustedRootCertificateAndroidWork Description'
-                        Id                               = 'e30954ac-a65e-4dcb-ab79-91d45f3c52b4'
-                        AdditionalProperties             = @{
-                            certFileName                 = "FakeStringValue"
-                            trustedRootCertificate       = "fakestringvalue0"
-                            '@odata.type'                = '#microsoft.graph.androidWorkProfileTrustedRootCertificate'
-                        }
-                    }
                 }
             }
 

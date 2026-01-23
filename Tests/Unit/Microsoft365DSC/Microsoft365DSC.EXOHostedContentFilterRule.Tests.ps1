@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -32,20 +32,33 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName New-HostedContentFilterRule -MockWith {
-                return @{
-
-                }
             }
 
             Mock -CommandName Set-HostedContentFilterRule -MockWith {
-                return @{
-
-                }
             }
 
             Mock -CommandName Remove-HostedContentFilterRule -MockWith {
-                return @{
+            }
 
+            Mock -CommandName Get-HostedContentFilterRule -MockWith {
+                return @{
+                    Ensure                    = 'Present'
+                    Identity                  = 'TestRule'
+                    HostedContentFilterPolicy = 'TestPolicy'
+                    Priority                  = 0
+                    ExceptIfRecipientDomainIs = @('dev.contoso.com')
+                    ExceptIfSentTo            = @('test@contoso.com')
+                    ExceptIfSentToMemberOf    = @('Special Group')
+                    RecipientDomainIs         = @('contoso.com')
+                    SentTo                    = @('someone@contoso.com')
+                    SentToMemberOf            = @('Some Group', 'Some Other Group')
+                    State                     = 'Enabled'
+                }
+            }
+
+            Mock -CommandName Get-HostedContentFilterPolicy -MockWith {
+                return @{
+                    Identity = 'TestPolicy'
                 }
             }
 
@@ -67,15 +80,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-HostedContentFilterRule -MockWith {
-                    return @{
-                        Identity = 'SomeOtherPolicy'
-                    }
-                }
-
-                Mock -CommandName Get-HostedContentFilterPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
+                    return $null
                 }
             }
 
@@ -85,6 +90,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-HostedContentFilterRule -Exactly 1
             }
         }
 
@@ -104,28 +110,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SentTo                    = @('someone@contoso.com')
                     SentToMemberOf            = @('Some Group', 'Some Other Group')
                 }
-
-                Mock -CommandName Get-HostedContentFilterRule -MockWith {
-                    return @{
-                        Ensure                    = 'Present'
-                        Identity                  = 'TestRule'
-                        HostedContentFilterPolicy = 'TestPolicy'
-                        Priority                  = 0
-                        ExceptIfRecipientDomainIs = @('dev.contoso.com')
-                        ExceptIfSentTo            = @('test@contoso.com')
-                        ExceptIfSentToMemberOf    = @('Special Group')
-                        RecipientDomainIs         = @('contoso.com')
-                        SentTo                    = @('someone@contoso.com')
-                        SentToMemberOf            = @('Some Group', 'Some Other Group')
-                        State                     = 'Enabled'
-                    }
-                }
-
-                Mock -CommandName Get-HostedContentFilterPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -142,35 +126,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     HostedContentFilterPolicy = 'TestPolicy'
                     Enabled                   = $true
                     Priority                  = 0
-                    ExceptIfRecipientDomainIs = @('dev.contoso.com')
+                    ExceptIfRecipientDomainIs = @('notdev.contoso.com') # Drift
                     ExceptIfSentTo            = @('test@contoso.com')
                     ExceptIfSentToMemberOf    = @('Special Group')
                     RecipientDomainIs         = @('contoso.com')
                     SentTo                    = @('someone@contoso.com')
                     SentToMemberOf            = @('Some Group', 'Some Other Group')
-                }
-
-                Mock -CommandName Get-HostedContentFilterRule -MockWith {
-                    return @{
-                        Ensure                    = 'Present'
-                        Identity                  = 'TestRule'
-                        Credential                = $Credential
-                        HostedContentFilterPolicy = 'TestPolicy'
-                        Enabled                   = $true
-                        Priority                  = 0
-                        ExceptIfRecipientDomainIs = @('notdev.contoso.com')
-                        ExceptIfSentTo            = @('nottest@contoso.com')
-                        ExceptIfSentToMemberOf    = @('UnSpecial Group')
-                        RecipientDomainIs         = @('contoso.com')
-                        SentTo                    = @('wrongperson@contoso.com', 'someone@contoso.com')
-                        SentToMemberOf            = @('Some Group', 'Some Other Group', 'DeletedGroup')
-                    }
-                }
-
-                Mock -CommandName Get-HostedContentFilterPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
                 }
             }
 
@@ -180,6 +141,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-HostedContentFilterRule -Exactly 1
             }
         }
 
@@ -191,18 +153,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                  = 'TestRule'
                     HostedContentFilterPolicy = 'TestPolicy'
                 }
-
-                Mock -CommandName Get-HostedContentFilterRule -MockWith {
-                    return @{
-                        Identity = 'TestRule'
-                    }
-                }
-
-                Mock -CommandName Get-HostedContentFilterPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -211,6 +161,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Remove-HostedContentFilterRule -Exactly 1
             }
         }
 
@@ -220,19 +171,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-HostedContentFilterRule -MockWith {
-                    return @{
-                        Identity                  = 'TestRule'
-                        HostedContentFilterPolicy = 'TestPolicy'
-                    }
-                }
-
-                Mock -CommandName Get-HostedContentFilterPolicy -MockWith {
-                    return @{
-                        Identity = 'TestPolicy'
-                    }
                 }
             }
 

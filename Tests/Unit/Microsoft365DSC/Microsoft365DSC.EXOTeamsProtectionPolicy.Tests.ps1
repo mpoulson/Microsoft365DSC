@@ -27,6 +27,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
@@ -39,6 +41,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName New-TeamsProtectionPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-TeamsProtectionPolicy -MockWith {
+                return @{
+                    AdminDisplayName                 = "Contoso Administrator"
+                    HighConfidencePhishQuarantineTag = "DefaultFullAccessPolicy"
+                    MalwareQuarantineTag             = "AdminOnlyAccessPolicy"
+                    ZapEnabled                       = $true
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -93,15 +104,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MalwareQuarantineTag             = "AdminOnlyAccessPolicy"
                     ZapEnabled                       = $true
                     Credential                       = $Credential
-                }
-
-                Mock -CommandName Get-TeamsProtectionPolicy -MockWith {
-                    return @{
-                        AdminDisplayName                 = "Contoso Administrator"
-                        HighConfidencePhishQuarantineTag = "DefaultFullAccessPolicy"
-                        MalwareQuarantineTag             = "AdminOnlyAccessPolicy"
-                        ZapEnabled                       = $true
-                    }
                 }
             }
 
@@ -161,15 +163,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-TeamsProtectionPolicy -MockWith {
-                    return @{
-                        AdminDisplayName                 = "Contoso Administrator"
-                        HighConfidencePhishQuarantineTag = "AdminOnlyAccessPolicy"
-                        MalwareQuarantineTag             = "AdminOnlyAccessPolicy"
-                        ZapEnabled                       = $true
-                    }
                 }
             }
 

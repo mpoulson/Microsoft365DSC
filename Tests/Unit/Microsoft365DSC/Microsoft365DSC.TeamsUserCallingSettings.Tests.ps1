@@ -27,6 +27,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
+
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
 
@@ -35,6 +38,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Set-CsUserCallingSettings -MockWith {
+            }
+
+            Mock -CommandName Get-CsUserCallingSettings -MockWith {
+                return @{
+                    CallGroupOrder  = 'Simultaneous'
+                    UnansweredDelay = '00:00:20'
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -81,14 +91,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     CallGroupOrder  = 'Simultaneous'
                     Ensure          = 'Present'
                     Credential      = $Credential
-                    UnansweredDelay = '00:00:20'
-                }
-
-                Mock -CommandName Get-CsUserCallingSettings -MockWith {
-                    return @{
-                        CallGroupOrder  = 'Simultaneous'
-                        UnansweredDelay = '00:00:30'; # Drift
-                    }
+                    UnansweredDelay = '00:00:30' # Drift
                 }
             }
 
@@ -115,13 +118,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential      = $Credential
                     UnansweredDelay = '00:00:20'
                 }
-
-                Mock -CommandName Get-CsUserCallingSettings -MockWith {
-                    return @{
-                        CallGroupOrder  = 'Simultaneous'
-                        UnansweredDelay = '00:00:20'
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -141,20 +137,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential = $Credential
                 }
 
-
                 Mock -CommandName Get-MgUser -MockWith {
                     return @(
                         @{
                             UserPrincipalName = 'John.Smith@contoso.onmicrosoft.com'
                         }
                     )
-                }
-
-                Mock -CommandName Get-CsUserCallingSettings -MockWith {
-                    return @{
-                        CallGroupOrder  = 'Simultaneous'
-                        UnansweredDelay = '00:00:20'
-                    }
                 }
             }
 

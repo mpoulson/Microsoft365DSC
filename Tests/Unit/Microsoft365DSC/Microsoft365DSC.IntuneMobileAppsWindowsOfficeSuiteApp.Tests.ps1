@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -51,6 +51,43 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Update-MgBetaDeviceAppManagementMobileApp -MockWith {
             }
             Mock -CommandName Remove-MgBetaDeviceAppManagementMobileApp -MockWith {
+            }
+            Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{
+                return @()
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
+                return @{
+                    Id                    = "8d027f94-0682-431e-97c1-827d1879fa79"
+                    Categories            = @()
+                    Description           = "Microsoft 365 Apps for Windows 10 and later"
+                    DisplayName           = "Microsoft 365 Apps for Windows 10 and later"
+                    InformationUrl        = ""
+                    IsFeatured            = $False
+                    Notes                 = ""
+                    PrivacyInformationUrl = ""
+                    RoleScopeTagIds       = @()
+                    AdditionalProperties   = @{
+                        '@odata.type' = '#microsoft.graph.officeSuiteApp'
+                        excludedApps          = @{
+                            teams = $false
+                            sharePointDesigner = $true
+                            powerPoint = $false
+                            outlook = $false
+                            groove = $true
+                            word = $false
+                            lync = $true
+                            oneNote = $false
+                            oneDrive = $false
+                            publisher = $false
+                            bing = $false
+                            visio = $false
+                            access = $false
+                            infoPath = $true
+                            excel = $false
+                        }
+                    }
+                }
             }
 
             Mock -CommandName Update-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{}
@@ -146,42 +183,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = 'Absent'
                     Credential            = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                    return @{
-                        Id                    = "ad027f94-0682-431e-97c1-827d1879fa79"
-                        Categories            = @()
-                        Description           = "Microsoft 365 Apps for Windows 10 and laterr"
-                        DisplayName           = "Microsoft 365 Apps for Windows 10 and later"
-                        InformationUrl        = ""
-                        IsFeatured            = $False
-                        Notes                 = ""
-                        PrivacyInformationUrl = ""
-                        RoleScopeTagIds       = @()
-                        ExcludedApps          = (New-CimInstance -ClassName MSFT_DeviceManagementMobileAppExcludedApp -Property @{
-                            teams = $false
-                            sharePointDesigner = $true
-                            powerPoint = $false
-                            outlook = $false
-                            groove = $true
-                            word = $false
-                            lync = $true
-                            oneNote = $false
-                            oneDrive = $false
-                            publisher = $false
-                            bing = $false
-                            visio = $false
-                            access = $false
-                            infoPath = $true
-                            excel = $false
-                        } -ClientOnly)
-                        Ensure                = 'Present'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{
-                    return $null
-                }
             }
 
             It '2.1 Should return Values from the Get method' {
@@ -199,43 +200,34 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "3. The instance exists and values are already in the desired state" -Fixture {
         BeforeAll {
             $testParams = @{
-                Id                    = "8d027f94-0682-431e-97c1-827d1879fa79"
+                Id                    = "ad027f94-0682-431e-97c1-827d1879fa79"
                 Categories            = @()
                 Description           = "Microsoft 365 Apps for Windows 10 and later"
                 DisplayName           = "Microsoft 365 Apps for Windows 10 and later"
                 InformationUrl        = ""
                 IsFeatured            = $False
+                ExcludedApps          = (New-CimInstance -ClassName MSFT_DeviceManagementMobileAppExcludedApp -Property @{
+                    teams = $false
+                    sharePointDesigner = $true
+                    powerPoint = $false
+                    outlook = $false
+                    groove = $true
+                    word = $false
+                    lync = $true
+                    oneNote = $false
+                    oneDrive = $false
+                    publisher = $false
+                    bing = $false
+                    visio = $false
+                    access = $false
+                    infoPath = $true
+                    excel = $false
+                } -ClientOnly)
                 Notes                 = ""
                 PrivacyInformationUrl = ""
                 RoleScopeTagIds       = @()
                 Ensure                = 'Present'
                 Credential            = $Credential
-            }
-
-            Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                return @{
-                    Id                    = "8d027f94-0682-431e-97c1-827d1879fa79"
-                    Categories            = @()
-                    Description           = "Microsoft 365 Apps for Windows 10 and later"
-                    DisplayName           = "Microsoft 365 Apps for Windows 10 and later"
-                    InformationUrl        = ""
-                    IsFeatured            = $False
-                    Notes                 = ""
-                    PrivacyInformationUrl = ""
-                    RoleScopeTagIds       = @()
-                    AdditionalProperties   = @{
-                        '@odata.type' = '#microsoft.graph.officeSuiteApp'
-                        minimumSupportedOperatingSystem = @{
-                            v11_0 = $true
-                        }
-                    }
-                    Ensure                = 'Present'
-                }
-            }
-
-            # Remove Assignments logic for now as we debug this part
-            Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{
-                return $null
             }
         }
 
@@ -255,7 +247,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsFeatured            = $False
                     ExcludedApps          = (New-CimInstance -ClassName MSFT_DeviceManagementMobileAppExcludedApp -Property @{
                         teams = $false
-                        sharePointDesigner = $true
+                        sharePointDesigner = $false # Updated property
                         powerPoint = $false
                         outlook = $false
                         groove = $true
@@ -275,45 +267,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleScopeTagIds       = @()
                     Ensure                = 'Present'
                     Credential            = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                    return @{
-                        Id                    = "8d027f94-0682-431e-97c1-827d1879fa79"
-                        Categories            = @()
-                        Description           = "Microsoft 365 Apps for Windows 10 and later"
-                        DisplayName           = "Microsoft 365 Apps for Windows 10 and later drift"
-                        InformationUrl        = ""
-                        IsFeatured            = $False
-                        Notes                 = ""
-                        PrivacyInformationUrl = ""
-                        ExcludedApps          = (New-CimInstance -ClassName MSFT_DeviceManagementMobileAppExcludedApp -Property @{
-                            teams = $false
-                            sharePointDesigner = $true
-                            powerPoint = $false
-                            outlook = $false
-                            groove = $true
-                            word = $false
-                            lync = $true
-                            oneNote = $false
-                            oneDrive = $false
-                            publisher = $false
-                            bing = $false
-                            visio = $false
-                            access = $false
-                            infoPath = $true
-                            excel = $false
-                        } -ClientOnly)
-                        AdditionalProperties   = @{
-                            '@odata.type' = '#microsoft.graph.officeSuiteApp'
-                            minimumSupportedOperatingSystem = @{
-                                v11_0 = $true
-                            }
-                        }
-                    }
-                }
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{
-                    return $null
                 }
             }
 
@@ -335,46 +288,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
-                    return @{
-                        Id                    = "8d027f94-0682-431e-97c1-827d1879fa79"
-                        Categories            = @()
-                        Description           = "Microsoft 365 Apps for Windows 10 and later"
-                        DisplayName           = "Microsoft 365 Apps for Windows 10 and later drift"
-                        InformationUrl        = ""
-                        IsFeatured            = $False
-                        Notes                 = ""
-                        PrivacyInformationUrl = ""
-                        RoleScopeTagIds       = @()
-                        ExcludedApps          = (New-CimInstance -ClassName MSFT_DeviceManagementMobileAppExcludedApp -Property @{
-                            teams = $false
-                            sharePointDesigner = $true
-                            powerPoint = $false
-                            outlook = $false
-                            groove = $true
-                            word = $false
-                            lync = $true
-                            oneNote = $false
-                            oneDrive = $false
-                            publisher = $false
-                            bing = $false
-                            visio = $false
-                            access = $false
-                            infoPath = $true
-                            excel = $false
-                        } -ClientOnly)
-                        AdditionalProperties   = @{
-                            '@odata.type' = '#microsoft.graph.officeSuiteApp'
-                            minimumSupportedOperatingSystem = @{
-                                v11_0 = $true
-                            }
-                        }
-                    }
-                }
-                Mock -CommandName Get-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{
-                    return $null
                 }
             }
 

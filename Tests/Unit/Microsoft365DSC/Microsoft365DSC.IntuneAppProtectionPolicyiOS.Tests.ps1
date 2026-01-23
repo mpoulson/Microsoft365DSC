@@ -25,7 +25,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -41,16 +41,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
+            }
+
             Mock -CommandName Update-MgBetaDeviceAppManagementiosManagedAppProtection -MockWith {
             }
 
             Mock -CommandName Remove-MgBetaDeviceAppManagementiosManagedAppProtection -MockWith {
-            }
-
-            Mock -CommandName Update-IntuneAppProtectionPolicyiOSAssignment -MockWith {
-            }
-
-            Mock -CommandName Update-IntuneAppProtectionPolicyiOSApp -MockWith {
             }
 
             Mock -CommandName Get-MgGroup -MockWith {
@@ -62,6 +59,158 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     @{
                         id = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
                         DisplayName = 'MyAssignedGroup'
+                    }
+                )
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementiosManagedAppProtection -MockWith {
+                return @{
+                    '@odata.type'                                  = '#microsoft.graph.iosManagedAppProtection'
+                    AllowedDataIngestionLocations                  = @("oneDriveForBusiness","sharePoint","camera");
+                    AllowedOutboundClipboardSharingExceptionLength = 0;
+                    AllowWidgetContentSync                         = $True;
+                    AppActionIfDeviceComplianceRequired            = "wipe";
+                    AppActionIfIosDeviceModelNotAllowed            = "block";
+                    AppActionIfUnableToAuthenticateUser            = "block";
+                    AppGroupType                                   = "selectedPublicApps";
+                    BlockDataIngestionIntoOrganizationDocuments    = $True;
+                    CustomBrowserProtocol                          = "access://open?url=http";
+                    CustomDialerAppProtocol                        = "skype";
+                    DeployedAppCount                               = 3;
+                    DialerRestrictionLevel                         = "allApps";
+                    DisableProtectionOfManagedOutboundOpenInData   = $False;
+                    ExemptedUniversalLinks                         = @("http://facetime.apple.com","http://maps.apple.com","https://facetime.apple.com","https://maps.apple.com");
+                    FilterOpenInToOnlyManagedApps                  = $False;
+                    ManagedUniversalLinks                          = @("http://*.appsplatform.us/*","http://*.onedrive.com/*","http://*.powerapps.cn/*");
+                    MaximumAllowedDeviceThreatLevel                = "low";
+                    MaximumRequiredOsVersion                       = "1";
+                    MaximumWarningOsVersion                        = "1";
+                    MaximumWipeOsVersion                           = "1";
+                    MessagingRedirectAppUrlScheme                  = "https://www.fakesite.com";
+                    MobileThreatDefenseRemediationAction           = "block";
+                    NotificationRestriction                        = "blockOrganizationalData";
+                    PreviousPinBlockCount                          = 0;
+                    ProtectedMessagingRedirectAppType              = "anyApp";
+                    ProtectInboundDataFromUnknownSources           = $False;
+                    ThirdPartyKeyboardsBlocked                     = $True;
+                    AllowedDataStorageLocations                    = @('sharePoint')
+                    AllowedInboundDataTransferSources              = 'managedApps'
+                    AllowedOutboundClipboardSharingLevel           = 'managedAppsWithPasteIn'
+                    AllowedOutboundDataTransferDestinations        = 'managedApps'
+                    AppDataEncryptionType                          = 'whenDeviceLocked'
+                    ContactSyncBlocked                             = $False
+                    DataBackupBlocked                              = $False
+                    Description                                    = ''
+                    DeviceComplianceRequired                       = $True
+                    DisplayName                                    = 'DSC Policy'
+                    FaceIdBlocked                                  = $False
+                    FingerprintBlocked                             = $False
+                    ManagedBrowser                                 = 'microsoftEdge'
+                    MinimumRequiredAppVersion                      = '0.2'
+                    MinimumRequiredOSVersion                       = '0.2'
+                    MinimumRequiredSdkVersion                      = '0.1'
+                    MinimumWarningAppVersion                       = '0.1'
+                    MinimumWarningOSVersion                        = '0.1'
+                    ManagedBrowserToOpenLinksRequired              = $True
+                    MaximumPinRetries                              = 5
+                    MinimumPinLength                               = 4
+                    OrganizationalCredentialsRequired              = $False
+                    PeriodBeforePinReset                           = New-TimeSpan -Days 90
+                    PeriodOfflineBeforeAccessCheck                 = New-TimeSpan -Hours 12
+                    PeriodOfflineBeforeWipeIsEnforced              = New-TimeSpan -Days 90
+                    PeriodOnlineBeforeAccessCheck                  = New-TimeSpan -Minutes 30
+                    PinCharacterSet                                = 'alphanumericAndSymbol'
+                    PinRequired                                    = $True
+                    DisableAppPinIfDevicePinIsSet                  = $False
+                    PrintBlocked                                   = $False
+                    SaveAsBlocked                                  = $True
+                    SimplePinBlocked                               = $False
+                    id                                             = '12345-12345-12345-12345-12345'
+                    TargetedAppManagementLevels                    = 'unmanaged'
+                }
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementiosManagedAppProtectionApp -MockWith {
+                return @(
+                    @{
+                        id                  = 'com.cisco.jabberimintune.ios.ios'
+                        mobileAppIdentifier = @{
+                            additionalProperties = @{
+                                '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
+                                bundleId      = 'com.cisco.jabberimintune.ios'
+                            }
+                        }
+                    },
+                    @{
+                        id                  = 'com.pervasent.boardpapers.ios.ios'
+                        mobileAppIdentifier = @{
+                            additionalProperties = @{
+                                '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
+                                bundleId      = 'com.pervasent.boardpapers.ios'
+                            }
+                        }
+                    },
+                    @{
+                        id                  = 'com.sharefile.mobile.intune.ios.ios'
+                        mobileAppIdentifier = @{
+                            additionalProperties = @{
+                                '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
+                                bundleId      = 'com.sharefile.mobile.intune.ios'
+                            }
+                        }
+                    }
+                )
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementManagedAppStatus -MockWith {
+                return @(
+                    @{
+                        '@odata.type' = '#microsoft.graph.managedAppStatusRaw'
+                        id = 'managedAppList'
+                        displayName = 'Managed App collection for Tenant'
+                        content = @{
+                            '@odata.type' = '#microsoft.graph.managedAppList'
+                            appList = @(
+                                @{
+                                    appGroups = 'none'
+                                    appIdentifier = @{
+                                        '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
+                                        bundleId = 'com.cisco.jabberimintune.ios'
+                                    }
+                                }
+                                @{
+                                    appGroups = 'none'
+                                    appIdentifier = @{
+                                        '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
+                                        bundleId = 'com.pervasent.boardpapers.ios'
+                                    }
+                                }
+                                @{
+                                    appGroups = 'none'
+                                    appIdentifier = @{
+                                        '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
+                                        bundleId = 'com.sharefile.mobile.intune.ios'
+                                    }
+                                }
+                            )
+                        }
+                    }
+                )
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementiOSManagedAppProtectionAssignment -MockWith {
+                return @(
+                    @{
+                        target = @{
+                            '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
+                            groupId       = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
+                        }
+                    },
+                    @{
+                        target = @{
+                            '@odata.type' = '#microsoft.graph.exclusionGroupAssignmentTarget'
+                            groupId       = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
+                        }
                     }
                 )
             }
@@ -92,7 +241,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisableProtectionOfManagedOutboundOpenInData   = $False;
                     ExemptedUniversalLinks                         = @("http://facetime.apple.com","http://maps.apple.com","https://facetime.apple.com","https://maps.apple.com");
                     FilterOpenInToOnlyManagedApps                  = $False;
-                    IsAssigned                                     = $True;
                     ManagedUniversalLinks                          = @("http://*.appsplatform.us/*","http://*.onedrive.com/*","http://*.powerapps.cn/*");
                     MaximumAllowedDeviceThreatLevel                = "low";
                     MaximumRequiredOsVersion                       = "1";
@@ -111,14 +259,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowedOutboundDataTransferDestinations        = 'managedApps'
                     AppDataEncryptionType                          = 'whenDeviceLocked'
                     Apps                                           = @('com.cisco.jabberimintune.ios', 'com.pervasent.boardpapers.ios', 'com.sharefile.mobile.intune.ios')
-                    Assignments                                    = @('6ee86c9f-2b3c-471d-ad38-ff4673ed723e')
+                    Assignments                                    = [CimInstance[]]@(
+                        New-CimInstance -ClassName MSFT_DeviceManagementConfigurationPolicyAssignments -Property @{
+                            groupId  = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
+                            dataType = '#microsoft.graph.groupAssignmentTarget'
+                            deviceAndAppManagementAssignmentFilterType = 'none'
+                        } -ClientOnly
+                        New-CimInstance -ClassName MSFT_DeviceManagementConfigurationPolicyAssignments -Property @{
+                            groupId  = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
+                            dataType = '#microsoft.graph.exclusionGroupAssignmentTarget'
+                            deviceAndAppManagementAssignmentFilterType = 'none'
+                        } -ClientOnly
+                    )
                     ContactSyncBlocked                             = $False
                     DataBackupBlocked                              = $False
                     Description                                    = ''
                     DeviceComplianceRequired                       = $True
                     DisplayName                                    = 'DSC Policy'
                     Ensure                                         = 'Present'
-                    ExcludedGroups                                 = @('3eacc231-d77b-4efb-bb5f-310f68bd6198')
                     FaceIdBlocked                                  = $False
                     FingerprintBlocked                             = $False
                     Credential                                     = $Credential
@@ -132,10 +290,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MaximumPinRetries                              = 5
                     MinimumPinLength                               = 4
                     OrganizationalCredentialsRequired              = $False
-                    PeriodBeforePinReset                           = '90.00:00:00'
-                    PeriodOfflineBeforeAccessCheck                 = '12:00:00'
-                    PeriodOfflineBeforeWipeIsEnforced              = '90.00:00:00'
-                    PeriodOnlineBeforeAccessCheck                  = '00:30:00'
+                    PeriodBeforePinReset                           = 'P90D'
+                    PeriodOfflineBeforeAccessCheck                 = 'PT12H'
+                    PeriodOfflineBeforeWipeIsEnforced              = 'P90D'
+                    PeriodOnlineBeforeAccessCheck                  = 'PT30M'
                     PinCharacterSet                                = 'alphanumericAndSymbol'
                     PinRequired                                    = $True
                     DisableAppPinIfDevicePinIsSet                  = $False
@@ -182,7 +340,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisableProtectionOfManagedOutboundOpenInData   = $False;
                     ExemptedUniversalLinks                         = @("http://facetime.apple.com","http://maps.apple.com","https://facetime.apple.com","https://maps.apple.com");
                     FilterOpenInToOnlyManagedApps                  = $False;
-                    IsAssigned                                     = $True;
                     ManagedUniversalLinks                          = @("http://*.appsplatform.us/*","http://*.onedrive.com/*","http://*.powerapps.cn/*");
                     MaximumAllowedDeviceThreatLevel                = "low";
                     MaximumRequiredOsVersion                       = "1";
@@ -201,14 +358,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowedOutboundDataTransferDestinations        = 'managedApps'
                     AppDataEncryptionType                          = 'whenDeviceLocked'
                     Apps                                           = @('com.cisco.jabberimintune.ios', 'com.pervasent.boardpapers.ios', 'com.sharefile.mobile.intune.ios')
-                    Assignments                                    = @('6ee86c9f-2b3c-471d-ad38-ff4673ed723e')
+                    Assignments                                    = [CimInstance[]]@(
+                        New-CimInstance -ClassName MSFT_DeviceManagementConfigurationPolicyAssignments -Property @{
+                            groupId  = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
+                            dataType = '#microsoft.graph.groupAssignmentTarget'
+                            deviceAndAppManagementAssignmentFilterType = 'none'
+                        } -ClientOnly
+                        New-CimInstance -ClassName MSFT_DeviceManagementConfigurationPolicyAssignments -Property @{
+                            groupId  = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
+                            dataType = '#microsoft.graph.exclusionGroupAssignmentTarget'
+                            deviceAndAppManagementAssignmentFilterType = 'none'
+                        } -ClientOnly
+                    )
                     ContactSyncBlocked                             = $False
                     DataBackupBlocked                              = $False
                     Description                                    = ''
                     DeviceComplianceRequired                       = $True
                     DisplayName                                    = 'DSC Policy'
                     Ensure                                         = 'Present'
-                    ExcludedGroups                                 = @('3eacc231-d77b-4efb-bb5f-310f68bd6198')
                     FaceIdBlocked                                  = $False
                     FingerprintBlocked                             = $False
                     Credential                                     = $Credential
@@ -222,10 +389,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MaximumPinRetries                              = 5
                     MinimumPinLength                               = 4
                     OrganizationalCredentialsRequired              = $False
-                    PeriodBeforePinReset                           = '90.00:00:00'
-                    PeriodOfflineBeforeAccessCheck                 = '12:00:00'
-                    PeriodOfflineBeforeWipeIsEnforced              = '90.00:00:00'
-                    PeriodOnlineBeforeAccessCheck                  = '00:30:00'
+                    PeriodBeforePinReset                           = 'P90D'
+                    PeriodOfflineBeforeAccessCheck                 = 'PT12H'
+                    PeriodOfflineBeforeWipeIsEnforced              = 'P90D'
+                    PeriodOnlineBeforeAccessCheck                  = 'PT30M'
                     PinCharacterSet                                = 'alphanumericAndSymbol'
                     PinRequired                                    = $True
                     DisableAppPinIfDevicePinIsSet                  = $False
@@ -235,122 +402,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                                       = '12345-12345-12345-12345-12345'
                     TargetedAppManagementLevels                    = @('unmanaged')
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementiosManagedAppProtection -MockWith {
-                    return @{
-                        '@odata.type'                           = '#microsoft.graph.iosManagedAppProtection'
-                        AllowedDataIngestionLocations                  = @("oneDriveForBusiness","sharePoint","camera");
-                        AllowedOutboundClipboardSharingExceptionLength = 0;
-                        AllowWidgetContentSync                         = $True;
-                        AppActionIfDeviceComplianceRequired            = "wipe";
-                        AppActionIfIosDeviceModelNotAllowed            = "block";
-                        AppActionIfUnableToAuthenticateUser            = "block";
-                        AppGroupType                                   = "selectedPublicApps";
-                        BlockDataIngestionIntoOrganizationDocuments    = $True;
-                        CustomBrowserProtocol                          = "access://open?url=http";
-                        CustomDialerAppProtocol                        = "skype";
-                        DeployedAppCount                               = 3;
-                        DialerRestrictionLevel                         = "allApps";
-                        DisableProtectionOfManagedOutboundOpenInData   = $False;
-                        ExemptedUniversalLinks                         = @("http://facetime.apple.com","http://maps.apple.com","https://facetime.apple.com","https://maps.apple.com");
-                        FilterOpenInToOnlyManagedApps                  = $False;
-                        IsAssigned                                     = $True;
-                        ManagedUniversalLinks                          = @("http://*.appsplatform.us/*","http://*.onedrive.com/*","http://*.powerapps.cn/*");
-                        MaximumAllowedDeviceThreatLevel                = "low";
-                        MaximumRequiredOsVersion                       = "1";
-                        MaximumWarningOsVersion                        = "1";
-                        MaximumWipeOsVersion                           = "1";
-                        MessagingRedirectAppUrlScheme                  = "https://www.fakesite.com";
-                        MobileThreatDefenseRemediationAction           = "block";
-                        NotificationRestriction                        = "blockOrganizationalData";
-                        PreviousPinBlockCount                          = 0;
-                        ProtectedMessagingRedirectAppType              = "anyApp";
-                        ProtectInboundDataFromUnknownSources           = $False;
-                        ThirdPartyKeyboardsBlocked                     = $True;
-                        AllowedDataStorageLocations                    = @('sharePoint')
-                        AllowedInboundDataTransferSources              = 'managedApps'
-                        AllowedOutboundClipboardSharingLevel           = 'managedAppsWithPasteIn'
-                        AllowedOutboundDataTransferDestinations        = 'managedApps'
-                        AppDataEncryptionType                          = 'whenDeviceLocked'
-                        ContactSyncBlocked                             = $False
-                        DataBackupBlocked                              = $False
-                        Description                                    = ''
-                        DeviceComplianceRequired                       = $True
-                        DisplayName                                    = 'DSC Policy'
-                        FaceIdBlocked                                  = $False
-                        FingerprintBlocked                             = $False
-                        ManagedBrowser                                 = 'microsoftEdge'
-                        MinimumRequiredAppVersion                      = '0.2'
-                        MinimumRequiredOSVersion                       = '0.2'
-                        MinimumRequiredSdkVersion                      = '0.1'
-                        MinimumWarningAppVersion                       = '0.1'
-                        MinimumWarningOSVersion                        = '0.1'
-                        ManagedBrowserToOpenLinksRequired              = $True
-                        MaximumPinRetries                              = 5
-                        MinimumPinLength                               = 4
-                        OrganizationalCredentialsRequired              = $False
-                        PeriodBeforePinReset                           = '90.00:00:00'
-                        PeriodOfflineBeforeAccessCheck                 = '12:00:00'
-                        PeriodOfflineBeforeWipeIsEnforced              = '90.00:00:00'
-                        PeriodOnlineBeforeAccessCheck                  = '00:30:00'
-                        PinCharacterSet                                = 'alphanumericAndSymbol'
-                        PinRequired                                    = $True
-                        DisableAppPinIfDevicePinIsSet                  = $False
-                        PrintBlocked                                   = $False
-                        SaveAsBlocked                                  = $True
-                        SimplePinBlocked                               = $False
-                        id                                             = '12345-12345-12345-12345-12345'
-                        TargetedAppManagementLevels                    = 'unmanaged'
-                    }
-                }
-                Mock -CommandName Get-MgBetaDeviceAppManagementiosManagedAppProtectionApp -MockWith {
-                    return @(
-                        @{
-                            id                  = 'com.cisco.jabberimintune.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.cisco.jabberimintune.ios'
-                                }
-                            }
-                        },
-                        @{
-                            id                  = 'com.pervasent.boardpapers.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.pervasent.boardpapers.ios'
-                                }
-                            }
-                        },
-                        @{
-                            id                  = 'com.sharefile.mobile.intune.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.sharefile.mobile.intune.ios'
-                                }
-                            }
-                        }
-                    )
-                }
-                Mock -CommandName Get-IntuneAppProtectionPolicyiOSAssignment -MockWith {
-                    return @(
-                        @{
-                            target = @{
-                                '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
-                                groupId       = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
-                            }
-                        },
-                        @{
-                            target = @{
-                                '@odata.type' = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                                groupId       = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
-                            }
-                        }
-                    )
-                }
-
             }
 
             It 'Should return Present from the Get method' {
@@ -385,7 +436,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisableProtectionOfManagedOutboundOpenInData   = $False;
                     ExemptedUniversalLinks                         = @("http://facetime.apple.com","http://maps.apple.com","https://facetime.apple.com","https://maps.apple.com");
                     FilterOpenInToOnlyManagedApps                  = $False;
-                    IsAssigned                                     = $True;
                     ManagedUniversalLinks                          = @("http://*.appsplatform.us/*","http://*.onedrive.com/*","http://*.powerapps.cn/*");
                     MaximumAllowedDeviceThreatLevel                = "low";
                     MaximumRequiredOsVersion                       = "1";
@@ -397,7 +447,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PreviousPinBlockCount                          = 0;
                     ProtectedMessagingRedirectAppType              = "anyApp";
                     ProtectInboundDataFromUnknownSources           = $False;
-                    ThirdPartyKeyboardsBlocked                     = $True;       
+                    ThirdPartyKeyboardsBlocked                     = $True;
                     AllowedDataStorageLocations                    = @('sharePoint')
                     AllowedInboundDataTransferSources              = 'managedApps'
                     AllowedOutboundClipboardSharingLevel           = 'managedAppsWithPasteIn'
@@ -423,10 +473,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MaximumPinRetries                              = 5
                     MinimumPinLength                               = 4
                     OrganizationalCredentialsRequired              = $False
-                    PeriodBeforePinReset                           = '90.00:00:00'
-                    PeriodOfflineBeforeAccessCheck                 = '12:00:00'
-                    PeriodOfflineBeforeWipeIsEnforced              = '90.00:00:00'
-                    PeriodOnlineBeforeAccessCheck                  = '00:30:00'
+                    PeriodBeforePinReset                           = 'P90D'
+                    PeriodOfflineBeforeAccessCheck                 = 'PT12H'
+                    PeriodOfflineBeforeWipeIsEnforced              = 'P90D'
+                    PeriodOnlineBeforeAccessCheck                  = 'PT30M'
                     PinCharacterSet                                = 'alphanumericAndSymbol'
                     PinRequired                                    = $True
                     DisableAppPinIfDevicePinIsSet                  = $False
@@ -436,122 +486,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                                       = '12345-12345-12345-12345-12345'
                     TargetedAppManagementLevels                    = @('unmanaged')
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementiosManagedAppProtection -MockWith {
-                    return @{
-                        '@odata.type'                           = '#microsoft.graph.iosManagedAppProtection'
-                        AllowedDataIngestionLocations                  = @("oneDriveForBusiness","sharePoint","camera");
-                        AllowedOutboundClipboardSharingExceptionLength = 0;
-                        AllowWidgetContentSync                         = $True;
-                        AppActionIfDeviceComplianceRequired            = "wipe";
-                        AppActionIfIosDeviceModelNotAllowed            = "block";
-                        AppActionIfUnableToAuthenticateUser            = "block";
-                        AppGroupType                                   = "selectedPublicApps";
-                        BlockDataIngestionIntoOrganizationDocuments    = $True;
-                        CustomBrowserProtocol                          = "access://open?url=http";
-                        CustomDialerAppProtocol                        = "skype";
-                        DeployedAppCount                               = 3;
-                        DialerRestrictionLevel                         = "allApps";
-                        DisableProtectionOfManagedOutboundOpenInData   = $False;
-                        ExemptedUniversalLinks                         = @("http://facetime.apple.com","http://maps.apple.com","https://facetime.apple.com","https://maps.apple.com");
-                        FilterOpenInToOnlyManagedApps                  = $False;
-                        IsAssigned                                     = $True;
-                        ManagedUniversalLinks                          = @("http://*.appsplatform.us/*","http://*.onedrive.com/*","http://*.powerapps.cn/*");
-                        MaximumAllowedDeviceThreatLevel                = "low";
-                        MaximumRequiredOsVersion                       = "1";
-                        MaximumWarningOsVersion                        = "1";
-                        MaximumWipeOsVersion                           = "1";
-                        MessagingRedirectAppUrlScheme                  = "https://www.fakesite.com";
-                        MobileThreatDefenseRemediationAction           = "block";
-                        NotificationRestriction                        = "blockOrganizationalData";
-                        PreviousPinBlockCount                          = 0;
-                        ProtectedMessagingRedirectAppType              = "anyApp";
-                        ProtectInboundDataFromUnknownSources           = $False;
-                        ThirdPartyKeyboardsBlocked                     = $True;       
-                        AllowedDataStorageLocations                    = @('sharePoint')
-                        AllowedInboundDataTransferSources              = 'managedApps'
-                        AllowedOutboundClipboardSharingLevel           = 'managedAppsWithPasteIn'
-                        AllowedOutboundDataTransferDestinations        = 'managedApps'
-                        AppDataEncryptionType                          = 'whenDeviceLocked'
-                        ContactSyncBlocked                             = $False
-                        DataBackupBlocked                              = $False
-                        Description                                    = ''
-                        DeviceComplianceRequired                       = $True
-                        DisplayName                                    = 'DSC Policy'
-                        FaceIdBlocked                                  = $False
-                        FingerprintBlocked                             = $False
-                        ManagedBrowser                                 = 'microsoftEdge'
-                        MinimumRequiredAppVersion                      = '0.2'
-                        MinimumRequiredOsVersion                       = '0.2'
-                        MinimumRequiredSdkVersion                      = '0.1'
-                        MinimumWarningAppVersion                       = '0.1'
-                        MinimumWarningOsVersion                        = '0.1'
-                        ManagedBrowserToOpenLinksRequired              = $True
-                        MaximumPinRetries                              = 5
-                        MinimumPinLength                               = 4
-                        OrganizationalCredentialsRequired              = $False
-                        PeriodBeforePinReset                           = '90.00:00:00'
-                        PeriodOfflineBeforeAccessCheck                 = '12:00:00'
-                        PeriodOfflineBeforeWipeIsEnforced              = '90.00:00:00'
-                        PeriodOnlineBeforeAccessCheck                  = '00:30:00'
-                        PinCharacterSet                                = 'alphanumericAndSymbol'
-                        PinRequired                                    = $True
-                        DisableAppPinIfDevicePinIsSet                  = $False
-                        PrintBlocked                                   = $False
-                        SaveAsBlocked                                  = $True
-                        SimplePinBlocked                               = $False
-                        id                                             = '12345-12345-12345-12345-12345'
-                        TargetedAppManagementLevels                    = 'unmanaged'
-                    }
-                }
-                Mock -CommandName Get-MgBetaDeviceAppManagementiosManagedAppProtectionApp -MockWith {
-                    return @(
-                        @{
-                            id                  = 'com.cisco.jabberimintune.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.cisco.jabberimintune.ios'
-                                }
-                            }
-                        },
-                        @{
-                            id                  = 'com.pervasent.boardpapers.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.pervasent.boardpapers.ios'
-                                }
-                            }
-                        },
-                        @{
-                            id                  = 'com.sharefile.mobile.intune.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.sharefile.mobile.intune.ios'
-                                }
-                            }
-                        }
-                    )
-                }
-                Mock -CommandName Get-IntuneAppProtectionPolicyiOSAssignment -MockWith {
-                    return @(
-                        @{
-                            target = @{
-                                '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
-                                groupId       = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
-                            }
-                        },
-                        @{
-                            target = @{
-                                '@odata.type' = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                                groupId       = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
-                            }
-                        }
-                    )
-                }
-
             }
 
             It 'Should return true from the Test method' {
@@ -577,7 +511,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisableProtectionOfManagedOutboundOpenInData   = $False;
                     ExemptedUniversalLinks                         = @("http://facetime.apple.com","http://maps.apple.com","https://facetime.apple.com","https://maps.apple.com");
                     FilterOpenInToOnlyManagedApps                  = $False;
-                    IsAssigned                                     = $True;
                     ManagedUniversalLinks                          = @("http://*.appsplatform.us/*","http://*.onedrive.com/*","http://*.powerapps.cn/*");
                     MaximumAllowedDeviceThreatLevel                = "low";
                     MaximumRequiredOsVersion                       = "1";
@@ -596,14 +529,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowedOutboundDataTransferDestinations        = 'managedApps'
                     AppDataEncryptionType                          = 'whenDeviceLocked'
                     Apps                                           = @('com.cisco.jabberimintune.ios', 'com.pervasent.boardpapers.ios', 'com.sharefile.mobile.intune.ios')
-                    Assignments                                    = @('6ee86c9f-2b3c-471d-ad38-ff4673ed723e')
+                    Assignments                                    = [CimInstance[]]@(
+                        New-CimInstance -ClassName MSFT_DeviceManagementConfigurationPolicyAssignments -Property @{
+                            groupId  = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
+                            dataType = '#microsoft.graph.groupAssignmentTarget'
+                            deviceAndAppManagementAssignmentFilterType = 'none'
+                        } -ClientOnly
+                        New-CimInstance -ClassName MSFT_DeviceManagementConfigurationPolicyAssignments -Property @{
+                            groupId  = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
+                            dataType = '#microsoft.graph.exclusionGroupAssignmentTarget'
+                            deviceAndAppManagementAssignmentFilterType = 'none'
+                        } -ClientOnly
+                    )
                     ContactSyncBlocked                             = $False
                     DataBackupBlocked                              = $False
                     Description                                    = ''
                     DeviceComplianceRequired                       = $True
                     DisplayName                                    = 'DSC Policy'
                     Ensure                                         = 'Absent'
-                    ExcludedGroups                                 = @('3eacc231-d77b-4efb-bb5f-310f68bd6198')
                     FaceIdBlocked                                  = $False
                     FingerprintBlocked                             = $False
                     Credential                                     = $Credential
@@ -617,10 +560,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MaximumPinRetries                              = 5
                     MinimumPinLength                               = 4
                     OrganizationalCredentialsRequired              = $False
-                    PeriodBeforePinReset                           = '90.00:00:00'
-                    PeriodOfflineBeforeAccessCheck                 = '12:00:00'
-                    PeriodOfflineBeforeWipeIsEnforced              = '90.00:00:00'
-                    PeriodOnlineBeforeAccessCheck                  = '00:30:00'
+                    PeriodBeforePinReset                           = 'P90D'
+                    PeriodOfflineBeforeAccessCheck                 = 'PT12H'
+                    PeriodOfflineBeforeWipeIsEnforced              = 'P90D'
+                    PeriodOnlineBeforeAccessCheck                  = 'PT30M'
                     PinCharacterSet                                = 'alphanumericAndSymbol'
                     PinRequired                                    = $True
                     DisableAppPinIfDevicePinIsSet                  = $False
@@ -630,122 +573,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                                       = '12345-12345-12345-12345-12345'
                     TargetedAppManagementLevels                    = @('unmanaged')
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementiosManagedAppProtection -MockWith {
-                    return @{
-                        '@odata.type'                                  = '#microsoft.graph.iosManagedAppProtection'
-                        AllowedDataIngestionLocations                  = @("oneDriveForBusiness","sharePoint","camera");
-                        AllowedOutboundClipboardSharingExceptionLength = 0;
-                        AllowWidgetContentSync                         = $True;
-                        AppActionIfDeviceComplianceRequired            = "wipe";
-                        AppActionIfIosDeviceModelNotAllowed            = "block";
-                        AppActionIfUnableToAuthenticateUser            = "block";
-                        AppGroupType                                   = "selectedPublicApps";
-                        BlockDataIngestionIntoOrganizationDocuments    = $True;
-                        CustomBrowserProtocol                          = "access://open?url=http";
-                        CustomDialerAppProtocol                        = "skype";
-                        DeployedAppCount                               = 3;
-                        DialerRestrictionLevel                         = "allApps";
-                        DisableProtectionOfManagedOutboundOpenInData   = $False;
-                        ExemptedUniversalLinks                         = @("http://facetime.apple.com","http://maps.apple.com","https://facetime.apple.com","https://maps.apple.com");
-                        FilterOpenInToOnlyManagedApps                  = $False;
-                        IsAssigned                                     = $True;
-                        ManagedUniversalLinks                          = @("http://*.appsplatform.us/*","http://*.onedrive.com/*","http://*.powerapps.cn/*");
-                        MaximumAllowedDeviceThreatLevel                = "low";
-                        MaximumRequiredOsVersion                       = "1";
-                        MaximumWarningOsVersion                        = "1";
-                        MaximumWipeOsVersion                           = "1";
-                        MessagingRedirectAppUrlScheme                  = "https://www.fakesite.com";
-                        MobileThreatDefenseRemediationAction           = "block";
-                        NotificationRestriction                        = "blockOrganizationalData";
-                        PreviousPinBlockCount                          = 0;
-                        ProtectedMessagingRedirectAppType              = "anyApp";
-                        ProtectInboundDataFromUnknownSources           = $False;
-                        ThirdPartyKeyboardsBlocked                     = $True;
-                        AllowedDataStorageLocations                    = @('sharePoint')
-                        AllowedInboundDataTransferSources              = 'managedApps'
-                        AllowedOutboundClipboardSharingLevel           = 'managedAppsWithPasteIn'
-                        AllowedOutboundDataTransferDestinations        = 'managedApps'
-                        AppDataEncryptionType                          = 'whenDeviceLocked'
-                        ContactSyncBlocked                             = $False
-                        DataBackupBlocked                              = $False
-                        Description                                    = ''
-                        DeviceComplianceRequired                       = $True
-                        DisplayName                                    = 'DSC Policy'
-                        FaceIdBlocked                                  = $False
-                        FingerprintBlocked                             = $False
-                        ManagedBrowser                                 = 'microsoftEdge'
-                        MinimumRequiredAppVersion                      = '0.2'
-                        MinimumRequiredOSVersion                       = '0.2'
-                        MinimumRequiredSdkVersion                      = '0.1'
-                        MinimumWarningAppVersion                       = '0.1'
-                        MinimumWarningOSVersion                        = '0.1'
-                        ManagedBrowserToOpenLinksRequired              = $True
-                        MaximumPinRetries                              = 5
-                        MinimumPinLength                               = 4
-                        OrganizationalCredentialsRequired              = $False
-                        PeriodBeforePinReset                           = '90.00:00:00'
-                        PeriodOfflineBeforeAccessCheck                 = '12:00:00'
-                        PeriodOfflineBeforeWipeIsEnforced              = '90.00:00:00'
-                        PeriodOnlineBeforeAccessCheck                  = '00:30:00'
-                        PinCharacterSet                                = 'alphanumericAndSymbol'
-                        PinRequired                                    = $True
-                        DisableAppPinIfDevicePinIsSet                  = $False
-                        PrintBlocked                                   = $False
-                        SaveAsBlocked                                  = $True
-                        SimplePinBlocked                               = $False
-                        id                                             = '12345-12345-12345-12345-12345'
-                        TargetedAppManagementLevels                    = 'unmanaged'
-                    }
-                }
-                Mock -CommandName Get-MgBetaDeviceAppManagementiosManagedAppProtectionApp -MockWith {
-                    return @(
-                        @{
-                            id                  = 'com.cisco.jabberimintune.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.cisco.jabberimintune.ios'
-                                }
-                            }
-                        },
-                        @{
-                            id                  = 'com.pervasent.boardpapers.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.pervasent.boardpapers.ios'
-                                }
-                            }
-                        },
-                        @{
-                            id                  = 'com.sharefile.mobile.intune.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.sharefile.mobile.intune.ios'
-                                }
-                            }
-                        }
-                    )
-                }
-                Mock -CommandName Get-IntuneAppProtectionPolicyiOSAssignment -MockWith {
-                    return @(
-                        @{
-                            target = @{
-                                '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
-                                groupId       = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
-                            }
-                        },
-                        @{
-                            target = @{
-                                '@odata.type' = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                                groupId       = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
-                            }
-                        }
-                    )
-                }
-
             }
 
             It 'Should return Present from the Get method' {
@@ -768,121 +595,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementiosManagedAppProtection -MockWith {
-                    return @{
-                        '@odata.type'                           = '#microsoft.graph.iosManagedAppProtection'
-                        AllowedDataIngestionLocations                  = @("oneDriveForBusiness","sharePoint","camera");
-                        AllowedOutboundClipboardSharingExceptionLength = 0;
-                        AllowWidgetContentSync                         = $True;
-                        AppActionIfDeviceComplianceRequired            = "wipe";
-                        AppActionIfIosDeviceModelNotAllowed            = "block";
-                        AppActionIfUnableToAuthenticateUser            = "block";
-                        AppGroupType                                   = "selectedPublicApps";
-                        BlockDataIngestionIntoOrganizationDocuments    = $True;
-                        CustomBrowserProtocol                          = "access://open?url=http";
-                        CustomDialerAppProtocol                        = "skype";
-                        DeployedAppCount                               = 3;
-                        DialerRestrictionLevel                         = "allApps";
-                        DisableProtectionOfManagedOutboundOpenInData   = $False;
-                        ExemptedUniversalLinks                         = @("http://facetime.apple.com","http://maps.apple.com","https://facetime.apple.com","https://maps.apple.com");
-                        FilterOpenInToOnlyManagedApps                  = $False;
-                        IsAssigned                                     = $True;
-                        ManagedUniversalLinks                          = @("http://*.appsplatform.us/*","http://*.onedrive.com/*","http://*.powerapps.cn/*");
-                        MaximumAllowedDeviceThreatLevel                = "low";
-                        MaximumRequiredOsVersion                       = "1";
-                        MaximumWarningOsVersion                        = "1";
-                        MaximumWipeOsVersion                           = "1";
-                        MessagingRedirectAppUrlScheme                  = "https://www.fakesite.com";
-                        MobileThreatDefenseRemediationAction           = "block";
-                        NotificationRestriction                        = "blockOrganizationalData";
-                        PreviousPinBlockCount                          = 0;
-                        ProtectedMessagingRedirectAppType              = "anyApp";
-                        ProtectInboundDataFromUnknownSources           = $False;
-                        ThirdPartyKeyboardsBlocked                     = $True;
-                        AllowedDataStorageLocations                    = @('sharePoint')
-                        AllowedInboundDataTransferSources              = 'managedApps'
-                        AllowedOutboundClipboardSharingLevel           = 'managedAppsWithPasteIn'
-                        AllowedOutboundDataTransferDestinations        = 'managedApps'
-                        AppDataEncryptionType                          = 'whenDeviceLocked'
-                        ContactSyncBlocked                             = $False
-                        DataBackupBlocked                              = $False
-                        Description                                    = ''
-                        DeviceComplianceRequired                       = $True
-                        DisplayName                                    = 'DSC Policy'
-                        FaceIdBlocked                                  = $False
-                        FingerprintBlocked                             = $False
-                        ManagedBrowser                                 = 'microsoftEdge'
-                        MinimumRequiredAppVersion                      = '0.2'
-                        MinimumRequiredOSVersion                       = '0.2'
-                        MinimumRequiredSdkVersion                      = '0.1'
-                        MinimumWarningAppVersion                       = '0.1'
-                        MinimumWarningOSVersion                        = '0.1'
-                        ManagedBrowserToOpenLinksRequired              = $True
-                        MaximumPinRetries                              = 5
-                        MinimumPinLength                               = 4
-                        OrganizationalCredentialsRequired              = $False
-                        PeriodBeforePinReset                           = '90.00:00:00'
-                        PeriodOfflineBeforeAccessCheck                 = '12:00:00'
-                        PeriodOfflineBeforeWipeIsEnforced              = '90.00:00:00'
-                        PeriodOnlineBeforeAccessCheck                  = '00:30:00'
-                        PinCharacterSet                                = 'alphanumericAndSymbol'
-                        PinRequired                                    = $True
-                        DisableAppPinIfDevicePinIsSet                  = $False
-                        PrintBlocked                                   = $False
-                        SaveAsBlocked                                  = $True
-                        SimplePinBlocked                               = $False
-                        id                                             = '12345-12345-12345-12345-12345'
-                        TargetedAppManagementLevels                    = 'unmanaged'
-                    }
-                }
-                Mock -CommandName Get-MgBetaDeviceAppManagementiosManagedAppProtectionApp -MockWith {
-                    return @(
-                        @{
-                            id                  = 'com.cisco.jabberimintune.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.cisco.jabberimintune.ios'
-                                }
-                            }
-                        },
-                        @{
-                            id                  = 'com.pervasent.boardpapers.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.pervasent.boardpapers.ios'
-                                }
-                            }
-                        },
-                        @{
-                            id                  = 'com.sharefile.mobile.intune.ios.ios'
-                            mobileAppIdentifier = @{
-                                additionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.iosMobileAppIdentifier'
-                                    bundleId      = 'com.sharefile.mobile.intune.ios'
-                                }
-                            }
-                        }
-                    )
-                }
-                Mock -CommandName Get-IntuneAppProtectionPolicyiOSAssignment -MockWith {
-                    return @(
-                        @{
-                            target = @{
-                                '@odata.type' = '#microsoft.graph.groupAssignmentTarget'
-                                groupId       = '6ee86c9f-2b3c-471d-ad38-ff4673ed723e'
-                            }
-                        },
-                        @{
-                            target = @{
-                                '@odata.type' = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                                groupId       = '3eacc231-d77b-4efb-bb5f-310f68bd6198'
-                            }
-                        }
-                    )
                 }
             }
 

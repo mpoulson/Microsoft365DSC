@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -35,6 +35,30 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Remove-SafeLinksPolicy -MockWith {
+            }
+
+            Mock -CommandName New-SafeLinksPolicy -MockWith {
+            }
+
+            Mock -CommandName Set-SafeLinksPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-SafeLinksPolicy -MockWith {
+                return @{
+                    Identity                      = 'TestSafeLinksPolicy'
+                    AdminDisplayName              = 'Test SafeLinks Policy'
+                    CustomNotificationText        = ''
+                    DoNotRewriteUrls              = @('test.contoso.com', 'test.fabrikam.org')
+                    EnableForInternalSenders      = $false
+                    EnableSafeLinksForEmail       = $false
+                    EnableSafeLinksForTeams       = $false
+                    EnableOrganizationBranding    = $false
+                    ScanUrls                      = $false
+                    UseTranslatedNotificationText = $false
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -63,9 +87,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-SafeLinksPolicy -MockWith {
-                    return @{
-                        Identity = 'SomeOtherPolicy'
-                    }
+                    return $null
                 }
             }
 
@@ -75,6 +97,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-SafeLinksPolicy -Exactly 1
             }
         }
 
@@ -94,21 +117,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ScanUrls                      = $false
                     UseTranslatedNotificationText = $false
                 }
-
-                Mock -CommandName Get-SafeLinksPolicy -MockWith {
-                    return @{
-                        Identity                      = 'TestSafeLinksPolicy'
-                        AdminDisplayName              = 'Test SafeLinks Policy'
-                        CustomNotificationText        = ''
-                        DoNotRewriteUrls              = @('test.contoso.com', 'test.fabrikam.org')
-                        EnableForInternalSenders      = $false
-                        EnableSafeLinksForEmail       = $false
-                        EnableSafeLinksForTeams       = $false
-                        EnableOrganizationBranding    = $false
-                        ScanUrls                      = $false
-                        UseTranslatedNotificationText = $false
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -125,34 +133,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AdminDisplayName              = 'Test SafeLinks Policy'
                     CustomNotificationText        = ''
                     DoNotRewriteUrls              = @('test.contoso.com', 'test.fabrikam.org')
-                    EnableForInternalSenders      = $false
+                    EnableForInternalSenders      = $true # Drift
                     EnableSafeLinksForEmail       = $false
                     EnableSafeLinksForTeams       = $false
                     EnableOrganizationBranding    = $false
                     ScanUrls                      = $false
                     UseTranslatedNotificationText = $false
-                }
-
-                Mock -CommandName Get-SafeLinksPolicy -MockWith {
-                    return @{
-                        Ensure                        = 'Present'
-                        Identity                      = 'TestSafeLinksPolicy'
-                        Credential                    = $Credential
-                        AdminDisplayName              = 'Test SafeLinks Policy'
-                        CustomNotificationText        = 'This is a custom notification text'
-                        DoNotRewriteUrls              = @('test1.contoso.com', 'test.fabrikam.org')
-                        EnableForInternalSenders      = $true
-                        EnableSafeLinksForEmail       = $true
-                        EnableSafeLinksForTeams       = $true
-                        EnableOrganizationBranding    = $true
-                        ScanUrls                      = $true
-                        UseTranslatedNotificationText = $true
-                    }
-                }
-
-                Mock -CommandName Set-SafeLinksPolicy -MockWith {
-                    return @{
-                    }
                 }
             }
 
@@ -162,6 +148,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-SafeLinksPolicy -Exactly 1
             }
         }
 
@@ -181,18 +168,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ScanUrls                      = $false
                     UseTranslatedNotificationText = $false
                 }
-
-                Mock -CommandName Get-SafeLinksPolicy -MockWith {
-                    return @{
-                        Identity = 'TestSafeLinksPolicy'
-                    }
-                }
-
-                Mock -CommandName Remove-SafeLinksPolicy -MockWith {
-                    return @{
-
-                    }
-                }
             }
 
             It 'Should return false from the Test method' {
@@ -201,6 +176,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Remove-SafeLinksPolicy -Exactly 1
             }
         }
 
@@ -214,21 +190,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Confirm-ImportedCmdletIsAvailable -MockWith {
                     return $true
-                }
-
-                Mock -CommandName Get-SafeLinksPolicy -MockWith {
-                    return @{
-                        Identity                      = 'TestSafeLinksPolicy'
-                        AdminDisplayName              = 'Test SafeLinks Policy'
-                        CustomNotificationText        = ''
-                        DoNotRewriteUrls              = @('test.contoso.com', 'test.fabrikam.org')
-                        EnableForInternalSenders      = $false
-                        EnableSafeLinksForEmail       = $false
-                        EnableSafeLinksForTeams       = $false
-                        EnableOrganizationBranding    = $false
-                        ScanUrls                      = $false
-                        UseTranslatedNotificationText = $false
-                    }
                 }
             }
 

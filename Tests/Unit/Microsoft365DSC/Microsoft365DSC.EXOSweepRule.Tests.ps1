@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -47,6 +47,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Get-Mailbox -MockWith {
                 return @{
                     Name                  = "Test2";
+                }
+            }
+
+            Mock -CommandName Get-SweepRule -MockWith {
+                return @{
+                    DestinationFolder     = "Deleted Items";
+                    Enabled               = $True;
+                    KeepLatest            = 11;
+                    MailboxOwnerId        = "Test2";
+                    Name                  = "From Michelle";
+                    Provider              = "Exchange16";
+                    Sender                = "`"michelle@fabrikam.com`" [SMTP:Michell]";
+                    SourceFolder          = "Inbox";
                 }
             }
 
@@ -101,7 +114,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DestinationFolder     = "Test2:\Deleted Items";
                     Enabled               = $True;
                     Ensure                = "Absent";
-                    KeepLatest            = 11;
+                    KeepLatest            = 13; # Drift
                     Mailbox               = "Test2";
                     Name                  = "From Michelle";
                     Provider              = "Exchange16";
@@ -109,20 +122,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SourceFolder          = "Test2:\Inbox";
                     Credential            = $Credential;
                 }
-
-                Mock -CommandName Get-SweepRule -MockWith {
-                    return @{
-                        DestinationFolder     = "Test2:\Deleted Items";
-                        Enabled               = $True;
-                        KeepLatest            = 13; #Drift
-                        MailboxOwnerId        = "Test2";
-                        Name                  = "From Michelle";
-                        Provider              = "Exchange16";
-                        Sender                = "`"michelle@fabrikam.com`" [SMTP:Michell]";
-                        SourceFolder          = "Test2:\Inbox";
-                    }
-                }
-
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -151,19 +150,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SourceFolder          = "Test2:\Inbox";
                     Credential            = $Credential;
                 }
-
-                Mock -CommandName Get-SweepRule -MockWith {
-                    return @{
-                        DestinationFolder     = "Deleted Items";
-                        Enabled               = $True;
-                        KeepLatest            = 11;
-                        MailboxOwnerId        = "Test2";
-                        Name                  = "From Michelle";
-                        Provider              = "Exchange16";
-                        Sender                = "`"michelle@fabrikam.com`" [SMTP:Michell]";
-                        SourceFolder          = "Inbox";
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -178,26 +164,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         DestinationFolder     = "Deleted Items";
                         Enabled               = $True;
                         Ensure                = "Present";
-                        KeepLatest            = 15; #Drift
+                        KeepLatest            = 15; # Drift
                         Mailbox               = "Test2";
                         Name                  = "From Michelle";
                         Provider              = "Exchange16";
                         SenderName            = "michelle@fabrikam.com";
                         SourceFolder          = "Inbox";
                         Credential            = $Credential;
-                    }
-
-                    Mock -CommandName Get-SweepRule -MockWith {
-                        return @{
-                            DestinationFolder     = "Test2:\Deleted Items";
-                            Enabled               = $True;
-                            KeepLatest            = 11;
-                            Mailbox               = "Test2";
-                            MailboxOwnerId        = "Test2";
-                            Provider              = "Exchange16";
-                            Sender                = "`"michelle@fabrikam.com`" [SMTP:Michell]";
-                            SourceFolder          = "Test2:\Inbox";
-                        }
                     }
                 }
 
@@ -222,19 +195,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-SweepRule -MockWith {
-                    return @{
-                        DestinationFolder     = "Test2:\Deleted Items";
-                        Enabled               = $True;
-                        KeepLatest            = 11;
-                        MailboxOwnerId        = "Test2";
-                        Name                  = "From Michelle";
-                        Provider              = "Exchange16";
-                        Sender                = "`"michelle@fabrikam.com`" [SMTP:Michell]";
-                        SourceFolder          = "Test2:\Inbox";
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString "f@kepassword1" -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -40,6 +40,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaPolicyActivityBasedTimeoutPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyActivityBasedTimeoutPolicy -MockWith {
+                return @{
+                    DisplayName = "displayName-value"
+                    AzurePortalTimeOut = "02:00:00"
+                    DefaultTimeOut = "03:00:00"
+                    Id = "000000-0000-0000-0000-000000000000"
+                    Ensure = "Present"
+                    Definition = @("{`"ActivityBasedTimeoutPolicy`":{`"Version`":1,`"ApplicationPolicies`":[{`"ApplicationId`":`"c44b4083-3bb0-49c1-b47d-974e53cbdf3c`",`"WebSessionIdleTimeout`":`"02:00:00`"},{`"ApplicationId`":`"default`",`"WebSessionIdleTimeout`":`"04:00:00`"}]}}");
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -90,17 +101,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = "Absent"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyActivityBasedTimeoutPolicy -MockWith {
-                    return @{
-                        DisplayName = "displayName-value"
-                        AzurePortalTimeOut = "02:00:00"
-                        DefaultTimeOut = "03:00:00"
-                        Id = "000000-0000-0000-0000-000000000000"
-                        Ensure = "Present"
-                        Definition = @("{`"ActivityBasedTimeoutPolicy`":{`"Version`":1,`"ApplicationPolicies`":[{`"ApplicationId`":`"c44b4083-3bb0-49c1-b47d-974e53cbdf3c`",`"WebSessionIdleTimeout`":`"02:00:00`"},{`"ApplicationId`":`"default`",`"WebSessionIdleTimeout`":`"04:00:00`"}]}}");
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -126,19 +126,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = "Present"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyActivityBasedTimeoutPolicy -MockWith {
-                    return @{
-                        DisplayName = "displayName-value"
-                        AzurePortalTimeOut = "02:00:00"
-                        DefaultTimeOut = "04:00:00"
-                        Id = "000000-0000-0000-0000-000000000000"
-                        Ensure = "Present"
-                        Definition = @("{`"ActivityBasedTimeoutPolicy`":{`"Version`":1,`"ApplicationPolicies`":[{`"ApplicationId`":`"c44b4083-3bb0-49c1-b47d-974e53cbdf3c`",`"WebSessionIdleTimeout`":`"02:00:00`"},{`"ApplicationId`":`"default`",`"WebSessionIdleTimeout`":`"04:00:00`"}]}}");
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -150,21 +138,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     DisplayName = "displayName-value"
                     AzurePortalTimeOut = "02:00:00"
-                    DefaultTimeOut = "03:00:00"
+                    DefaultTimeOut = "03:00:00" # Drift
                     Id = "000000-0000-0000-0000-000000000000"
                     Ensure = "Present"
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyActivityBasedTimeoutPolicy -MockWith {
-                    return @{
-                        DisplayName = "displayName-value"
-                        AzurePortalTimeOut = "02:00:00"
-                        DefaultTimeOut = "03:00:00"
-                        Id = "000000-0000-0000-0000-000000000000"
-                        Ensure = "Present"
-                        Definition = @("{`"ActivityBasedTimeoutPolicy`":{`"Version`":1,`"ApplicationPolicies`":[{`"ApplicationId`":`"c44b4083-3bb0-49c1-b47d-974e53cbdf3c`",`"WebSessionIdleTimeout`":`"02:00:00`"},{`"ApplicationId`":`"default`",`"WebSessionIdleTimeout`":`"04:00:00`"}]}}");
-                    }
                 }
             }
 
@@ -188,17 +165,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyActivityBasedTimeoutPolicy -MockWith {
-                    return @{
-                        DisplayName = "displayName-value"
-                        AzurePortalTimeOut = "02:00:00"
-                        DefaultTimeOut = "03:00:00"
-                        Id = "000000-0000-0000-0000-000000000000"
-                        Ensure = "Present"
-                        Definition = @("{`"ActivityBasedTimeoutPolicy`":{`"Version`":1,`"ApplicationPolicies`":[{`"ApplicationId`":`"c44b4083-3bb0-49c1-b47d-974e53cbdf3c`",`"WebSessionIdleTimeout`":`"02:00:00`"},{`"ApplicationId`":`"default`",`"WebSessionIdleTimeout`":`"04:00:00`"}]}}");
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

@@ -24,13 +24,89 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-GUID).ToString() -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
             }
 
             Mock -CommandName Remove-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        IncludeTargets        = @(
+                            @{
+                                TargetType = 'group'
+                                Id         = '00000000-0000-0000-0000-000000000001'
+                            }
+                        )
+                        featureSettings       = @{
+                            companionAppAllowedState                = @{
+                                state         = 'default'
+                                includeTarget = @{
+                                    targetType = 'group'
+                                    id         = '00000000-0000-0000-0000-000000000001'
+                                }
+                                excludeTarget = @{
+                                    targetType = 'group'
+                                    id         = '00000000-0000-0000-0000-000000000001'
+                                }
+                            }
+                            displayAppInformationRequiredState      = @{
+                                state         = 'default'
+                                includeTarget = @{
+                                    targetType = 'group'
+                                    id         = '00000000-0000-0000-0000-000000000001'
+                                }
+                                excludeTarget = @{
+                                    targetType = 'group'
+                                    id         = '00000000-0000-0000-0000-000000000001'
+                                }
+                            }
+                            displayLocationInformationRequiredState = @{
+                                state         = 'default'
+                                includeTarget = @{
+                                    targetType = 'group'
+                                    id         = '00000000-0000-0000-0000-000000000001'
+                                }
+                                excludeTarget = @{
+                                    targetType = 'group'
+                                    id         = '00000000-0000-0000-0000-000000000001'
+                                }
+                            }
+                            numberMatchingRequiredState             = @{
+                                state         = 'default'
+                                includeTarget = @{
+                                    targetType = 'group'
+                                    id         = '00000000-0000-0000-0000-000000000001'
+                                }
+                                excludeTarget = @{
+                                    targetType = 'group'
+                                    id         = '00000000-0000-0000-0000-000000000001'
+                                }
+                            }
+                        }
+                        '@odata.type'         = '#microsoft.graph.microsoftAuthenticatorAuthenticationMethodConfiguration'
+                        isSoftwareOathEnabled = $True
+                    }
+                    ExcludeTargets       = @(
+                        @{
+                            TargetType = 'group'
+                            Id         = '00000000-0000-0000-0000-000000000001'
+                        }
+                    )
+                    Id                   = 'MicrosoftAuthenticator'
+                    State                = 'enabled'
+                }
+            }
+
+            Mock -CommandName Get-MgGroup -MockWith {
+                return @{
+                    Id          = '00000000-0000-0000-0000-000000000001'
+                    DisplayName = 'Fakegroup'
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -99,13 +175,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     State                 = 'enabled'
                     Ensure                = 'Present'
                     Credential            = $Credential
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id          = '00000000-0000-0000-0000-000000000000'
-                        DisplayName = 'Fakegroup'
-                    }
                 }
 
                 Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
@@ -180,76 +249,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = 'Absent'
                     Credential            = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = '00000000-0000-0000-0000-000000000000'
-                                }
-                            )
-                            featureSettings       = @{
-                                companionAppAllowedState                = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = '00000000-0000-0000-0000-000000000000'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = '00000000-0000-0000-0000-000000000000'
-                                    }
-                                }
-                                displayAppInformationRequiredState      = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = '00000000-0000-0000-0000-000000000000'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = '00000000-0000-0000-0000-000000000000'
-                                    }
-                                }
-                                displayLocationInformationRequiredState = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = '00000000-0000-0000-0000-000000000000'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = '00000000-0000-0000-0000-000000000000'
-                                    }
-                                }
-                                numberMatchingRequiredState             = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = '00000000-0000-0000-0000-000000000000'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = '00000000-0000-0000-0000-000000000000'
-                                    }
-                                }
-                            }
-                            '@odata.type'         = '#microsoft.graph.microsoftAuthenticatorAuthenticationMethodConfiguration'
-                            isSoftwareOathEnabled = $True
-                        }
-                        ExcludeTargets       = @(
-                            @{
-                                TargetType = 'group'
-                                Id         = '00000000-0000-0000-0000-000000000000'
-                            }
-                        )
-                        Id                   = 'MicrosoftAuthenticator'
-                        State                = 'enabled'
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -321,74 +320,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = 'Present'
                     Credential            = $Credential
                 }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id          = '00000000-0000-0000-0000-000000000000'
-                        DisplayName = 'Fakegroup'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = 'Fakegroup'
-                                }
-                            )
-                            featureSettings       = @{
-                                companionAppAllowedState                = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                }
-                                displayAppInformationRequiredState      = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                }
-                                displayLocationInformationRequiredState = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                }
-                            }
-                            '@odata.type'         = '#microsoft.graph.microsoftAuthenticatorAuthenticationMethodConfiguration'
-                            isSoftwareOathEnabled = $True
-                        }
-                        ExcludeTargets       = @(
-                            @{
-                                TargetType = 'group'
-                                Id         = '00000000-0000-0000-0000-000000000000'
-                            }
-                        )
-                        Id                   = 'MicrosoftAuthenticator'
-                        State                = 'enabled'
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -446,74 +378,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 } -ClientOnly)
                         } -ClientOnly)
                     Id                    = 'MicrosoftAuthenticator'
-                    isSoftwareOathEnabled = $True
+                    isSoftwareOathEnabled = $false # Drift
                     State                 = 'enabled'
                     Ensure                = 'Present'
                     Credential            = $Credential
-                }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    return @{
-                        Id          = '00000000-0000-0000-0000-000000000000'
-                        DisplayName = 'Fakegroup'
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = '00000000-0000-0000-0000-000000000000'
-                                }
-                            )
-                            '@odata.type'   = '#microsoft.graph.microsoftAuthenticatorAuthenticationMethodConfiguration'
-                            featureSettings = @{
-                                companionAppAllowedState                = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                }
-                                displayAppInformationRequiredState      = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                }
-                                displayLocationInformationRequiredState = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                }
-                            }
-                        }
-                        ExcludeTargets       = @(
-                            @{
-                                TargetType = 'group'
-                                Id         = '00000000-0000-0000-0000-000000000000'
-                            }
-                        )
-                        Id                   = 'MicrosoftAuthenticator'
-                        State                = 'enabled'
-                    }
                 }
             }
 
@@ -537,65 +405,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            IncludeTargets        = @(
-                                @{
-                                    TargetType = 'group'
-                                    Id         = '00000000-0000-0000-0000-000000000000'
-                                }
-                            )
-                            featureSettings       = @{
-                                companionAppAllowedState                = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                }
-                                displayAppInformationRequiredState      = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                }
-                                displayLocationInformationRequiredState = @{
-                                    state         = 'default'
-                                    includeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                    excludeTarget = @{
-                                        targetType = 'group'
-                                        id         = 'Fakegroup'
-                                    }
-                                }
-                            }
-                            '@odata.type'         = '#microsoft.graph.microsoftAuthenticatorAuthenticationMethodConfiguration'
-                            isSoftwareOathEnabled = $True
-                        }
-                        ExcludeTargets       = @(
-                            @{
-                                TargetType = 'group'
-                                Id         = '00000000-0000-0000-0000-000000000000'
-                            }
-                        )
-                        Id                   = 'MicrosoftAuthenticator'
-                        State                = 'enabled'
-
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

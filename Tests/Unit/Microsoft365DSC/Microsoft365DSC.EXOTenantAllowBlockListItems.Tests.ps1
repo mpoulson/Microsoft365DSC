@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -40,6 +40,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-TenantAllowBlockListItems -MockWith {
+            }
+
+            Mock -CommandName Get-TenantAllowBlockListItems -MockWith {
+                return @{
+                    Action = "Block";
+                    ListType = "Url";
+                    Value = "example.com";
+                    Ensure = 'Present';
+                    SubmissionID = "FakeStringValue";
+                    Notes = "FakeStringValue";
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -88,15 +99,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-TenantAllowBlockListItems -MockWith {
-                    return @{
-                    SubmissionID          = "FakeStringValue"
-                    RemoveAfter           = 3
-                    Notes                 = "FakeStringValue"
-
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -123,19 +125,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Notes = "FakeStringValue";
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-TenantAllowBlockListItems -MockWith {
-                    return @{
-                        Action = "Block";
-                        ListType = "Url";
-                        Value = "example.com";
-                        Ensure = 'Present';
-                        SubmissionID = "FakeStringValue";
-                        Notes = "FakeStringValue";
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -148,20 +138,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Action = "Block";
                     ListType = "Url";
                     Value = "example.com";
-                    Ensure = 'Present'
-                    Notes = "FakeStringValueDrift"
-                    SubmissionID          = "FakeStringValue";
+                    Ensure = 'Present';
+                    Notes = "FakeStringValueDrift Drift"; # Drift
+                    SubmissionID = "FakeStringValue";
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-TenantAllowBlockListItems -MockWith {
-                    return @{
-                        Action = "Block";
-                        ListType = "Url";
-                        Value = "example.com";
-                        Notes = "FakeStringValueDrift #Drift";
-                        SubmissionID          = "FakeStringValue";
-                    }
                 }
             }
 
@@ -189,15 +169,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SubmissionID = "SubmissionID"
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-TenantAllowBlockListItems -MockWith {
-                    return @{
-                        Action = "Block";
-                        ListType = "Url";
-                        Value = "example.com";
-                        SubmissionID = "SubmissionID"
-                    }
-                }
             }
             It 'Should throw if SubmissionID is changed' {
                 $testParams['SubmissionID'] = "SubmissionID 2"
@@ -211,17 +182,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-TenantAllowBlockListItems -MockWith {
-                    return @{
-                        Action = "Block";
-                        ListType = "Url";
-                        Value = "example.com";
-                        SubmissionID          = "FakeStringValue"
-                        RemoveAfter           = 3
-                        Notes                 = "FakeStringValue"
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

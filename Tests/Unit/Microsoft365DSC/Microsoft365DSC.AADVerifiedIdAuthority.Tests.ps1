@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -34,6 +34,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Invoke-M365DSCVerifiedIdWebRequest -MockWith {
+                return @{
+                    value = @(
+                        @{
+                            id = "FakeStringValue"
+                            name = "FakeStringValue"
+                            didModel = @{
+                                linkedDomainUrls = @("FakeStringValue")
+                                did = "did:FakeStringValue"
+                            }
+                        }
+                    )
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -100,22 +115,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     } -ClientOnly)
                     Ensure = 'Absent'
                 }
-
-                Mock -CommandName Invoke-M365DSCVerifiedIdWebRequest -MockWith {
-                    return @{
-                        value = @(
-                            @{
-                                id = "FakeStringValue"
-                                name = "FakeStringValue"
-                                didModel = @{
-                                    linkedDomainUrls = @("FakeStringValue")
-                                    did = "did:FakeStringValue"
-                                }
-                            }
-                        )
-                    }
-                }
-
             }
 
             It 'Should return Values from the Get method' {
@@ -138,25 +137,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Name = "FakeStringValue"
                     LinkedDomainUrl = "FakeStringValue"
                     DidMethod = "FakeStringValue"
+                    KeyVaultMetadata = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityKeyVaultMetadata -Property @{
+                        SubscriptionId = "FakeStringValue"
+                        ResourceGroup = "FakeStringValue"
+                        ResourceName = "FakeStringValue"
+                        ResourceUrl = "FakeStringValue"
+                    } -ClientOnly)
                     Ensure = 'Present'
                 }
-
-                Mock -CommandName Invoke-M365DSCVerifiedIdWebRequest -MockWith {
-                    return @{
-                        value = @(
-                            @{
-                                id = "FakeStringValue"
-                                name = "FakeStringValue"
-                                didModel = @{
-                                    linkedDomainUrls = @("FakeStringValue")
-                                    did = "did:FakeStringValue"
-                                }
-                            }
-                        )
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -168,8 +157,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Id = "FakeStringValue"
                     Name = "FakeStringValue2"
-                    LinkedDomainUrl = "FakeStringValue"
-                    DidMethod = "FakeStringValue"
+                    LinkedDomainUrl = "FakeStringValue" # Drift
+                    DidMethod = "FakeStringValue2"
                     KeyVaultMetadata = (New-CimInstance -ClassName MSFT_AADVerifiedIdAuthorityKeyVaultMetadata -Property @{
                         SubscriptionId = "FakeStringValue"
                         ResourceGroup = "FakeStringValue"
@@ -177,27 +166,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         ResourceUrl = "FakeStringValue"
                     } -ClientOnly)
                     Ensure = 'Present'
-                }
-
-                Mock -CommandName Invoke-M365DSCVerifiedIdWebRequest -MockWith {
-                    return @{
-                        value = @(
-                            @{
-                                id = "FakeStringValue"
-                                name = "FakeStringValue"
-                                didModel = @{
-                                    linkedDomainUrls = @("FakeStringValue")
-                                    did = "did:FakeStringValue"
-                                }
-                                keyVaultMetadata = @{
-                                    subscriptionId = "FakeStringValue"
-                                    resourceGroup = "FakeStringValue"
-                                    resourceName = "FakeStringValue"
-                                    resourceUrl = "FakeStringValue"
-                                }
-                            }
-                        )
-                    }
                 }
             }
 
@@ -221,27 +189,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Invoke-M365DSCVerifiedIdWebRequest -MockWith {
-                    return @{
-                        value = @(
-                            @{
-                                id = "FakeStringValue"
-                                name = "FakeStringValue"
-                                didModel = @{
-                                    linkedDomainUrls = @("FakeStringValue")
-                                    did = "did:FakeStringValue"
-                                }
-                                keyVaultMetadata = @{
-                                    subscriptionId = "FakeStringValue"
-                                    resourceGroup = "FakeStringValue"
-                                    resourceName = "FakeStringValue"
-                                    resourceUrl = "FakeStringValue"
-                                }
-                            }
-                        )
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

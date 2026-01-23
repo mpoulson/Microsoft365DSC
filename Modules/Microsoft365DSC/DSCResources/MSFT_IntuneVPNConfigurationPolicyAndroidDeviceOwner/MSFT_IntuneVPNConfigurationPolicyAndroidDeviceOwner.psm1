@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_IntuneVPNConfigurationPolicyAndroidDeviceOwner'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -128,7 +130,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -180,11 +182,11 @@ function Get-TargetResource
         $complexServers = @()
         foreach ($currentservers in $getValue.AdditionalProperties.servers)
         {
-            $myservers = @{}
+            $myservers = [ordered]@{}
             $myservers.Add('address', $currentservers.address)
             $myservers.Add('description', $currentservers.description)
             $myservers.Add('isDefaultServer', $currentservers.isDefaultServer)
-            if ($myservers.values.Where({$null -ne $_}).count -gt 0)
+            if ($myservers.values.Where({$null -ne $_}).Count -gt 0)
             {
                 $complexServers += $myservers
             }
@@ -193,11 +195,11 @@ function Get-TargetResource
         $complexProxyServers = @()
         foreach ($currentservers in $getValue.AdditionalProperties.proxyServer)
         {
-            $myservers = @{}
+            $myservers = [ordered]@{}
             $myservers.Add('automaticConfigurationScriptUrl', $currentservers.automaticConfigurationScriptUrl)
             $myservers.Add('address', $currentservers.address)
             $myservers.Add('port', $currentservers.port)
-            if ($myservers.values.Where({$null -ne $_}).count -gt 0)
+            if ($myservers.values.Where({$null -ne $_}).Count -gt 0)
             {
                 $complexProxyServers += $myservers
             }
@@ -206,10 +208,10 @@ function Get-TargetResource
         $complexCustomData = @()
         foreach ($value in $getValue.AdditionalProperties.customData)
         {
-            $myCustomdata = @{}
+            $myCustomdata = [ordered]@{}
             $myCustomdata.Add('key', $value.key)
             $myCustomdata.Add('value', $value.value)
-            if ($myCustomdata.values.Where({$null -ne $_}).count -gt 0)
+            if ($myCustomdata.values.Where({$null -ne $_}).Count -gt 0)
             {
                 $complexCustomData += $myCustomdata
             }
@@ -218,10 +220,10 @@ function Get-TargetResource
         $complexCustomKeyValueData = @()
         foreach ($value in $getValue.AdditionalProperties.customKeyValueData)
         {
-            $myCVdata = @{}
+            $myCVdata = [ordered]@{}
             $myCVdata.Add('name', $value.name)
             $myCVdata.Add('value', $value.value)
-            if ($myCVdata.values.Where({$null -ne $_}).count -gt 0)
+            if ($myCVdata.values.Where({$null -ne $_}).Count -gt 0)
             {
                 $complexCustomKeyValueData += $myCVdata
             }
@@ -230,12 +232,12 @@ function Get-TargetResource
         $complexTargetedMobileApps = @()
         foreach ($value in $getValue.AdditionalProperties.targetedMobileApps)
         {
-            $myTMAdata = @{}
+            $myTMAdata = [ordered]@{}
             $myTMAdata.Add('name', $value.name)
             $myTMAdata.Add('publisher', $value.publisher)
             $myTMAdata.Add('appStoreUrl', $value.appStoreUrl)
             $myTMAdata.Add('appId', $value.appId)
-            if ($myTMAdata.values.Where({$null -ne $_}).count -gt 0)
+            if ($myTMAdata.values.Where({$null -ne $_}).Count -gt 0)
             {
                 $complexTargetedMobileApps += $myTMAdata
             }
@@ -268,7 +270,7 @@ function Get-TargetResource
             TenantId                       = $TenantId
             ApplicationSecret              = $ApplicationSecret
             CertificateThumbprint          = $CertificateThumbprint
-            Managedidentity                = $ManagedIdentity.IsPresent
+            ManagedIdentity                = $ManagedIdentity.IsPresent
             AccessTokens                   = $AccessTokens
         }
 
@@ -282,7 +284,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $assignmentResult)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -292,7 +294,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -419,15 +421,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    try
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-            -InboundParameters $PSBoundParameters
-    }
-    catch
-    {
-        Write-Verbose -Message $_
-    }
+    Write-Verbose -Message "Setting configuration of the Intune VPN Policy for Android Device Owner with Id {$Id} and DisplayName {$DisplayName}"
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -467,7 +461,7 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Creating {$DisplayName}"
         $BoundParameters.Remove('Assignments') | Out-Null
-        $CreateParameters = ([Hashtable]$BoundParameters).clone()
+        $CreateParameters = ([Hashtable]$BoundParameters).Clone()
         $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters
         $AdditionalProperties = Get-M365DSCAdditionalProperties -Properties ($CreateParameters)
 
@@ -475,16 +469,16 @@ function Set-TargetResource
         {
             if ($key -ne '@odata.type')
             {
-                $keyName = $key.substring(0, 1).ToUpper() + $key.substring(1, $key.length - 1)
-                $CreateParameters.remove($keyName)
+                $keyName = $key.Substring(0, 1).ToUpper() + $key.Substring(1, $key.Length - 1)
+                $CreateParameters.Remove($keyName)
             }
         }
 
         $CreateParameters.Remove('Id') | Out-Null
 
-        foreach ($key in ($CreateParameters.clone()).Keys)
+        foreach ($key in ($CreateParameters.Clone()).Keys)
         {
-            if ($CreateParameters[$key].getType().Fullname -like '*CimInstance*')
+            if ($CreateParameters[$key].GetType().Fullname -like '*CimInstance*')
             {
                 $CreateParameters[$key] = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters[$key]
             }
@@ -493,10 +487,10 @@ function Set-TargetResource
         if ($AdditionalProperties.proxyServer)
         {
             $AdditionalProperties.Remove('proxyServer') #this is not in a format Update-MgBetaDeviceManagementDeviceConfiguration will accept
-            $AdditionalProperties.add('proxyServer',$proxyHashtable) #replaced with the hashtable we created earlier
+            $AdditionalProperties.Add('proxyServer',$proxyHashtable) #replaced with the hashtable we created earlier
         }
 
-        $CreateParameters.add('AdditionalProperties', $AdditionalProperties)
+        $CreateParameters.Add('AdditionalProperties', $AdditionalProperties)
 
         #region resource generator code
         $policy = New-MgBetaDeviceManagementDeviceConfiguration @CreateParameters
@@ -515,7 +509,7 @@ function Set-TargetResource
         Write-Verbose -Message "Updating {$DisplayName}"
 
         $BoundParameters.Remove('Assignments') | Out-Null
-        $UpdateParameters = ([Hashtable]$BoundParameters).clone()
+        $UpdateParameters = ([Hashtable]$BoundParameters).Clone()
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
         $AdditionalProperties = Get-M365DSCAdditionalProperties -Properties ($UpdateParameters)
 
@@ -523,16 +517,16 @@ function Set-TargetResource
         {
             if ($key -ne '@odata.type')
             {
-                $keyName = $key.substring(0, 1).ToUpper() + $key.substring(1, $key.length - 1)
-                $UpdateParameters.remove($keyName)
+                $keyName = $key.Substring(0, 1).ToUpper() + $key.Substring(1, $key.Length - 1)
+                $UpdateParameters.Remove($keyName)
             }
         }
 
         $UpdateParameters.Remove('Id') | Out-Null
 
-        foreach ($key in ($UpdateParameters.clone()).Keys)
+        foreach ($key in ($UpdateParameters.Clone()).Keys)
         {
-            if ($UpdateParameters[$key].getType().Fullname -like '*CimInstance*')
+            if ($UpdateParameters[$key].GetType().Fullname -like '*CimInstance*')
             {
                 $UpdateParameters[$key] = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters[$key]
             }
@@ -541,13 +535,13 @@ function Set-TargetResource
         if ($AdditionalProperties.proxyServer)
         {
             $AdditionalProperties.Remove('proxyServer') #this is not in a format Update-MgBetaDeviceManagementDeviceConfiguration will accept
-            $AdditionalProperties.add('proxyServer',$proxyHashtable) #replaced with the hashtable we created earlier
+            $AdditionalProperties.Add('proxyServer',$proxyHashtable) #replaced with the hashtable we created earlier
         }
 
         if ($AdditionalProperties)
         {
             #add the additional properties to the updateparameters
-            $UpdateParameters.add('AdditionalProperties', $AdditionalProperties)
+            $UpdateParameters.Add('AdditionalProperties', $AdditionalProperties)
         }
 
         #region resource generator code
@@ -692,9 +686,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -704,56 +695,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of {$id}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult) { break }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    #Convert any DateTime to String
-    foreach ($key in $ValuesToCheck.Keys)
-    {
-        if (($null -ne $CurrentValues[$key]) `
-                -and ($CurrentValues[$key].getType().Name -eq 'DateTime'))
-        {
-            $CurrentValues[$key] = $CurrentValues[$key].toString()
-        }
-    }
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -848,7 +792,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -967,16 +911,14 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
@@ -1010,15 +952,15 @@ function Get-M365DSCAdditionalProperties
     )
 
     $results = @{'@odata.type' = '#microsoft.graph.androidDeviceOwnerVpnConfiguration' }
-    $cloneProperties = $Properties.clone()
+    $cloneProperties = $Properties.Clone()
     foreach ($property in $cloneProperties.Keys)
     {
         if ($property -in ($additionalProperties) )
         {
             $propertyName = $property[0].ToString().ToLower() + $property.Substring(1, $property.Length - 1)
-            if ($properties.$property -and $properties.$property.getType().FullName -like '*CIMInstance*')
+            if ($properties.$property -and $properties.$property.GetType().FullName -like '*CIMInstance*')
             {
-                if ($properties.$property.getType().FullName -like '*[[\]]')
+                if ($properties.$property.GetType().FullName -like '*[[\]]')
                 {
                     $array = @()
                     foreach ($item in $properties.$property)

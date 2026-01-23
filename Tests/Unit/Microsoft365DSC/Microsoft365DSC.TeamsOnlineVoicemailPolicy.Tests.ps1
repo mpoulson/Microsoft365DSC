@@ -27,6 +27,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
@@ -42,6 +44,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-CsOnlineVoicemailPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-CsOnlineVoicemailPolicy -MockWith {
+                return @{
+                    EnableEditingCallAnswerRulesSetting = $True
+                    EnableTranscription                 = $True
+                    EnableTranscriptionProfanityMasking = $False
+                    EnableTranscriptionTranslation      = $True
+                    Identity                            = 'TestPolicy'
+                    MaximumRecordingLength              = '00:10:00'
+                    ShareData                           = 'Defer'
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -95,20 +109,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnableTranscriptionTranslation      = $True
                     Ensure                              = 'Present'
                     Identity                            = 'TestPolicy'
-                    MaximumRecordingLength              = '00:10:00'
+                    MaximumRecordingLength              = '00:05:00' # Drift
                     ShareData                           = 'Defer'
-                }
-
-                Mock -CommandName Get-CsOnlineVoicemailPolicy -MockWith {
-                    return @{
-                        EnableEditingCallAnswerRulesSetting = $True
-                        EnableTranscription                 = $True
-                        EnableTranscriptionProfanityMasking = $False
-                        EnableTranscriptionTranslation      = $True
-                        Identity                            = 'TestPolicy'
-                        MaximumRecordingLength              = '00:05:00'; #Drift
-                        ShareData                           = 'Defer'
-                    }
                 }
             }
 
@@ -140,18 +142,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MaximumRecordingLength              = '00:10:00'
                     ShareData                           = 'Defer'
                 }
-
-                Mock -CommandName Get-CsOnlineVoicemailPolicy -MockWith {
-                    return @{
-                        EnableEditingCallAnswerRulesSetting = $True
-                        EnableTranscription                 = $True
-                        EnableTranscriptionProfanityMasking = $False
-                        EnableTranscriptionTranslation      = $True
-                        Identity                            = 'TestPolicy'
-                        MaximumRecordingLength              = '00:10:00'
-                        ShareData                           = 'Defer'
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -176,18 +166,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MaximumRecordingLength              = '00:10:00'
                     ShareData                           = 'Defer'
                 }
-
-                Mock -CommandName Get-CsOnlineVoicemailPolicy -MockWith {
-                    return @{
-                        EnableEditingCallAnswerRulesSetting = $True
-                        EnableTranscription                 = $True
-                        EnableTranscriptionProfanityMasking = $False
-                        EnableTranscriptionTranslation      = $True
-                        Identity                            = 'TestPolicy'
-                        MaximumRecordingLength              = '00:10:00'
-                        ShareData                           = 'Defer'
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -210,18 +188,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsOnlineVoicemailPolicy -MockWith {
-                    return @{
-                        EnableEditingCallAnswerRulesSetting = $True
-                        EnableTranscription                 = $True
-                        EnableTranscriptionProfanityMasking = $False
-                        EnableTranscriptionTranslation      = $True
-                        Identity                            = 'TestPolicy'
-                        MaximumRecordingLength              = '00:10:00'
-                        ShareData                           = 'Defer'
-                    }
                 }
             }
 

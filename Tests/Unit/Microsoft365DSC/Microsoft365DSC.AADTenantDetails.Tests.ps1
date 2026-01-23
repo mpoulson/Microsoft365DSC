@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@contoso.onmicrosoft.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -33,6 +33,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Update-MgBetaOrganization -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaOrganization -MockWith {
+                return @{
+                    MarketingNotificationEmails          = 'exapmle@contoso.com'
+                    SecurityComplianceNotificationMails  = 'exapmle@contoso.com'
+                    SecurityComplianceNotificationPhones = '+1123456789'
+                    TechnicalNotificationMails           = 'exapmle@contoso.com'
+                }
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -59,13 +68,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-MgBetaOrganization -MockWith {
-                    $result = @{
+                    return @{
                         MarketingNotificationEmails          = ''
                         SecurityComplianceNotificationMails  = ''
                         SecurityComplianceNotificationPhones = ''
                         TechnicalNotificationMails           = ''
                     }
-                    return $result
                 }
             }
 
@@ -77,21 +85,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Values exists but it should not' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    TechnicalNotificationMails           = 'exapmle@contoso.com'
-                    SecurityComplianceNotificationPhones = '+1123456789'
-                    SecurityComplianceNotificationMails  = 'exapmle@contoso.com'
+                    TechnicalNotificationMails           = ''
+                    SecurityComplianceNotificationPhones = ''
+                    SecurityComplianceNotificationMails  = ''
                     Credential                           = $Credential
                     IsSingleInstance                     = 'Yes'
-                }
-
-                Mock -CommandName Get-MgBetaOrganization -MockWith {
-                    $AADTenantDetails = New-Object PSCustomObject
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name MarketingNotificationEmails -Value '' #should not be
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name SecurityComplianceNotificationMails -Value ''
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name SecurityComplianceNotificationPhones -Value ''
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name TechnicalNotificationMails -Value ''
-
-                    return $AADTenantDetails
                 }
             }
 
@@ -108,15 +106,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MarketingNotificationEmails          = 'exapmle@contoso.com'
                     Credential                           = $Credential
                     IsSingleInstance                     = 'Yes'
-                }
-
-                Mock -CommandName Get-MgBetaOrganization -MockWith {
-                    $AADTenantDetails = New-Object PSCustomObject
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name MarketingNotificationEmails -Value 'exapmle@contoso.com'
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name SecurityComplianceNotificationMails -Value 'exapmle@contoso.com'
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name SecurityComplianceNotificationPhones -Value '+1123456789'
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name TechnicalNotificationMails -Value 'exapmle@contoso.com'
-                    return $AADTenantDetails
                 }
             }
 
@@ -139,16 +128,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MarketingNotificationEmails          = 'NOTexapmle@contoso.com' #Drift
                     Credential                           = $Credential
                     IsSingleInstance                     = 'Yes'
-                }
-
-                Mock -CommandName Get-MgBetaOrganization -MockWith {
-                    $AADTenantDetails = New-Object PSCustomObject
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name MarketingNotificationEmails -Value 'exapmle@contoso.com'
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name SecurityComplianceNotificationMails -Value 'exapmle@contoso.com'
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name SecurityComplianceNotificationPhones -Value '+1123456789'
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name TechnicalNotificationMails -Value 'exapmle@contoso.com'
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name Id -Value '12345-12345-12345-12345-12345'
-                    return $AADTenantDetails
                 }
             }
 
@@ -173,12 +152,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaOrganization -MockWith {
-                    $AADTenantDetails = New-Object PSCustomObject
-                    $AADTenantDetails | Add-Member -MemberType NoteProperty -Name IsSingleInstance -Value 'Yes'
-                    return $AADTenantDetails
                 }
             }
 

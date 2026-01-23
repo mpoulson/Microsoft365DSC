@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -34,6 +34,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Get-EmailTenantSettings -MockWith {
+                return @{
+                    EnablePriorityAccountProtection            = $True;
+                    IsValid                                    = $True;
+                    ObjectState                                = "New"
+                    Identity                                   = "sotmcpoc.onmicrosoft.com\Default"
+                    Name                                       = "Default"
+                }
             }
 
             Mock -CommandName Set-EmailTenantSettings -MockWith {
@@ -51,19 +61,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     IsSingleInstance                           = 'Yes'
-                    EnablePriorityAccountProtection            = $True;
+                    EnablePriorityAccountProtection            = $False; # Drift
                     IsValid                                    = $True;
                     ObjectState                                = "New"
                     Credential                                 = $Credential
                     Name                                       = "Default"
-                }
-
-                Mock -CommandName Get-EmailTenantSettings -MockWith {
-                    return @{
-                        EnablePriorityAccountProtection            = $False;
-                        IsValid                                    = $True;
-                        ObjectState                                = "New"
-                    }
                 }
             }
 
@@ -88,16 +90,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential                                 = $Credential
                     Name                                       = "Default"
                 }
-
-                Mock -CommandName Get-EmailTenantSettings -MockWith {
-                    return @{
-                        EnablePriorityAccountProtection            = $True;
-                        IsValid                                    = $True;
-                        ObjectState                                = "New"
-                        Identity                                   = "sotmcpoc.onmicrosoft.com\Default"
-                        Name                                       = "Default"
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -111,14 +103,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-EmailTenantSettings -MockWith {
-                    return @{
-                        EnablePriorityAccountProtection            = $False;
-                        IsValid                                    = $True;
-                        ObjectState                                = "New"
-                    }
                 }
             }
 

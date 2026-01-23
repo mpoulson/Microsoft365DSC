@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -155,7 +155,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                          }
 
                     },
-
                     @{
                         Id = '1'
                         SettingDefinitions = @(
@@ -169,9 +168,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                         @{
                                             name ='Allowed. Turns on and runs the real-time monitoring service.'
                                             itemId = 'device_vendor_msft_policy_config_defender_allowrealtimemonitoring_1'
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 1
+                                            }
                                         }
                                     )
-
                                 }
                             }
                         )
@@ -198,10 +200,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 OffsetUri = '/Config/InternetExplorer/DisableBypassOfSmartScreenWarningsAboutUncommonFiles'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
-                                    options=@(
+                                    options = @(
                                         @{
                                             name ='Enabled'
                                             itemId = 'user_vendor_msft_policy_config_internetexplorer_disablebypassofsmartscreenwarningsaboutuncommonfiles_1'
+                                            optionValue = @{
+                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
+                                                value = 1
+                                            }
                                         }
                                     )
                                 }
@@ -274,13 +280,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineDefenderForEndpoint -Property @{
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'off'
                         BlockWin32APICallsFromOfficeMacros = 'warn'
-                        AllowRealtimeMonitoring = '1'
+                        AllowRealtimeMonitoring = 1
                     } -ClientOnly)
                     Id = "12345-12345-12345-12345-12345"
                     DisplayName = "My Test"
                     RoleScopeTagIds = @("FakeStringValue")
                     userSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogUserSettings_IntuneSecurityBaselineDefenderForEndpoint -Property @{
-                        DisableSafetyFilterOverrideForAppRepUnknown= '1'
+                        DisableSafetyFilterOverrideForAppRepUnknown = 1
                     } -ClientOnly)
                     Ensure = "Present"
                     Credential = $Credential;
@@ -316,13 +322,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineDefenderForEndpoint -Property @{
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'off'
                         BlockWin32APICallsFromOfficeMacros = 'warn'
-                        AllowRealtimeMonitoring = '1'
+                        AllowRealtimeMonitoring = 1
                     } -ClientOnly)
                     Id = "12345-12345-12345-12345-12345"
                     DisplayName = "My Test"
                     RoleScopeTagIds = @("FakeStringValue")
                     userSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogUserSettings_IntuneSecurityBaselineDefenderForEndpoint -Property @{
-                        DisableSafetyFilterOverrideForAppRepUnknown= '1'
+                        DisableSafetyFilterOverrideForAppRepUnknown = 1
                     } -ClientOnly)
                     Ensure = "Absent"
                     Credential = $Credential;
@@ -356,13 +362,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineDefenderForEndpoint -Property @{
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'off'
                         BlockWin32APICallsFromOfficeMacros = 'warn'
-                        AllowRealtimeMonitoring = '1'
+                        AllowRealtimeMonitoring = 1
                     } -ClientOnly)
                     Id = "12345-12345-12345-12345-12345"
                     DisplayName = "My Test"
                     RoleScopeTagIds = @("FakeStringValue")
                     userSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogUserSettings_IntuneSecurityBaselineDefenderForEndpoint -Property @{
-                        DisableSafetyFilterOverrideForAppRepUnknown= '1'
+                        DisableSafetyFilterOverrideForAppRepUnknown = 1
                     } -ClientOnly)
                     Ensure = "Present"
                     Credential = $Credential;
@@ -388,13 +394,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineDefenderForEndpoint -Property @{
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'off'
                         BlockWin32APICallsFromOfficeMacros = 'warn'
-                        AllowRealtimeMonitoring = '1'
+                        AllowRealtimeMonitoring = 1
                     } -ClientOnly)
                     Id = "12345-12345-12345-12345-12345"
                     DisplayName = "My Test"
                     RoleScopeTagIds = @("FakeStringValue")
                     userSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogUserSettings_IntuneSecurityBaselineDefenderForEndpoint -Property @{
-                        DisableSafetyFilterOverrideForAppRepUnknown= '0'
+                        DisableSafetyFilterOverrideForAppRepUnknown = 0
                     } -ClientOnly)
                     Ensure = "Present"
                     Credential = $Credential;

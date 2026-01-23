@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_IntuneWindowsUpdateForBusinessRingUpdateProfileWindows10'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -211,7 +213,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -263,7 +265,7 @@ function Get-TargetResource
         Write-Verbose -Message "An Intune Window Update For Business Ring Update Profile for Windows10 with Id {$Id} and DisplayName {$DisplayName} was found."
 
         #region resource generator code
-        $complexInstallationSchedule = @{}
+        $complexInstallationSchedule = [ordered]@{}
         if ($null -ne $getValue.AdditionalProperties.installationSchedule.activeHoursEnd)
         {
             $complexInstallationSchedule.Add('ActiveHoursEnd', ([TimeSpan]$getValue.AdditionalProperties.installationSchedule.activeHoursEnd).ToString())
@@ -274,7 +276,7 @@ function Get-TargetResource
         }
         if ($null -ne $getValue.AdditionalProperties.installationSchedule.scheduledInstallDay)
         {
-            $complexInstallationSchedule.Add('ScheduledInstallDay', $getValue.AdditionalProperties.installationSchedule.scheduledInstallDay.toString())
+            $complexInstallationSchedule.Add('ScheduledInstallDay', $getValue.AdditionalProperties.installationSchedule.scheduledInstallDay.ToString())
         }
         if ($null -ne $getValue.AdditionalProperties.installationSchedule.scheduledInstallTime)
         {
@@ -282,9 +284,9 @@ function Get-TargetResource
         }
         if ($null -ne $getValue.AdditionalProperties.installationSchedule.'@odata.type')
         {
-            $complexInstallationSchedule.Add('odataType', $getValue.AdditionalProperties.installationSchedule.'@odata.type'.toString())
+            $complexInstallationSchedule.Add('odataType', $getValue.AdditionalProperties.installationSchedule.'@odata.type'.ToString())
         }
-        if ($complexInstallationSchedule.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexInstallationSchedule.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexInstallationSchedule = $null
         }
@@ -430,7 +432,7 @@ function Get-TargetResource
             TenantId                                = $TenantId
             ApplicationSecret                       = $ApplicationSecret
             CertificateThumbprint                   = $CertificateThumbprint
-            Managedidentity                         = $ManagedIdentity.IsPresent
+            ManagedIdentity                         = $ManagedIdentity.IsPresent
             AccessTokens                            = $AccessTokens
             #endregion
         }
@@ -438,12 +440,12 @@ function Get-TargetResource
         $rawAssignments = @()
         $rawAssignments = Get-MgBetaDeviceManagementDeviceConfigurationAssignment -DeviceConfigurationId $Id -All
         $assignmentResult = @()
-        if ($null -ne $rawAssignments -and $rawAssignments.count -gt 0)
+        if ($null -ne $rawAssignments -and $rawAssignments.Count -gt 0)
         {
             $assignmentResult += ConvertFrom-IntunePolicyAssignment -Assignments $rawAssignments
         }
         $results.Add('Assignments', $assignmentResult)
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -453,7 +455,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -677,29 +679,19 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    $PSBoundParameters.Remove('Ensure') | Out-Null
-    $PSBoundParameters.Remove('Credential') | Out-Null
-    $PSBoundParameters.Remove('ApplicationId') | Out-Null
-    $PSBoundParameters.Remove('ApplicationSecret') | Out-Null
-    $PSBoundParameters.Remove('TenantId') | Out-Null
-    $PSBoundParameters.Remove('CertificateThumbprint') | Out-Null
-    $PSBoundParameters.Remove('ManagedIdentity') | Out-Null
-    $PSBoundParameters.Remove('Verbose') | Out-Null
-    $PSBoundParameters.Remove('AccessTokens') | Out-Null
-
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating an Intune Window Update For Business Ring Update Profile for Windows10 with DisplayName {$DisplayName}"
         $PSBoundParameters.Remove('Assignments') | Out-Null
 
-        $CreateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $CreateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters
         $CreateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$CreateParameters).clone()).Keys
+        $keys = (([Hashtable]$CreateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
             }
@@ -710,7 +702,7 @@ function Set-TargetResource
         #endregion
         #region new Intune assignment management
         $intuneAssignments = @()
-        if ($null -ne $Assignments -and $Assignments.count -gt 0)
+        if ($null -ne $Assignments -and $Assignments.Count -gt 0)
         {
             $intuneAssignments += ConvertTo-IntunePolicyAssignment -Assignments $Assignments
         }
@@ -727,15 +719,15 @@ function Set-TargetResource
         Write-Verbose -Message "Updating the Intune Window Update For Business Ring Update Profile for Windows10 with Id {$($currentInstance.Id)}"
         $PSBoundParameters.Remove('Assignments') | Out-Null
 
-        $UpdateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
 
         $UpdateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$UpdateParameters).clone()).Keys
+        $keys = (([Hashtable]$UpdateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
             }
@@ -751,7 +743,7 @@ function Set-TargetResource
         $currentAssignments += Get-MgBetaDeviceManagementDeviceConfigurationAssignment -DeviceConfigurationId $currentInstance.id
 
         $intuneAssignments = @()
-        if ($null -ne $Assignments -and $Assignments.count -gt 0)
+        if ($null -ne $Assignments -and $Assignments.Count -gt 0)
         {
             $intuneAssignments += ConvertTo-IntunePolicyAssignment -Assignments $Assignments
         }
@@ -768,7 +760,7 @@ function Set-TargetResource
                 $currentAssignments = $currentAssignments | Where-Object { -not($_.Target.AdditionalProperties.groupId -eq $assignment.Target.groupId -and $_.Target.AdditionalProperties.'@odata.type' -eq $assignment.Target.'@odata.type') }
             }
         }
-        if ($currentAssignments.count -gt 0)
+        if ($currentAssignments.Count -gt 0)
         {
             foreach ($assignment in $currentAssignments)
             {
@@ -994,9 +986,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -1006,47 +995,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Window Update For Business Ring Update Profile for Windows10 with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-    $ValuesToCheck.Remove('Id') | Out-Null
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -1145,7 +1096,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -1202,16 +1153,14 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 

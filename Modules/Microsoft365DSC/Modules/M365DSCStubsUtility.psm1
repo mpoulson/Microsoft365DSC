@@ -80,17 +80,13 @@ function New-M365DSCStubFiles
             @{Name = 'MicrosoftTeams'; ModuleName = 'MicrosoftTeams'; }
         )
     }
-    if ($null -ne $CmdletsList -and $CmdletsList.Length -gt 0)
-    {
-        $workloads = @{Name = 'MicrosoftGraph'; ModuleName = 'Microsoft.Graph.Authentication'}
-    }
 
     foreach ($Module in $workloads)
     {
         if ($null -eq $CmdletsList -or $CmdletsList.Length -eq 0)
         {
             Write-Host "Connecting to {$($Module.Name)}"
-            $ConnectionMode = New-M365DSCConnection -Workload ($Module.Name) `
+            $null = New-M365DSCConnection -Workload ($Module.Name) `
                 -InboundParameters $PSBoundParameters
 
             Write-Host "Generating Stubs for {$($Module.ModuleName)}..."
@@ -106,7 +102,7 @@ function New-M365DSCStubFiles
             else
             {
                 Import-Module $CurrentModuleName -Force -Global -ErrorAction SilentlyContinue
-                $ConnectionMode = New-M365DSCConnection -Workload $Module.Name `
+                $null = New-M365DSCConnection -Workload $Module.Name `
                     -InboundParameters $PSBoundParameters
             }
 

@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOPerimeterConfiguration'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -50,43 +52,39 @@ function Get-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     Write-Verbose -Message 'Getting Perimeter Configuration'
-
-    if ($Global:CurrentModeIsExport)
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = $PSBoundParameters
-    $nullReturn.Ensure = 'Absent'
 
     try
     {
-        #Get-OMEConfiguration do NOT accept ErrorAction parameter
-        $PerimeterConfiguration = Get-PerimeterConfig 2>&1
-        if ($null -ne ($PerimeterConfiguration | Where-Object { $_.gettype().Name -like '*ErrorRecord*' }))
+        if (-not $Script:exportedInstance)
         {
-            throw $PerimeterConfiguration
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = $PSBoundParameters
+            $nullReturn.Ensure = 'Absent'
+
+            $PerimeterConfiguration = Get-PerimeterConfig -ErrorAction Stop
         }
+        else
+        {
+            $PerimeterConfiguration = $Script:exportedInstance
+        }
+
+        Write-Verbose -Message "Found Perimeter Configuration"
 
         $result = @{
             IsSingleInstance      = 'Yes'
@@ -97,13 +95,11 @@ function Get-TargetResource
             CertificateThumbprint = $CertificateThumbprint
             CertificatePath       = $CertificatePath
             CertificatePassword   = $CertificatePassword
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             TenantId              = $TenantId
             AccessTokens          = $AccessTokens
         }
 
-        Write-Verbose -Message 'Found Perimeter Configuration '
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
         return $result
     }
     catch
@@ -114,7 +110,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -183,22 +179,13 @@ function Set-TargetResource
 
     Write-Verbose -Message 'Setting configuration of Perimeter Configuration'
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+    $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters
 
-    $PerimeterConfigurationParams = [System.Collections.Hashtable]($PSBoundParameters)
-    $PerimeterConfigurationParams.Remove('Ensure') | Out-Null
-    $PerimeterConfigurationParams.Remove('Credential') | Out-Null
-    $PerimeterConfigurationParams.Remove('ApplicationId') | Out-Null
-    $PerimeterConfigurationParams.Remove('TenantId') | Out-Null
-    $PerimeterConfigurationParams.Remove('CertificateThumbprint') | Out-Null
-    $PerimeterConfigurationParams.Remove('CertificatePath') | Out-Null
-    $PerimeterConfigurationParams.Remove('CertificatePassword') | Out-Null
-    $PerimeterConfigurationParams.Remove('ManagedIdentity') | Out-Null
+    $PerimeterConfigurationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $PerimeterConfigurationParams.Remove('IsSingleInstance') | Out-Null
-    $PerimeterConfigurationParams.Remove('AccessTokens') | Out-Null
 
-    if (('Present' -eq $Ensure ) -and ($Null -ne $PerimeterConfigurationParams))
+    if ('Present' -eq $Ensure -and $null -ne $PerimeterConfigurationParams)
     {
         Write-Verbose -Message "Setting Perimeter Configuration with values: $(Convert-M365DscHashtableToString -Hashtable $PerimeterConfigurationParams)"
         Set-PerimeterConfig @PerimeterConfigurationParams -Confirm:$false
@@ -257,11 +244,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -269,23 +254,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration of Perimeter Configuration '
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $($TestResult)"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -326,6 +297,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' -InboundParameters $PSBoundParameters -SkipModuleReload $true
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -347,11 +319,7 @@ function Export-TargetResource
             $Global:M365DSCExportResourceInstancesCount++
         }
 
-        $PerimeterConfiguration = Get-PerimeterConfig 2>&1
-        if ($null -ne ($PerimeterConfiguration | Where-Object { $_.gettype().Name -like '*ErrorRecord*' }))
-        {
-            throw $PerimeterConfiguration
-        }
+        $PerimeterConfiguration = Get-PerimeterConfig -ErrorAction Stop
 
         $dscContent = ''
         Write-M365DSCHost -Message "`r`n" -DeferWrite
@@ -364,11 +332,11 @@ function Export-TargetResource
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint
             CertificatePassword   = $CertificatePassword
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             CertificatePath       = $CertificatePath
             AccessTokens          = $AccessTokens
         }
-
+        $Script:exportedInstance = $PerimeterConfiguration
         $Results = Get-TargetResource @Params
         $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
             -ConnectionMode $ConnectionMode `
@@ -383,15 +351,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

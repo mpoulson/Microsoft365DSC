@@ -23,7 +23,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString ((New-Guid).ToString()) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -37,6 +37,88 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    DisplayName                             = 'FakeStringValue'
+                    Description                             = 'FakeStringValue'
+                    Id                                      = 'ab915bca-1234-4b11-8acb-719a771139bc'
+                    AdditionalProperties                    = @{
+                        '@odata.type'              = '#microsoft.graph.iosDeviceFeaturesConfiguration'
+                        wallpaperDisplayLocation   = 'notConfigured'
+                        airPrintDestinations      = @(
+                            @{
+                                ipAddress     = '1.0.0.1'
+                                resourcePath  = 'printers/xerox_Phase'
+                                port          = 0
+                                forceTls      = $false
+                            }
+                        )
+                        contentFilterSettings     = @{
+                                '@odata.Type' = '#microsoft.graph.iosWebContentFilterAutoFilter'
+                                allowedUrls = @(
+                                    'https://www.fakeallowed.com'
+                                )
+                                blockedUrls = @(
+                                    'https://www.fakeblocked.com'
+                                )
+                        }
+                        homeScreenDockIcons       = @(
+                            @{
+                                '@odata.type'   = '#microsoft.graph.iosHomeScreenApp'
+                                displayName   = 'Apple Store'
+                                bundleID      = 'com.apple.store.Jolly'
+                                isWebClip     = $false
+                            }
+                        )
+                        homeScreenPages           = @(
+                            @{
+                                icons = @(
+                                    @{
+                                        '@odata.type'   = '#microsoft.graph.iosHomeScreenApp'
+                                        displayName   = 'App Store'
+                                        bundleID      = 'com.apple.AppStore'
+                                        isWebClip     = $false
+                                    }
+                                )
+                            }
+                        )
+                        notificationSettings      = @(
+                            @{
+                                bundleID               = 'app.id'
+                                appName                = 'fakeapp'
+                                publisher              = 'fakepublisher'
+                                enabled                = $true
+                                showInNotificationCenter = $true
+                                showOnLockScreen       = $true
+                                alertType              = 'banner'
+                                badgesEnabled          = $true
+                                soundsEnabled          = $true
+                                previewVisibility      = 'hideWhenLocked'
+                            }
+                        )
+                        singleSignOnSettings      = @{
+                            allowedUrls            = @('https://www.fakeurl.com')
+                            displayName            = 'iOS-DeviceFeatures-ContentSettingsSpecificSites'
+                            kerberosPrincipalName  = 'userPrincipalName'
+                            kerberosRealm          = 'fakerealm.com'
+                            allowedAppsList        = @(
+                                @{
+                                    name   = 'Intune Company Portal'
+                                    appId  = 'com.microsoft.companyportal'
+                                }
+                            )
+                        }
+                        iosSingleSignOnExtension = @{
+                            '@odata.type' = '#microsoft.graph.iosCredentialSingleSignOnExtension'
+                            extensionIdentifier = 'com.example.sso.credential'
+                            teamIdentifier      = '4HMSJJRMAD'
+                            realm               = 'EXAMPLE.COM'
+                            domains             = @('example.com')
+                        }
+                    }
+                }
             }
 
             Mock -CommandName Get-MgBetaDeviceManagementDeviceCompliancePolicyAssignment -MockWith {
@@ -70,9 +152,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             ipAddress = '1.0.0.1'
                         } -ClientOnly)
                     )
-
                     AssetTagTemplate                             = 'FakeStringValue'
-                    ContentFilterSettings                        = [CimInstance[]]@(
+                    ContentFilterSettings  = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosWebContentFilterSpecificWebsitesAccess `
                         -Property @{
@@ -86,7 +167,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         } -ClientOnly)
                     )
                     LockScreenFootnote                           = 'FakeStringValue'
-                    HomeScreenDockIcons                          = [CimInstance[]]@(
+                    HomeScreenDockIcons    = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosHomeScreenApp `
                         -Property @{
@@ -97,7 +178,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     HomeScreenGridWidth                          = 5
                     HomeScreenGridHeight                         = 6
-                    HomeScreenPages                              = [CimInstance[]]@(
+                    HomeScreenPages = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosHomeScreenItem `
                         -Property @{
@@ -112,7 +193,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             )
                         } -ClientOnly)
                     )
-                    NotificationSettings                         = [CimInstance[]]@(
+                    NotificationSettings = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosNotificationSettings `
                         -Property @{
@@ -128,7 +209,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             appName = 'fakeapp'
                         } -ClientOnly)
                     )
-                    SingleSignOnSettings                         = [CimInstance[]]@(
+                    SingleSignOnSettings = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosSingleSignOnSettings `
                         -Property @{
@@ -185,7 +266,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         } -ClientOnly)
                     )
                     Assignments                                = @()
-
                     Ensure                                     = 'Present'
                     Credential                                 = $Credential
                 }
@@ -228,7 +308,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             ipAddress = '1.0.0.1'
                         } -ClientOnly)
                     )
-                   ContentFilterSettings                        = [CimInstance[]]@(
+                   ContentFilterSettings = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosWebContentFilterSpecificWebsitesAccess `
                         -Property @{
@@ -241,7 +321,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             )
                         } -ClientOnly)
                     )
-                    HomeScreenDockIcons                          = [CimInstance[]]@(
+                    HomeScreenDockIcons = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosHomeScreenApp `
                         -Property @{
@@ -250,7 +330,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             isWebClip = $False
                         } -ClientOnly)
                     )
-                    HomeScreenPages                              = [CimInstance[]]@(
+                    HomeScreenPages = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosHomeScreenItem `
                         -Property @{
@@ -265,13 +345,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             )
                         } -ClientOnly)
                     )
-                    NotificationSettings                         = [CimInstance[]]@(
+                    NotificationSettings = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosNotificationSettings `
                         -Property @{
                             alertType = 'banner'
                             enabled = $True
-                            showOnLockScreen = $True
+                            showOnLockScreen = $False # Updated property
                             badgesEnabled = $True
                             soundsEnabled = $True
                             publisher = 'fakepublisher'
@@ -281,7 +361,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             appName = 'fakeapp'
                         } -ClientOnly)
                     )
-                    SingleSignOnSettings                         = [CimInstance[]]@(
+                    SingleSignOnSettings = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosSingleSignOnSettings `
                         -Property @{
@@ -313,93 +393,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                       = 'Present'
                     Credential                                   = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                   return @{
-                        DisplayName                             = 'FakeStringValue'
-                        Description                             = 'FakeStringValue - CHANGED' #changed
-                        Id                                      = 'ab915bca-1234-4b11-8acb-719a771139bc'
-                        AdditionalProperties                    = @{
-                            '@odata.type'              = '#microsoft.graph.iosDeviceFeaturesConfiguration'
-                            wallpaperDisplayLocation   = 'notConfigured'
-                            airPrintDestinations      = @(
-                                @{
-                                    ipAddress     = '1.0.0.1'
-                                    resourcePath  = 'printers/xerox_Phase'
-                                    port          = 0
-                                    forceTls      = $false
-                                }
-                            )
-                            contentFilterSettings     = @{
-                                    '@odata.Type' = '#microsoft.graph.iosWebContentFilterAutoFilter'
-                                    allowedUrls = @(
-                                        'https://www.fakeallowed.com'
-                                    )
-                                    blockedUrls = @(
-                                        'https://www.fakeblocked.com'
-                                    )
-                            }
-                            homeScreenDockIcons       = @(
-                                @{
-                                    '@odata.type'   = '#microsoft.graph.iosHomeScreenApp'
-                                    displayName   = 'Apple Store'
-                                    bundleID      = 'com.apple.store.Jolly'
-                                    isWebClip     = $false
-                                }
-                            )
-                            homeScreenPages           = @(
-                                @{
-                                    icons = @(
-                                        @{
-                                            '@odata.type'   = '#microsoft.graph.iosHomeScreenApp'
-                                            displayName   = 'App Store'
-                                            bundleID      = 'com.apple.AppStore'
-                                            isWebClip     = $false
-                                        }
-                                    )
-                                }
-                            )
-                            notificationSettings      = @(
-                                @{
-                                    bundleID               = 'app.id'
-                                    appName                = 'fakeapp'
-                                    publisher              = 'fakepublisher'
-                                    enabled                = $true
-                                    showInNotificationCenter = $true
-                                    showOnLockScreen       = $true
-                                    alertType              = 'banner'
-                                    badgesEnabled          = $true
-                                    soundsEnabled          = $true
-                                    previewVisibility      = 'hideWhenLocked'
-                                }
-                            )
-                            singleSignOnSettings      = @{
-                                allowedUrls            = @('https://www.fakeurl.com')
-                                displayName            = 'iOS-DeviceFeatures-ContentSettingsSpecificSites'
-                                kerberosPrincipalName  = 'userPrincipalName'
-                                kerberosRealm          = 'fakerealm.com'
-                                allowedAppsList        = @(
-                                    @{
-                                        name   = 'Intune Company Portal'
-                                        appId  = 'com.microsoft.companyportal'
-                                    }
-                                )
-                            }
-                            iosSingleSignOnExtension = @{
-                                '@odata.type' = '#microsoft.graph.iosCredentialSingleSignOnExtension'
-                                extensionIdentifier = 'com.example.sso.credential'
-                                teamIdentifier      = '4HMSJJRMAD'
-                                realm               = 'EXAMPLE.COM'
-                                domains             = @('example.com')
-                            }
-                        #end additionalproperties
-                        }
-                    }
             }
-        }
 
             It 'Should return Present from the Get method' {
-                    (Get-TargetResource @testParams).Ensure | Should -Be 'Present' #-Displayname 'FakeStringValue').Ensure | Should -Be 'Present' #
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
             }
 
             It 'Should return false from the Test method' {
@@ -409,7 +406,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should update the IntuneDeviceFeaturesConfigurationPolicyIOS from the Set method' {
                 Set-TargetResource @testParams
                 Should -Invoke -CommandName Update-MgBetaDeviceManagementDeviceConfiguration -Exactly 1
-
             }
         }
 
@@ -432,7 +428,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             ipAddress = '1.0.0.1'
                         } -ClientOnly)
                     )
-                   ContentFilterSettings                        = [CimInstance[]]@(
+                   ContentFilterSettings  = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosWebContentFilterSpecificWebsitesAccess `
                         -Property @{
@@ -445,7 +441,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             )
                         } -ClientOnly)
                     )
-                    HomeScreenDockIcons                          = [CimInstance[]]@(
+                    HomeScreenDockIcons    = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosHomeScreenApp `
                         -Property @{
@@ -454,7 +450,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             isWebClip = $False
                         } -ClientOnly)
                     )
-                    HomeScreenPages                              = [CimInstance[]]@(
+                    HomeScreenPages        = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosHomeScreenItem `
                         -Property @{
@@ -469,7 +465,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             )
                         } -ClientOnly)
                     )
-                    NotificationSettings                         = [CimInstance[]]@(
+                    NotificationSettings   = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosNotificationSettings `
                         -Property @{
@@ -485,7 +481,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             appName = 'fakeapp'
                         } -ClientOnly)
                     )
-                    SingleSignOnSettings                         = [CimInstance[]]@(
+                    SingleSignOnSettings   = [CimInstance[]]@(
                         (New-CimInstance `
                         -ClassName MSFT_iosSingleSignOnSettings `
                         -Property @{
@@ -517,89 +513,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                       = 'Present'
                     Credential                                   = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                   return @{
-                        DisplayName                             = 'FakeStringValue'
-                        Description                             = 'FakeStringValue'
-                        Id                                      = 'ab915bca-1234-4b11-8acb-719a771139bc'
-                        AdditionalProperties                    = @{
-                            '@odata.type'              = '#microsoft.graph.iosDeviceFeaturesConfiguration'
-                            wallpaperDisplayLocation   = 'notConfigured'
-                            airPrintDestinations      = @(
-                                @{
-                                    ipAddress     = '1.0.0.1'
-                                    resourcePath  = 'printers/xerox_Phase'
-                                    port          = 0
-                                    forceTls      = $false
-                                }
-                            )
-                            contentFilterSettings     = @{
-                                    '@odata.Type' = '#microsoft.graph.iosWebContentFilterAutoFilter'
-                                    allowedUrls = @(
-                                        'https://www.fakeallowed.com'
-                                    )
-                                    blockedUrls = @(
-                                        'https://www.fakeblocked.com'
-                                    )
-                            }
-                            homeScreenDockIcons       = @(
-                                @{
-                                    '@odata.type'   = '#microsoft.graph.iosHomeScreenApp'
-                                    displayName   = 'Apple Store'
-                                    bundleID      = 'com.apple.store.Jolly'
-                                    isWebClip     = $false
-                                }
-                            )
-                            homeScreenPages           = @(
-                                @{
-                                    icons = @(
-                                        @{
-                                            '@odata.type'   = '#microsoft.graph.iosHomeScreenApp'
-                                            displayName   = 'App Store'
-                                            bundleID      = 'com.apple.AppStore'
-                                            isWebClip     = $false
-                                        }
-                                    )
-                                }
-                            )
-                            notificationSettings      = @(
-                                @{
-                                    bundleID               = 'app.id'
-                                    appName                = 'fakeapp'
-                                    publisher              = 'fakepublisher'
-                                    enabled                = $true
-                                    showInNotificationCenter = $true
-                                    showOnLockScreen       = $true
-                                    alertType              = 'banner'
-                                    badgesEnabled          = $true
-                                    soundsEnabled          = $true
-                                    previewVisibility      = 'hideWhenLocked'
-                                }
-                            )
-                            singleSignOnSettings      = @{
-                                allowedUrls            = @('https://www.fakeurl.com')
-                                displayName            = 'iOS-DeviceFeatures-ContentSettingsSpecificSites'
-                                kerberosPrincipalName  = 'userPrincipalName'
-                                kerberosRealm          = 'fakerealm.com'
-                                allowedAppsList        = @(
-                                    @{
-                                        name   = 'Intune Company Portal'
-                                        appId  = 'com.microsoft.companyportal'
-                                    }
-                                )
-                            }
-                            iosSingleSignOnExtension = @{
-                                '@odata.type' = '#microsoft.graph.iosCredentialSingleSignOnExtension'
-                                extensionIdentifier = 'com.example.sso.credential'
-                                teamIdentifier      = '4HMSJJRMAD'
-                                realm               = 'EXAMPLE.COM'
-                                domains             = @('example.com')
-                            }
-                        #end additionalproperties
-                        }
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -618,19 +531,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Assignments                                  = @()
                     Ensure                                       = 'Absent'
                     Credential                                   = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                   return @{
-                        DisplayName                             = 'FakeStringValue'
-                        Description                             = 'FakeStringValue'
-                        Id                                      = 'FakeStringValue'
-                        RoleScopeTagIds                         = @('0')
-                        AdditionalProperties                    = @{
-                            '@odata.type'              = '#microsoft.graph.iosDeviceFeaturesConfiguration'
-                            wallpaperDisplayLocation   = 'notConfigured'
-                        }
-                    }
                 }
             }
 
@@ -654,110 +554,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        DisplayName                               = 'FakeStringValue'
-                        Description                               = 'FakeStringValue'
-                        Id                                        = 'FakeStringValue'
-                        RoleScopeTagIds                           = @('0')
-                        AdditionalProperties                      = @{
-                            '@odata.type'             = '#microsoft.graph.iosDeviceFeaturesConfiguration'
-                            airPrintDestinations      = @(
-                                @{
-                                    ipAddress     = '1.0.0.1'
-                                    resourcePath  = 'printers/xerox_Phase'
-                                    port          = 0
-                                    forceTls      = $false
-                                }
-                            )
-                            assetTagTemplate          = 'Asset #123abc'
-                            lockScreenFootnote        = 'If Lost, Return to'
-                            homeScreenGridWidth       = 4
-                            homeScreenGridHeight      = 5
-                            wallpaperDisplayLocation  = 'notConfigured'
-                            contentFilterSettings     = @{
-                                '@odata.Type' = '#microsoft.graph.iosWebContentFilterAutoFilter'
-                                allowedUrls = @(
-                                    'https://www.fakeallowed.com'
-                                )
-                                blockedUrls = @(
-                                    'https://www.fakeblocked.com'
-                                )
-                            }
-                            homeScreenDockIcons       = @(
-                                @{
-                                    '@odata.type'   = '#microsoft.graph.iosHomeScreenApp'
-                                    displayName   = 'Apple Store'
-                                    bundleID      = 'com.apple.store.Jolly'
-                                    isWebClip     = $false
-                                }
-                            )
-                            homeScreenPages           = @(
-                                @{
-                                    icons = @(
-                                        @{
-                                            '@odata.type'   = '#microsoft.graph.iosHomeScreenApp'
-                                            displayName   = 'App Store'
-                                            bundleID      = 'com.apple.AppStore'
-                                            isWebClip     = $false
-                                        }
-                                    )
-                                }
-                            )
-                            notificationSettings      = @(
-                                @{
-                                    bundleID               = 'app.id'
-                                    appName                = 'fakeapp'
-                                    publisher              = 'fakepublisher'
-                                    enabled                = $true
-                                    showInNotificationCenter = $true
-                                    showOnLockScreen       = $true
-                                    alertType              = 'banner'
-                                    badgesEnabled          = $true
-                                    soundsEnabled          = $true
-                                    previewVisibility      = 'hideWhenLocked'
-                                }
-                            )
-                            singleSignOnSettings      = @{
-                                allowedUrls            = @('https://www.fakeurl.com')
-                                displayName            = 'iOS-DeviceFeatures-ContentSettingsSpecificSites'
-                                kerberosPrincipalName  = 'userPrincipalName'
-                                kerberosRealm          = 'fakerealm.com'
-                                allowedAppsList        = @(
-                                    @{
-                                        name   = 'Intune Company Portal'
-                                        appId  = 'com.microsoft.companyportal'
-                                    }
-                                )
-                            }
-                            iosCredentialSingleSignOnExtension = @{
-                                '@odata.type'        = '#microsoft.graph.iosCredentialSingleSignOnExtension'
-                                extensionIdentifier  = 'com.example.sso.credential'
-                                teamIdentifier       = '4HMSJJRMAD'
-                                domains             = @('example.com')
-                                realm               = 'EXAMPLE.COM'
-                                configurations      = @(
-                                @{
-                                    '@odata.type' = '#microsoft.graph.keyStringValuePair'
-                                    key          = 'myString'
-                                    value        = 'myvalue'
-                                }
-                                @{
-                                    '@odata.type' = '#microsoft.graph.keyBooleanValuePair'
-                                    key          = 'mybool'
-                                    value        = $true
-                                }
-                                @{
-                                    '@odata.type' = '#microsoft.graph.keyIntegerValuePair'
-                                    key          = 'myInt'
-                                    value        = 4
-                                }
-                            )
-                            }
-                        }
-                    }
                 }
             }
 

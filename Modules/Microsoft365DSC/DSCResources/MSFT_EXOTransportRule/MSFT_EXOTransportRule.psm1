@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOTransportRule'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -80,10 +82,6 @@ function Get-TargetResource
         [Parameter()]
         [System.String]
         $ApplyHtmlDisclaimerText,
-
-        [Parameter()]
-        [System.Boolean]
-        $ApplyOME,
 
         [Parameter()]
         [System.String]
@@ -293,10 +291,6 @@ function Get-TargetResource
         $ExceptIfHasNoClassification,
 
         [Parameter()]
-        [System.Boolean]
-        $ExceptIfHasSenderOverride, #DEPRECATED
-
-        [Parameter()]
         [System.String]
         $ExceptIfHeaderContainsMessageHeader,
 
@@ -324,10 +318,6 @@ function Get-TargetResource
         [ValidateSet('OOF', 'AutoForward', 'Encrypted', 'Calendaring', 'PermissionControlled', 'Voicemail', 'Signed', 'ApprovalRequest', 'ReadReceipt')]
         [System.String]
         $ExceptIfMessageTypeMatches,
-
-        [Parameter()]
-        [System.String[]]
-        $ExceptIfMessageContainsDataClassifications = @(), #DEPRECATED
 
         [Parameter()]
         [System.String]
@@ -462,10 +452,6 @@ function Get-TargetResource
         $HasNoClassification,
 
         [Parameter()]
-        [System.Boolean]
-        $HasSenderOverride, #DEPRECATED
-
-        [Parameter()]
         [System.String]
         $HeaderContainsMessageHeader,
 
@@ -495,10 +481,6 @@ function Get-TargetResource
         $ManagerForEvaluatedUser,
 
         [Parameter()]
-        [System.String[]]
-        $MessageContainsDataClassifications, #DEPRECATED
-
-        [Parameter()]
         [System.String]
         $MessageSizeOver,
 
@@ -519,11 +501,6 @@ function Get-TargetResource
         [Parameter()]
         [System.String[]]
         $ModerateMessageByUser = @(),
-
-        [Parameter()]
-        [ValidateSet('NotifyOnly', 'RejectMessage', 'RejectUnlessFalsePositiveOverride', 'RejectUnlessSilentOverride', 'RejectUnlessExplicitOverride')]
-        [System.String]
-        $NotifySender, #DEPRECATED
 
         [Parameter()]
         [System.String]
@@ -581,10 +558,6 @@ function Get-TargetResource
         [Parameter()]
         [System.String]
         $RemoveHeader,
-
-        [Parameter()]
-        [System.Boolean]
-        $RemoveOME,
 
         [Parameter()]
         [System.Boolean]
@@ -739,13 +712,16 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting Transport Rule configuration for $Name"
+
     try
     {
+        $nullReturn = $PSBoundParameters
+        $nullReturn.Ensure = 'Absent'
+
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            Write-Verbose -Message "Getting Transport Rule configuration for $Name"
-
-            $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -760,35 +736,16 @@ function Get-TargetResource
             Add-M365DSCTelemetryEvent -Data $data
             #endregion
 
-            $TransportRule = Get-TransportRule -Identity $Name -ErrorAction 'SilentlyContinue'
-
+            $TransportRule = Get-TransportRule -Identity $Name -ErrorAction SilentlyContinue
             if ($null -eq $TransportRule)
             {
                 Write-Verbose -Message "Transport Rule $($Name) does not exist."
-                $nullReturn = $PSBoundParameters
-                $nullReturn.Ensure = 'Absent'
                 return $nullReturn
             }
         }
         else
         {
             $TransportRule = $Script:exportedInstance
-        }
-
-
-        $MessageContainsDataClassificationsValue = $null
-        if ($null -ne $TransportRule.MessageContainsDataClassifications)
-        {
-            $MessageContainsDataClassificationsValue = $TransportRule.MessageContainsDataClassifications.Replace('"', "'")
-        }
-
-        if ($TransportRule.State -eq 'Enabled')
-        {
-            $enabled = $true
-        }
-        else
-        {
-            $enabled = $false
         }
 
         $result = @{
@@ -810,7 +767,6 @@ function Get-TargetResource
             ApplyHtmlDisclaimerFallbackAction            = $TransportRule.ApplyHtmlDisclaimerFallbackAction
             ApplyHtmlDisclaimerLocation                  = $TransportRule.ApplyHtmlDisclaimerLocation
             ApplyHtmlDisclaimerText                      = $TransportRule.ApplyHtmlDisclaimerText
-            ApplyOME                                     = $TransportRule.ApplyOME
             ApplyRightsProtectionCustomizationTemplate   = $TransportRule.ApplyRightsProtectionCustomizationTemplate
             ApplyRightsProtectionTemplate                = $TransportRule.ApplyRightsProtectionTemplate
             AttachmentContainsWords                      = $TransportRule.AttachmentContainsWords
@@ -831,7 +787,7 @@ function Get-TargetResource
             CopyTo                                       = $TransportRule.CopyTo
             DeleteMessage                                = $TransportRule.DeleteMessage
             DlpPolicy                                    = $TransportRule.DlpPolicy
-            Enabled                                      = $enabled
+            Enabled                                      = $TransportRule.State -eq 'Enabled'
             ExceptIfADComparisonAttribute                = $TransportRule.ExceptIfADComparisonAttribute
             ExceptIfADComparisonOperator                 = $TransportRule.ExceptIfADComparisonOperator
             ExceptIfAnyOfCcHeader                        = $TransportRule.ExceptIfAnyOfCcHeader
@@ -927,7 +883,6 @@ function Get-TargetResource
             RejectMessageEnhancedStatusCode              = $TransportRule.RejectMessageEnhancedStatusCode
             RejectMessageReasonText                      = $TransportRule.RejectMessageReasonText
             RemoveHeader                                 = $TransportRule.RemoveHeader
-            RemoveOME                                    = $TransportRule.RemoveOME
             RemoveOMEv2                                  = $TransportRule.RemoveOMEv2
             RemoveRMSAttachmentEncryption                = $TransportRule.RemoveRMSAttachmentEncryption
             RouteMessageOutboundConnector                = $TransportRule.RouteMessageOutboundConnector
@@ -961,7 +916,7 @@ function Get-TargetResource
             CertificateThumbprint                        = $CertificateThumbprint
             CertificatePath                              = $CertificatePath
             CertificatePassword                          = $CertificatePassword
-            Managedidentity                              = $ManagedIdentity.IsPresent
+            ManagedIdentity                              = $ManagedIdentity.IsPresent
             TenantId                                     = $TenantId
             AccessTokens                                 = $AccessTokens
         }
@@ -970,18 +925,18 @@ function Get-TargetResource
         {
             $propertyInfo = $inputParams.$key
             $curVar = $TransportRule.$key
-            if ($propertyInfo.ParameterType.Name -eq 'String[]' -and $curVar -eq $null)
+            if ($result.ContainsKey($key) -and $propertyInfo.ParameterType.Name -eq 'String[]' -and $null -eq $curVar)
             {
                 $result.$key = @()
             }
         }
 
         # Formats DateTime as String
-        if ($null -ne $result.ActivationDate)
+        if ($null -ne $TransportRule.ActivationDate)
         {
             $result.ActivationDate = $TransportRule.ActivationDate.ToUniversalTime().ToString()
         }
-        if ($null -ne $result.ExpiryDate)
+        if ($null -ne $TransportRule.ExpiryDate)
         {
             $result.ExpiryDate = $TransportRule.ExpiryDate.ToUniversalTime().ToString()
         }
@@ -997,7 +952,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 function Set-TargetResource
@@ -1081,10 +1036,6 @@ function Set-TargetResource
         [Parameter()]
         [System.String]
         $ApplyHtmlDisclaimerText,
-
-        [Parameter()]
-        [System.Boolean]
-        $ApplyOME,
 
         [Parameter()]
         [System.String]
@@ -1294,10 +1245,6 @@ function Set-TargetResource
         $ExceptIfHasNoClassification,
 
         [Parameter()]
-        [System.Boolean]
-        $ExceptIfHasSenderOverride, #DEPRECATED
-
-        [Parameter()]
         [System.String]
         $ExceptIfHeaderContainsMessageHeader,
 
@@ -1325,10 +1272,6 @@ function Set-TargetResource
         [ValidateSet('OOF', 'AutoForward', 'Encrypted', 'Calendaring', 'PermissionControlled', 'Voicemail', 'Signed', 'ApprovalRequest', 'ReadReceipt')]
         [System.String]
         $ExceptIfMessageTypeMatches,
-
-        [Parameter()]
-        [System.String[]]
-        $ExceptIfMessageContainsDataClassifications = @(), #DEPRECATED
 
         [Parameter()]
         [System.String]
@@ -1463,10 +1406,6 @@ function Set-TargetResource
         $HasNoClassification,
 
         [Parameter()]
-        [System.Boolean]
-        $HasSenderOverride, #DEPRECATED
-
-        [Parameter()]
         [System.String]
         $HeaderContainsMessageHeader,
 
@@ -1496,10 +1435,6 @@ function Set-TargetResource
         $ManagerForEvaluatedUser,
 
         [Parameter()]
-        [System.String[]]
-        $MessageContainsDataClassifications, #DEPRECATED
-
-        [Parameter()]
         [System.String]
         $MessageSizeOver,
 
@@ -1520,11 +1455,6 @@ function Set-TargetResource
         [Parameter()]
         [System.String[]]
         $ModerateMessageByUser = @(),
-
-        [Parameter()]
-        [ValidateSet('NotifyOnly', 'RejectMessage', 'RejectUnlessFalsePositiveOverride', 'RejectUnlessSilentOverride', 'RejectUnlessExplicitOverride')]
-        [System.String]
-        $NotifySender, #DEPRECATED
 
         [Parameter()]
         [System.String]
@@ -1582,10 +1512,6 @@ function Set-TargetResource
         [Parameter()]
         [System.String]
         $RemoveHeader,
-
-        [Parameter()]
-        [System.Boolean]
-        $RemoveOME,
 
         [Parameter()]
         [System.Boolean]
@@ -1756,37 +1682,10 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' -InboundParameters $PSBoundParameters
+    $newTransportRuleParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    $newTransportRuleParams.Remove('MakeDefault') | Out-Null
 
-    $NewTransportRuleParams = [System.Collections.Hashtable]($PSBoundParameters)
-    $NewTransportRuleParams.Remove('Ensure') | Out-Null
-    $NewTransportRuleParams.Remove('Credential') | Out-Null
-    $NewTransportRuleParams.Remove('MakeDefault') | Out-Null
-    $NewTransportRuleParams.Remove('ApplicationId') | Out-Null
-    $NewTransportRuleParams.Remove('TenantId') | Out-Null
-    $NewTransportRuleParams.Remove('CertificateThumbprint') | Out-Null
-    $NewTransportRuleParams.Remove('CertificatePath') | Out-Null
-    $NewTransportRuleParams.Remove('CertificatePassword') | Out-Null
-    $NewTransportRuleParams.Remove('ManagedIdentity') | Out-Null
-    $NewTransportRuleParams.Remove('AccessTokens') | Out-Null
-
-    # check for deprecated DLP parameters and remove them
-    if ($NewTransportRuleParams.ContainsKey('MessageContainsDataClassifications') `
-            -or $NewTransportRuleParams.ContainsKey('ExceptIfMessageContainsDataClassifications') `
-            -or $NewTransportRuleParams.ContainsKey('HasSenderOverride') `
-            -or $NewTransportRuleParams.ContainsKey('ExceptIfHasSenderOverride') `
-            -or $NewTransportRuleParams.ContainsKey('NotifySender'))
-    {
-        $NewTransportRuleParams.Remove('MessageContainsDataClassifications') | Out-Null
-        $NewTransportRuleParams.Remove('ExceptIfMessageContainsDataClassifications') | Out-Null
-        $NewTransportRuleParams.Remove('HasSenderOverride') | Out-Null
-        $NewTransportRuleParams.Remove('ExceptIfHasSenderOverride') | Out-Null
-        $NewTransportRuleParams.Remove('NotifySender') | Out-Null
-
-        Write-Verbose -Message 'DEPRECATED - The DLP parameters (MessageContainsDataClassifications, ExceptIfMessageContainsDataClassifications, ExceptIfHasSenderOverride, HasSenderOverride and NotifySender) are deprecated and will be ignored.'
-    }
-
-    $SetTransportRuleParams = $NewTransportRuleParams.Clone()
+    $SetTransportRuleParams = $newTransportRuleParams.Clone()
     $SetTransportRuleParams.Add('Identity', $Name)
     $SetTransportRuleParams.Remove('Enabled') | Out-Null
 
@@ -1796,16 +1695,16 @@ function Set-TargetResource
         Write-Verbose -Message "Transport Rule '$($Name)' does not exist but it should. Create and configure it."
 
         $nullKeysToRemove = @()
-        foreach ($key in $NewTransportRuleParams.Keys)
+        foreach ($key in $newTransportRuleParams.Keys)
         {
-            if ($NewTransportRuleParams.$key.GetType().Name -eq 'String[]' -and $NewTransportRuleParams.$key.Length -eq 0)
+            if ($newTransportRuleParams.$key.GetType().Name -eq 'String[]' -and $newTransportRuleParams.$key.Length -eq 0)
             {
                 $nullKeysToRemove += $key
             }
         }
         foreach ($paramToRemove in $nullKeysToRemove)
         {
-            $NewTransportRuleParams.Remove($paramToRemove) | Out-Null
+            $newTransportRuleParams.Remove($paramToRemove) | Out-Null
         }
 
         # Create Transport Rule
@@ -1823,33 +1722,89 @@ function Set-TargetResource
     {
         if ($null -ne $HeaderContainsMessageHeader -and $null -eq $currentTransportRuleConfig.HeaderContainsMessageHeader)
         {
-            $SetTransportRuleParams.Add("HeaderContainsMessageHeader",$null)
-            $SetTransportRuleParams.Add("HeaderContainsWords", @())
+            if (-not $SetTransportRuleParams.ContainsKey('HeaderContainsMessageHeader'))
+            {
+                $SetTransportRuleParams.Add("HeaderContainsMessageHeader", $null)
+            }
+            else
+            {
+                $SetTransportRuleParams.HeaderContainsMessageHeader = $null
+            }
+
+            if (-not $SetTransportRuleParams.ContainsKey('HeaderContainsWords'))
+            {
+                $SetTransportRuleParams.Add("HeaderContainsWords", @())
+            }
+            else
+            {
+                $SetTransportRuleParams.HeaderContainsWords = @()
+            }
         }
-        if ($null -ne $HeaderMatchesPatterns -and $null -eq $currentTransportRuleConfig.HeaderMatchesMessageHeader)
+        elseif ([System.String]::IsNullOrEmpty($HeaderContainsMessageHeader))
         {
-            $SetTransportRuleParams.Add("HeaderMatchesMessageHeader",$null)
-            $SetTransportRuleParams.Add("HeaderMatchesPatterns", @())
+            $SetTransportRuleParams.HeaderContainsMessageHeader = $null
         }
-        if ($null -ne $ExceptIfHeaderContainsWords -and $null -eq $currentTransportRuleConfig.ExceptIfHeaderContainsMessageHeader)
+
+        if ($null -eq $HeaderMatchesPatterns -and $null -eq $currentTransportRuleConfig.HeaderMatchesMessageHeader)
         {
-            $SetTransportRuleParams.Add("ExceptIfHeaderContainsMessageHeader",$null)
-            $SetTransportRuleParams.Add("ExceptIfHeaderContainsWords", @())
+
+            if (-not $SetTransportRuleParams.ContainsKey('HeaderMatchesMessageHeader'))
+            {
+                $SetTransportRuleParams.Add("HeaderMatchesMessageHeader", $null)
+            }
+            else
+            {
+                $SetTransportRuleParams.HeaderMatchesMessageHeader = $null
+            }
+
+            if (-not $SetTransportRuleParams.ContainsKey('HeaderMatchesPatterns'))
+            {
+                $SetTransportRuleParams.Add("HeaderMatchesPatterns", @())
+            }
+            else
+            {
+                $SetTransportRuleParams.HeaderMatchesPatterns = @()
+            }
         }
-        if ($null -ne $ExceptIfHeaderMatchesPatterns -and $null -eq $currentTransportRuleConfig.ExceptIfHeaderMatchesMessageHeader)
+        if ($null -eq $ExceptIfHeaderContainsWords -and $null -eq $currentTransportRuleConfig.ExceptIfHeaderContainsMessageHeader)
         {
-            $SetTransportRuleParams.Add("ExceptIfHeaderMatchesMessageHeader",$null)
-            $SetTransportRuleParams.Add("ExceptIfHeaderMatchesPatterns", @())
+            if (-not $SetTransportRuleParams.ContainsKey('ExceptIfHeaderContainsMessageHeader'))
+            {
+                $SetTransportRuleParams.Add("ExceptIfHeaderContainsMessageHeader", $null)
+            }
+            else
+            {
+                $SetTransportRuleParams.ExceptIfHeaderContainsMessageHeader = $null
+            }
+
+            if (-not $SetTransportRuleParams.ContainsKey('ExceptIfHeaderContainsWords'))
+            {
+                $SetTransportRuleParams.Add("ExceptIfHeaderContainsWords", @())
+            }
+            else
+            {
+                $SetTransportRuleParams.ExceptIfHeaderContainsWords = @()
+            }
         }
-        if ($null -ne $ApplyOME)
+        if ($null -eq $ExceptIfHeaderMatchesPatterns -and $null -eq $currentTransportRuleConfig.ExceptIfHeaderMatchesMessageHeader)
         {
-            Write-Warning -Message "ApplyOME is deprecated. Use ApplyRightsProtectionTemplate instead."
-            $SetTransportRuleParams.Remove("ApplyOME") | Out-Null
-        }
-        if ($null -ne $RemoveOME)
-        {
-            Write-Warning -Message "RemoveOME is deprecated. Use RemoveOMEv2 instead."
-            $SetTransportRuleParams.Remove("RemoveOME") | Out-Null
+            if (-not $SetTransportRuleParams.ContainsKey('ExceptIfHeaderMatchesMessageHeader'))
+            {
+                $SetTransportRuleParams.Add("ExceptIfHeaderMatchesMessageHeader", $null)
+            }
+            else
+            {
+                $SetTransportRuleParams.ExceptIfHeaderMatchesMessageHeader = $null
+            }
+
+            if (-not $SetTransportRuleParams.ContainsKey('ExceptIfHeaderMatchesPatterns'))
+            {
+                $SetTransportRuleParams.Add("ExceptIfHeaderMatchesPatterns", @())
+            }
+            else
+            {
+                $SetTransportRuleParams.ExceptIfHeaderMatchesPatterns = @()
+            }
         }
 
         Write-Verbose -Message "Transport Rule '$($Name)' already exists, but needs updating."
@@ -1940,10 +1895,6 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $ApplyHtmlDisclaimerText,
-
-        [Parameter()]
-        [System.Boolean]
-        $ApplyOME,
 
         [Parameter()]
         [System.String]
@@ -2153,10 +2104,6 @@ function Test-TargetResource
         $ExceptIfHasNoClassification,
 
         [Parameter()]
-        [System.Boolean]
-        $ExceptIfHasSenderOverride, #DEPRECATED
-
-        [Parameter()]
         [System.String]
         $ExceptIfHeaderContainsMessageHeader,
 
@@ -2184,10 +2131,6 @@ function Test-TargetResource
         [ValidateSet('OOF', 'AutoForward', 'Encrypted', 'Calendaring', 'PermissionControlled', 'Voicemail', 'Signed', 'ApprovalRequest', 'ReadReceipt')]
         [System.String]
         $ExceptIfMessageTypeMatches,
-
-        [Parameter()]
-        [System.String[]]
-        $ExceptIfMessageContainsDataClassifications = @(), #DEPRECATED
 
         [Parameter()]
         [System.String]
@@ -2322,10 +2265,6 @@ function Test-TargetResource
         $HasNoClassification,
 
         [Parameter()]
-        [System.Boolean]
-        $HasSenderOverride, #DEPRECATED
-
-        [Parameter()]
         [System.String]
         $HeaderContainsMessageHeader,
 
@@ -2355,10 +2294,6 @@ function Test-TargetResource
         $ManagerForEvaluatedUser,
 
         [Parameter()]
-        [System.String[]]
-        $MessageContainsDataClassifications, #DEPRECATED
-
-        [Parameter()]
         [System.String]
         $MessageSizeOver,
 
@@ -2379,11 +2314,6 @@ function Test-TargetResource
         [Parameter()]
         [System.String[]]
         $ModerateMessageByUser = @(),
-
-        [Parameter()]
-        [ValidateSet('NotifyOnly', 'RejectMessage', 'RejectUnlessFalsePositiveOverride', 'RejectUnlessSilentOverride', 'RejectUnlessExplicitOverride')]
-        [System.String]
-        $NotifySender, #DEPRECATED
 
         [Parameter()]
         [System.String]
@@ -2441,10 +2371,6 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $RemoveHeader,
-
-        [Parameter()]
-        [System.Boolean]
-        $RemoveOME,
 
         [Parameter()]
         [System.Boolean]
@@ -2599,11 +2525,8 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -2611,22 +2534,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing Transport Rule configuration for $Name"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -2667,6 +2577,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters `
         -SkipModuleReload $true
@@ -2711,7 +2622,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
                 CertificatePassword   = $CertificatePassword
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 CertificatePath       = $CertificatePath
                 AccessTokens          = $AccessTokens
             }
@@ -2732,15 +2643,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
-        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+        New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

@@ -24,12 +24,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Update-MgBetaPolicyCrossTenantAccessPolicy -MockWith {
             }
 
+            Mock -CommandName Get-MgBetaPolicyCrossTenantAccessPolicy -MockWith {
+                return @{
+                    AllowedCloudEndpoints = @("microsoftonline.us");
+                    DisplayName           = "MyXTAPPolicy";
+                }
+            }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
@@ -51,13 +57,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                = "Present";
                     IsSingleInstance      = "Yes";
                 }
-
-                Mock -CommandName Get-MgBetaPolicyCrossTenantAccessPolicy -MockWith {
-                    return @{
-                        AllowedCloudEndpoints = @("microsoftonline.us");
-                        DisplayName           = "MyXTAPPolicy";
-                    }
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -70,18 +69,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The policy is NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    AllowedCloudEndpoints = @("microsoftonline.us");
+                    AllowedCloudEndpoints = @("microsoftonline.com"); # Drift
                     Credential            = $Credential;
                     DisplayName           = "MyXTAPPolicy";
                     Ensure                = "Present";
                     IsSingleInstance      = "Yes";
-                }
-
-                Mock -CommandName Get-MgBetaPolicyCrossTenantAccessPolicy -MockWith {
-                    return @{
-                        AllowedCloudEndpoints = @("microsoftonline.com"); #drift
-                        DisplayName           = "MyXTAPPolicy";
-                    }
                 }
             }
             It 'Should return Values from the Get method' {
@@ -103,13 +95,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaPolicyCrossTenantAccessPolicy -MockWith {
-                    return @{
-                        AllowedCloudEndpoints = @("microsoftonline.com"); #drift
-                        DisplayName           = "MyXTAPPolicy";
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

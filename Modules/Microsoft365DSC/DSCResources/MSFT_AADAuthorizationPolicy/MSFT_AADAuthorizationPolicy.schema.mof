@@ -1,4 +1,4 @@
-[ClassVersion("1.0.0.0"), FriendlyName("AADAuthorizationPolicy")]
+[ClassVersion("1.0.0.1"), FriendlyName("AADAuthorizationPolicy")]
 class MSFT_AADAuthorizationPolicy : OMI_BaseResource
 {
     [Key, Description("Only valid value is 'Yes'."), ValueMap{"Yes"}, Values{"Yes"}] String IsSingleInstance;
@@ -8,6 +8,7 @@ class MSFT_AADAuthorizationPolicy : OMI_BaseResource
     [Write, Description("Boolean Indicates whether the Self-Serve Password Reset feature can be used by users on the tenant.")] Boolean AllowedToUseSSPR;
     [Write, Description("Boolean Indicates whether a user can join the tenant by email validation.")] Boolean AllowEmailVerifiedUsersToJoinOrganization;
     [Write, Description("Indicates who can invite external users to the organization. Possible values are: None, AdminsAndGuestInviters, AdminsGuestInvitersAndAllMembers, Everyone. Everyone is the default setting for all cloud environments except US Government."), ValueMap{"None","AdminsAndGuestInviters","AdminsGuestInvitersAndAllMembers","Everyone"}, Values{"None","AdminsAndGuestInviters","AdminsGuestInvitersAndAllMembers","Everyone"}] String AllowInvitesFrom;
+    [Write, Description("Indicates whether user consent for risky apps is allowed.")] Boolean AllowUserConsentForRiskyApps;
     [Write, Description("Boolean To disable the use of MSOL PowerShell, set this property to true. This will also disable user-based access to the legacy service endpoint used by MSOL PowerShell. This does not affect Azure AD Connect or Microsoft Graph.")] Boolean BlockMsolPowershell;
     [Write, Description("Boolean Indicates whether the default user role can create applications.")] Boolean DefaultUserRoleAllowedToCreateApps;
     [Write, Description("Boolean Indicates whether the default user role can create security groups.")] Boolean DefaultUserRoleAllowedToCreateSecurityGroups;

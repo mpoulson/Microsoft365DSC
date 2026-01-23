@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -35,6 +35,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Set-OwaMailboxPolicy -MockWith {
+            }
+
+            Mock -CommandName New-OwaMailboxPolicy -MockWith {
+            }
+
+            Mock -CommandName Get-OwaMailboxPolicy -MockWith {
+                return @{
+                    Name                    = 'Contoso OWA Mailbox Policy'
+                    InstantMessagingEnabled = $true
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -55,20 +68,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-OwaMailboxPolicy -MockWith {
-                    return @{
-                        Name                    = 'Contoso OWA Mailbox Policy Different'
-                        InstantMessagingEnabled = $true
-                        FreeBusyAccessLevel     = 'AvailabilityOnly'
-                    }
-                }
-
-                Mock -CommandName Set-OwaMailboxPolicy -MockWith {
-                    return @{
-                        Name                    = 'Contoso OWA Mailbox Policy'
-                        InstantMessagingEnabled = $true
-                        Ensure                  = 'Present'
-                        Credential              = $Credential
-                    }
+                    return $null
                 }
             }
 
@@ -78,6 +78,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName New-OwaMailboxPolicy -Exactly 1
             }
 
             It 'Should return Absent from the Get method' {
@@ -92,13 +93,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     InstantMessagingEnabled = $true
                     Ensure                  = 'Present'
                     Credential              = $Credential
-                }
-
-                Mock -CommandName Get-OwaMailboxPolicy -MockWith {
-                    return @{
-                        Name                    = 'Contoso OWA Mailbox Policy'
-                        InstantMessagingEnabled = $true
-                    }
                 }
             }
 
@@ -115,26 +109,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Name                    = 'Contoso OWA Mailbox Policy'
-                    InstantMessagingEnabled = $true
+                    InstantMessagingEnabled = $false # Drift
                     Ensure                  = 'Present'
                     Credential              = $Credential
-                }
-
-                Mock -CommandName Get-OwaMailboxPolicy -MockWith {
-                    return @{
-                        Name                    = 'Contoso OWA Mailbox Policy'
-                        InstantMessagingEnabled = $false
-
-                    }
-                }
-
-                Mock -CommandName Set-OwaMailboxPolicy -MockWith {
-                    return @{
-                        Name                    = 'Contoso OWA Mailbox Policy'
-                        InstantMessagingEnabled = $true
-                        Ensure                  = 'Present'
-                        Credential              = $Credential
-                    }
                 }
             }
 
@@ -144,6 +121,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
+                Should -Invoke -CommandName Set-OwaMailboxPolicy -Exactly 1
             }
         }
 
@@ -153,15 +131,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                $OwaMailboxPolicy = @{
-                    Name                    = 'Contoso OWA Mailbox Policy'
-                    InstantMessagingEnabled = $true
-                }
-
-                Mock -CommandName Get-OwaMailboxPolicy -MockWith {
-                    return $OwaMailboxPolicy
                 }
             }
 

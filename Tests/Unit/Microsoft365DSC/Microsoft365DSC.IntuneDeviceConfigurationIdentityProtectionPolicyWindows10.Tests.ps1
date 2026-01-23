@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-GUID).ToString() -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -44,6 +44,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        pinRecoveryEnabled                           = $True
+                        pinExpirationInDays                          = 25
+                        pinMinimumLength                             = 25
+                        securityDeviceRequired                       = $True
+                        useCertificatesForOnPremisesAuthEnabled      = $True
+                        unlockWithBiometricsEnabled                  = $True
+                        '@odata.type'                                = '#microsoft.graph.windowsIdentityProtectionConfiguration'
+                        pinLowercaseCharactersUsage                  = 'blocked'
+                        pinPreviousBlockCount                        = 25
+                        windowsHelloForBusinessBlocked               = $True
+                        useSecurityKeyForSignin                      = $True
+                        pinSpecialCharactersUsage                    = 'blocked'
+                        pinMaximumLength                             = 25
+                        enhancedAntiSpoofingForFacialFeaturesEnabled = $True
+                        pinUppercaseCharactersUsage                  = 'blocked'
+                    }
+                    Description          = 'FakeStringValue'
+                    DisplayName          = 'FakeStringValue'
+                    Id                   = 'FakeStringValue'
+                }
             }
 
             Mock -CommandName Get-MgBetaDeviceManagementDeviceConfigurationAssignment -MockWith {
@@ -77,7 +102,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PinSpecialCharactersUsage                    = 'blocked'
                     PinUppercaseCharactersUsage                  = 'blocked'
                     SecurityDeviceRequired                       = $True
-                    SupportsScopeTags                            = $True
                     UnlockWithBiometricsEnabled                  = $True
                     UseCertificatesForOnPremisesAuthEnabled      = $True
                     UseSecurityKeyForSignin                      = $True
@@ -118,40 +142,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PinSpecialCharactersUsage                    = 'blocked'
                     PinUppercaseCharactersUsage                  = 'blocked'
                     SecurityDeviceRequired                       = $True
-                    SupportsScopeTags                            = $True
                     UnlockWithBiometricsEnabled                  = $True
                     UseCertificatesForOnPremisesAuthEnabled      = $True
                     UseSecurityKeyForSignin                      = $True
                     WindowsHelloForBusinessBlocked               = $True
                     Ensure                                       = 'Absent'
                     Credential                                   = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            pinRecoveryEnabled                           = $True
-                            pinExpirationInDays                          = 25
-                            pinMinimumLength                             = 25
-                            securityDeviceRequired                       = $True
-                            useCertificatesForOnPremisesAuthEnabled      = $True
-                            unlockWithBiometricsEnabled                  = $True
-                            '@odata.type'                                = '#microsoft.graph.windowsIdentityProtectionConfiguration'
-                            pinLowercaseCharactersUsage                  = 'blocked'
-                            pinPreviousBlockCount                        = 25
-                            windowsHelloForBusinessBlocked               = $True
-                            useSecurityKeyForSignin                      = $True
-                            pinSpecialCharactersUsage                    = 'blocked'
-                            pinMaximumLength                             = 25
-                            enhancedAntiSpoofingForFacialFeaturesEnabled = $True
-                            pinUppercaseCharactersUsage                  = 'blocked'
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                        SupportsScopeTags    = $True
-
-                    }
                 }
             }
 
@@ -184,40 +180,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PinSpecialCharactersUsage                    = 'blocked'
                     PinUppercaseCharactersUsage                  = 'blocked'
                     SecurityDeviceRequired                       = $True
-                    SupportsScopeTags                            = $True
                     UnlockWithBiometricsEnabled                  = $True
                     UseCertificatesForOnPremisesAuthEnabled      = $True
                     UseSecurityKeyForSignin                      = $True
                     WindowsHelloForBusinessBlocked               = $True
                     Ensure                                       = 'Present'
                     Credential                                   = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            pinRecoveryEnabled                           = $True
-                            pinExpirationInDays                          = 25
-                            pinMinimumLength                             = 25
-                            securityDeviceRequired                       = $True
-                            useCertificatesForOnPremisesAuthEnabled      = $True
-                            unlockWithBiometricsEnabled                  = $True
-                            '@odata.type'                                = '#microsoft.graph.windowsIdentityProtectionConfiguration'
-                            pinLowercaseCharactersUsage                  = 'blocked'
-                            pinPreviousBlockCount                        = 25
-                            windowsHelloForBusinessBlocked               = $True
-                            useSecurityKeyForSignin                      = $True
-                            pinSpecialCharactersUsage                    = 'blocked'
-                            pinMaximumLength                             = 25
-                            enhancedAntiSpoofingForFacialFeaturesEnabled = $True
-                            pinUppercaseCharactersUsage                  = 'blocked'
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                        SupportsScopeTags    = $True
-
-                    }
                 }
             }
 
@@ -234,7 +202,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName                                  = 'FakeStringValue'
                     EnhancedAntiSpoofingForFacialFeaturesEnabled = $True
                     Id                                           = 'FakeStringValue'
-                    PinExpirationInDays                          = 25
+                    PinExpirationInDays                          = 7 # Updated property
                     PinLowercaseCharactersUsage                  = 'blocked'
                     PinMaximumLength                             = 25
                     PinMinimumLength                             = 25
@@ -243,31 +211,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PinSpecialCharactersUsage                    = 'blocked'
                     PinUppercaseCharactersUsage                  = 'blocked'
                     SecurityDeviceRequired                       = $True
-                    SupportsScopeTags                            = $True
                     UnlockWithBiometricsEnabled                  = $True
                     UseCertificatesForOnPremisesAuthEnabled      = $True
                     UseSecurityKeyForSignin                      = $True
                     WindowsHelloForBusinessBlocked               = $True
                     Ensure                                       = 'Present'
                     Credential                                   = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type'               = '#microsoft.graph.windowsIdentityProtectionConfiguration'
-                            pinUppercaseCharactersUsage = 'blocked'
-                            pinPreviousBlockCount       = 7
-                            pinMinimumLength            = 7
-                            pinSpecialCharactersUsage   = 'blocked'
-                            pinExpirationInDays         = 7
-                            pinLowercaseCharactersUsage = 'blocked'
-                            pinMaximumLength            = 7
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                    }
                 }
             }
 
@@ -291,33 +240,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            pinRecoveryEnabled                           = $True
-                            pinExpirationInDays                          = 25
-                            pinMinimumLength                             = 25
-                            securityDeviceRequired                       = $True
-                            useCertificatesForOnPremisesAuthEnabled      = $True
-                            unlockWithBiometricsEnabled                  = $True
-                            '@odata.type'                                = '#microsoft.graph.windowsIdentityProtectionConfiguration'
-                            pinLowercaseCharactersUsage                  = 'blocked'
-                            pinPreviousBlockCount                        = 25
-                            windowsHelloForBusinessBlocked               = $True
-                            useSecurityKeyForSignin                      = $True
-                            pinSpecialCharactersUsage                    = 'blocked'
-                            pinMaximumLength                             = 25
-                            enhancedAntiSpoofingForFacialFeaturesEnabled = $True
-                            pinUppercaseCharactersUsage                  = 'blocked'
-                        }
-                        Description          = 'FakeStringValue'
-                        DisplayName          = 'FakeStringValue'
-                        Id                   = 'FakeStringValue'
-                        SupportsScopeTags    = $True
-
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

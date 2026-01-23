@@ -28,14 +28,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
-            }
-
-            Mock -CommandName Get-MailboxFolderPermission -MockWith {
             }
 
             Mock -CommandName Set-MailboxFolderPermission -MockWith {
@@ -48,6 +45,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Get-MailboxFolder -MockWith {
+                return @{
+                    Identity = "admin:/Calendar"
+                }
+            }
+
+            Mock -CommandName Get-MailboxFolderPermission -MockWith {
+                return @(
+                    @{
+                        User = 'User'
+                        AccessRights = @('Editor')
+                        SharingPermissionFlags = 'Delegate'
+                    }
+                )
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -103,16 +113,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Absent'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-MailboxFolderPermission -MockWith {
-                    return @(
-                        @{
-                            User = 'User'
-                            AccessRights = @('Editor')
-                            SharingPermissionFlags = 'Delegate'
-                        }
-                    )
-                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
@@ -141,16 +141,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
-
-                Mock -CommandName Get-MailboxFolderPermission -MockWith {
-                    return @(
-                        @{
-                            User = 'User'
-                            AccessRights = @('Editor')
-                            SharingPermissionFlags = 'Delegate'
-                        }
-                    )
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -165,22 +155,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     UserPermissions     = @(
                         (New-CimInstance -ClassName MSFT_EXOMailboxFolderUserPermission -Property @{
                             User     = 'User'
-                            AccessRights = @('Editor')
+                            AccessRights = @('Owner') # Drift
                             SharingPermissionFlags = 'Delegate'
                         } -ClientOnly)
                     )
                     Ensure              = 'Present'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Get-MailboxFolderPermission -MockWith {
-                    return @(
-                        @{
-                            User = 'User'
-                            AccessRights = @('Owner')
-                            SharingPermissionFlags = 'Delegate'
-                        }
-                    )
                 }
             }
 
@@ -205,23 +185,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MailboxFolderPermission -MockWith {
-                    return @(
-                        @{
-                            User = 'User'
-                            AccessRights = @('Editor')
-                            SharingPermissionFlags = 'Delegate'
-                        }
-                    )
-                }
-
-                Mock -CommandName Get-MailboxFolder -MockWith {
-                    return @{
-                        Identity = "admin:/Calendar"
-                    }
-
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

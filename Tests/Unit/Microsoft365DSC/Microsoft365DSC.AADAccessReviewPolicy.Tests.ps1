@@ -28,17 +28,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
             }
 
-            Mock -Command Get-MgBetaPolicyAccessReviewPolicy -MockWith {
+            Mock -Command Update-MgBetaPolicyAccessReviewPolicy -MockWith {
             }
 
-            Mock -Command Update-MgBetaPolicyAccessReviewPolicy -MockWith {
+            Mock -CommandName Get-MgBetaPolicyAccessReviewPolicy -MockWith {
+                return @{
+                    IsGroupOwnerManagementEnabled = $True;
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -55,12 +58,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsGroupOwnerManagementEnabled = $True;
                     Credential                    = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaPolicyAccessReviewPolicy -MockWith {
-                    return @{
-                        IsGroupOwnerManagementEnabled = $True;
-                    }
-                }
             }
 
             It 'Should return true from the Test method' {
@@ -72,14 +69,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     IsSingleInstance              = 'Yes'
-                    IsGroupOwnerManagementEnabled = $True;
+                    IsGroupOwnerManagementEnabled = $False; # Drift
                     Credential                    = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAccessReviewPolicy -MockWith {
-                    return @{
-                        IsGroupOwnerManagementEnabled = $False;
-                    }
                 }
             }
 
@@ -99,12 +90,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaPolicyAccessReviewPolicy -MockWith {
-                    return @{
-                        IsGroupOwnerManagementEnabled = $True;
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

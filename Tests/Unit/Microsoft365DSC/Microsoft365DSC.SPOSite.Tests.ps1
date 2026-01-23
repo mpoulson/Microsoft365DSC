@@ -26,6 +26,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
+
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
 
@@ -101,7 +104,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-PnPTenantSite -MockWith {
                     if ($global:M365DscSiteCreated -eq $false)
                     {
-                        throw
+                        return $null
                     }
                     else
                     {

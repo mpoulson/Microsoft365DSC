@@ -27,12 +27,52 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-CsTeamsMeetingPolicy -MockWith {
+                return @{
+                    Identity                                   = 'Test Policy'
+                    AllowAnonymousUsersToStartMeeting          = $False
+                    AllowChannelMeetingScheduling              = $True
+                    AllowCloudRecording                        = $True
+                    AllowExternalNonTrustedMeetingChat         = $True
+                    AllowExternalParticipantGiveRequestControl = $False
+                    AllowIPVideo                               = $True
+                    AllowMeetNow                               = $True
+                    AllowOutlookAddIn                          = $True
+                    AllowParticipantGiveRequestControl         = $True
+                    AllowPowerPointSharing                     = $True
+                    AllowPrivateMeetingScheduling              = $True
+                    AllowSharedNotes                           = $True
+                    AllowTranscription                         = $False
+                    AllowWhiteboard                            = $True
+                    AttendeeIdentityMasking                    = 'DisabledUserOverride'
+                    AutoAdmittedUsers                          = 'Everyone'
+                    AutomaticallyStartCopilot                  = 'Disabled'
+                    AutoRecording                              = 'Enabled'
+                    ChannelRecordingDownload                   = 'Allow'
+                    ConnectToMeetingControls                   = 'Enabled'
+                    ContentSharingInExternalMeetings           = 'EnabledForAnyone'
+                    Copilot                                    = 'EnabledWithTranscript'
+                    CopyRestriction                            = $True
+                    DetectSensitiveContentDuringScreenSharing  = $True
+                    ExternalMeetingJoin                        = 'EnabledForAnyone'
+                    Description                                = $null
+                    MediaBitRateKb                             = 50000
+                    ParticipantNameChange                      = 'Enabled'
+                    ScreenSharingMode                          = 'EntireScreen'
+                    VoiceIsolation                             = 'Disabled'
+                    WhoCanRegister                             = 'EveryoneInCompany'
+                    RoomAttributeUserOverride                  = 'OFF'
+                }
             }
 
             Mock -CommandName New-CsTeamsMeetingPolicy -MockWith {
@@ -114,7 +154,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowPrivateMeetingScheduling              = $True
                     AllowSharedNotes                           = $True
                     AllowTranscription                         = $False
-                    AllowWhiteboard                            = $True
+                    AllowWhiteboard                            = $False # Drift
                     AttendeeIdentityMasking                    = 'DisabledUserOverride'
                     AutoAdmittedUsers                          = 'Everyone'
                     AutomaticallyStartCopilot                  = 'Disabled'
@@ -134,43 +174,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     WhoCanRegister                             = 'EveryoneInCompany'
                     Ensure                                     = 'Present'
                     Credential                                 = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsMeetingPolicy -MockWith {
-                    return @{
-                        Identity                                   = 'Test Policy'
-                        AllowAnonymousUsersToStartMeeting          = $False
-                        AllowChannelMeetingScheduling              = $True
-                        AllowCloudRecording                        = $True
-                        AllowExternalNonTrustedMeetingChat         = $True
-                        AllowExternalParticipantGiveRequestControl = $False
-                        AllowIPVideo                               = $True
-                        AllowMeetNow                               = $True
-                        AllowOutlookAddIn                          = $True
-                        AllowParticipantGiveRequestControl         = $True
-                        AllowPowerPointSharing                     = $True
-                        AllowPrivateMeetingScheduling              = $True
-                        AllowSharedNotes                           = $True
-                        AllowTranscription                         = $False
-                        AllowWhiteboard                            = $False
-                        AttendeeIdentityMasking                    = 'DisabledUserOverride'
-                        AutoAdmittedUsers                          = 'Everyone'
-                        AutomaticallyStartCopilot                  = 'Disabled'
-                        AutoRecording                              = 'Enabled'
-                        ChannelRecordingDownload                   = 'Allow'
-                        ConnectToMeetingControls                   = 'Enabled'
-                        ContentSharingInExternalMeetings           = 'EnabledForAnyone'
-                        Copilot                                    = 'EnabledWithTranscript'
-                        CopyRestriction                            = $True
-                        DetectSensitiveContentDuringScreenSharing  = $True
-                        ExternalMeetingJoin                        = 'EnabledForAnyone'
-                        Description                                = $null
-                        MediaBitRateKb                             = 50000
-                        ParticipantNameChange                      = 'Enabled'
-                        ScreenSharingMode                          = 'EntireScreen'
-                        VoiceIsolation                             = 'Disabled'
-                        WhoCanRegister                             = 'EveryoneInCompany'
-                    }
                 }
             }
 
@@ -211,45 +214,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MediaBitRateKb                             = 50000
                     ScreenSharingMode                          = 'EntireScreen'
                     WhoCanRegister                             = 'EveryoneInCompany'
+                    RoomAttributeUserOverride                  = 'OFF'
                     Ensure                                     = 'Present'
                     Credential                                 = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsMeetingPolicy -MockWith {
-                    return @{
-                        Identity                                   = 'Test Policy'
-                        AllowAnonymousUsersToStartMeeting          = $False
-                        AllowChannelMeetingScheduling              = $True
-                        AllowCloudRecording                        = $True
-                        AllowExternalNonTrustedMeetingChat         = $True
-                        AllowExternalParticipantGiveRequestControl = $False
-                        AllowIPVideo                               = $True
-                        AllowMeetNow                               = $True
-                        AllowOutlookAddIn                          = $True
-                        AllowParticipantGiveRequestControl         = $True
-                        AllowPowerPointSharing                     = $True
-                        AllowPrivateMeetingScheduling              = $True
-                        AllowSharedNotes                           = $True
-                        AllowTranscription                         = $False
-                        AllowWhiteboard                            = $True
-                        AttendeeIdentityMasking                    = 'DisabledUserOverride'
-                        AutoAdmittedUsers                          = 'Everyone'
-                        AutomaticallyStartCopilot                  = 'Disabled'
-                        AutoRecording                              = 'Enabled'
-                        ChannelRecordingDownload                   = 'Allow'
-                        ConnectToMeetingControls                   = 'Enabled'
-                        ContentSharingInExternalMeetings           = 'EnabledForAnyone'
-                        Copilot                                    = 'EnabledWithTranscript'
-                        CopyRestriction                            = $True
-                        DetectSensitiveContentDuringScreenSharing  = $True
-                        ExternalMeetingJoin                        = 'EnabledForAnyone'
-                        Description                                = $null
-                        MediaBitRateKb                             = 50000
-                        ParticipantNameChange                      = 'Enabled'
-                        ScreenSharingMode                          = 'EntireScreen'
-                        VoiceIsolation                             = 'Disabled'
-                        WhoCanRegister                             = 'EveryoneInCompany'
-                    }
                 }
             }
 
@@ -287,43 +254,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                     = 'Absent'
                     Credential                                 = $Credential
                 }
-
-                Mock -CommandName Get-CsTeamsMeetingPolicy -MockWith {
-                    return @{
-                        Identity                                   = 'Test Policy'
-                        AllowAnonymousUsersToStartMeeting          = $False
-                        AllowChannelMeetingScheduling              = $True
-                        AllowCloudRecording                        = $True
-                        AllowExternalNonTrustedMeetingChat         = $True
-                        AllowExternalParticipantGiveRequestControl = $False
-                        AllowIPVideo                               = $True
-                        AllowMeetNow                               = $True
-                        AllowOutlookAddIn                          = $True
-                        AllowParticipantGiveRequestControl         = $True
-                        AllowPowerPointSharing                     = $True
-                        AllowPrivateMeetingScheduling              = $True
-                        AllowSharedNotes                           = $True
-                        AllowTranscription                         = $False
-                        AllowWhiteboard                            = $False
-                        AttendeeIdentityMasking                    = 'DisabledUserOverride'
-                        AutoAdmittedUsers                          = 'Everyone'
-                        AutomaticallyStartCopilot                  = 'Disabled'
-                        AutoRecording                              = 'Enabled'
-                        ChannelRecordingDownload                   = 'Allow'
-                        ConnectToMeetingControls                   = 'Enabled'
-                        ContentSharingInExternalMeetings           = 'EnabledForAnyone'
-                        Copilot                                    = 'EnabledWithTranscript'
-                        CopyRestriction                            = $True
-                        DetectSensitiveContentDuringScreenSharing  = $True
-                        ExternalMeetingJoin                        = 'EnabledForAnyone'
-                        Description                                = $null
-                        MediaBitRateKb                             = 50000
-                        ParticipantNameChange                      = 'Enabled'
-                        ScreenSharingMode                          = 'EntireScreen'
-                        VoiceIsolation                             = 'Disabled'
-                        WhoCanRegister                             = 'EveryoneInCompany'
-                    }
-                }
             }
 
             It 'Should return Present from the Get method' {
@@ -346,43 +276,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-CsTeamsMeetingPolicy -MockWith {
-                    return @{
-                        Identity                                   = 'Test Policy'
-                        AllowAnonymousUsersToStartMeeting          = $False
-                        AllowChannelMeetingScheduling              = $True
-                        AllowCloudRecording                        = $True
-                        AllowExternalNonTrustedMeetingChat         = $True
-                        AllowExternalParticipantGiveRequestControl = $False
-                        AllowIPVideo                               = $True
-                        AllowMeetNow                               = $True
-                        AllowOutlookAddIn                          = $True
-                        AllowParticipantGiveRequestControl         = $True
-                        AllowPowerPointSharing                     = $True
-                        AllowPrivateMeetingScheduling              = $True
-                        AllowSharedNotes                           = $True
-                        AllowTranscription                         = $False
-                        AllowWhiteboard                            = $False
-                        AttendeeIdentityMasking                    = 'DisabledUserOverride'
-                        AutoAdmittedUsers                          = 'Everyone'
-                        AutomaticallyStartCopilot                  = 'Disabled'
-                        AutoRecording                              = 'Enabled'
-                        ChannelRecordingDownload                   = 'Allow'
-                        ConnectToMeetingControls                   = 'Enabled'
-                        ContentSharingInExternalMeetings           = 'EnabledForAnyone'
-                        Copilot                                    = 'EnabledWithTranscript'
-                        CopyRestriction                            = $True
-                        DetectSensitiveContentDuringScreenSharing  = $True
-                        ExternalMeetingJoin                        = 'EnabledForAnyone'
-                        Description                                = $null
-                        MediaBitRateKb                             = 50000
-                        ParticipantNameChange                      = 'Enabled'
-                        ScreenSharingMode                          = 'EntireScreen'
-                        VoiceIsolation                             = 'Disabled'
-                        WhoCanRegister                             = 'EveryoneInCompany'
-                    }
                 }
             }
 

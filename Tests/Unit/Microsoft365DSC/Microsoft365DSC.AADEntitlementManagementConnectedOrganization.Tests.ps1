@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -34,6 +34,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName New-MgBetaEntitlementManagementConnectedOrganization -MockWith {
+                return @{
+                    Id = '12345678-1234-1234-1234-123456789012'
+                }
             }
 
             Mock -CommandName Remove-MgBetaEntitlementManagementConnectedOrganization -MockWith {
@@ -51,6 +54,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MgBetaEntitlementManagementConnectedOrganizationInternalSponsorDirectoryObjectByRef -MockWith {
             }
 
+            Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganizationExternalSponsor -MockWith {
+                return @(
+                    @{
+                        Id = '12345678-1234-1234-1234-123456789012'
+                    }
+                )
+            }
+            Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganizationInternalSponsor -MockWith {
+                return @(
+                    @{
+                        Id = '12345678-1234-1234-1234-123456789012'
+                    }
+                )
+            }
+
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
             }
@@ -64,14 +82,37 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $Script:exportedInstances =$null
             $Script:ExportMode = $false
 
-            Mock -CommandName Get-MgUser -MockWith {
+            Mock -CommandName Get-MgUser -ParameterFilter { $UserId -eq '12345678-1234-1234-1234-123456789012' -or $UserId -eq 'John.smith@contoso.com' } -MockWith {
                 return @{
                     Id = '12345678-1234-1234-1234-123456789012'
                     UserPrincipalName = 'John.smith@contoso.com'
                 }
             }
 
-            Mock -CommandName Get-MgBetaDirectoryObject -MockWith {
+            Mock -CommandName Get-MgUser -ParameterFilter { $UserId -eq '12345678-1234-1234-1234-12345678903' -or $UserId -eq 'John.Snow@contoso.com' } -MockWith {
+                return @{
+                    Id = '12345678-1234-1234-1234-12345678903'
+                    UserPrincipalName = 'John.Snow@contoso.com'
+                }
+            }
+
+            Mock -CommandName Get-MgUser -ParameterFilter { $UserId -eq '12345678-1234-1234-1234-234567890123' -or $UserId -eq 'John.Doe@contoso.com' } -MockWith {
+                return @{
+                    Id = '12345678-1234-1234-1234-234567890123'
+                    UserPrincipalName = 'John.Doe@contoso.com'
+                }
+            }
+
+            Mock -CommandName Get-MgBetaDirectoryObject -ParameterFilter { $DirectoryObjectId -eq '12345678-1234-1234-1234-234567890123' } -MockWith {
+                return @{
+                    Id                   = '12345678-1234-1234-1234-234567890123'
+                    AdditionalProperties = @{
+                        '@odata.type' = '#microsoft.graph.user'
+                    }
+                }
+            }
+
+            Mock -CommandName Get-MgBetaDirectoryObject -ParameterFilter { $DirectoryObjectId -eq '12345678-1234-1234-1234-123456789012' } -MockWith {
                 return @{
                     Id                   = '12345678-1234-1234-1234-123456789012'
                     AdditionalProperties = @{
@@ -79,17 +120,44 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
             }
+
+            Mock -CommandName Get-MgBetaDirectoryObject -ParameterFilter { $DirectoryObjectId -eq '12345678-1234-1234-1234-12345678903' } -MockWith {
+                return @{
+                    Id                   = '12345678-1234-1234-1234-12345678903'
+                    AdditionalProperties = @{
+                        '@odata.type' = '#microsoft.graph.user'
+                    }
+                }
+            }
+
+            Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganization -MockWith {
+                return @{
+                    Description     = 'ConnectedOrganization_Description'
+                    DisplayName     = 'ConnectedOrganization_DisplayName'
+                    Id              = 'ConnectedOrganization_Id'
+                    IdentitySources = @(
+                        @{
+                            AdditionalProperties = @{
+                                '@odata.type' = '#microsoft.graph.azureActiveDirectoryTenant'
+                                tenantId      = 'IdentitySource_TenantId'
+                                displayName   = 'IdentitySource_DisplayName'
+                            }
+                        }
+                    )
+                    State           = 'configured'
+                }
+            }
         }
         # Test contexts
         Context -Name 'The AADEntitlementManagementConnectedOrganization should exist but it DOES NOT' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Description      = 'ConnectedOrganzition_Description'
-                    DisplayName      = 'ConnectedOrganzition_DisplayName'
+                    Description      = 'ConnectedOrganization_Description'
+                    DisplayName      = 'ConnectedOrganization_DisplayName'
                     ExternalSponsors = @('12345678-1234-1234-1234-123456789012')
                     Id               = 'ConnectedOrganization_Id'
                     IdentitySources  = @(
-                            (New-CimInstance -ClassName MSFT_AADEntitlementManagementConnectedOrganizationIdentitySource -Property @{
+                        (New-CimInstance -ClassName MSFT_AADEntitlementManagementConnectedOrganizationIdentitySource -Property @{
                             ExternalTenantId = 'IdentitySource_TenantId'
                             odataType        = '#microsoft.graph.azureActiveDirectoryTenant'
                             displayName      = 'IdentitySource_DisplayName'
@@ -97,7 +165,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     InternalSponsors = @('12345678-1234-1234-1234-123456789012')
                     State            = 'configured'
-
                     Ensure           = 'Present'
                     Credential       = $Credential
                 }
@@ -110,11 +177,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
                 Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganizationInternalSponsor -MockWith {
                     return @()
-                }
-                Mock -CommandName New-MgBetaEntitlementManagementConnectedOrganization -MockWith {
-                    return @{
-                        Id = '12345678-1234-1234-1234-123456789012'
-                    }
                 }
             }
             It 'Should return Values from the Get method' {
@@ -150,39 +212,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure           = 'Absent'
                     Credential       = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganization -MockWith {
-                    return @{
-                        Description     = 'ConnectedOrganization_Description'
-                        DisplayName     = 'ConnectedOrganization_DisplayName'
-                        Id              = 'ConnectedOrganization_Id'
-                        IdentitySources = @(
-                            @{
-                                AdditionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.azureActiveDirectoryTenant'
-                                    tenantId      = 'IdentitySource_TenantId'
-                                    displayName   = 'IdentitySource_DisplayName'
-                                }
-                            }
-                        )
-                        State           = 'configured'
-
-                    }
-                }
-                Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganizationExternalSponsor -MockWith {
-                    return @(
-                        @{
-                            Id = '12345678-1234-1234-1234-123456789012'
-                        }
-                    )
-                }
-                Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganizationInternalSponsor -MockWith {
-                    return @(
-                        @{
-                            Id = '12345678-1234-1234-1234-123456789012'
-                        }
-                    )
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -217,38 +246,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure           = 'Present'
                     Credential       = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganization -MockWith {
-                    return @{
-                        Description     = 'ConnectedOrganization_Description'
-                        DisplayName     = 'ConnectedOrganization_DisplayName'
-                        Id              = '12345678-1234-1234-1234-123456789012'
-                        IdentitySources = @(
-                            @{
-                                AdditionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.azureActiveDirectoryTenant'
-                                    tenantId      = 'IdentitySource_TenantId'
-                                    displayName   = 'IdentitySource_DisplayName'
-                                }
-                            }
-                        )
-                        State           = 'configured'
-                    }
-                }
-                Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganizationExternalSponsor -MockWith {
-                    return @(
-                        @{
-                            Id = '12345678-1234-1234-1234-123456789012'
-                        }
-                    )
-                }
-                Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganizationInternalSponsor -MockWith {
-                    return @(
-                        @{
-                            Id = '12345678-1234-1234-1234-123456789012'
-                        }
-                    )
-                }
             }
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -260,7 +257,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Description      = 'ConnectedOrganization_Description'
                     DisplayName      = 'ConnectedOrganization_DisplayName'
-                    ExternalSponsors = @('John.Smith@contoso.com')
+                    ExternalSponsors = @('John.Smith@contoso.com', "John.Snow@contoso.com") # Drift
                     Id               = '12345678-1234-1234-1234-123456789012'
                     IdentitySources  = @(
                         (New-CimInstance -ClassName MSFT_AADEntitlementManagementConnectedOrganizationIdentitySource -Property @{
@@ -271,28 +268,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     InternalSponsors = @('John.Smith@contoso.com')
                     State            = 'configured'
-
                     Ensure           = 'Present'
                     Credential       = $Credential
                 }
 
-                Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganization -MockWith {
-                    return @{
-                        Description     = 'ConnectedOrganization_Description'
-                        DisplayName     = 'ConnectedOrganization_DisplayName'
-                        Id              = '12345678-1234-1234-1234-123456789012'
-                        IdentitySources = @(
-                            @{
-                                AdditionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.azureActiveDirectoryTenant'
-                                    tenantId      = 'IdentitySource_TenantId'
-                                    displayName   = 'IdentitySource_DisplayName'
-                                }
-                            }
-                        )
-                        State           = 'configured'
-                    }
-                }
                 Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganizationExternalSponsor -MockWith {
                     return @(
                         @{
@@ -300,13 +279,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         },
                         @{
                             Id = '12345678-1234-1234-1234-234567890123' #Drift
-                        }
-                    )
-                }
-                Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganizationInternalSponsor -MockWith {
-                    return @(
-                        @{
-                            Id = '12345678-1234-1234-1234-123456789012'
                         }
                     )
                 }
@@ -333,39 +305,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganization -MockWith {
-                    return @{
-                        Description     = 'ConnectedOrganization_Description'
-                        DisplayName     = 'ConnectedOrganization_DisplayName'
-                        Id              = 'ConnectedOrganization_Id'
-                        IdentitySources = @(
-                            @{
-                                AdditionalProperties = @{
-                                    '@odata.type' = '#microsoft.graph.azureActiveDirectoryTenant'
-                                    tenantId      = 'IdentitySource_TenantId'
-                                    displayName   = 'IdentitySource_DisplayName'
-                                }
-                            }
-                        )
-                        State           = 'configured'
-
-                    }
-                }
-                Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganizationExternalSponsor -MockWith {
-                    return @(
-                        @{
-                            Id = '12345678-1234-1234-1234-123456789012'
-                        }
-                    )
-                }
-                Mock -CommandName Get-MgBetaEntitlementManagementConnectedOrganizationInternalSponsor -MockWith {
-                    return @(
-                        @{
-                            Id = '12345678-1234-1234-1234-123456789012'
-                        }
-                    )
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

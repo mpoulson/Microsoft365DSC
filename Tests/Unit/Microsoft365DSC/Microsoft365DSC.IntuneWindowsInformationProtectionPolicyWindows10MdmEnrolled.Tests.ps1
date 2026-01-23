@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-GUID).ToString() -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-PSSession -MockWith {
@@ -45,6 +45,124 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
+            }
+
+            Mock -CommandName Get-MgBetaDeviceAppManagementMdmWindowsInformationProtectionPolicy -MockWith {
+                return @{
+                    AdditionalProperties                   = @{
+                        '@odata.type' = '#microsoft.graph.MdmWindowsInformationProtectionPolicy'
+                    }
+                    AzureRightsManagementServicesAllowed   = $True
+                    DataRecoveryCertificate                = @{
+                        Description        = 'FakeStringValue'
+                        ExpirationDateTime = '2023-01-01T00:00:00.0000000+00:00'
+                        SubjectName        = 'FakeStringValue'
+                    }
+                    Description                            = 'FakeStringValue'
+                    DisplayName                            = 'FakeStringValue'
+                    EnforcementLevel                       = 'noProtection'
+                    EnterpriseDomain                       = 'FakeStringValue'
+                    EnterpriseInternalProxyServers         = @(
+                        @{
+                            DisplayName = 'FakeStringValue'
+                            Resources   = @('FakeStringValue')
+                        }
+                    )
+                    EnterpriseIPRanges                     = @(
+                        @{
+                            DisplayName = 'FakeStringValue'
+                            Ranges      = @(
+                                @{
+                                    AdditionalProperties = @{
+                                        cidrAddress   = 'FakeStringValue'
+                                        upperAddress  = 'FakeStringValue'
+                                        lowerAddress  = 'FakeStringValue'
+                                        '@odata.type' = '#microsoft.graph.iPv4CidrRange'
+                                    }
+                                }
+                            )
+                        }
+                    )
+                    EnterpriseIPRangesAreAuthoritative     = $True
+                    EnterpriseNetworkDomainNames           = @(
+                        @{
+                            DisplayName = 'FakeStringValue'
+                            Resources   = @('FakeStringValue')
+                        }
+                    )
+                    EnterpriseProtectedDomainNames         = @(
+                        @{
+                            DisplayName = 'FakeStringValue'
+                            Resources   = @('FakeStringValue')
+                        }
+                    )
+                    EnterpriseProxiedDomains               = @(
+                        @{
+                            DisplayName    = 'FakeStringValue'
+                            ProxiedDomains = @(
+                                @{
+                                    Proxy           = 'FakeStringValue'
+                                    IpAddressOrFQDN = 'FakeStringValue'
+                                }
+                            )
+                        }
+                    )
+                    EnterpriseProxyServers                 = @(
+                        @{
+                            DisplayName = 'FakeStringValue'
+                            Resources   = @('FakeStringValue')
+                        }
+                    )
+                    EnterpriseProxyServersAreAuthoritative = $True
+                    ExemptApps                             = @(
+                        @{
+                            Description          = 'FakeStringValue'
+                            AdditionalProperties = @{
+                                binaryName        = 'FakeStringValue'
+                                binaryVersionLow  = 'FakeStringValue'
+                                binaryVersionHigh = 'FakeStringValue'
+                                '@odata.type'     = '#microsoft.graph.windowsInformationProtectionDesktopApp'
+                            }
+                            Denied               = $True
+                            PublisherName        = 'FakeStringValue'
+                            ProductName          = 'FakeStringValue'
+                            DisplayName          = 'FakeStringValue'
+                        }
+                    )
+                    IconsVisible                           = $True
+                    Id                                     = 'FakeStringValue'
+                    IndexingEncryptedStoresOrItemsBlocked  = $True
+                    NeutralDomainResources                 = @(
+                        @{
+                            DisplayName = 'FakeStringValue'
+                            Resources   = @('FakeStringValue')
+                        }
+                    )
+                    ProtectedApps                          = @(
+                        @{
+                            Description          = 'FakeStringValue'
+                            AdditionalProperties = @{
+                                binaryName        = 'FakeStringValue'
+                                binaryVersionLow  = 'FakeStringValue'
+                                binaryVersionHigh = 'FakeStringValue'
+                                '@odata.type'     = '#microsoft.graph.windowsInformationProtectionDesktopApp'
+                            }
+                            Denied               = $True
+                            PublisherName        = 'FakeStringValue'
+                            ProductName          = 'FakeStringValue'
+                            DisplayName          = 'FakeStringValue'
+                        }
+                    )
+                    ProtectionUnderLockConfigRequired      = $True
+                    RevokeOnUnenrollDisabled               = $True
+                    SmbAutoEncryptedFileExtensions         = @(
+                        @{
+                            DisplayName = 'FakeStringValue'
+                            Resources   = @('FakeStringValue')
+                        }
+                    )
+
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -100,7 +218,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnterpriseProxiedDomains               = @(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphwindowsInformationProtectionProxiedDomainCollection -Property @{
                             DisplayName    = 'FakeStringValue'
-                            ProxiedDomains = (New-CimInstance -ClassName MSFT_MicrosoftGraphproxiedDomain -Property @{
+                            ProxiedDomains = [CimInstance[]]@(New-CimInstance -ClassName MSFT_MicrosoftGraphproxiedDomain -Property @{
                                     Proxy           = 'FakeStringValue'
                                     IpAddressOrFQDN = 'FakeStringValue'
                                 } -ClientOnly)
@@ -222,7 +340,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnterpriseProxiedDomains               = @(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphwindowsInformationProtectionProxiedDomainCollection -Property @{
                             DisplayName    = 'FakeStringValue'
-                            ProxiedDomains = (New-CimInstance -ClassName MSFT_MicrosoftGraphproxiedDomain -Property @{
+                            ProxiedDomains = [CimInstance[]]@(New-CimInstance -ClassName MSFT_MicrosoftGraphproxiedDomain -Property @{
                                     Proxy           = 'FakeStringValue'
                                     IpAddressOrFQDN = 'FakeStringValue'
                                 } -ClientOnly)
@@ -280,124 +398,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     )
                     Ensure                                 = 'Absent'
                     Credential                             = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMdmWindowsInformationProtectionPolicy -MockWith {
-                    return @{
-                        AdditionalProperties                   = @{
-                            '@odata.type' = '#microsoft.graph.MdmWindowsInformationProtectionPolicy'
-                        }
-                        AzureRightsManagementServicesAllowed   = $True
-                        DataRecoveryCertificate                = @{
-                            Description        = 'FakeStringValue'
-                            ExpirationDateTime = '2023-01-01T00:00:00.0000000+00:00'
-                            SubjectName        = 'FakeStringValue'
-                        }
-                        Description                            = 'FakeStringValue'
-                        DisplayName                            = 'FakeStringValue'
-                        EnforcementLevel                       = 'noProtection'
-                        EnterpriseDomain                       = 'FakeStringValue'
-                        EnterpriseInternalProxyServers         = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseIPRanges                     = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Ranges      = @(
-                                    @{
-                                        AdditionalProperties = @{
-                                            cidrAddress   = 'FakeStringValue'
-                                            upperAddress  = 'FakeStringValue'
-                                            lowerAddress  = 'FakeStringValue'
-                                            '@odata.type' = '#microsoft.graph.iPv4CidrRange'
-                                        }
-                                    }
-                                )
-                            }
-                        )
-                        EnterpriseIPRangesAreAuthoritative     = $True
-                        EnterpriseNetworkDomainNames           = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseProtectedDomainNames         = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseProxiedDomains               = @(
-                            @{
-                                DisplayName    = 'FakeStringValue'
-                                ProxiedDomains = @(
-                                    @{
-                                        Proxy           = 'FakeStringValue'
-                                        IpAddressOrFQDN = 'FakeStringValue'
-                                    }
-                                )
-                            }
-                        )
-                        EnterpriseProxyServers                 = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseProxyServersAreAuthoritative = $True
-                        ExemptApps                             = @(
-                            @{
-                                Description          = 'FakeStringValue'
-                                AdditionalProperties = @{
-                                    binaryName        = 'FakeStringValue'
-                                    binaryVersionLow  = 'FakeStringValue'
-                                    binaryVersionHigh = 'FakeStringValue'
-                                    '@odata.type'     = '#microsoft.graph.windowsInformationProtectionDesktopApp'
-                                }
-                                Denied               = $True
-                                PublisherName        = 'FakeStringValue'
-                                ProductName          = 'FakeStringValue'
-                                DisplayName          = 'FakeStringValue'
-                            }
-                        )
-                        IconsVisible                           = $True
-                        Id                                     = 'FakeStringValue'
-                        IndexingEncryptedStoresOrItemsBlocked  = $True
-                        NeutralDomainResources                 = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        ProtectedApps                          = @(
-                            @{
-                                Description          = 'FakeStringValue'
-                                AdditionalProperties = @{
-                                    binaryName        = 'FakeStringValue'
-                                    binaryVersionLow  = 'FakeStringValue'
-                                    binaryVersionHigh = 'FakeStringValue'
-                                    '@odata.type'     = '#microsoft.graph.windowsInformationProtectionDesktopApp'
-                                }
-                                Denied               = $True
-                                PublisherName        = 'FakeStringValue'
-                                ProductName          = 'FakeStringValue'
-                                DisplayName          = 'FakeStringValue'
-                            }
-                        )
-                        ProtectionUnderLockConfigRequired      = $True
-                        RevokeOnUnenrollDisabled               = $True
-                        SmbAutoEncryptedFileExtensions         = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-
-                    }
                 }
             }
 
@@ -460,7 +460,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnterpriseProxiedDomains               = @(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphwindowsInformationProtectionProxiedDomainCollection -Property @{
                             DisplayName    = 'FakeStringValue'
-                            ProxiedDomains = (New-CimInstance -ClassName MSFT_MicrosoftGraphproxiedDomain -Property @{
+                            ProxiedDomains = [CimInstance[]]@(New-CimInstance -ClassName MSFT_MicrosoftGraphproxiedDomain -Property @{
                                     Proxy           = 'FakeStringValue'
                                     IpAddressOrFQDN = 'FakeStringValue'
                                 } -ClientOnly)
@@ -519,126 +519,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                 = 'Present'
                     Credential                             = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMdmWindowsInformationProtectionPolicy -MockWith {
-                    return @{
-                        AdditionalProperties                   = @{
-                            '@odata.type' = '#microsoft.graph.MdmWindowsInformationProtectionPolicy'
-                        }
-                        AzureRightsManagementServicesAllowed   = $True
-                        DataRecoveryCertificate                = @{
-                            Description        = 'FakeStringValue'
-                            ExpirationDateTime = '2023-01-01T00:00:00.0000000+00:00'
-                            SubjectName        = 'FakeStringValue'
-                        }
-                        Description                            = 'FakeStringValue'
-                        DisplayName                            = 'FakeStringValue'
-                        EnforcementLevel                       = 'noProtection'
-                        EnterpriseDomain                       = 'FakeStringValue'
-                        EnterpriseInternalProxyServers         = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseIPRanges                     = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Ranges      = @(
-                                    @{
-                                        AdditionalProperties = @{
-                                            cidrAddress   = 'FakeStringValue'
-                                            upperAddress  = 'FakeStringValue'
-                                            lowerAddress  = 'FakeStringValue'
-                                            '@odata.type' = '#microsoft.graph.iPv4CidrRange'
-                                        }
-                                    }
-                                )
-                            }
-                        )
-                        EnterpriseIPRangesAreAuthoritative     = $True
-                        EnterpriseNetworkDomainNames           = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseProtectedDomainNames         = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseProxiedDomains               = @(
-                            @{
-                                DisplayName    = 'FakeStringValue'
-                                ProxiedDomains = @(
-                                    @{
-                                        Proxy           = 'FakeStringValue'
-                                        IpAddressOrFQDN = 'FakeStringValue'
-                                    }
-                                )
-                            }
-                        )
-                        EnterpriseProxyServers                 = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseProxyServersAreAuthoritative = $True
-                        ExemptApps                             = @(
-                            @{
-                                Description          = 'FakeStringValue'
-                                AdditionalProperties = @{
-                                    binaryName        = 'FakeStringValue'
-                                    binaryVersionLow  = 'FakeStringValue'
-                                    binaryVersionHigh = 'FakeStringValue'
-                                    '@odata.type'     = '#microsoft.graph.windowsInformationProtectionDesktopApp'
-                                }
-                                Denied               = $True
-                                PublisherName        = 'FakeStringValue'
-                                ProductName          = 'FakeStringValue'
-                                DisplayName          = 'FakeStringValue'
-                            }
-                        )
-                        IconsVisible                           = $True
-                        Id                                     = 'FakeStringValue'
-                        IndexingEncryptedStoresOrItemsBlocked  = $True
-                        NeutralDomainResources                 = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        ProtectedApps                          = @(
-                            @{
-                                Description          = 'FakeStringValue'
-                                AdditionalProperties = @{
-                                    binaryName        = 'FakeStringValue'
-                                    binaryVersionLow  = 'FakeStringValue'
-                                    binaryVersionHigh = 'FakeStringValue'
-                                    '@odata.type'     = '#microsoft.graph.windowsInformationProtectionDesktopApp'
-                                }
-                                Denied               = $True
-                                PublisherName        = 'FakeStringValue'
-                                ProductName          = 'FakeStringValue'
-                                DisplayName          = 'FakeStringValue'
-                            }
-                        )
-                        ProtectionUnderLockConfigRequired      = $True
-                        RevokeOnUnenrollDisabled               = $True
-                        SmbAutoEncryptedFileExtensions         = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -691,10 +572,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnterpriseProxiedDomains               = @(
                         (New-CimInstance -ClassName MSFT_MicrosoftGraphwindowsInformationProtectionProxiedDomainCollection -Property @{
                             DisplayName    = 'FakeStringValue'
-                            ProxiedDomains = (New-CimInstance -ClassName MSFT_MicrosoftGraphproxiedDomain -Property @{
-                                    Proxy           = 'FakeStringValue'
-                                    IpAddressOrFQDN = 'FakeStringValue'
-                                } -ClientOnly)
+                            ProxiedDomains = [CimInstance[]]@(New-CimInstance -ClassName MSFT_MicrosoftGraphproxiedDomain -Property @{
+                                Proxy           = 'DefinedProxy' # Updated property
+                                IpAddressOrFQDN = 'FakeStringValue'
+                            } -ClientOnly)
                         } -ClientOnly)
                     )
                     EnterpriseProxyServers                 = @(
@@ -750,111 +631,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                                 = 'Present'
                     Credential                             = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMdmWindowsInformationProtectionPolicy -MockWith {
-                    return @{
-                        DataRecoveryCertificate        = @{
-                            Description        = 'FakeStringValue'
-                            ExpirationDateTime = '2023-01-01T00:00:00.0000000+00:00'
-                            SubjectName        = 'FakeStringValue'
-                        }
-                        Description                    = 'FakeStringValue'
-                        DisplayName                    = 'FakeStringValue'
-                        EnforcementLevel               = 'noProtection'
-                        EnterpriseDomain               = 'FakeStringValue'
-                        EnterpriseInternalProxyServers = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseIPRanges             = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Ranges      = @(
-                                    @{
-                                        AdditionalProperties = @{
-                                            cidrAddress   = 'FakeStringValue'
-                                            upperAddress  = 'FakeStringValue'
-                                            lowerAddress  = 'FakeStringValue'
-                                            '@odata.type' = '#microsoft.graph.iPv4CidrRange'
-                                        }
-                                    }
-                                )
-                            }
-                        )
-                        EnterpriseNetworkDomainNames   = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseProtectedDomainNames = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseProxiedDomains       = @(
-                            @{
-                                DisplayName    = 'FakeStringValue'
-                                ProxiedDomains = @(
-                                    @{
-                                        Proxy           = 'FakeStringValue'
-                                        IpAddressOrFQDN = 'FakeStringValue'
-                                    }
-                                )
-                            }
-                        )
-                        EnterpriseProxyServers         = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        ExemptApps                     = @(
-                            @{
-                                AdditionalProperties = @{
-                                    binaryName        = 'FakeStringValue'
-                                    binaryVersionLow  = 'FakeStringValue'
-                                    binaryVersionHigh = 'FakeStringValue'
-                                    '@odata.type'     = '#microsoft.graph.windowsInformationProtectionDesktopApp'
-                                }
-                                PublisherName        = 'FakeStringValue'
-                                Description          = 'FakeStringValue'
-                                DisplayName          = 'FakeStringValue'
-                                ProductName          = 'FakeStringValue'
-                            }
-                        )
-                        Id                             = 'FakeStringValue'
-                        NeutralDomainResources         = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        ProtectedApps                  = @(
-                            @{
-                                AdditionalProperties = @{
-                                    binaryName        = 'FakeStringValue'
-                                    binaryVersionLow  = 'FakeStringValue'
-                                    binaryVersionHigh = 'FakeStringValue'
-                                    '@odata.type'     = '#microsoft.graph.windowsInformationProtectionDesktopApp'
-                                }
-                                PublisherName        = 'FakeStringValue'
-                                Description          = 'FakeStringValue'
-                                DisplayName          = 'FakeStringValue'
-                                ProductName          = 'FakeStringValue'
-                            }
-                        )
-                        SmbAutoEncryptedFileExtensions = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                    }
-                }
             }
 
             It 'Should return Values from the Get method' {
@@ -878,125 +654,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
-
-                Mock -CommandName Get-MgBetaDeviceAppManagementMdmWindowsInformationProtectionPolicy -MockWith {
-                    return @{
-                        AdditionalProperties                   = @{
-                            '@odata.type' = '#microsoft.graph.MdmWindowsInformationProtectionPolicy'
-                        }
-                        AzureRightsManagementServicesAllowed   = $True
-                        DataRecoveryCertificate                = @{
-                            Description        = 'FakeStringValue'
-                            ExpirationDateTime = '2023-01-01T00:00:00.0000000+00:00'
-                            SubjectName        = 'FakeStringValue'
-                        }
-                        Description                            = 'FakeStringValue'
-                        DisplayName                            = 'FakeStringValue'
-                        EnforcementLevel                       = 'noProtection'
-                        EnterpriseDomain                       = 'FakeStringValue'
-                        EnterpriseInternalProxyServers         = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseIPRanges                     = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Ranges      = @(
-                                    @{
-                                        AdditionalProperties = @{
-                                            cidrAddress   = 'FakeStringValue'
-                                            upperAddress  = 'FakeStringValue'
-                                            lowerAddress  = 'FakeStringValue'
-                                            '@odata.type' = '#microsoft.graph.iPv4CidrRange'
-                                        }
-                                    }
-                                )
-                            }
-                        )
-                        EnterpriseIPRangesAreAuthoritative     = $True
-                        EnterpriseNetworkDomainNames           = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseProtectedDomainNames         = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseProxiedDomains               = @(
-                            @{
-                                DisplayName    = 'FakeStringValue'
-                                ProxiedDomains = @(
-                                    @{
-                                        Proxy           = 'FakeStringValue'
-                                        IpAddressOrFQDN = 'FakeStringValue'
-                                    }
-                                )
-                            }
-                        )
-                        EnterpriseProxyServers                 = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        EnterpriseProxyServersAreAuthoritative = $True
-                        ExemptApps                             = @(
-                            @{
-                                Description          = 'FakeStringValue'
-                                AdditionalProperties = @{
-                                    binaryName        = 'FakeStringValue'
-                                    binaryVersionLow  = 'FakeStringValue'
-                                    binaryVersionHigh = 'FakeStringValue'
-                                    '@odata.type'     = '#microsoft.graph.windowsInformationProtectionDesktopApp'
-                                }
-                                Denied               = $True
-                                PublisherName        = 'FakeStringValue'
-                                ProductName          = 'FakeStringValue'
-                                DisplayName          = 'FakeStringValue'
-                            }
-                        )
-                        IconsVisible                           = $True
-                        Id                                     = 'FakeStringValue'
-                        IndexingEncryptedStoresOrItemsBlocked  = $True
-                        NeutralDomainResources                 = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-                        ProtectedApps                          = @(
-                            @{
-                                Description          = 'FakeStringValue'
-                                AdditionalProperties = @{
-                                    binaryName        = 'FakeStringValue'
-                                    binaryVersionLow  = 'FakeStringValue'
-                                    binaryVersionHigh = 'FakeStringValue'
-                                    '@odata.type'     = '#microsoft.graph.windowsInformationProtectionDesktopApp'
-                                }
-                                Denied               = $True
-                                PublisherName        = 'FakeStringValue'
-                                ProductName          = 'FakeStringValue'
-                                DisplayName          = 'FakeStringValue'
-                            }
-                        )
-                        ProtectionUnderLockConfigRequired      = $True
-                        RevokeOnUnenrollDisabled               = $True
-                        SmbAutoEncryptedFileExtensions         = @(
-                            @{
-                                DisplayName = 'FakeStringValue'
-                                Resources   = @('FakeStringValue')
-                            }
-                        )
-
-                    }
-                }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

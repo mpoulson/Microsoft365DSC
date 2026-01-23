@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@contoso.onmicrosoft.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -35,6 +35,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Set-MessageClassification -MockWith {
+            }
+
+            Mock -CommandName Remove-MessageClassification -MockWith {
+            }
+
+            Mock -CommandName Get-MessageClassification -MockWith {
+                return @{
+                    ClassificationID            = '00a71ebb-b13d-4f23-9eee-daba7a1f2336'
+                    DisplayName                 = 'Nik Classification'
+                    DisplayPrecedence           = 'Medium'
+                    Identity                    = 'Default\NikClassification'
+                    Name                        = 'NikClassification'
+                    PermissionMenuVisible       = $True
+                    RecipientDescription        = 'test'
+                    RetainClassificationEnabled = $True
+                    SenderDescription           = 'test'
+                }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -86,24 +103,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                      = 'Present'
                     Identity                    = 'Default\NikClassification'
                     Name                        = 'NikClassification'
-                    PermissionMenuVisible       = $True
+                    PermissionMenuVisible       = $false # Drift
                     RecipientDescription        = 'test'
                     RetainClassificationEnabled = $True
                     SenderDescription           = 'test'
-                }
-
-                Mock -CommandName Get-MessageClassification -MockWith {
-                    return @{
-                        ClassificationID            = '00a71ebb-b13d-4f23-9eee-daba7a1f2336'
-                        DisplayName                 = 'Nik Classification'
-                        DisplayPrecedence           = 'Medium'
-                        Identity                    = 'Default\NikClassification'
-                        Name                        = 'NikClassification'
-                        PermissionMenuVisible       = $False; #Drift
-                        RecipientDescription        = 'test'
-                        RetainClassificationEnabled = $True
-                        SenderDescription           = 'test'
-                    }
                 }
             }
 
@@ -132,24 +135,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RetainClassificationEnabled = $True
                     SenderDescription           = 'test'
                 }
-
-                Mock -CommandName Get-MessageClassification -MockWith {
-                    return @{
-                        ClassificationID            = '00a71ebb-b13d-4f23-9eee-daba7a1f2336'
-                        DisplayName                 = 'Nik Classification'
-                        DisplayPrecedence           = 'Medium'
-                        Identity                    = 'Default\NikClassification'
-                        Name                        = 'NikClassification'
-                        PermissionMenuVisible       = $True
-                        RecipientDescription        = 'test'
-                        RetainClassificationEnabled = $True
-                        SenderDescription           = 'test'
-                    }
-                }
-
-                Mock -CommandName Remove-MessageClassification -MockWith {
-
-                }
             }
 
             It 'Should return present from the Get-TargetResource function' {
@@ -168,20 +153,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
-                }
-
-                Mock -CommandName Get-MessageClassification -MockWith {
-                    return @{
-                        ClassificationID            = '00a71ebb-b13d-4f23-9eee-daba7a1f2336'
-                        DisplayName                 = 'Nik Classification'
-                        DisplayPrecedence           = 'Medium'
-                        Identity                    = 'Default\NikClassification'
-                        Name                        = 'NikClassification'
-                        PermissionMenuVisible       = $True
-                        RecipientDescription        = 'test'
-                        RetainClassificationEnabled = $True
-                        SenderDescription           = 'test'
-                    }
                 }
             }
 
