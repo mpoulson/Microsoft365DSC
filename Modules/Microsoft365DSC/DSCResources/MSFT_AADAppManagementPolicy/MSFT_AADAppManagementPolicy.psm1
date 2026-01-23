@@ -1,5 +1,170 @@
 Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADAppManagementPolicy'
 
+function Resolve-AppIds
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String[]] $NamesOrIds
+    )
+    $results = @()
+    $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
+    foreach ($item in $NamesOrIds)
+    {
+        $id = $item
+        $guidOut = [System.Guid]::Empty
+        if (-not [System.Guid]::TryParse($item, [ref] $guidOut))
+        {
+            $matchApp = $allApps | Where-Object { $_.DisplayName -eq $item }
+            if ($matchApp)
+            {
+                $id = $matchApp.Id
+            }
+        }
+        if ($id)
+        {
+            $results += $id
+        }
+    }
+    return $results
+}
+
+function Get-AppPolicyAssignments
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String] $PolicyId,
+        [Parameter()]
+        [Switch] $ResolveNames
+    )
+    $assigned = @()
+    try
+    {
+        $refs = Get-MgPolicyAppManagementPolicyApplyTo -AppManagementPolicyId $PolicyId -ErrorAction SilentlyContinue
+        if ($refs)
+        {
+            if ($ResolveNames.IsPresent)
+            {
+                $appIds = $refs.Id
+                $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
+                foreach ($refId in $appIds)
+                {
+                    $matchApp = $allApps | Where-Object { $_.Id -eq $refId }
+                    if ($matchApp)
+                    {
+                        $assigned += $matchApp.DisplayName
+                    }
+                    else
+                    {
+                        $assigned += $refId
+                    }
+                }
+            }
+            else
+            {
+                $assigned = $refs.Id
+            }
+        }
+    }
+    catch {}
+    return $assigned
+}
+
+function Resolve-CertificateConfigIds
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String[]] $NamesOrIds
+    )
+    $results = @()
+    $allConfigs = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -All -ErrorAction SilentlyContinue
+    foreach ($item in $NamesOrIds)
+    {
+        $id = $item
+        $guidOut = [System.Guid]::Empty
+        if (-not [System.Guid]::TryParse($item, [ref] $guidOut))
+        {
+            $match = $allConfigs | Where-Object -FilterScript { $_.DisplayName -eq $item }
+            if ($null -ne $match)
+            {
+                $id = $match.Id
+            }
+        }
+        if ($id)
+        {
+            $results += $id
+        }
+    }
+    return $results
+}
+
+function Convert-CertificateConfigIdsToNames
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String[]] $Ids
+    )
+    $results = @()
+    $allConfigs = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -All -ErrorAction SilentlyContinue
+    foreach ($id in $Ids)
+    {
+        $displayValue = $id
+        $guidOut = [System.Guid]::Empty
+        if ([System.Guid]::TryParse($id, [ref] $guidOut))
+        {
+            $match = $allConfigs | Where-Object -FilterScript { $_.Id -eq $id }
+            if ($null -ne $match)
+            {
+                $duplicate = $allConfigs | Where-Object -FilterScript { $_.DisplayName -eq $match.DisplayName }
+                if ($duplicate.Count -eq 1)
+                {
+                    $displayValue = $match.DisplayName
+                }
+            }
+        }
+        $results += $displayValue
+    }
+    return $results
+}
+
+function Sync-AppPolicyAssignments
+{
+    param(
+        [Parameter()]
+        [System.String] $PolicyId,
+        [Parameter()]
+        [System.String] $PolicyDisplayName,
+        [Parameter(Mandatory = $true)]
+        [System.String[]] $DesiredAssignments
+    )
+    $targetPolicyId = $PolicyId
+    if (-not $targetPolicyId -and $PolicyDisplayName)
+    {
+        $targetPolicyId = (Get-MgBetaPolicyAppManagementPolicy -Filter "displayName eq '$PolicyDisplayName'" -ErrorAction SilentlyContinue).Id
+    }
+    if (-not $targetPolicyId)
+    {
+        return
+    }
+
+    $desiredIds = Resolve-AppIds -NamesOrIds $DesiredAssignments
+    $currentIds = Get-AppPolicyAssignments -PolicyId $targetPolicyId
+
+    $toAdd = $desiredIds | Where-Object { $_ -notin $currentIds }
+    $toRemove = $currentIds | Where-Object { $_ -notin $desiredIds }
+
+    foreach ($addId in $toAdd)
+    {
+        New-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $addId -BodyParameter @{
+            '@odata.id' = "https://graph.microsoft.com/beta/policies/appManagementPolicies/$($targetPolicyId)"
+        }
+    }
+
+    foreach ($removeId in $toRemove)
+    {
+        Remove-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $removeId -AppManagementPolicyId $targetPolicyId -ErrorAction SilentlyContinue
+    }
+}
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -23,8 +188,16 @@ function Get-TargetResource
         $IsEnabled,
 
         [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
+        [System.Object]
         $Restrictions,
+
+        [Parameter()]
+        [System.String[]]
+        $CertificateBasedApplicationConfigurationIds,
+
+        [Parameter()]
+        [System.String[]]
+        $AssignedApplications,
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
@@ -55,6 +228,114 @@ function Get-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    function Resolve-AppIds
+    {
+        param(
+            [Parameter(Mandatory = $true)]
+            [System.String[]] $NamesOrIds
+        )
+        $results = @()
+        $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
+        foreach ($item in $NamesOrIds)
+        {
+            $id = $item
+            $guidOut = [System.Guid]::Empty
+            if (-not [System.Guid]::TryParse($item, [ref] $guidOut))
+            {
+                $matchApp = $allApps | Where-Object { $_.DisplayName -eq $item }
+                if ($matchApp)
+                {
+                    $id = $matchApp.Id
+                }
+            }
+            if ($id)
+            {
+                $results += $id
+            }
+        }
+        return $results
+    }
+
+    function Get-AppPolicyAssignments
+    {
+        param(
+            [Parameter(Mandatory = $true)]
+            [System.String] $PolicyId,
+            [Parameter()]
+            [Switch] $ResolveNames
+        )
+        $assigned = @()
+        try
+        {
+            $refs = Get-MgPolicyAppManagementPolicyApplyTo -AppManagementPolicyId $PolicyId -ErrorAction SilentlyContinue
+            if ($refs)
+            {
+                if ($ResolveNames.IsPresent)
+                {
+                    $appIds = $refs.Id
+                    $allApps = Get-MgBetaApplication -All -Property "id,displayName" -ErrorAction SilentlyContinue
+                    foreach ($refId in $appIds)
+                    {
+                        $matchApp = $allApps | Where-Object { $_.Id -eq $refId }
+                        if ($matchApp)
+                        {
+                            $assigned += $matchApp.DisplayName
+                        }
+                        else
+                        {
+                            $assigned += $refId
+                        }
+                    }
+                }
+                else
+                {
+                    $assigned = $refs.Id
+                }
+            }
+        }
+        catch {}
+        return $assigned
+    }
+
+function Sync-AppPolicyAssignments
+{
+    param(
+            [Parameter()]
+            [System.String] $PolicyId,
+            [Parameter()]
+            [System.String] $PolicyDisplayName,
+            [Parameter(Mandatory = $true)]
+            [System.String[]] $DesiredAssignments
+        )
+        $targetPolicyId = $PolicyId
+        if (-not $targetPolicyId -and $PolicyDisplayName)
+        {
+            $targetPolicyId = (Get-MgBetaPolicyAppManagementPolicy -Filter "displayName eq '$PolicyDisplayName'" -ErrorAction SilentlyContinue).Id
+        }
+        if (-not $targetPolicyId)
+        {
+            return
+        }
+
+        $desiredIds = Resolve-AppIds -NamesOrIds $DesiredAssignments
+        $currentIds = Get-AppPolicyAssignments -PolicyId $targetPolicyId
+
+        $toAdd = $desiredIds | Where-Object { $_ -notin $currentIds }
+        $toRemove = $currentIds | Where-Object { $_ -notin $desiredIds }
+
+        foreach ($addId in $toAdd)
+        {
+            New-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $addId -BodyParameter @{
+                '@odata.id' = "https://graph.microsoft.com/beta/policies/appManagementPolicies/$($targetPolicyId)"
+            }
+        }
+
+        foreach ($removeId in $toRemove)
+        {
+            Remove-MgBetaApplicationAppManagementPolicyByRef -ApplicationId $removeId -AppManagementPolicyId $targetPolicyId -ErrorAction SilentlyContinue
+        }
+    }
 
     Write-Verbose -Message "Getting configuration of App Management Policy '$DisplayName'"
 
@@ -91,6 +372,14 @@ function Get-TargetResource
             else
             {
                 $instance = Get-MgBetaPolicyAppManagementPolicy | Where-Object -FilterScript {$_.DisplayName -eq $DisplayName}
+                if ($null -eq $instance)
+                {
+                    $defaultPolicy = Get-MgBetaPolicyDefaultAppManagementPolicy -ErrorAction SilentlyContinue
+                    if ($null -ne $defaultPolicy -and $defaultPolicy.DisplayName -eq $DisplayName)
+                    {
+                        $instance = $defaultPolicy
+                    }
+                }
             }
 
         }
@@ -102,6 +391,7 @@ function Get-TargetResource
         $restrictionsValue = @{
             passwordCredentials     = @()
             keyCredentials          = @()
+            applicationRestrictions = @{}
         }
 
         foreach ($passwordCred in $instance.Restrictions.PasswordCredentials)
@@ -131,22 +421,77 @@ function Get-TargetResource
                 $iso8601Duration = "P{0}DT{1}H{2}M{3}S" -f $keyCred.MaxLifetime.Days, $keyCred.MaxLifetime.Hours, $keyCred.MaxLifetime.Minutes, $keyCred.MaxLifetime.Seconds
                 $newItem.Add('maxLifetime', $iso8601Duration)
             }
+            if ($null -ne $keyCred.TrustedCertificateAuthority)
+            {
+                $trustedValue = $keyCred.TrustedCertificateAuthority
+                # Convert GUID to display name for export
+                $guidValue = [System.Guid]::Empty
+                if ([System.Guid]::TryParse($trustedValue, [ref] $guidValue))
+                {
+                    try
+                    {
+                        $allConfigs = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -All -ErrorAction SilentlyContinue
+                        $match = $allConfigs | Where-Object -FilterScript { $_.Id -eq $trustedValue }
+                        if ($null -ne $match)
+                        {
+                            $trustedValue = $match.DisplayName
+                        }
+                    }
+                    catch
+                    {
+                        Write-Verbose -Message "Unable to resolve trusted certificate authority Id '$trustedValue' to name: $_"
+                    }
+                }
+                $newItem.Add('trustedCertificateAuthority', $trustedValue)
+            }
+            if ($null -ne $keyCred.CertificateBasedApplicationConfigurationIds)
+            {
+                $resolvedNames = Convert-CertificateConfigIdsToNames -Ids $keyCred.CertificateBasedApplicationConfigurationIds
+                $newItem.Add('certificateBasedApplicationConfigurationIds', $resolvedNames)
+            }
             $restrictionsValue.keyCredentials += $newItem
         }
 
+        if ($null -ne $instance.Restrictions.ApplicationRestrictions)
+        {
+            $appRestrict = @{}
+            $appRestrict.audiences = $instance.Restrictions.ApplicationRestrictions.Audiences
+            $appRestrict.trustedSubjectNameAndIssuers = $instance.Restrictions.ApplicationRestrictions.TrustedSubjectNameAndIssuers
+            if ($null -ne $instance.Restrictions.ApplicationRestrictions.IdentifierUris)
+            {
+                $appRestrict.identifierUris = @{
+                    nonDefaultUriAddition = $instance.Restrictions.ApplicationRestrictions.IdentifierUris.NonDefaultUriAddition
+                    uriAdditionWithoutUniqueTenantIdentifier = $instance.Restrictions.ApplicationRestrictions.IdentifierUris.UriAdditionWithoutUniqueTenantIdentifier
+                }
+            }
+            $restrictionsValue.applicationRestrictions = $appRestrict
+        }
+
+        # Get certificate-based application configuration IDs
+        $certConfigIds = @()
+        if ($null -ne $instance.AdditionalProperties -and $null -ne $instance.AdditionalProperties['certificateBasedApplicationConfigurationIds'])
+        {
+            $certConfigIds = Convert-CertificateConfigIdsToNames -Ids $instance.AdditionalProperties['certificateBasedApplicationConfigurationIds']
+        }
+
+        # Resolve assigned applications for this policy (names preferred)
+        $assignedApps = Get-AppPolicyAssignments -PolicyId $instance.Id -ResolveNames
+
         $results = @{
-            DisplayName           = $instance.DisplayName
-            Id                    = $instance.Id
-            Description           = $instance.Description
-            IsEnabled             = $instance.IsEnabled
-            Restrictions          = $restrictionsValue
-            Ensure                = 'Present'
-            Credential            = $Credential
-            ApplicationId         = $ApplicationId
-            TenantId              = $TenantId
-            CertificateThumbprint = $CertificateThumbprint
-            ManagedIdentity       = $ManagedIdentity.IsPresent
-            AccessTokens          = $AccessTokens
+            DisplayName                                  = $instance.DisplayName
+            Id                                           = $instance.Id
+            Description                                  = $instance.Description
+            IsEnabled                                    = $instance.IsEnabled
+            Restrictions                                 = $restrictionsValue
+            CertificateBasedApplicationConfigurationIds  = $certConfigIds
+            AssignedApplications                         = $assignedApps
+            Ensure                                       = 'Present'
+            Credential                                   = $Credential
+            ApplicationId                                = $ApplicationId
+            TenantId                                     = $TenantId
+            CertificateThumbprint                        = $CertificateThumbprint
+            ManagedIdentity                              = $ManagedIdentity.IsPresent
+            AccessTokens                                 = $AccessTokens
         }
         return $results
     }
@@ -184,8 +529,16 @@ function Set-TargetResource
         $IsEnabled,
 
         [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
+        [System.Object]
         $Restrictions,
+
+        [Parameter()]
+        [System.String[]]
+        $CertificateBasedApplicationConfigurationIds,
+
+        [Parameter()]
+        [System.String[]]
+        $AssignedApplications,
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
@@ -234,6 +587,10 @@ function Set-TargetResource
     $currentInstance = Get-TargetResource @PSBoundParameters
 
     $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    if ($setParameters.ContainsKey('AssignedApplications'))
+    {
+        $null = $setParameters.Remove('AssignedApplications')
+    }
 
     $restrictionsValue = @{
         passwordCredentials = @()
@@ -265,22 +622,65 @@ function Set-TargetResource
         {
             $newItem.Add('maxLifetime', $keyCred.MaxLifetime.ToString())
         }
+        if ($null -ne $keyCred.TrustedCertificateAuthority -and -not [System.String]::IsNullOrEmpty($keyCred.TrustedCertificateAuthority))
+        {
+            $trustedValue = $keyCred.TrustedCertificateAuthority
+            $guidOut = [System.Guid]::Empty
+            if (-not [System.Guid]::TryParse($trustedValue, [ref] $guidOut))
+            {
+                try
+                {
+                    $allConfigs = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -All -ErrorAction SilentlyContinue
+                    $match = $allConfigs | Where-Object -FilterScript { $_.DisplayName -eq $trustedValue }
+                    if ($null -ne $match)
+                    {
+                        $trustedValue = $match.Id
+                    }
+                }
+                catch
+                {
+                    Write-Verbose -Message "Unable to resolve trusted certificate authority name '$trustedValue' to Id: $_"
+                }
+            }
+            $newItem.Add('trustedCertificateAuthority', $trustedValue)
+        }
+        if ($null -ne $keyCred.CertificateBasedApplicationConfigurationIds)
+        {
+            $resolvedIds = Resolve-CertificateConfigIds -NamesOrIds $keyCred.CertificateBasedApplicationConfigurationIds
+            $newItem.Add('certificateBasedApplicationConfigurationIds', $resolvedIds)
+        }
         $restrictionsValue.keyCredentials += $newItem
     }
 
     $setParameters.Restrictions = $restrictionsValue
+
+    # Add certificate-based application configuration IDs if provided
+    if ($null -ne $CertificateBasedApplicationConfigurationIds -and $CertificateBasedApplicationConfigurationIds.Count -gt 0)
+    {
+        $setParameters.Add('certificateBasedApplicationConfigurationIds', (Resolve-CertificateConfigIds -NamesOrIds $CertificateBasedApplicationConfigurationIds))
+    }
 
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating new App Management Policy {$DisplayName} with:`r`n$(ConvertTo-Json $setParameters -Depth 10)"
         New-MgBetaPolicyAppManagementPolicy @SetParameters
+
+        if ($null -ne $AssignedApplications -and $AssignedApplications.Count -gt 0)
+        {
+            Sync-AppPolicyAssignments -PolicyDisplayName $DisplayName -DesiredAssignments $AssignedApplications
+        }
     }
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating App Management Policy {$DisplayName} with:`r`n$(ConvertTo-Json $setParameters -Depth 10)"
         Update-MgBetaPolicyAppManagementPolicy @SetParameters -AppManagementPolicyId $currentInstance.Id
+
+        if ($null -ne $AssignedApplications)
+        {
+            Sync-AppPolicyAssignments -PolicyId $currentInstance.Id -DesiredAssignments $AssignedApplications
+        }
     }
     # REMOVE
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
@@ -313,8 +713,16 @@ function Test-TargetResource
         $IsEnabled,
 
         [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
+        [System.Object]
         $Restrictions,
+
+        [Parameter()]
+        [System.String[]]
+        $CertificateBasedApplicationConfigurationIds,
+
+        [Parameter()]
+        [System.String[]]
+        $AssignedApplications,
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
@@ -413,7 +821,17 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        [array] $Script:exportedInstances = Get-MgBetaPolicyAppManagementPolicy -ErrorAction Stop
+        $customPolicies = Get-MgBetaPolicyAppManagementPolicy -ErrorAction SilentlyContinue
+        $defaultPolicy = Get-MgBetaPolicyDefaultAppManagementPolicy -ErrorAction SilentlyContinue
+        [array] $Script:exportedInstances = @()
+        if ($null -ne $customPolicies)
+        {
+            $Script:exportedInstances += $customPolicies
+        }
+        if ($null -ne $defaultPolicy)
+        {
+            $Script:exportedInstances += $defaultPolicy
+        }
 
         $i = 1
         $dscContent = ''

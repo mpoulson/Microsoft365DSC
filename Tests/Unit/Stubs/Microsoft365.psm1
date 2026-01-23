@@ -1,5 +1,42 @@
 #region Azure
 
+function Resolve-Credentials
+{
+    param($Credential)
+    return $Credential
+}
+
+function Get-MgBetaApplicationAppManagementPolicyByRef
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String] $ApplicationId
+    )
+}
+
+function New-MgBetaApplicationAppManagementPolicyByRef
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String] $ApplicationId,
+        [Parameter(Mandatory = $true)]
+        [System.Collections.Hashtable] $BodyParameter
+    )
+}
+
+function Remove-MgBetaApplicationAppManagementPolicyByRef
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String] $ApplicationId,
+        [Parameter(Mandatory = $true)]
+        [System.String] $AppManagementPolicyId
+    )
+}
+
 function Get-AzSentinelSetting
 {
     [CmdletBinding()]
@@ -3984,6 +4021,142 @@ function Get-MgBetaRoleManagementEntitlementManagementRoleDefinition
         [Parameter()]
         [Switch]
         $All
+    )
+}
+function Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $All,
+
+        [Parameter()]
+        [System.String]
+        $Filter,
+
+        [Parameter()]
+        [System.String[]]
+        $Property,
+
+        [Parameter()]
+        [System.Int32]
+        $Top,
+
+        [Parameter()]
+        [System.Int32]
+        $Skip
+    )
+}
+function Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [System.String]
+        $CertificateAuthorityAsEntityId,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $All,
+
+        [Parameter()]
+        [System.String]
+        $Filter,
+
+        [Parameter()]
+        [System.String[]]
+        $Property,
+
+        [Parameter()]
+        [System.Int32]
+        $Top,
+
+        [Parameter()]
+        [System.Int32]
+        $Skip
+    )
+}
+function New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [PSObject]
+        $BodyParameter
+    )
+}
+function Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [PSObject]
+        $BodyParameter
+    )
+}
+function Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId
+    )
+}
+function New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [PSObject]
+        $BodyParameter
+    )
+}
+function Update-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [System.String]
+        $CertificateAuthorityAsEntityId,
+
+        [Parameter()]
+        [PSObject]
+        $BodyParameter
+    )
+}
+function Remove-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $CertificateBasedApplicationConfigurationId,
+
+        [Parameter()]
+        [System.String]
+        $CertificateAuthorityAsEntityId
     )
 }
 
