@@ -1,0 +1,61 @@
+{
+  "resourceName": "AADPermissionGrantPolicyInclude",
+  "description": "This resource configures an include condition for an Azure Active Directory Permission Grant Policy.",
+  "roles": {
+    "read": [
+      "Security Reader"
+    ],
+    "update": [
+      "Privileged Role Administrator"
+    ]
+  },
+  "permissions": {
+    "graph": {
+      "delegated": {
+        "read": [
+          {
+            "name": "Policy.Read.PermissionGrant"
+          }
+        ],
+        "update": [
+          {
+            "name": "Policy.ReadWrite.PermissionGrant"
+          }
+        ]
+      },
+      "application": {
+        "read": [
+          {
+            "name": "Policy.Read.PermissionGrant"
+          }
+        ],
+        "update": [
+          {
+            "name": "Policy.ReadWrite.PermissionGrant"
+          }
+        ]
+      }
+    }
+  },
+  "requiredModules": [
+    "Microsoft.Graph.Authentication",
+    "Microsoft.Graph.Beta.Identity.SignIns",
+    "MSCloudLoginAssistant"
+  ],
+  "supportedEnvironments": [
+    "Global",
+    "USGov"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.Identity.SignIns",
+      "cmdlets": [
+        "Get-MgBetaPolicyPermissionGrantPolicyInclude",
+        "New-MgBetaPolicyPermissionGrantPolicyInclude",
+        "Update-MgBetaPolicyPermissionGrantPolicyInclude",
+        "Remove-MgBetaPolicyPermissionGrantPolicyInclude"
+      ]
+    }
+  ]
+}

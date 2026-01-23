@@ -87127,3 +87127,311 @@ function Update-MgBetaDeviceManagementReusableSetting
 }
 
 #endregion
+
+function Get-MgBetaPolicyPermissionGrantPolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [Switch]
+        $All
+    )
+}
+
+function New-MgBetaPolicyPermissionGrantPolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $Id,
+        
+        [Parameter()]
+        [System.String]
+        $DisplayName,
+        
+        [Parameter()]
+        [System.String]
+        $Description
+    )
+}
+
+function Update-MgBetaPolicyPermissionGrantPolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [System.String]
+        $DisplayName,
+        
+        [Parameter()]
+        [System.String]
+        $Description
+    )
+}
+
+function Remove-MgBetaPolicyPermissionGrantPolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId
+    )
+}
+
+function Get-MgBetaPolicyPermissionGrantPolicyInclude
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionGrantConditionSetId,
+        
+        [Parameter()]
+        [Switch]
+        $All
+    )
+}
+
+function New-MgBetaPolicyPermissionGrantPolicyInclude
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [System.String]
+        $Id,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionType,
+        
+        [Parameter()]
+        [System.String]
+        $ResourceApplication,
+        
+        [Parameter()]
+        [System.String[]]
+        $Permissions,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionClassification,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationIds,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationTenantIds,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationPublisherIds,
+        
+        [Parameter()]
+        [System.Boolean]
+        $ClientApplicationsFromVerifiedPublisherOnly
+    )
+}
+
+function Update-MgBetaPolicyPermissionGrantPolicyInclude
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionGrantConditionSetId,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionType,
+        
+        [Parameter()]
+        [System.String]
+        $ResourceApplication,
+        
+        [Parameter()]
+        [System.String[]]
+        $Permissions,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionClassification,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationIds,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationTenantIds,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationPublisherIds,
+        
+        [Parameter()]
+        [System.Boolean]
+        $ClientApplicationsFromVerifiedPublisherOnly
+    )
+}
+
+function Remove-MgBetaPolicyPermissionGrantPolicyInclude
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionGrantConditionSetId
+    )
+}
+
+function Get-MgBetaPolicyPermissionGrantPolicyExclude
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionGrantConditionSetId,
+        
+        [Parameter()]
+        [Switch]
+        $All
+    )
+}
+
+function New-MgBetaPolicyPermissionGrantPolicyExclude
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [System.String]
+        $Id,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionType,
+        
+        [Parameter()]
+        [System.String]
+        $ResourceApplication,
+        
+        [Parameter()]
+        [System.String[]]
+        $Permissions,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionClassification,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationIds,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationTenantIds,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationPublisherIds,
+        
+        [Parameter()]
+        [System.Boolean]
+        $ClientApplicationsFromVerifiedPublisherOnly
+    )
+}
+
+function Update-MgBetaPolicyPermissionGrantPolicyExclude
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionGrantConditionSetId,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionType,
+        
+        [Parameter()]
+        [System.String]
+        $ResourceApplication,
+        
+        [Parameter()]
+        [System.String[]]
+        $Permissions,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionClassification,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationIds,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationTenantIds,
+        
+        [Parameter()]
+        [System.String[]]
+        $ClientApplicationPublisherIds,
+        
+        [Parameter()]
+        [System.Boolean]
+        $ClientApplicationsFromVerifiedPublisherOnly
+    )
+}
+
+function Remove-MgBetaPolicyPermissionGrantPolicyExclude
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [System.String]
+        $PermissionGrantConditionSetId
+    )
+}
