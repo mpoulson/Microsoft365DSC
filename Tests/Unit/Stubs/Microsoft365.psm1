@@ -87127,3 +87127,63 @@ function Update-MgBetaDeviceManagementReusableSetting
 }
 
 #endregion
+
+function Get-MgBetaPolicyPermissionGrantPolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [Switch]
+        $All
+    )
+}
+
+function New-MgBetaPolicyPermissionGrantPolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $Id,
+        
+        [Parameter()]
+        [System.String]
+        $DisplayName,
+        
+        [Parameter()]
+        [System.String]
+        $Description
+    )
+}
+
+function Update-MgBetaPolicyPermissionGrantPolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId,
+        
+        [Parameter()]
+        [System.String]
+        $DisplayName,
+        
+        [Parameter()]
+        [System.String]
+        $Description
+    )
+}
+
+function Remove-MgBetaPolicyPermissionGrantPolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $PermissionGrantPolicyId
+    )
+}
