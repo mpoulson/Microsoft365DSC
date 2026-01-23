@@ -101,26 +101,8 @@ function Get-TargetResource
         Add-M365DSCTelemetryEvent -Data $data
         #endregion
 
-        $nullResult = @{
-            Id                                              = $Id
-            PermissionGrantPolicyId                         = $PermissionGrantPolicyId
-            PermissionType                                  = $null
-            ResourceApplication                             = $null
-            Permissions                                     = $null
-            PermissionClassification                        = $null
-            ClientApplicationIds                            = $null
-            ClientApplicationTenantIds                      = $null
-            ClientApplicationPublisherIds                   = $null
-            ClientApplicationsFromVerifiedPublisherOnly     = $null
-            Ensure                                          = 'Absent'
-            Credential                                      = $Credential
-            ApplicationId                                   = $ApplicationId
-            TenantId                                        = $TenantId
-            ApplicationSecret                               = $ApplicationSecret
-            CertificateThumbprint                           = $CertificateThumbprint
-            ManagedIdentity                                 = $ManagedIdentity.IsPresent
-            AccessTokens                                    = $AccessTokens
-        }
+        $nullResult = $PSBoundParameters
+        $nullResult.Ensure = 'Absent'
 
         # Check if parent policy exists
         $parentPolicy = $null
@@ -304,7 +286,7 @@ function Set-TargetResource
         if ($Ensure -eq 'Present' -and $currentCondition.Ensure -eq 'Absent')
         {
             Write-Verbose -Message "Creating new Exclude condition {$Id} for policy {$PermissionGrantPolicyId}"
-            
+
             $createParameters = @{
                 PermissionGrantPolicyId = $PermissionGrantPolicyId
                 Id                      = $Id
@@ -314,37 +296,37 @@ function Set-TargetResource
             {
                 $createParameters.PermissionType = $PermissionType
             }
-            
+
             if ($PSBoundParameters.ContainsKey('ResourceApplication'))
             {
                 $createParameters.ResourceApplication = $ResourceApplication
             }
-            
+
             if ($PSBoundParameters.ContainsKey('Permissions'))
             {
                 $createParameters.Permissions = $Permissions
             }
-            
+
             if ($PSBoundParameters.ContainsKey('PermissionClassification'))
             {
                 $createParameters.PermissionClassification = $PermissionClassification
             }
-            
+
             if ($PSBoundParameters.ContainsKey('ClientApplicationIds'))
             {
                 $createParameters.ClientApplicationIds = $ClientApplicationIds
             }
-            
+
             if ($PSBoundParameters.ContainsKey('ClientApplicationTenantIds'))
             {
                 $createParameters.ClientApplicationTenantIds = $ClientApplicationTenantIds
             }
-            
+
             if ($PSBoundParameters.ContainsKey('ClientApplicationPublisherIds'))
             {
                 $createParameters.ClientApplicationPublisherIds = $ClientApplicationPublisherIds
             }
-            
+
             if ($PSBoundParameters.ContainsKey('ClientApplicationsFromVerifiedPublisherOnly'))
             {
                 $createParameters.ClientApplicationsFromVerifiedPublisherOnly = $ClientApplicationsFromVerifiedPublisherOnly
@@ -355,7 +337,7 @@ function Set-TargetResource
         elseif ($Ensure -eq 'Present' -and $currentCondition.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Exclude conditions cannot be updated. Recreating Exclude condition {$Id} for policy {$PermissionGrantPolicyId}"
-            
+
             # Delete existing condition
             Remove-MgBetaPolicyPermissionGrantPolicyExclude `
                 -PermissionGrantPolicyId $PermissionGrantPolicyId `
@@ -371,37 +353,37 @@ function Set-TargetResource
             {
                 $createParameters.PermissionType = $PermissionType
             }
-            
+
             if ($PSBoundParameters.ContainsKey('ResourceApplication'))
             {
                 $createParameters.ResourceApplication = $ResourceApplication
             }
-            
+
             if ($PSBoundParameters.ContainsKey('Permissions'))
             {
                 $createParameters.Permissions = $Permissions
             }
-            
+
             if ($PSBoundParameters.ContainsKey('PermissionClassification'))
             {
                 $createParameters.PermissionClassification = $PermissionClassification
             }
-            
+
             if ($PSBoundParameters.ContainsKey('ClientApplicationIds'))
             {
                 $createParameters.ClientApplicationIds = $ClientApplicationIds
             }
-            
+
             if ($PSBoundParameters.ContainsKey('ClientApplicationTenantIds'))
             {
                 $createParameters.ClientApplicationTenantIds = $ClientApplicationTenantIds
             }
-            
+
             if ($PSBoundParameters.ContainsKey('ClientApplicationPublisherIds'))
             {
                 $createParameters.ClientApplicationPublisherIds = $ClientApplicationPublisherIds
             }
-            
+
             if ($PSBoundParameters.ContainsKey('ClientApplicationsFromVerifiedPublisherOnly'))
             {
                 $createParameters.ClientApplicationsFromVerifiedPublisherOnly = $ClientApplicationsFromVerifiedPublisherOnly
@@ -412,7 +394,7 @@ function Set-TargetResource
         elseif ($Ensure -eq 'Absent' -and $currentCondition.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Removing Exclude condition {$Id} for policy {$PermissionGrantPolicyId}"
-            
+
             Remove-MgBetaPolicyPermissionGrantPolicyExclude `
                 -PermissionGrantPolicyId $PermissionGrantPolicyId `
                 -PermissionGrantConditionSetId $Id | Out-Null
@@ -593,11 +575,11 @@ function Export-TargetResource
 
         if ($policies.Length -eq 0)
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         else
         {
-            Write-M365DSCHost -Message "`r`n" -NoNewLine
+            Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
 
         foreach ($policy in $policies)
@@ -608,7 +590,7 @@ function Export-TargetResource
                     -PermissionGrantPolicyId $policy.Id `
                     -All `
                     -ErrorAction Stop
-                
+
                 if ($null -ne $excludes -and $excludes.Count -gt 0)
                 {
                     foreach ($exclude in $excludes)
@@ -618,7 +600,7 @@ function Export-TargetResource
                             $Global:M365DSCExportResourceInstancesCount++
                         }
 
-                        Write-M365DSCHost -Message "    |---[$i/$($excludes.Count)] $($exclude.Id) (Policy: $($policy.Id))" -NoNewLine
+                        Write-M365DSCHost -Message "    |---[$i/$($excludes.Count)] $($exclude.Id) (Policy: $($policy.Id))" -DeferWrite
 
                         $Params = @{
                             Id                        = $exclude.Id
@@ -632,26 +614,21 @@ function Export-TargetResource
                             AccessTokens              = $AccessTokens
                         }
 
+                        $Script:exportedInstance = $config
                         $Results = Get-TargetResource @Params
 
-                        if ($Results.Ensure -eq 'Present')
-                        {
-                            $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                                -Results $Results
+                        $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
+                            -ConnectionMode $ConnectionMode `
+                            -ModulePath $PSScriptRoot `
+                            -Results $Results `
+                            -Credential $Credential
 
-                            $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
-                                -ConnectionMode $ConnectionMode `
-                                -ModulePath $PSScriptRoot `
-                                -Results $Results `
-                                -Credential $Credential
+                        $dscContent += $currentDSCBlock
+                        Save-M365DSCPartialExport -Content $currentDSCBlock `
+                            -FileName $Global:PartialExportFileName
 
-                            $dscContent += $currentDSCBlock
-                            Save-M365DSCPartialExport -Content $currentDSCBlock `
-                                -FileName $Global:PartialExportFileName
-
-                            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark
-                            $i++
-                        }
+                        Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+                        $i++
                     }
                 }
             }

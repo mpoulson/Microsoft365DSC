@@ -56,42 +56,31 @@ function Get-TargetResource
 
     try
     {
-        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
+        {
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
 
-        #Ensure the proper dependencies are installed in the current environment.
-        Confirm-M365DSCDependencies
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
 
-        #region Telemetry
-        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-        $CommandName = $MyInvocation.MyCommand
-        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-            -CommandName $CommandName `
-            -Parameters $PSBoundParameters
-        Add-M365DSCTelemetryEvent -Data $data
-        #endregion
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
 
-        $nullResult = @{
-            Id                    = $Id
-            DisplayName           = $null
-            Description           = $null
-            Ensure                = 'Absent'
-            Credential            = $Credential
-            ApplicationId         = $ApplicationId
-            TenantId              = $TenantId
-            ApplicationSecret     = $ApplicationSecret
-            CertificateThumbprint = $CertificateThumbprint
-            ManagedIdentity       = $ManagedIdentity.IsPresent
-            AccessTokens          = $AccessTokens
-        }
+            $nullResult = $PSBoundParameters
+            $nullResult.Ensure = 'Absent'
 
-        if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
-        {
-            $getValue = $Script:exportedInstances | Where-Object -FilterScript {$_.Id -eq $Id}
+            $getValue = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $Id -ErrorAction SilentlyContinue
         }
         else
         {
-            $getValue = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $Id -ErrorAction SilentlyContinue
+            $getValue = $Script:exportedInstance
         }
 
         if ($null -eq $getValue)
@@ -207,7 +196,7 @@ function Set-TargetResource
         if ($Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Absent')
         {
             Write-Verbose -Message "Creating new Azure AD Permission Grant Policy {$Id}"
-            
+
             $createParameters = @{
                 Id          = $Id
                 DisplayName = $DisplayName
@@ -219,7 +208,7 @@ function Set-TargetResource
         elseif ($Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Updating Azure AD Permission Grant Policy {$Id}"
-            
+
             $updateParameters = @{
                 PermissionGrantPolicyId = $Id
             }
@@ -228,7 +217,7 @@ function Set-TargetResource
             {
                 $updateParameters.Add('DisplayName', $DisplayName)
             }
-            
+
             if ($PSBoundParameters.ContainsKey('Description') -and $Description -ne $currentPolicy.Description)
             {
                 $updateParameters.Add('Description', $Description)
@@ -392,11 +381,11 @@ function Export-TargetResource
 
         if ($Script:exportedInstances.Length -eq 0)
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         else
         {
-            Write-M365DSCHost -Message "`r`n" -NoNewLine
+            Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
 
         foreach ($policy in $Script:exportedInstances)
@@ -406,7 +395,7 @@ function Export-TargetResource
                 $Global:M365DSCExportResourceInstancesCount++
             }
 
-            Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $($policy.Id)" -NoNewLine
+            Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $($policy.Id)" -DeferWrite
 
             $Params = @{
                 Id                    = $policy.Id
@@ -419,26 +408,20 @@ function Export-TargetResource
                 AccessTokens          = $AccessTokens
             }
 
+            $Script:exportedInstance = $config
             $Results = Get-TargetResource @Params
 
-            if ($Results.Ensure -eq 'Present')
-            {
-                $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                    -Results $Results
+            $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
+                -ConnectionMode $ConnectionMode `
+                -ModulePath $PSScriptRoot `
+                -Results $Results `
+                -Credential $Credential
+            $dscContent += $currentDSCBlock
+            Save-M365DSCPartialExport -Content $currentDSCBlock `
+                -FileName $Global:PartialExportFileName
 
-                $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
-                    -ConnectionMode $ConnectionMode `
-                    -ModulePath $PSScriptRoot `
-                    -Results $Results `
-                    -Credential $Credential
-
-                $dscContent += $currentDSCBlock
-                Save-M365DSCPartialExport -Content $currentDSCBlock `
-                    -FileName $Global:PartialExportFileName
-
-                Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark
-                $i++
-            }
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+            $i++
         }
 
         return $dscContent
