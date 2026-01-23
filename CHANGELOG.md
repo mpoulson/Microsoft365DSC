@@ -2,6 +2,12 @@
 
 # UNRELEASED
 
+* AADPermissionGrantPolicy
+  * Initial release - NEW resource to manage Azure AD Permission Grant Policies
+* AADPermissionGrantPolicyInclude
+  * Initial release - NEW resource to manage include conditions for Permission Grant Policies
+* AADPermissionGrantPolicyExclude
+  * Initial release - NEW resource to manage exclude conditions for Permission Grant Policies
 * AADRoleAssignmentScheduleRequest
   * FIXES [#6810](https://github.com/microsoft/Microsoft365DSC/issues/6810)
 * AADRoleEligibilityScheduleRequest
