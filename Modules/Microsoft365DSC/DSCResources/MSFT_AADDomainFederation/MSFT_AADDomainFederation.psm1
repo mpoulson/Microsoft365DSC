@@ -620,8 +620,14 @@ function Export-TargetResource
                     {
                         foreach ($config in $federationConfigs)
                         {
-                            $configWithDomain = $config.PSObject.Copy()
-                            $configWithDomain | Add-Member -MemberType NoteProperty -Name 'DomainId' -Value $domain.Id -Force
+                            # Create a new object with the DomainId property
+                            $configWithDomain = [PSCustomObject]@{
+                                DomainId = $domain.Id
+                            }
+                            # Copy all properties from the original config
+                            $config.PSObject.Properties | ForEach-Object {
+                                $configWithDomain | Add-Member -MemberType NoteProperty -Name $_.Name -Value $_.Value -Force
+                            }
                             $Script:exportedInstances += $configWithDomain
                         }
                     }
@@ -716,6 +722,20 @@ function Write-CertificateDebugInfo
 
     try
     {
+        # Validate certificate string is not empty and appears to be base64
+        if ([string]::IsNullOrWhiteSpace($Certificate))
+        {
+            Write-Verbose -Message "Certificate string is empty or null"
+            return
+        }
+
+        # Basic validation for base64 format (should only contain valid base64 characters)
+        if ($Certificate -notmatch '^[A-Za-z0-9+/]*={0,2}$')
+        {
+            Write-Verbose -Message "Certificate string does not appear to be valid base64 format"
+            return
+        }
+
         $verifyCert = [System.Security.Cryptography.X509Certificates.X509Certificate2][Convert]::FromBase64String($Certificate)
         
         Write-M365DSCHost "====================="
