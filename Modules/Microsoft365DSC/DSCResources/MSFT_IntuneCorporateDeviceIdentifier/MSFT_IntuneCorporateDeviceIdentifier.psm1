@@ -303,6 +303,7 @@ function Set-TargetResource
 
             $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/deviceManagement/importedDeviceIdentities/importDeviceIdentityList'
             $body = @{
+                overwriteImportedDeviceIdentities = $false
                 importedDeviceIdentities = $importList
             }
 
