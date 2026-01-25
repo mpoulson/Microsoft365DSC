@@ -8,7 +8,8 @@ function Get-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [System.String]
-        $Identity,
+        [ValidateSet('Yes')]
+        $IsSingleInstance,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
@@ -48,8 +49,6 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Getting configuration of Intune Corporate Device Identifiers with Identity {$Identity}"
-
     try
     {
         $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
@@ -72,9 +71,9 @@ function Get-TargetResource
         $nullResult.Devices = @()
 
         # Get all imported device identities from Intune
-        $uri = '/beta/deviceManagement/importedDeviceIdentities'
+        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/deviceManagement/importedDeviceIdentities'
         $allDevices = @()
-        
+
         do
         {
             $response = Invoke-MgGraphRequest -Method GET -Uri $uri
@@ -113,7 +112,7 @@ function Get-TargetResource
         }
 
         $results = @{
-            Identity              = $Identity
+            IsSingleInstance                  = 'Yes'
             Devices               = $deviceArray
             Ensure                = 'Present'
             Credential            = $Credential
@@ -146,7 +145,8 @@ function Set-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [System.String]
-        $Identity,
+        [ValidateSet('Yes')]
+        $IsSingleInstance,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
@@ -185,9 +185,6 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
-
-    Write-Verbose -Message "Setting configuration of Intune Corporate Device Identifiers with Identity {$Identity}"
-
     $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -203,9 +200,12 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
+    $desiredParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    $desiredParameters.Remove('IsSingleInstance') | Out-Null
+
     # Get current state
     $currentInstance = Get-TargetResource @PSBoundParameters
-    
+
     if ($Ensure -eq 'Present')
     {
         # Convert CIM instances to hashtables for comparison
@@ -284,12 +284,12 @@ function Set-TargetResource
         if ($devicesToAdd.Count -gt 0)
         {
             Write-Verbose -Message "Adding $($devicesToAdd.Count) device identifier(s) to Intune"
-            
+
             $importList = @()
             foreach ($device in $devicesToAdd)
             {
                 $deviceToImport = @{}
-                
+
                 if (-not [System.String]::IsNullOrEmpty($device.SerialNumber))
                 {
                     $deviceToImport.serialNumber = $device.SerialNumber
@@ -314,15 +314,15 @@ function Set-TargetResource
                 {
                     $deviceToImport.platform = $device.Platform
                 }
-                
+
                 $importList += $deviceToImport
             }
 
-            $uri = '/beta/deviceManagement/importedDeviceIdentities/importDeviceIdentityList'
+            $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/deviceManagement/importedDeviceIdentities/importDeviceIdentityList'
             $body = @{
                 importedDeviceIdentities = $importList
             }
-            
+
             try
             {
                 Invoke-MgGraphRequest -Method POST -Uri $uri -Body ($body | ConvertTo-Json -Depth 10)
@@ -339,10 +339,11 @@ function Set-TargetResource
         if ($devicesToRemove.Count -gt 0)
         {
             Write-Verbose -Message "Removing $($devicesToRemove.Count) device identifier(s) from Intune"
-            
+
             foreach ($device in $devicesToRemove)
             {
-                $uri = "/beta/deviceManagement/importedDeviceIdentities/$($device.Id)"
+                $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/deviceManagement/importedDeviceIdentities/$($device.Id)"
+
                 try
                 {
                     Invoke-MgGraphRequest -Method DELETE -Uri $uri
@@ -367,10 +368,10 @@ function Set-TargetResource
         if ($null -ne $currentInstance.Devices -and $currentInstance.Devices.Count -gt 0)
         {
             Write-Verbose -Message "Removing all $($currentInstance.Devices.Count) device identifier(s) from Intune"
-            
+
             foreach ($device in $currentInstance.Devices)
             {
-                $uri = "/beta/deviceManagement/importedDeviceIdentities/$($device.Id)"
+                $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/deviceManagement/importedDeviceIdentities/$($device.Id)"
                 try
                 {
                     Invoke-MgGraphRequest -Method DELETE -Uri $uri
@@ -398,7 +399,8 @@ function Test-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [System.String]
-        $Identity,
+        [ValidateSet('Yes')]
+        $IsSingleInstance,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
@@ -447,10 +449,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Intune Corporate Device Identifiers with Identity {$Identity}"
 
     $currentValues = Get-TargetResource @PSBoundParameters
-    
+
     Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $currentValues)"
     Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
 
@@ -609,11 +610,11 @@ function Export-TargetResource
     try
     {
         $dscContent = ''
-        
+        $i = 1
         # Get all imported device identities
-        $uri = '/beta/deviceManagement/importedDeviceIdentities'
+        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/deviceManagement/importedDeviceIdentities'
         $allDevices = @()
-        
+
         do
         {
             $response = Invoke-MgGraphRequest -Method GET -Uri $uri
@@ -622,8 +623,9 @@ function Export-TargetResource
                 $allDevices += $response.value
             }
             $uri = $response.'@odata.nextLink'
-        } while ($null -ne $uri)
-
+        } while ($uri)
+        Write-M365DSCHost -Message "`r`n" -DeferWrite
+        Write-M365DSCHost -Message "Found $($allDevices.Count) devices" -CommitWrite
         if ($allDevices.Count -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
@@ -632,30 +634,35 @@ function Export-TargetResource
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
             Write-M365DSCHost -Message "  |---[$($allDevices.Count)] Corporate Device Identifiers" -CommitWrite
-            
+
             $params = @{
-                Identity              = 'CorporateDevices'
+                IsSingleInstance      = 'Yes'
+                Ensure                = 'Present'
                 Credential            = $Credential
                 ApplicationId         = $ApplicationId
                 TenantId              = $TenantId
-                ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
+                ApplicationSecret     = $ApplicationSecret
                 ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
             $results = Get-TargetResource @params
-            $results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                -Results $results
 
             # Build the devices array content
             $devicesArray = @()
             foreach ($device in $allDevices)
             {
                 $deviceEntry = @{}
-                if (-not [System.String]::IsNullOrEmpty($device.serialNumber))
+                $deviceEntry.id = $device.id
+                Write-M365DSCHost -Message "    |---[$i/$($allDevices.Count)] - $($device.id)" -CommitWrite
+                if (-not [System.String]::IsNullOrEmpty($device.importedDeviceIdentifier))
                 {
-                    $deviceEntry.SerialNumber = $device.serialNumber
+                    $deviceEntry.importedDeviceIdentifier = $device.importedDeviceIdentifier
+                }
+                if (-not [System.String]::IsNullOrEmpty($device.importedDeviceIdentifier))
+                {
+                    $deviceEntry.importedDeviceIdentifier = $device.importedDeviceIdentifier
                 }
                 if (-not [System.String]::IsNullOrEmpty($device.imei))
                 {
@@ -665,9 +672,9 @@ function Export-TargetResource
                 {
                     $deviceEntry.Manufacturer = $device.manufacturer
                 }
-                if (-not [System.String]::IsNullOrEmpty($device.model))
+                if (-not [System.String]::IsNullOrEmpty($device.importedDeviceIdentityType))
                 {
-                    $deviceEntry.Model = $device.model
+                    $deviceEntry.importedDeviceIdentityType = $device.importedDeviceIdentityType
                 }
                 if (-not [System.String]::IsNullOrEmpty($device.description))
                 {
@@ -677,24 +684,45 @@ function Export-TargetResource
                 {
                     $deviceEntry.Platform = $device.platform
                 }
-                $devicesArray += $deviceEntry
+                if (-not [System.String]::IsNullOrEmpty($device.enrollmentState))
+                {
+                    $deviceEntry.enrollmentState = $device.enrollmentState
+                }
+                if (-not [System.String]::IsNullOrEmpty($device.lastModifiedDateTime))
+                {
+                    $deviceEntry.lastModifiedDateTime = $device.lastModifiedDateTime
+                }
+                if (-not [System.String]::IsNullOrEmpty($device.createdDateTime))
+                {
+                    $deviceEntry.createdDateTime = $device.createdDateTime
+                }
+                if (-not [System.String]::IsNullOrEmpty($device.lastContactedDateTime))
+                {
+                    $deviceEntry.lastContactedDateTime = $device.lastContactedDateTime
+                }
+
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeTo `
+                    -ComplexObject $deviceEntry `
+                    -CIMInstanceName 'MSFT_IntuneDeviceIdentifier'
+                $devicesArray += complexTypeStringResult
+                $i++
             }
 
             $results.Devices = $devicesArray
-            
+
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
                 -Results $results `
                 -Credential $Credential
-            
             $dscContent += $currentDSCBlock
+
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
-            
+
             Write-M365DSCHost -Message "    Exported $($allDevices.Count) device identifier(s)" -CommitWrite
         }
-
+        Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         return $dscContent
     }
     catch
@@ -707,7 +735,7 @@ function Export-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -741,14 +769,14 @@ function Compare-DeviceIdentifier
     }
 
     # Match on Manufacturer + Model + SerialNumber if all three are present
-    if (-not [System.String]::IsNullOrEmpty($Device1.Manufacturer) -and 
-        -not [System.String]::IsNullOrEmpty($Device1.Model) -and 
+    if (-not [System.String]::IsNullOrEmpty($Device1.Manufacturer) -and
+        -not [System.String]::IsNullOrEmpty($Device1.Model) -and
         -not [System.String]::IsNullOrEmpty($Device1.SerialNumber) -and
-        -not [System.String]::IsNullOrEmpty($Device2.Manufacturer) -and 
-        -not [System.String]::IsNullOrEmpty($Device2.Model) -and 
+        -not [System.String]::IsNullOrEmpty($Device2.Manufacturer) -and
+        -not [System.String]::IsNullOrEmpty($Device2.Model) -and
         -not [System.String]::IsNullOrEmpty($Device2.SerialNumber))
     {
-        return (($Device1.Manufacturer.ToLower() -eq $Device2.Manufacturer.ToLower()) -and 
+        return (($Device1.Manufacturer.ToLower() -eq $Device2.Manufacturer.ToLower()) -and
                 ($Device1.Model.ToLower() -eq $Device2.Model.ToLower()) -and
                 ($Device1.SerialNumber.ToLower() -eq $Device2.SerialNumber.ToLower()))
     }
