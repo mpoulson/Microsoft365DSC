@@ -609,121 +609,72 @@ function Export-TargetResource
 
     try
     {
-        $dscContent = ''
-        $i = 1
-        # Get all imported device identities
-        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/deviceManagement/importedDeviceIdentities'
-        $allDevices = @()
-
-        do
+        if ($null -ne $Global:M365DSCExportResourceInstancesCount)
         {
-            $response = Invoke-MgGraphRequest -Method GET -Uri $uri
-            if ($null -ne $response.value)
-            {
-                $allDevices += $response.value
-            }
-            $uri = $response.'@odata.nextLink'
-        } while ($uri)
-        Write-M365DSCHost -Message "`r`n" -DeferWrite
-        Write-M365DSCHost -Message "Found $($allDevices.Count) devices" -CommitWrite
-        if ($allDevices.Count -eq 0)
-        {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+            $Global:M365DSCExportResourceInstancesCount++
         }
-        else
+
+        $params = @{
+            IsSingleInstance      = 'Yes'
+            Credential            = $Credential
+            ApplicationId         = $ApplicationId
+            TenantId              = $TenantId
+            ApplicationSecret     = $ApplicationSecret
+            CertificateThumbprint = $CertificateThumbprint
+            ManagedIdentity       = $ManagedIdentity.IsPresent
+            AccessTokens          = $AccessTokens
+        }
+        
+        $Results = Get-TargetResource @Params
+        
+        if ($Results.Ensure -eq 'Present' -and $null -ne $Results.Devices -and $Results.Devices.Count -gt 0)
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
-            Write-M365DSCHost -Message "  |---[$($allDevices.Count)] Corporate Device Identifiers" -CommitWrite
-
-            $params = @{
-                IsSingleInstance      = 'Yes'
-                Ensure                = 'Present'
-                Credential            = $Credential
-                ApplicationId         = $ApplicationId
-                TenantId              = $TenantId
-                CertificateThumbprint = $CertificateThumbprint
-                ApplicationSecret     = $ApplicationSecret
-                ManagedIdentity       = $ManagedIdentity.IsPresent
-                AccessTokens          = $AccessTokens
-            }
-
-            $results = Get-TargetResource @params
-
-            # Build the devices array content
-            $devicesArray = @()
-            foreach ($device in $allDevices)
+            Write-M365DSCHost -Message "    |---[1/1] Corporate Device Identifiers ($($Results.Devices.Count) devices)" -CommitWrite
+            
+            # Handle complex type conversion for Devices array
+            if ($Results.Devices)
             {
-                $deviceEntry = @{}
-                $deviceEntry.id = $device.id
-                Write-M365DSCHost -Message "    |---[$i/$($allDevices.Count)] - $($device.id)" -CommitWrite
-                if (-not [System.String]::IsNullOrEmpty($device.importedDeviceIdentifier))
+                $complexMapping = @(
+                    @{
+                        Name            = 'Devices'
+                        CimInstanceName = 'MSFT_IntuneDeviceIdentifier'
+                        IsRequired      = $False
+                    }
+                )
+                
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.Devices `
+                    -CIMInstanceName 'MSFT_IntuneDeviceIdentifier' `
+                    -ComplexTypeMapping $complexMapping
+                
+                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
-                    $deviceEntry.importedDeviceIdentifier = $device.importedDeviceIdentifier
+                    $Results.Devices = $complexTypeStringResult
                 }
-                if (-not [System.String]::IsNullOrEmpty($device.importedDeviceIdentifier))
+                else
                 {
-                    $deviceEntry.importedDeviceIdentifier = $device.importedDeviceIdentifier
+                    $Results.Remove('Devices') | Out-Null
                 }
-                if (-not [System.String]::IsNullOrEmpty($device.imei))
-                {
-                    $deviceEntry.IMEI = $device.imei
-                }
-                if (-not [System.String]::IsNullOrEmpty($device.manufacturer))
-                {
-                    $deviceEntry.Manufacturer = $device.manufacturer
-                }
-                if (-not [System.String]::IsNullOrEmpty($device.importedDeviceIdentityType))
-                {
-                    $deviceEntry.importedDeviceIdentityType = $device.importedDeviceIdentityType
-                }
-                if (-not [System.String]::IsNullOrEmpty($device.description))
-                {
-                    $deviceEntry.Description = $device.description
-                }
-                if (-not [System.String]::IsNullOrEmpty($device.platform))
-                {
-                    $deviceEntry.Platform = $device.platform
-                }
-                if (-not [System.String]::IsNullOrEmpty($device.enrollmentState))
-                {
-                    $deviceEntry.enrollmentState = $device.enrollmentState
-                }
-                if (-not [System.String]::IsNullOrEmpty($device.lastModifiedDateTime))
-                {
-                    $deviceEntry.lastModifiedDateTime = $device.lastModifiedDateTime
-                }
-                if (-not [System.String]::IsNullOrEmpty($device.createdDateTime))
-                {
-                    $deviceEntry.createdDateTime = $device.createdDateTime
-                }
-                if (-not [System.String]::IsNullOrEmpty($device.lastContactedDateTime))
-                {
-                    $deviceEntry.lastContactedDateTime = $device.lastContactedDateTime
-                }
-
-                $complexTypeStringResult = Get-M365DSCDRGComplexTypeTo `
-                    -ComplexObject $deviceEntry `
-                    -CIMInstanceName 'MSFT_IntuneDeviceIdentifier'
-                $devicesArray += complexTypeStringResult
-                $i++
             }
-
-            $results.Devices = $devicesArray
-
+            
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
-                -Results $results `
+                -Results $Results `
                 -Credential $Credential
-            $dscContent += $currentDSCBlock
-
+                
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
 
-            Write-M365DSCHost -Message "    Exported $($allDevices.Count) device identifier(s)" -CommitWrite
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+            return $currentDSCBlock
         }
-        Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
-        return $dscContent
+        else
+        {
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+            return ''
+        }
     }
     catch
     {
@@ -735,7 +686,7 @@ function Export-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        throw
+        return ''
     }
 }
 
