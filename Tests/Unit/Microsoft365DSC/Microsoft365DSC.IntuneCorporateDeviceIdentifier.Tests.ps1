@@ -61,13 +61,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     IsSingleInstance = 'Yes'
-                    Devices          = @(
-                        @{
+                    Devices          = [CimInstance[]]@(
+                        (New-CimInstance -ClassName MSFT_IntuneDeviceIdentifier -Property @{
                             importedDeviceIdentifier   = 'ABC123456'
                             importedDeviceIdentityType = 'serialNumber'
                             description                = 'Corporate laptop'
                             platform                   = 'windows'
-                        }
+                        } -ClientOnly)
                     )
                     Ensure           = 'Present'
                     Credential       = $Credential
@@ -100,13 +100,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     IsSingleInstance = 'Yes'
-                    Devices          = @(
-                        @{
+                    Devices          = [CimInstance[]]@(
+                        (New-CimInstance -ClassName MSFT_IntuneDeviceIdentifier -Property @{
                             importedDeviceIdentifier   = 'ABC123456'
                             importedDeviceIdentityType = 'serialNumber'
                             description                = 'Corporate laptop'
                             platform                   = 'windows'
-                        }
+                        } -ClientOnly)
                     )
                     Ensure           = 'Present'
                     Credential       = $Credential
@@ -143,13 +143,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     IsSingleInstance = 'Yes'
-                    Devices          = @(
-                        @{
+                    Devices          = [CimInstance[]]@(
+                        (New-CimInstance -ClassName MSFT_IntuneDeviceIdentifier -Property @{
                             importedDeviceIdentifier   = 'XYZ987654'
                             importedDeviceIdentityType = 'serialNumber'
                             description                = 'Executive laptop'
                             platform                   = 'macos'
-                        }
+                        } -ClientOnly)
                     )
                     Ensure           = 'Present'
                     Credential       = $Credential
