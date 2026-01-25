@@ -36,15 +36,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return @{
                     value = @(
                         @{
-                            id                   = '12345-67890'
-                            serialNumber         = 'ABC123456'
-                            manufacturer         = 'Dell Inc.'
-                            model                = 'Latitude 7490'
-                            description          = 'Corporate laptop'
-                            platform             = 'windows'
-                            enrollmentState      = 'notContacted'
-                            lastModifiedDateTime = '2024-01-01T00:00:00Z'
-                            createdDateTime      = '2024-01-01T00:00:00Z'
+                            id                         = '12345-67890'
+                            importedDeviceIdentifier   = 'ABC123456'
+                            importedDeviceIdentityType = 'serialNumber'
+                            description                = 'Corporate laptop'
+                            platform                   = 'windows'
+                            enrollmentState            = 'notContacted'
+                            lastModifiedDateTime       = '2024-01-01T00:00:00Z'
+                            createdDateTime            = '2024-01-01T00:00:00Z'
                         }
                     )
                 }
@@ -61,18 +60,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "When no devices exist in Intune" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity   = 'CorporateDevices'
-                    Devices    = @(
+                    IsSingleInstance = 'Yes'
+                    Devices          = @(
                         @{
-                            SerialNumber = 'ABC123456'
-                            Manufacturer = 'Dell Inc.'
-                            Model        = 'Latitude 7490'
-                            Description  = 'Corporate laptop'
-                            Platform     = 'windows'
+                            importedDeviceIdentifier   = 'ABC123456'
+                            importedDeviceIdentityType = 'serialNumber'
+                            description                = 'Corporate laptop'
+                            platform                   = 'windows'
                         }
                     )
-                    Ensure     = 'Present'
-                    Credential = $Credential
+                    Ensure           = 'Present'
+                    Credential       = $Credential
                 }
 
                 Mock -CommandName Invoke-MgGraphRequest -MockWith {
@@ -101,33 +99,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'When devices exist and match the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity   = 'CorporateDevices'
-                    Devices    = @(
+                    IsSingleInstance = 'Yes'
+                    Devices          = @(
                         @{
-                            SerialNumber = 'ABC123456'
-                            Manufacturer = 'Dell Inc.'
-                            Model        = 'Latitude 7490'
-                            Description  = 'Corporate laptop'
-                            Platform     = 'windows'
+                            importedDeviceIdentifier   = 'ABC123456'
+                            importedDeviceIdentityType = 'serialNumber'
+                            description                = 'Corporate laptop'
+                            platform                   = 'windows'
                         }
                     )
-                    Ensure     = 'Present'
-                    Credential = $Credential
+                    Ensure           = 'Present'
+                    Credential       = $Credential
                 }
 
                 Mock -CommandName Invoke-MgGraphRequest -MockWith {
                     return @{
                         value = @(
                             @{
-                                id                   = '12345-67890'
-                                serialNumber         = 'ABC123456'
-                                manufacturer         = 'Dell Inc.'
-                                model                = 'Latitude 7490'
-                                description          = 'Corporate laptop'
-                                platform             = 'windows'
-                                enrollmentState      = 'notContacted'
-                                lastModifiedDateTime = '2024-01-01T00:00:00Z'
-                                createdDateTime      = '2024-01-01T00:00:00Z'
+                                id                         = '12345-67890'
+                                importedDeviceIdentifier   = 'ABC123456'
+                                importedDeviceIdentityType = 'serialNumber'
+                                description                = 'Corporate laptop'
+                                platform                   = 'windows'
+                                enrollmentState            = 'notContacted'
+                                lastModifiedDateTime       = '2024-01-01T00:00:00Z'
+                                createdDateTime            = '2024-01-01T00:00:00Z'
                             }
                         )
                     }
@@ -146,18 +142,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'When devices exist but do not match desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity   = 'CorporateDevices'
-                    Devices    = @(
+                    IsSingleInstance = 'Yes'
+                    Devices          = @(
                         @{
-                            SerialNumber = 'XYZ987654'
-                            Manufacturer = 'Apple Inc.'
-                            Model        = 'MacBook Pro'
-                            Description  = 'Executive laptop'
-                            Platform     = 'macOS'
+                            importedDeviceIdentifier   = 'XYZ987654'
+                            importedDeviceIdentityType = 'serialNumber'
+                            description                = 'Executive laptop'
+                            platform                   = 'macos'
                         }
                     )
-                    Ensure     = 'Present'
-                    Credential = $Credential
+                    Ensure           = 'Present'
+                    Credential       = $Credential
                 }
 
                 Mock -CommandName Invoke-MgGraphRequest -MockWith {
@@ -168,10 +163,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         return @{
                             value = @(
                                 @{
-                                    id                   = '12345-67890'
-                                    serialNumber         = 'ABC123456'
-                                    manufacturer         = 'Dell Inc.'
-                                    model                = 'Latitude 7490'
+                                    id                         = '12345-67890'
+                                    importedDeviceIdentifier   = 'ABC123456'
+                                    importedDeviceIdentityType = 'serialNumber'
                                     description          = 'Corporate laptop'
                                     platform             = 'windows'
                                     enrollmentState      = 'notContacted'
@@ -203,9 +197,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'When Ensure is Absent and devices exist' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity   = 'CorporateDevices'
-                    Ensure     = 'Absent'
-                    Credential = $Credential
+                    IsSingleInstance = 'Yes'
+                    Ensure           = 'Absent'
+                    Credential       = $Credential
                 }
 
                 Mock -CommandName Invoke-MgGraphRequest -MockWith {
@@ -216,15 +210,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         return @{
                             value = @(
                                 @{
-                                    id                   = '12345-67890'
-                                    serialNumber         = 'ABC123456'
-                                    manufacturer         = 'Dell Inc.'
-                                    model                = 'Latitude 7490'
-                                    description          = 'Corporate laptop'
-                                    platform             = 'windows'
-                                    enrollmentState      = 'notContacted'
-                                    lastModifiedDateTime = '2024-01-01T00:00:00Z'
-                                    createdDateTime      = '2024-01-01T00:00:00Z'
+                                    id                         = '12345-67890'
+                                    importedDeviceIdentifier   = 'ABC123456'
+                                    importedDeviceIdentityType = 'serialNumber'
+                                    description                = 'Corporate laptop'
+                                    platform                   = 'windows'
+                                    enrollmentState            = 'notContacted'
+                                    lastModifiedDateTime       = '2024-01-01T00:00:00Z'
+                                    createdDateTime            = '2024-01-01T00:00:00Z'
                                 }
                             )
                         }
@@ -248,9 +241,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'When Ensure is Absent and no devices exist' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity   = 'CorporateDevices'
-                    Ensure     = 'Absent'
-                    Credential = $Credential
+                    IsSingleInstance = 'Yes'
+                    Ensure           = 'Absent'
+                    Credential       = $Credential
                 }
 
                 Mock -CommandName Invoke-MgGraphRequest -MockWith {
@@ -277,15 +270,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return @{
                         value = @(
                             @{
-                                id                   = '12345-67890'
-                                serialNumber         = 'ABC123456'
-                                manufacturer         = 'Dell Inc.'
-                                model                = 'Latitude 7490'
-                                description          = 'Corporate laptop'
-                                platform             = 'windows'
-                                enrollmentState      = 'notContacted'
-                                lastModifiedDateTime = '2024-01-01T00:00:00Z'
-                                createdDateTime      = '2024-01-01T00:00:00Z'
+                                id                         = '12345-67890'
+                                importedDeviceIdentifier   = 'ABC123456'
+                                importedDeviceIdentityType = 'serialNumber'
+                                description                = 'Corporate laptop'
+                                platform                   = 'windows'
+                                enrollmentState            = 'notContacted'
+                                lastModifiedDateTime       = '2024-01-01T00:00:00Z'
+                                createdDateTime            = '2024-01-01T00:00:00Z'
                             }
                         )
                     }

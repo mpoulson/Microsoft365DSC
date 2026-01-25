@@ -210,12 +210,10 @@ function Set-TargetResource
             foreach ($device in $Devices)
             {
                 $desiredDevices += @{
-                    SerialNumber = if ($device.SerialNumber) { $device.SerialNumber.Trim() } else { $null }
-                    IMEI         = if ($device.IMEI) { $device.IMEI.Trim() } else { $null }
-                    Manufacturer = if ($device.Manufacturer) { $device.Manufacturer.Trim() } else { $null }
-                    Model        = if ($device.Model) { $device.Model.Trim() } else { $null }
-                    Description  = $device.Description
-                    Platform     = if ($device.Platform) { $device.Platform.ToLower() } else { $null }
+                    importedDeviceIdentifier   = if ($device.importedDeviceIdentifier) { $device.importedDeviceIdentifier.Trim() } else { $null }
+                    importedDeviceIdentityType = if ($device.importedDeviceIdentityType) { $device.importedDeviceIdentityType } else { $null }
+                    description                = $device.description
+                    platform                   = if ($device.platform) { $device.platform.ToLower() } else { $null }
                 }
             }
         }
@@ -226,13 +224,11 @@ function Set-TargetResource
             foreach ($device in $currentInstance.Devices)
             {
                 $currentDevices += @{
-                    Id           = $device.Id
-                    SerialNumber = if ($device.SerialNumber) { $device.SerialNumber.Trim() } else { $null }
-                    IMEI         = if ($device.IMEI) { $device.IMEI.Trim() } else { $null }
-                    Manufacturer = if ($device.Manufacturer) { $device.Manufacturer.Trim() } else { $null }
-                    Model        = if ($device.Model) { $device.Model.Trim() } else { $null }
-                    Description  = $device.Description
-                    Platform     = if ($device.Platform) { $device.Platform.ToLower() } else { $null }
+                    Id                         = $device.Id
+                    importedDeviceIdentifier   = if ($device.importedDeviceIdentifier) { $device.importedDeviceIdentifier.Trim() } else { $null }
+                    importedDeviceIdentityType = if ($device.importedDeviceIdentityType) { $device.importedDeviceIdentityType } else { $null }
+                    description                = $device.description
+                    platform                   = if ($device.platform) { $device.platform.ToLower() } else { $null }
                 }
             }
         }
@@ -285,29 +281,21 @@ function Set-TargetResource
             {
                 $deviceToImport = @{}
 
-                if (-not [System.String]::IsNullOrEmpty($device.SerialNumber))
+                if (-not [System.String]::IsNullOrEmpty($device.importedDeviceIdentifier))
                 {
-                    $deviceToImport.serialNumber = $device.SerialNumber
+                    $deviceToImport.importedDeviceIdentifier = $device.importedDeviceIdentifier
                 }
-                if (-not [System.String]::IsNullOrEmpty($device.IMEI))
+                if (-not [System.String]::IsNullOrEmpty($device.importedDeviceIdentityType))
                 {
-                    $deviceToImport.imei = $device.IMEI
+                    $deviceToImport.importedDeviceIdentityType = $device.importedDeviceIdentityType
                 }
-                if (-not [System.String]::IsNullOrEmpty($device.Manufacturer))
+                if (-not [System.String]::IsNullOrEmpty($device.description))
                 {
-                    $deviceToImport.manufacturer = $device.Manufacturer
+                    $deviceToImport.description = $device.description
                 }
-                if (-not [System.String]::IsNullOrEmpty($device.Model))
+                if (-not [System.String]::IsNullOrEmpty($device.platform))
                 {
-                    $deviceToImport.model = $device.Model
-                }
-                if (-not [System.String]::IsNullOrEmpty($device.Description))
-                {
-                    $deviceToImport.description = $device.Description
-                }
-                if (-not [System.String]::IsNullOrEmpty($device.Platform))
-                {
-                    $deviceToImport.platform = $device.Platform
+                    $deviceToImport.platform = $device.platform
                 }
 
                 $importList += $deviceToImport
@@ -479,11 +467,9 @@ function Test-TargetResource
         foreach ($device in $Devices)
         {
             $desiredDevices += @{
-                SerialNumber = if ($device.SerialNumber) { $device.SerialNumber.Trim() } else { $null }
-                IMEI         = if ($device.IMEI) { $device.IMEI.Trim() } else { $null }
-                Manufacturer = if ($device.Manufacturer) { $device.Manufacturer.Trim() } else { $null }
-                Model        = if ($device.Model) { $device.Model.Trim() } else { $null }
-                Platform     = if ($device.Platform) { $device.Platform.ToLower() } else { $null }
+                importedDeviceIdentifier   = if ($device.importedDeviceIdentifier) { $device.importedDeviceIdentifier.Trim() } else { $null }
+                importedDeviceIdentityType = if ($device.importedDeviceIdentityType) { $device.importedDeviceIdentityType } else { $null }
+                platform                   = if ($device.platform) { $device.platform.ToLower() } else { $null }
             }
         }
     }
@@ -494,11 +480,9 @@ function Test-TargetResource
         foreach ($device in $currentValues.Devices)
         {
             $currentDevices += @{
-                SerialNumber = if ($device.SerialNumber) { $device.SerialNumber.Trim() } else { $null }
-                IMEI         = if ($device.IMEI) { $device.IMEI.Trim() } else { $null }
-                Manufacturer = if ($device.Manufacturer) { $device.Manufacturer.Trim() } else { $null }
-                Model        = if ($device.Model) { $device.Model.Trim() } else { $null }
-                Platform     = if ($device.Platform) { $device.Platform.ToLower() } else { $null }
+                importedDeviceIdentifier   = if ($device.importedDeviceIdentifier) { $device.importedDeviceIdentifier.Trim() } else { $null }
+                importedDeviceIdentityType = if ($device.importedDeviceIdentityType) { $device.importedDeviceIdentityType } else { $null }
+                platform                   = if ($device.platform) { $device.platform.ToLower() } else { $null }
             }
         }
     }
@@ -701,30 +685,21 @@ function Compare-DeviceIdentifier
         $Device2
     )
 
-    # Match on IMEI if both have it
-    if (-not [System.String]::IsNullOrEmpty($Device1.IMEI) -and -not [System.String]::IsNullOrEmpty($Device2.IMEI))
+    # Match on importedDeviceIdentifier and importedDeviceIdentityType if both have them
+    if (-not [System.String]::IsNullOrEmpty($Device1.importedDeviceIdentifier) -and
+        -not [System.String]::IsNullOrEmpty($Device2.importedDeviceIdentifier))
     {
-        return ($Device1.IMEI -eq $Device2.IMEI)
-    }
+        # Case-insensitive comparison for device identifiers
+        $identifierMatch = ($Device1.importedDeviceIdentifier.ToLower() -eq $Device2.importedDeviceIdentifier.ToLower())
 
-    # Match on SerialNumber if both have it
-    if (-not [System.String]::IsNullOrEmpty($Device1.SerialNumber) -and -not [System.String]::IsNullOrEmpty($Device2.SerialNumber))
-    {
-        # Case-insensitive comparison for serial numbers
-        return ($Device1.SerialNumber.ToLower() -eq $Device2.SerialNumber.ToLower())
-    }
+        # Also check type if both have it
+        if (-not [System.String]::IsNullOrEmpty($Device1.importedDeviceIdentityType) -and
+            -not [System.String]::IsNullOrEmpty($Device2.importedDeviceIdentityType))
+        {
+            return ($identifierMatch -and ($Device1.importedDeviceIdentityType -eq $Device2.importedDeviceIdentityType))
+        }
 
-    # Match on Manufacturer + Model + SerialNumber if all three are present
-    if (-not [System.String]::IsNullOrEmpty($Device1.Manufacturer) -and
-        -not [System.String]::IsNullOrEmpty($Device1.Model) -and
-        -not [System.String]::IsNullOrEmpty($Device1.SerialNumber) -and
-        -not [System.String]::IsNullOrEmpty($Device2.Manufacturer) -and
-        -not [System.String]::IsNullOrEmpty($Device2.Model) -and
-        -not [System.String]::IsNullOrEmpty($Device2.SerialNumber))
-    {
-        return (($Device1.Manufacturer.ToLower() -eq $Device2.Manufacturer.ToLower()) -and
-                ($Device1.Model.ToLower() -eq $Device2.Model.ToLower()) -and
-                ($Device1.SerialNumber.ToLower() -eq $Device2.SerialNumber.ToLower()))
+        return $identifierMatch
     }
 
     # If we can't determine a match, consider them different

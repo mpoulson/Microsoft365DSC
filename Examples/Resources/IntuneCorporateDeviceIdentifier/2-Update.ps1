@@ -23,26 +23,25 @@ Configuration Example
     {
         IntuneCorporateDeviceIdentifier 'CorporateDevices'
         {
-            Identity              = 'CorporateDevices'
+            IsSingleInstance      = 'Yes'
             Devices               = @(
-                MSFT_IntuneCorporateDeviceIdentifier {
-                    SerialNumber = 'ABC123456'
-                    Manufacturer = 'Dell Inc.'
-                    Model        = 'Latitude 7490'
-                    Description  = 'Corporate laptop'
-                    Platform     = 'windows'
+                MSFT_IntuneDeviceIdentifier {
+                    importedDeviceIdentifier   = 'ABC123456'
+                    importedDeviceIdentityType = 'serialNumber'
+                    description                = 'Corporate laptop'
+                    platform                   = 'windows'
                 }
-                MSFT_IntuneCorporateDeviceIdentifier {
-                    IMEI         = '353456789012345'
-                    Description  = 'Corporate phone'
-                    Platform     = 'android'
+                MSFT_IntuneDeviceIdentifier {
+                    importedDeviceIdentifier   = '353456789012345'
+                    importedDeviceIdentityType = 'imei'
+                    description                = 'Corporate phone'
+                    platform                   = 'android'
                 }
-                MSFT_IntuneCorporateDeviceIdentifier {
-                    SerialNumber = 'XYZ987654'
-                    Manufacturer = 'Apple Inc.'
-                    Model        = 'MacBook Pro'
-                    Description  = 'Executive laptop'
-                    Platform     = 'macOS'
+                MSFT_IntuneDeviceIdentifier {
+                    importedDeviceIdentifier   = 'XYZ987654'
+                    importedDeviceIdentityType = 'serialNumber'
+                    description                = 'Executive laptop'
+                    platform                   = 'macos'
                 }
             )
             Ensure                = 'Present'

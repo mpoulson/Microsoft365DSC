@@ -23,7 +23,7 @@ Configuration Example
     {
         IntuneCorporateDeviceIdentifier 'CorporateDevices'
         {
-            Identity              = 'CorporateDevices'
+            IsSingleInstance      = 'Yes'
             Ensure                = 'Absent'
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
