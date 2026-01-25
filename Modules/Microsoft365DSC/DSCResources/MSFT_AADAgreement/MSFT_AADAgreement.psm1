@@ -272,7 +272,8 @@ function Set-TargetResource
         $CreateParameters = Remove-NullEntriesFromHashtable -Hash $CreateParameters
         Write-Verbose -Message "Creating Azure AD Agreement with DisplayName {$DisplayName} with:`r`n$(ConvertTo-Json $CreateParameters -Depth 5)"
 
-        Invoke-MgGraphRequest -Uri "/beta/agreements" -Method POST -Body ($CreateParameters | ConvertTo-Json -Depth 5) | Out-Null
+        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/agreements"
+        Invoke-MgGraphRequest -Uri $uri -Method POST -Body ($CreateParameters | ConvertTo-Json -Depth 5) | Out-Null
     }
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
@@ -305,8 +306,9 @@ function Set-TargetResource
 
         $UpdateParameters = Remove-NullEntriesFromHashtable -Hash $UpdateParameters
         Write-Verbose -Message "Updating Azure AD Agreement with ID {$($currentInstance.Id)} with:`r`n$(ConvertTo-Json $UpdateParameters -Depth 5)"
+        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/agreements/$($currentInstance.Id)"
         Invoke-MgGraphRequest -Method PATCH `
-                              -Uri "/beta/agreements/$($currentInstance.Id)" `
+                              -Uri $uri `
                               -Body ($UpdateParameters | ConvertTo-Json -Depth 5) | Out-Null
     }
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')

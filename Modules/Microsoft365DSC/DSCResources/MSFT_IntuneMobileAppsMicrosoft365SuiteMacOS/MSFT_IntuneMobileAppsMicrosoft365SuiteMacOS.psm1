@@ -358,7 +358,8 @@ function Set-TargetResource
         }
         #region resource generator code
         $createParameters.Add("@odata.type", "#microsoft.graph.macOSOfficeSuiteApp")
-        $policy = Invoke-MgGraphRequest -Method POST -Uri "/beta/deviceAppManagement/mobileApps" -Body $($createParameters | ConvertTo-Json -Depth 10)
+        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/deviceAppManagement/mobileApps"
+        $policy = Invoke-MgGraphRequest -Method POST -Uri $uri -Body $($createParameters | ConvertTo-Json -Depth 10)
 
         if ($PSBoundParameters.ContainsKey('Categories'))
         {
@@ -395,7 +396,8 @@ function Set-TargetResource
 
         #region resource generator code
         $updateParameters.Add("@odata.type", "#microsoft.graph.macOSOfficeSuiteApp")
-        Invoke-MgGraphRequest -Method PATCH -Uri "/beta/deviceAppManagement/mobileApps/$($currentInstance.Id)" -Body $($UpdateParameters | ConvertTo-Json -Depth 10)
+        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/deviceAppManagement/mobileApps/$($currentInstance.Id)"
+        Invoke-MgGraphRequest -Method PATCH -Uri $uri -Body $($UpdateParameters | ConvertTo-Json -Depth 10)
 
         if ($PSBoundParameters.ContainsKey('Categories'))
         {

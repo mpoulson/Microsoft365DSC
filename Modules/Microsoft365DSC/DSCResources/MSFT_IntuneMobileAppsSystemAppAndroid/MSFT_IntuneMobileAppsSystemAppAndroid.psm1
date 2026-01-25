@@ -270,7 +270,8 @@ function Set-TargetResource
         #region resource generator code
         $createParameters.Add("@odata.type", "#microsoft.graph.androidManagedStoreApp")
         $createParameters.Add("isSystemApp", $true)
-        $policy = Invoke-MgGraphRequest -Method POST -Uri '/beta/deviceAppManagement/mobileApps' -Body $($createParameters | ConvertTo-Json -Depth 10)
+        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/deviceAppManagement/mobileApps"
+        $policy = Invoke-MgGraphRequest -Method POST -Uri $uri -Body $($createParameters | ConvertTo-Json -Depth 10)
 
         if ($policy.Id)
         {

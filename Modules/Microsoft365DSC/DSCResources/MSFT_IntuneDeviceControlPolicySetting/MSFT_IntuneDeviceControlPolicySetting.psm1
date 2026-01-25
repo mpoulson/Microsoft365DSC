@@ -426,7 +426,8 @@ function Set-TargetResource
         $createParameters.Remove('Id') | Out-Null
 
         #region resource generator code
-        $null = Invoke-MgGraphRequest -Uri '/beta/deviceManagement/reusablePolicySettings' -Method POST -Body $($createParameters | ConvertTo-Json -Depth 20)
+        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/deviceManagement/reusablePolicySettings"
+        $null = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $($createParameters | ConvertTo-Json -Depth 20)
         #endregion
     }
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
@@ -436,7 +437,8 @@ function Set-TargetResource
         $updateParameters.Remove('Id') | Out-Null
 
         #region resource generator code
-        Invoke-MgGraphRequest -Uri "/beta/deviceManagement/reusablePolicySettings/$($currentInstance.Id)" -Method PUT -Body $($updateParameters | ConvertTo-Json -Depth 20)
+        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/deviceManagement/reusablePolicySettings/$($currentInstance.Id)"
+        Invoke-MgGraphRequest -Uri $uri -Method PUT -Body $($updateParameters | ConvertTo-Json -Depth 20)
         #endregion
     }
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
@@ -445,7 +447,8 @@ function Set-TargetResource
         #region resource generator code
         try
         {
-            Invoke-MgGraphRequest -Uri "/beta/deviceManagement/reusablePolicySettings/$($currentInstance.Id)" -Method DELETE
+            $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/deviceManagement/reusablePolicySettings/$($currentInstance.Id)"
+            Invoke-MgGraphRequest -Uri $uri -Method DELETE
         }
         catch
         {
