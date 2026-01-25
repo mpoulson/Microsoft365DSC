@@ -5,11 +5,7 @@ class MSFT_IntuneDeviceIdentifier
     [Write, Description("Imported Device Identifier")] String importedDeviceIdentifier;
     [Write, Description("Type of Imported Device Identity. Possible values are: unknown, imei, serialNumber, manufacturerModelSerial."),ValueMap{"unknown","imei","serialNumber","manufacturerModelSerial"}, Values{"unknown","imei","serialNumber","manufacturerModelSerial"}] String importedDeviceIdentityType;
     [Write, Description("Description for the device identity.")] String description;
-    [Write, Description("Enrollment state of the device (e.g., unknown, enrolled, pendingReset, failed, notContacted, blocked)."),ValueMap{"unknown","enrolled","pendingReset","failed","notContacted","blocked"}, Values{"unknown","enrolled","pendingReset","failed","notContacted","blocked"}] String enrollmentState;
     [Write, Description("Platform of the device (e.g., Windows, Android, iOS).")] String platform;
-    [Write, Description("Date and time when the device identity was last modified.")] String lastModifiedDateTime;
-    [Write, Description("Date and time when the device identity was created.")] String createdDateTime;
-    [Write, Description("Date and time last contacted of the device")] String lastContactedDateTime;
 };
 
 [ClassVersion("1.0.0.0"), FriendlyName("IntuneCorporateDeviceIdentifier")]

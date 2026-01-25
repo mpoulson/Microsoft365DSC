@@ -97,16 +97,11 @@ function Get-TargetResource
         foreach ($device in $allDevices)
         {
             $deviceHash = @{
-                Id                   = $device.id
-                SerialNumber         = $device.serialNumber
-                IMEI                 = $device.imei
-                Manufacturer         = $device.manufacturer
-                Model                = $device.model
-                Description          = $device.description
-                EnrollmentState      = $device.enrollmentState
-                Platform             = if ($device.platform) { $device.platform.ToLower() } else { $null }
-                LastModifiedDateTime = $device.lastModifiedDateTime
-                CreatedDateTime      = $device.createdDateTime
+                Id                          = $device.id
+                importedDeviceIdentifier    = $device.importedDeviceIdentifier
+                importedDeviceIdentityType  = $device.importedDeviceIdentityType
+                Description                 = $device.description
+                Platform                    = if ($device.platform) { $device.platform.ToLower() } else { $null }
             }
             $deviceArray += $deviceHash
         }
@@ -624,14 +619,14 @@ function Export-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
-        
+
         $Results = Get-TargetResource @Params
-        
+
         if ($Results.Ensure -eq 'Present' -and $null -ne $Results.Devices -and $Results.Devices.Count -gt 0)
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
             Write-M365DSCHost -Message "    |---[1/1] Corporate Device Identifiers ($($Results.Devices.Count) devices)" -CommitWrite
-            
+
             # Handle complex type conversion for Devices array
             if ($Results.Devices)
             {
@@ -642,12 +637,12 @@ function Export-TargetResource
                         IsRequired      = $False
                     }
                 )
-                
+
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.Devices `
                     -CIMInstanceName 'MSFT_IntuneDeviceIdentifier' `
                     -ComplexTypeMapping $complexMapping
-                
+
                 if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.Devices = $complexTypeStringResult
@@ -657,13 +652,13 @@ function Export-TargetResource
                     $Results.Remove('Devices') | Out-Null
                 }
             }
-            
+
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
                 -Results $Results `
                 -Credential $Credential
-                
+
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
 
