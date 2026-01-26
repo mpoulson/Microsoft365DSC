@@ -16,11 +16,20 @@
         "read": [
           {
             "name": "Directory.Read.All"
+          },
+          {
+            "name": "AppCertTrustConfiguration.Read.All"
           }
         ],
         "update": [
           {
             "name": "Directory.ReadWrite.All"
+          },
+          {
+            "name": "AppCertTrustConfiguration.ReadWrite.All"
+          },
+          {
+            "name": "Organization.ReadWrite.All"
           }
         ]
       },
@@ -28,11 +37,20 @@
         "read": [
           {
             "name": "Directory.Read.All"
+          },
+          {
+            "name": "AppCertTrustConfiguration.Read.All"
           }
         ],
         "update": [
           {
             "name": "Directory.ReadWrite.All"
+          },
+          {
+            "name": "AppCertTrustConfiguration.ReadWrite.All"
+          },
+          {
+            "name": "Organization.ReadWrite.All"
           }
         ]
       }
