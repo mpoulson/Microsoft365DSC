@@ -2,7 +2,7 @@
 class MSFT_IntuneDeviceIdentifier
 {
     [Write, Description("Unique identifier for the imported device identity.")] String Id;
-    [Write, Description("Imported Device Identifier")] String importedDeviceIdentifier;
+    [Key, Description("Imported Device Identifier")] String importedDeviceIdentifier;
     [Write, Description("Type of Imported Device Identity. Possible values are: unknown, imei, serialNumber, manufacturerModelSerial."),ValueMap{"unknown","imei","serialNumber","manufacturerModelSerial"}, Values{"unknown","imei","serialNumber","manufacturerModelSerial"}] String importedDeviceIdentityType;
     [Write, Description("Description for the device identity.")] String description;
     [Write, Description("Platform of the device (e.g., Windows, Android, iOS).")] String platform;

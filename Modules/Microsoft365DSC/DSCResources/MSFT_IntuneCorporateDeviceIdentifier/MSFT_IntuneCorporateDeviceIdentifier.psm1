@@ -107,7 +107,7 @@ function Get-TargetResource
         }
 
         $results = @{
-            IsSingleInstance                  = 'Yes'
+            IsSingleInstance      = 'Yes'
             Devices               = $deviceArray
             Ensure                = 'Present'
             Credential            = $Credential
@@ -425,7 +425,7 @@ function Test-TargetResource
     )
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -433,108 +433,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-
-    $currentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $currentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    # If Ensure is Absent, check if there are any devices
-    if ($Ensure -eq 'Absent')
-    {
-        if ($currentValues.Ensure -eq 'Absent' -or $null -eq $currentValues.Devices -or $currentValues.Devices.Count -eq 0)
-        {
-            Write-Verbose -Message "Test-TargetResource returned $true - No devices present"
-            return $true
-        }
-        else
-        {
-            Write-Verbose -Message "Test-TargetResource returned $false - Devices still present"
-            return $false
-        }
-    }
-
-    # If Ensure is Present, compare the device arrays
-    if ($currentValues.Ensure -eq 'Absent')
-    {
-        Write-Verbose -Message "Test-TargetResource returned $false - No devices currently configured"
-        return $false
-    }
-
-    # Normalize and compare devices
-    $desiredDevices = @()
-    if ($null -ne $Devices)
-    {
-        foreach ($device in $Devices)
-        {
-            $desiredDevices += @{
-                importedDeviceIdentifier   = if ($device.importedDeviceIdentifier) { $device.importedDeviceIdentifier.Trim() } else { $null }
-                importedDeviceIdentityType = if ($device.importedDeviceIdentityType) { $device.importedDeviceIdentityType } else { $null }
-                platform                   = if ($device.platform) { $device.platform.ToLower() } else { $null }
-            }
-        }
-    }
-
-    $currentDevices = @()
-    if ($null -ne $currentValues.Devices)
-    {
-        foreach ($device in $currentValues.Devices)
-        {
-            $currentDevices += @{
-                importedDeviceIdentifier   = if ($device.importedDeviceIdentifier) { $device.importedDeviceIdentifier.Trim() } else { $null }
-                importedDeviceIdentityType = if ($device.importedDeviceIdentityType) { $device.importedDeviceIdentityType } else { $null }
-                platform                   = if ($device.platform) { $device.platform.ToLower() } else { $null }
-            }
-        }
-    }
-
-    # Check if counts match
-    if ($desiredDevices.Count -ne $currentDevices.Count)
-    {
-        Write-Verbose -Message "Test-TargetResource returned $false - Device count mismatch (Desired: $($desiredDevices.Count), Current: $($currentDevices.Count))"
-        return $false
-    }
-
-    # Check if all desired devices exist in current state
-    foreach ($desiredDevice in $desiredDevices)
-    {
-        $found = $false
-        foreach ($currentDevice in $currentDevices)
-        {
-            if (Compare-DeviceIdentifier -Device1 $desiredDevice -Device2 $currentDevice)
-            {
-                $found = $true
-                break
-            }
-        }
-        if (-not $found)
-        {
-            Write-Verbose -Message "Test-TargetResource returned $false - Desired device not found in current state"
-            return $false
-        }
-    }
-
-    # Check if all current devices exist in desired state
-    foreach ($currentDevice in $currentDevices)
-    {
-        $found = $false
-        foreach ($desiredDevice in $desiredDevices)
-        {
-            if (Compare-DeviceIdentifier -Device1 $currentDevice -Device2 $desiredDevice)
-            {
-                $found = $true
-                break
-            }
-        }
-        if (-not $found)
-        {
-            Write-Verbose -Message "Test-TargetResource returned $false - Current device not found in desired state"
-            return $false
-        }
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $true"
-    return $true
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
