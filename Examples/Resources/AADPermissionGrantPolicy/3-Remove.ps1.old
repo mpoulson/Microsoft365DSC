@@ -1,5 +1,5 @@
 <#
-This example removes an existing Azure AD Permission Grant Policy.
+This example removes an Azure AD Permission Grant Policy.
 #>
 
 Configuration Example
@@ -24,7 +24,7 @@ Configuration Example
     {
         AADPermissionGrantPolicy 'CustomConsentPolicy'
         {
-            Id                    = "my-custom-consent-policy"
+            Id                    = "custom-directory-devices-consent"
             Ensure                = "Absent"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

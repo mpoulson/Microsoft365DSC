@@ -2,6 +2,13 @@
 
 # UNRELEASED
 
+* AADPermissionGrantPolicy
+  * **BREAKING CHANGE**: Combined three separate resources (AADPermissionGrantPolicy, 
+    AADPermissionGrantPolicyInclude, AADPermissionGrantPolicyExclude) into a single 
+    comprehensive resource that manages the parent policy and its condition sets as 
+    embedded CIM instances.
+  * Added support for managing includes and excludes as embedded CIM instance arrays.
+  * Schema updated to version 1.0.0.1 with new MSFT_AADPermissionGrantConditionSet class.
 * M365DSCPermissions
   * Fixed an issue where Purview permissions were not in the correct format.
     FIXES [#6822](https://github.com/microsoft/Microsoft365DSC/issues/6822)

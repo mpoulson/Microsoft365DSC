@@ -54,7 +54,13 @@
         "Get-MgBetaPolicyPermissionGrantPolicy",
         "New-MgBetaPolicyPermissionGrantPolicy",
         "Update-MgBetaPolicyPermissionGrantPolicy",
-        "Remove-MgBetaPolicyPermissionGrantPolicy"
+        "Remove-MgBetaPolicyPermissionGrantPolicy",
+        "Get-MgBetaPolicyPermissionGrantPolicyInclude",
+        "New-MgBetaPolicyPermissionGrantPolicyInclude",
+        "Remove-MgBetaPolicyPermissionGrantPolicyInclude",
+        "Get-MgBetaPolicyPermissionGrantPolicyExclude",
+        "New-MgBetaPolicyPermissionGrantPolicyExclude",
+        "Remove-MgBetaPolicyPermissionGrantPolicyExclude"
       ]
     }
   ]
