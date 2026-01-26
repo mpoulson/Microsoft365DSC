@@ -46,6 +46,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MgBetaPolicyPermissionGrantPolicy -MockWith {
             }
 
+            Mock -CommandName New-MgBetaPolicyPermissionGrantPolicyInclude -MockWith {
+            }
+
+            Mock -CommandName Remove-MgBetaPolicyPermissionGrantPolicyInclude -MockWith {
+            }
+
+            Mock -CommandName New-MgBetaPolicyPermissionGrantPolicyExclude -MockWith {
+            }
+
+            Mock -CommandName Remove-MgBetaPolicyPermissionGrantPolicyExclude -MockWith {
+            }
+
             Mock -CommandName Get-MgBetaPolicyPermissionGrantPolicy -MockWith {
                 if ($All)
                 {
@@ -54,6 +66,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             Id          = 'test-policy'
                             DisplayName = 'Test Permission Grant Policy'
                             Description = 'Test policy description'
+                            Includes    = @()
+                            Excludes    = @()
                         }
                     )
                 }
@@ -63,13 +77,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Id          = $PermissionGrantPolicyId
                         DisplayName = 'Test Permission Grant Policy'
                         Description = 'Test policy description'
+                        Includes    = @()
+                        Excludes    = @()
                     }
                 }
-                return @{
-                    Id          = 'test-policy'
-                    DisplayName = 'Test Permission Grant Policy'
-                    Description = 'Test policy description'
-                }
+                return $null
             }
 
             Mock -CommandName Write-M365DSCHost -MockWith {
@@ -137,6 +149,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Id          = 'test-policy'
                         DisplayName = 'Test Permission Grant Policy'
                         Description = 'Test policy description'
+                        Includes    = @()
+                        Excludes    = @()
                     }
                 }
             }
@@ -171,6 +185,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Id          = 'test-policy'
                         DisplayName = 'Test Permission Grant Policy'
                         Description = 'Test policy description'
+                        Includes    = @()
+                        Excludes    = @()
                     }
                 }
             }
@@ -200,6 +216,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Id          = 'test-policy'
                         DisplayName = 'Test Permission Grant Policy'
                         Description = 'Test policy description'
+                        Includes    = @()
+                        Excludes    = @()
                     }
                 }
             }
@@ -235,11 +253,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 Id          = 'test-policy-1'
                                 DisplayName = 'Test Policy 1'
                                 Description = 'First test policy'
+                                Includes    = @()
+                                Excludes    = @()
                             },
                             @{
                                 Id          = 'test-policy-2'
                                 DisplayName = 'Test Policy 2'
                                 Description = 'Second test policy'
+                                Includes    = @()
+                                Excludes    = @()
                             }
                         )
                     }
