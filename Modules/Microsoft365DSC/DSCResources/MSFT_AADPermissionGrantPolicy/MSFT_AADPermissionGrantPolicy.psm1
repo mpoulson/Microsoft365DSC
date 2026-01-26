@@ -1,5 +1,8 @@
 Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADPermissionGrantPolicy'
 
+# Module-level constants
+$script:ExpandProperties = 'includes,excludes'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -85,7 +88,7 @@ function Get-TargetResource
             $nullResult.Ensure = 'Absent'
 
             $getValue = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $Id `
-                -ExpandProperty 'includes,excludes' `
+                -ExpandProperty $script:ExpandProperties `
                 -ErrorAction SilentlyContinue
         }
         else
@@ -555,7 +558,7 @@ function Export-TargetResource
         $Script:ExportMode = $true
 
         [array] $Script:exportedInstances = Get-MgBetaPolicyPermissionGrantPolicy -All:$true `
-            -ExpandProperty 'includes,excludes' `
+            -ExpandProperty $script:ExpandProperties `
             -ErrorAction Stop
 
         $dscContent = ''
@@ -631,6 +634,7 @@ function Get-PermissionGrantConditionSetAsHashtable
     param
     (
         [Parameter(Mandatory = $true)]
+        [System.Object]
         $ConditionSet
     )
 
@@ -693,6 +697,7 @@ function Get-PermissionGrantConditionSetAsParameters
     param
     (
         [Parameter(Mandatory = $true)]
+        [System.Object]
         $ConditionSet
     )
 
@@ -755,9 +760,11 @@ function Test-ConditionSetsEqual
     param
     (
         [Parameter(Mandatory = $true)]
+        [System.Object]
         $ConditionSet1,
 
         [Parameter(Mandatory = $true)]
+        [System.Object]
         $ConditionSet2
     )
 
