@@ -23,8 +23,8 @@ Configuration Example
     {
         IntuneCorporateDeviceIdentifier 'CorporateDevices'
         {
-            IsSingleInstance      = 'Yes'
-            Devices               = @(
+            IsSingleInstance                  = 'Yes'
+            Devices                           = @(
                 MSFT_IntuneDeviceIdentifier {
                     importedDeviceIdentifier   = 'ABC123456'
                     importedDeviceIdentityType = 'serialNumber'
@@ -38,10 +38,11 @@ Configuration Example
                     platform                   = 'android'
                 }
             )
-            Ensure                = 'Present'
-            ApplicationId         = $ApplicationId
-            TenantId              = $TenantId
-            CertificateThumbprint = $CertificateThumbprint
+            OverwriteImportedDeviceIdentities = $false
+            Ensure                            = 'Present'
+            ApplicationId                     = $ApplicationId
+            TenantId                          = $TenantId
+            CertificateThumbprint             = $CertificateThumbprint
         }
     }
 }

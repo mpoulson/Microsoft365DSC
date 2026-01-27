@@ -60,8 +60,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "When no devices exist in Intune" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance = 'Yes'
-                    Devices          = [CimInstance[]]@(
+                    IsSingleInstance                  = 'Yes'
+                    Devices                           = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_IntuneDeviceIdentifier -Property @{
                             importedDeviceIdentifier   = 'ABC123456'
                             importedDeviceIdentityType = 'serialNumber'
@@ -69,8 +69,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             platform                   = 'windows'
                         } -ClientOnly)
                     )
-                    Ensure           = 'Present'
-                    Credential       = $Credential
+                    OverwriteImportedDeviceIdentities = $false
+                    Ensure                            = 'Present'
+                    Credential                        = $Credential
                 }
 
                 Mock -CommandName Invoke-MgGraphRequest -MockWith {
@@ -99,8 +100,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'When devices exist and match the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance = 'Yes'
-                    Devices          = [CimInstance[]]@(
+                    IsSingleInstance                  = 'Yes'
+                    Devices                           = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_IntuneDeviceIdentifier -Property @{
                             importedDeviceIdentifier   = 'ABC123456'
                             importedDeviceIdentityType = 'serialNumber'
@@ -108,8 +109,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             platform                   = 'windows'
                         } -ClientOnly)
                     )
-                    Ensure           = 'Present'
-                    Credential       = $Credential
+                    OverwriteImportedDeviceIdentities = $false
+                    Ensure                            = 'Present'
+                    Credential                        = $Credential
                 }
 
                 Mock -CommandName Invoke-MgGraphRequest -MockWith {
@@ -142,8 +144,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'When devices exist but do not match desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance = 'Yes'
-                    Devices          = [CimInstance[]]@(
+                    IsSingleInstance                  = 'Yes'
+                    Devices                           = [CimInstance[]]@(
                         (New-CimInstance -ClassName MSFT_IntuneDeviceIdentifier -Property @{
                             importedDeviceIdentifier   = 'XYZ987654'
                             importedDeviceIdentityType = 'serialNumber'
@@ -151,8 +153,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             platform                   = 'macos'
                         } -ClientOnly)
                     )
-                    Ensure           = 'Present'
-                    Credential       = $Credential
+                    OverwriteImportedDeviceIdentities = $false
+                    Ensure                            = 'Present'
+                    Credential                        = $Credential
                 }
 
                 Mock -CommandName Invoke-MgGraphRequest -MockWith {
