@@ -16,6 +16,10 @@ function Get-TargetResource
         $Devices,
 
         [Parameter()]
+        [System.Boolean]
+        $OverwriteImportedDeviceIdentities,
+
+        [Parameter()]
         [System.String]
         [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
@@ -107,16 +111,17 @@ function Get-TargetResource
         }
 
         $results = @{
-            IsSingleInstance      = 'Yes'
-            Devices               = $deviceArray
-            Ensure                = 'Present'
-            Credential            = $Credential
-            ApplicationId         = $ApplicationId
-            TenantId              = $TenantId
-            ApplicationSecret     = $ApplicationSecret
-            CertificateThumbprint = $CertificateThumbprint
-            ManagedIdentity       = $ManagedIdentity.IsPresent
-            AccessTokens          = $AccessTokens
+            IsSingleInstance                  = 'Yes'
+            Devices                           = $deviceArray
+            OverwriteImportedDeviceIdentities = $OverwriteImportedDeviceIdentities
+            Ensure                            = 'Present'
+            Credential                        = $Credential
+            ApplicationId                     = $ApplicationId
+            TenantId                          = $TenantId
+            ApplicationSecret                 = $ApplicationSecret
+            CertificateThumbprint             = $CertificateThumbprint
+            ManagedIdentity                   = $ManagedIdentity.IsPresent
+            AccessTokens                      = $AccessTokens
         }
 
         return $results
@@ -146,6 +151,10 @@ function Set-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $Devices,
+
+        [Parameter()]
+        [System.Boolean]
+        $OverwriteImportedDeviceIdentities,
 
         [Parameter()]
         [System.String]
@@ -303,7 +312,7 @@ function Set-TargetResource
 
             $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/deviceManagement/importedDeviceIdentities/importDeviceIdentityList'
             $body = @{
-                overwriteImportedDeviceIdentities = $false
+                overwriteImportedDeviceIdentities = $OverwriteImportedDeviceIdentities
                 importedDeviceIdentities = $importList
             }
 
@@ -389,6 +398,10 @@ function Test-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $Devices,
+
+        [Parameter()]
+        [System.Boolean]
+        $OverwriteImportedDeviceIdentities,
 
         [Parameter()]
         [System.String]

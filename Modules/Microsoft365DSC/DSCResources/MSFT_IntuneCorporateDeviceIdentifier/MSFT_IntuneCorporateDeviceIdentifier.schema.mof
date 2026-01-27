@@ -13,6 +13,7 @@ class MSFT_IntuneCorporateDeviceIdentifier : OMI_BaseResource
 {
     [Key, Description("Only valid value is 'Yes'."), ValueMap{"Yes"}, Values{"Yes"}] String IsSingleInstance;
     [Write, Description("Array of corporate device identifiers."), EmbeddedInstance("MSFT_IntuneDeviceIdentifier")] String Devices[];
+    [Write, Description("Specifies whether to overwrite existing imported device identities when adding new ones.")] Boolean OverwriteImportedDeviceIdentities;
     [Write, Description("Present ensures the identifiers exist, absent ensures all are removed."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] string Ensure;
     [Write, Description("Credentials of the Intune Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
