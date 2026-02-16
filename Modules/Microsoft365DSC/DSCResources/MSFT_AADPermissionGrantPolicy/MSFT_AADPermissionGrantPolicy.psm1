@@ -627,6 +627,25 @@ function Export-TargetResource
 
 #region Helper Functions
 
+<#
+.SYNOPSIS
+Converts a permission grant condition set object to a hashtable representation.
+
+.DESCRIPTION
+This helper function takes a condition set object (from the Microsoft Graph API)
+and converts it to a hashtable format suitable for DSC configuration comparison.
+Only non-null properties are included in the result.
+
+.PARAMETER ConditionSet
+The condition set object to convert. This can be a PSCustomObject from the Graph API
+or a hashtable/CIM instance from DSC configuration.
+
+.OUTPUTS
+System.Collections.Hashtable
+
+.EXAMPLE
+$hashtable = Get-PermissionGrantConditionSetAsHashtable -ConditionSet $graphObject
+#>
 function Get-PermissionGrantConditionSetAsHashtable
 {
     [CmdletBinding()]
@@ -690,6 +709,25 @@ function Get-PermissionGrantConditionSetAsHashtable
     return $result
 }
 
+<#
+.SYNOPSIS
+Converts a condition set to Microsoft Graph API parameters.
+
+.DESCRIPTION
+This helper function takes a condition set (from DSC configuration) and converts it
+to a hashtable of parameters suitable for passing to Microsoft Graph API cmdlets
+(New-MgBetaPolicyPermissionGrantPolicyInclude/Exclude).
+
+.PARAMETER ConditionSet
+The condition set to convert. This can be a CIM instance or hashtable.
+
+.OUTPUTS
+System.Collections.Hashtable
+
+.EXAMPLE
+$params = Get-PermissionGrantConditionSetAsParameters -ConditionSet $cimInstance
+New-MgBetaPolicyPermissionGrantPolicyInclude @params
+#>
 function Get-PermissionGrantConditionSetAsParameters
 {
     [CmdletBinding()]
@@ -753,6 +791,28 @@ function Get-PermissionGrantConditionSetAsParameters
     return $params
 }
 
+<#
+.SYNOPSIS
+Compares two permission grant condition sets for equality.
+
+.DESCRIPTION
+This helper function performs a deep comparison of two condition sets to determine
+if they are logically equivalent. Array properties are compared after sorting to
+ensure order-independent comparison.
+
+.PARAMETER ConditionSet1
+The first condition set to compare.
+
+.PARAMETER ConditionSet2
+The second condition set to compare.
+
+.OUTPUTS
+System.Boolean
+Returns $true if the condition sets are equivalent, $false otherwise.
+
+.EXAMPLE
+$areEqual = Test-ConditionSetsEqual -ConditionSet1 $desired -ConditionSet2 $current
+#>
 function Test-ConditionSetsEqual
 {
     [CmdletBinding()]
