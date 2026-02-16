@@ -43,6 +43,8 @@ This resource manages Azure Active Directory Domain Federation configurations fo
 
 ## Example Usage
 
+### Basic Federation Configuration
+
 ```powershell
 AADDomainFederation 'ConfigureFederationForDomain'
 {
@@ -57,6 +59,60 @@ AADDomainFederation 'ConfigureFederationForDomain'
     SigningCertificate                  = 'MIIDdzCCAl+gAwIBAgIQXWWjEQHsC...' # Base64 encoded certificate
     FederatedIdpMfaBehavior             = 'acceptIfMfaDoneByFederatedIdp'
     IsSignedAuthenticationRequestRequired = $true
+    Ensure                              = 'Present'
+    ApplicationId                       = 'your-app-id'
+    TenantId                            = 'your-tenant-id'
+    CertificateThumbprint               = 'your-cert-thumbprint'
+}
+```
+
+### Certificate Rollover with NextSigningCertificate
+
+When performing a certificate rollover, you can configure both the current and next signing certificates:
+
+```powershell
+AADDomainFederation 'CertificateRollover-contoso.com'
+{
+    DomainId                            = 'contoso.com'
+    DisplayName                         = 'Contoso Federation'
+    IssuerUri                           = 'http://contoso.com/adfs/services/trust'
+    PassiveSignInUri                    = 'https://adfs.contoso.com/adfs/ls/'
+    PreferredAuthenticationProtocol     = 'wsFed'
+    SigningCertificate                  = 'MIIDdzCCAl+gAwIBAgIQXWWjEQ==' # Current certificate
+    NextSigningCertificate              = 'MIIDdzCCAl+gAwIBAgIQYZZkFR==' # Next certificate for rollover
+    FederatedIdpMfaBehavior             = 'acceptIfMfaDoneByFederatedIdp'
+    Ensure                              = 'Present'
+    ApplicationId                       = 'your-app-id'
+    TenantId                            = 'your-tenant-id'
+    CertificateThumbprint               = 'your-cert-thumbprint'
+}
+```
+
+### Multiple Federation Configurations per Domain
+
+You can manage multiple federation configurations for a single domain by specifying the Id:
+
+```powershell
+AADDomainFederation 'PrimaryFederation-contoso.com'
+{
+    DomainId                            = 'contoso.com'
+    Id                                  = '12345678-1234-1234-1234-123456789012'
+    DisplayName                         = 'Contoso Primary Federation'
+    IssuerUri                           = 'http://contoso.com/adfs/services/trust'
+    PreferredAuthenticationProtocol     = 'wsFed'
+    Ensure                              = 'Present'
+    ApplicationId                       = 'your-app-id'
+    TenantId                            = 'your-tenant-id'
+    CertificateThumbprint               = 'your-cert-thumbprint'
+}
+
+AADDomainFederation 'SecondaryFederation-contoso.com'
+{
+    DomainId                            = 'contoso.com'
+    Id                                  = '87654321-4321-4321-4321-210987654321'
+    DisplayName                         = 'Contoso Secondary Federation'
+    IssuerUri                           = 'http://contoso.com/adfs2/services/trust'
+    PreferredAuthenticationProtocol     = 'saml'
     Ensure                              = 'Present'
     ApplicationId                       = 'your-app-id'
     TenantId                            = 'your-tenant-id'
