@@ -390,6 +390,22 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $null = Export-TargetResource @testParams
                 $Script:exportedInstances.Count | Should -Be 3
             }
+
+            It 'Should export correct domain IDs and configuration details' {
+                $Script:exportedInstances = @()
+                $null = Export-TargetResource @testParams
+                
+                # Verify contoso.com has 2 configurations
+                $contosoConfigs = $Script:exportedInstances | Where-Object { $_.DomainId -eq 'contoso.com' }
+                $contosoConfigs.Count | Should -Be 2
+                $contosoConfigs[0].DisplayName | Should -Be 'Contoso Primary'
+                $contosoConfigs[1].DisplayName | Should -Be 'Contoso Secondary'
+                
+                # Verify fabrikam.com has 1 configuration
+                $fabrikamConfigs = $Script:exportedInstances | Where-Object { $_.DomainId -eq 'fabrikam.com' }
+                $fabrikamConfigs.Count | Should -Be 1
+                $fabrikamConfigs[0].DisplayName | Should -Be 'Fabrikam Federation'
+            }
         }
 
         Context -Name "Domain does not exist" -Fixture {
@@ -451,6 +467,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should handle invalid certificate format gracefully in Write-CertificateDebugInfo' {
                 { Set-TargetResource @testParams } | Should -Not -Throw
+            }
+
+            It 'Should call Write-CertificateDebugInfo when invalid certificate is provided' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName Write-CertificateDebugInfo -Exactly 1 -ParameterFilter {
+                    $Certificate -eq "INVALID_BASE64_STRING!!!" -and $CertificateName -eq "SigningCertificate"
+                }
             }
         }
 
