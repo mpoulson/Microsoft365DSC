@@ -82,17 +82,9 @@ function Get-TargetResource
 
     Write-Verbose -Message "Getting configuration of Security Filter for $FilterName"
 
-    if ($Global:CurrentModeIsExport)
-    {
-        $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-            -InboundParameters $PSBoundParameters
-    }
+    $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+        -InboundParameters $PSBoundParameters `
+        -EnableSearchOnlySession
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -191,8 +183,6 @@ function Get-M365DSCSCMapSecurityFilter
     }
     return $result
 }
-
-
 
 function Set-TargetResource
 {
@@ -465,7 +455,8 @@ function Export-TargetResource
     )
 
     $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-        -InboundParameters $PSBoundParameters
+        -InboundParameters $PSBoundParameters `
+        -EnableSearchOnlySession
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies

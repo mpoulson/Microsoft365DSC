@@ -1,10 +1,79 @@
 # Change log for Microsoft365DSC
 
-# UNRELEASED
+# 1.26.211.1
 
+* AADUser
+  * Fixed an export issue where a user was deleted during a long-running job.
+    FIXES [#5703](https://github.com/microsoft/Microsoft365DSC/issues/5703)
+* IntuneRoleAssignment
+  * Fixed an issue where properties were omitted during Set and testing
+    did not work with display names.
+    FIXES [#6881](https://github.com/microsoft/Microsoft365DSC/issues/6881)
+* FabricAdmintenantsettings
+  * Refreshed the property list.
+   FIXES [#6866](https://github.com/microsoft/Microsoft365DSC/issues/6866)
+* O365OrgSettings
+  * Changed how errors are handled to fail instead of returning false drifts.
+   FIXES [#6787](https://github.com/microsoft/Microsoft365DSC/issues/6787)
+* O365SearchAndIntelligenceConfiguration
+  * Expanded try/catch logic to cover all code paths in Get.
+    FIXES [#6788](https://github.com/microsoft/Microsoft365DSC/issues/6788)
+* SPOSearchManagedProperty
+  * Fixed an issue when connecting to the SPO AdminUrl.
+    FIXES [#6787](https://github.com/microsoft/Microsoft365DSC/issues/6787)
+* TeamsDialInConferencingTenantSettings
+  * Fixed an issue where the properties `MigrateServiceNumbersOnCrossForestMove`
+    and `UseUniqueConferenceIds` were not rendered correctly in the
+    documentation
+    FIXES [#6890](https://github.com/microsoft/Microsoft365DSC/issues/6890)
+* M365DSCUtil
+  * Fixed an issue during module update where `Install-PSResource` throws
+    an error if the module was installed in Windows PowerShell but the
+    update attempt was performed in PowerShell 7.
+  * Fixed an issue where `Export-M365DSCConfiguration` would stop
+    exporting resources after an error on Azure DevOps & GitHub.
+    FIXES [#6862](https://github.com/microsoft/Microsoft365DSC/issues/6862)
+* M365DSCPermissions
+  * Fixed an issue when selecting a property for the result.
+    FIXES [#6882](https://github.com/microsoft/Microsoft365DSC/issues/6882)
+* DEPENDENCIES
+  * Updated MSCloudLoginAssistant to version 1.1.58.
+
+# 1.26.128.1
+
+* EXOMailboxFolderPermission
+  * Fixed an issue where `AccessRights` was not exported properly.
+* EXOTransportRule
+  * Updated logic to properly handle the Enabled property.
+* IntuneAntivirusPolicyWindows10SettingCatalog
+  * Fixed an issue where the property `TamperProtection` was renamed to
+    `ControlledConfiguration` in the Settings Catalog backend.
+    FIXES [#6855](https://github.com/microsoft/Microsoft365DSC/issues/6855)
+* IntuneCloudProvisioningPolicyWindows365
+  * Fixed an issue where `ireland` was not a recognized country.
+    FIXES [#6830](https://github.com/microsoft/Microsoft365DSC/issues/6830)
+* IntuneDeviceFeaturesConfigurationPolicyIOS
+  * Fixed an issue where home screen folders were not configurable.
+    FIXES [#6836](https://github.com/microsoft/Microsoft365DSC/issues/6836)
+* O365OrgSettings
+  * Fixed an issue where comparing empty app installation options failed.
+    FIXES [#6812](https://github.com/microsoft/Microsoft365DSC/issues/6812)
+* SCSecurityFilter
+  * Fixed an issue where connecting to the service was not possible.
+    FIXES [#6798](https://github.com/microsoft/Microsoft365DSC/issues/6798)
+* SPOTenantSettings
+  * Fixing the empty array casting for AllowSelectSGsInODBListInTenant,
+    DenySelectSGsInODBListInTenant,DenySelectSecurityGroupsInSPSitesList
+    and AllowSelectSecurityGroupsInSPSitesList in Get-TargetResource.
 * M365DSCPermissions
   * Fixed an issue where Purview permissions were not in the correct format.
     FIXES [#6822](https://github.com/microsoft/Microsoft365DSC/issues/6822)
+* DEPENDENCIES
+  * Updated MSCloudLoginAssistant to version 1.1.57.
+* M365DSCUtil
+  * Removed the parameter `SkipModuleReload` from `New-M365DSCConnection`.
+* MISC
+  * Removed the `SkipModuleReload` logic from all resources.
 
 # 1.26.121.1
 
