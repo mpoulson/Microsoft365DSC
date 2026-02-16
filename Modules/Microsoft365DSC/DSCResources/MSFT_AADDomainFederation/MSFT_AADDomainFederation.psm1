@@ -706,6 +706,34 @@ function Export-TargetResource
     }
 }
 
+<#
+.SYNOPSIS
+    Displays certificate information for debugging purposes.
+
+.DESCRIPTION
+    This helper function parses a Base64-encoded X509 certificate string and displays
+    key certificate details including thumbprint, subject, issuer, and expiration date.
+    Used during Set-TargetResource operations to help administrators verify they are
+    using the correct certificates and monitor certificate expiration.
+
+.PARAMETER Certificate
+    The Base64-encoded certificate string (without headers/footers).
+    Must be a valid Base64 string representing an X509 certificate.
+
+.PARAMETER CertificateName
+    A descriptive name for the certificate (e.g., "SigningCertificate" or "NextSigningCertificate").
+    Used in the display output to identify which certificate is being shown.
+
+.EXAMPLE
+    Write-CertificateDebugInfo -Certificate $SigningCertificate -CertificateName "SigningCertificate"
+    
+    Displays information about the signing certificate including thumbprint, subject, issuer, and expiration.
+
+.NOTES
+    - Validates certificate format before attempting to parse
+    - Silently handles invalid certificate formats by writing to verbose stream
+    - Does not throw exceptions to avoid disrupting Set operations
+#>
 function Write-CertificateDebugInfo
 {
     [CmdletBinding()]

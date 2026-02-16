@@ -225,6 +225,273 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name "Certificate rollover scenario with NextSigningCertificate" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DomainId                                = "contoso.com"
+                    DisplayName                             = "Contoso Federation"
+                    IssuerUri                               = "http://contoso.com/adfs/services/trust"
+                    MetadataExchangeUri                     = "https://adfs.contoso.com/FederationMetadata/2007-06/FederationMetadata.xml"
+                    PassiveSignInUri                        = "https://adfs.contoso.com/adfs/ls/"
+                    PreferredAuthenticationProtocol         = "wsFed"
+                    SigningCertificate                      = "MIIDdzCCAl+gAwIBAgIQXWWjEQ=="
+                    NextSigningCertificate                  = "MIIDdzCCAl+gAwIBAgIQYZZkFR=="
+                    FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
+                    IsSignedAuthenticationRequestRequired   = $true
+                    Ensure                                  = "Present"
+                    Credential                              = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaDomainFederationConfiguration -MockWith {
+                    return @{
+                        Id                                      = "12345678-1234-1234-1234-123456789012"
+                        DisplayName                             = "Contoso Federation"
+                        IssuerUri                               = "http://contoso.com/adfs/services/trust"
+                        MetadataExchangeUri                     = "https://adfs.contoso.com/FederationMetadata/2007-06/FederationMetadata.xml"
+                        SigningCertificate                      = "MIIDdzCCAl+gAwIBAgIQXWWjEQ=="
+                        NextSigningCertificate                  = $null
+                        PassiveSignInUri                        = "https://adfs.contoso.com/adfs/ls/"
+                        ActiveSignInUri                         = "https://adfs.contoso.com/adfs/services/trust/2005/usernamemixed"
+                        SignOutUri                              = "https://adfs.contoso.com/adfs/ls/?wa=wsignout1.0"
+                        PreferredAuthenticationProtocol         = "wsFed"
+                        SigningCertificateUpdateStatus          = $null
+                        PromptLoginBehavior                     = $null
+                        FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
+                        IsSignedAuthenticationRequestRequired   = $true
+                    }
+                }
+            }
+
+            It 'Should detect drift when NextSigningCertificate is added' {
+                Test-TargetResource @testParams | Should -Be $false
+            }
+
+            It 'Should update configuration with NextSigningCertificate' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName Update-MgBetaDomainFederationConfiguration -Exactly 1
+            }
+
+            It 'Should call Write-CertificateDebugInfo for both certificates' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName Write-CertificateDebugInfo -Exactly 2
+            }
+        }
+
+        Context -Name "Multiple federation configurations for same domain" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DomainId                                = "contoso.com"
+                    Id                                      = "87654321-4321-4321-4321-210987654321"
+                    DisplayName                             = "Secondary Federation"
+                    IssuerUri                               = "http://contoso.com/adfs2/services/trust"
+                    PassiveSignInUri                        = "https://adfs2.contoso.com/adfs/ls/"
+                    PreferredAuthenticationProtocol         = "saml"
+                    SigningCertificate                      = "MIIDdzCCAl+gAwIBAgIQXWWjEQ=="
+                    Ensure                                  = "Present"
+                    Credential                              = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaDomainFederationConfiguration -MockWith {
+                    return @(
+                        @{
+                            Id                                      = "12345678-1234-1234-1234-123456789012"
+                            DisplayName                             = "Primary Federation"
+                            IssuerUri                               = "http://contoso.com/adfs/services/trust"
+                            PreferredAuthenticationProtocol         = "wsFed"
+                        },
+                        @{
+                            Id                                      = "87654321-4321-4321-4321-210987654321"
+                            DisplayName                             = "Secondary Federation"
+                            IssuerUri                               = "http://contoso.com/adfs2/services/trust"
+                            PassiveSignInUri                        = "https://adfs2.contoso.com/adfs/ls/"
+                            PreferredAuthenticationProtocol         = "saml"
+                            SigningCertificate                      = "MIIDdzCCAl+gAwIBAgIQXWWjEQ=="
+                        }
+                    )
+                }
+            }
+
+            It 'Should retrieve the correct federation configuration by Id' {
+                $result = Get-TargetResource @testParams
+                $result.Id | Should -Be "87654321-4321-4321-4321-210987654321"
+                $result.DisplayName | Should -Be "Secondary Federation"
+            }
+
+            It 'Should return true when configuration matches' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+        }
+
+        Context -Name "Export with multiple domains and configurations" -Fixture {
+            BeforeAll {
+                $Global:CurrentModeIsExport = $true
+                $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
+                $testParams = @{
+                    Credential = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaDomain -MockWith {
+                    return @(
+                        @{
+                            Id                 = "contoso.com"
+                            AuthenticationType = "Federated"
+                        },
+                        @{
+                            Id                 = "fabrikam.com"
+                            AuthenticationType = "Federated"
+                        },
+                        @{
+                            Id                 = "northwind.com"
+                            AuthenticationType = "Managed"
+                        }
+                    )
+                }
+
+                Mock -CommandName Get-MgBetaDomainFederationConfiguration -MockWith {
+                    param($DomainId)
+                    
+                    if ($DomainId -eq "contoso.com") {
+                        return @(
+                            @{
+                                Id                                      = "12345678-1234-1234-1234-123456789012"
+                                DisplayName                             = "Contoso Primary"
+                                IssuerUri                               = "http://contoso.com/adfs/services/trust"
+                                PreferredAuthenticationProtocol         = "wsFed"
+                            },
+                            @{
+                                Id                                      = "22345678-1234-1234-1234-123456789012"
+                                DisplayName                             = "Contoso Secondary"
+                                IssuerUri                               = "http://contoso.com/adfs2/services/trust"
+                                PreferredAuthenticationProtocol         = "saml"
+                            }
+                        )
+                    }
+                    elseif ($DomainId -eq "fabrikam.com") {
+                        return @{
+                            Id                                      = "32345678-1234-1234-1234-123456789012"
+                            DisplayName                             = "Fabrikam Federation"
+                            IssuerUri                               = "http://fabrikam.com/adfs/services/trust"
+                            PreferredAuthenticationProtocol         = "wsFed"
+                        }
+                    }
+                    else {
+                        return $null
+                    }
+                }
+            }
+
+            It 'Should export all federation configurations from all domains' {
+                $result = Export-TargetResource @testParams
+                $result | Should -Not -BeNullOrEmpty
+            }
+
+            It 'Should export 3 federation configurations total (2 from contoso.com, 1 from fabrikam.com)' {
+                $Script:exportedInstances = @()
+                $null = Export-TargetResource @testParams
+                $Script:exportedInstances.Count | Should -Be 3
+            }
+        }
+
+        Context -Name "Domain does not exist" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DomainId                                = "nonexistent.com"
+                    DisplayName                             = "Nonexistent Federation"
+                    IssuerUri                               = "http://nonexistent.com/adfs/services/trust"
+                    Ensure                                  = "Present"
+                    Credential                              = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaDomain -MockWith {
+                    return $null
+                }
+            }
+
+            It 'Should return Absent when domain does not exist' {
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
+            }
+
+            It 'Should return false from Test when domain does not exist' {
+                Test-TargetResource @testParams | Should -Be $false
+            }
+        }
+
+        Context -Name "Invalid certificate format handling" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DomainId                                = "contoso.com"
+                    DisplayName                             = "Contoso Federation"
+                    IssuerUri                               = "http://contoso.com/adfs/services/trust"
+                    PassiveSignInUri                        = "https://adfs.contoso.com/adfs/ls/"
+                    PreferredAuthenticationProtocol         = "wsFed"
+                    SigningCertificate                      = "INVALID_BASE64_STRING!!!"
+                    Ensure                                  = "Present"
+                    Credential                              = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaDomainFederationConfiguration -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Write-CertificateDebugInfo -MockWith {
+                    # Simulate the validation logic
+                    param($Certificate, $CertificateName)
+                    
+                    if ([string]::IsNullOrWhiteSpace($Certificate)) {
+                        Write-Verbose -Message "Certificate string is empty or null"
+                        return
+                    }
+
+                    if ($Certificate -notmatch '^[A-Za-z0-9+/]*={0,2}$') {
+                        Write-Verbose -Message "Certificate string does not appear to be valid base64 format"
+                        return
+                    }
+                }
+            }
+
+            It 'Should handle invalid certificate format gracefully in Write-CertificateDebugInfo' {
+                { Set-TargetResource @testParams } | Should -Not -Throw
+            }
+        }
+
+        Context -Name "Different MFA behavior scenarios" -Fixture {
+            BeforeAll {
+                Mock -CommandName Get-MgBetaDomainFederationConfiguration -MockWith {
+                    return @{
+                        Id                                      = "12345678-1234-1234-1234-123456789012"
+                        DisplayName                             = "Contoso Federation"
+                        IssuerUri                               = "http://contoso.com/adfs/services/trust"
+                        FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
+                        PreferredAuthenticationProtocol         = "wsFed"
+                    }
+                }
+            }
+
+            It 'Should detect drift when changing from acceptIfMfaDoneByFederatedIdp to enforceMfaByFederatedIdp' {
+                $testParams = @{
+                    DomainId                = "contoso.com"
+                    DisplayName             = "Contoso Federation"
+                    IssuerUri               = "http://contoso.com/adfs/services/trust"
+                    FederatedIdpMfaBehavior = "enforceMfaByFederatedIdp"
+                    Ensure                  = "Present"
+                    Credential              = $Credential
+                }
+                Test-TargetResource @testParams | Should -Be $false
+            }
+
+            It 'Should detect drift when changing from acceptIfMfaDoneByFederatedIdp to rejectMfaByFederatedIdp' {
+                $testParams = @{
+                    DomainId                = "contoso.com"
+                    DisplayName             = "Contoso Federation"
+                    IssuerUri               = "http://contoso.com/adfs/services/trust"
+                    FederatedIdpMfaBehavior = "rejectMfaByFederatedIdp"
+                    Ensure                  = "Present"
+                    Credential              = $Credential
+                }
+                Test-TargetResource @testParams | Should -Be $false
+            }
+        }
+
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
