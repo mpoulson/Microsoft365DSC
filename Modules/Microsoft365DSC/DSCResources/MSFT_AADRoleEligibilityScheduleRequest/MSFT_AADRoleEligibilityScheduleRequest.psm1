@@ -112,7 +112,7 @@ function Get-TargetResource
             }
             if ($null -eq $Script:RoleDefinitions)
             {
-                $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[string, object]]::new()
+                $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
                 $allRoleDefinitions = Get-MgBetaRoleManagementDirectoryRoleDefinition -All -ErrorAction SilentlyContinue
                 foreach ($singleRoleDefinition in $allRoleDefinitions)
                 {
@@ -718,7 +718,7 @@ function Export-TargetResource
         }
         if ($null -eq $Script:RoleDefinitions)
         {
-            $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[string, object]]::new()
+            $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
             $roleDefinitions = Get-MgBetaRoleManagementDirectoryRoleDefinition -All -ErrorAction SilentlyContinue
             foreach ($roleDefinition in $roleDefinitions)
             {
