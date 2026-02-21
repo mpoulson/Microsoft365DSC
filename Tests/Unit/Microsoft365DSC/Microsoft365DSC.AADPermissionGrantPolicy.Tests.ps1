@@ -31,6 +31,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return 'Credentials'
             }
 
+            Mock -CommandName Add-M365DSCTelemetryEvent -MockWith {
+            }
+
             Mock -CommandName Get-PSSession -MockWith {
             }
 
@@ -101,6 +104,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName New-M365DSCLogEntry -MockWith {
             }
 
+            $Script:exportedInstance = $null
             $Script:exportedInstances = $null
             $Script:ExportMode = $false
         }
@@ -446,7 +450,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 $result = Get-PermissionGrantConditionSetAsParameters -ConditionSet $conditionSet
 
-                $result.PermissionGrantConditionSetId | Should -Be 'test-id'
+                $result.ContainsKey('PermissionGrantConditionSetId') | Should -Be $false
                 $result.PermissionType | Should -Be 'delegated'
                 $result.ClientApplicationIds | Should -Be @('all')
             }

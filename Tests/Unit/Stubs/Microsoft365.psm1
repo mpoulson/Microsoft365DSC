@@ -87135,6 +87135,14 @@ function Get-MgBetaPolicyPermissionGrantPolicy
         [Parameter()]
         [System.String]
         $PermissionGrantPolicyId,
+
+        [Parameter()]
+        [System.String]
+        $ExpandProperty,
+
+        [Parameter()]
+        [System.String]
+        $Filter,
         
         [Parameter()]
         [Switch]
@@ -87248,7 +87256,11 @@ function New-MgBetaPolicyPermissionGrantPolicyInclude
         
         [Parameter()]
         [System.Boolean]
-        $ClientApplicationsFromVerifiedPublisherOnly
+        $ClientApplicationsFromVerifiedPublisherOnly,
+        
+        [Parameter()]
+        [System.Boolean]
+        $CertifiedClientApplicationsOnly
     )
 }
 
@@ -87372,7 +87384,11 @@ function New-MgBetaPolicyPermissionGrantPolicyExclude
         
         [Parameter()]
         [System.Boolean]
-        $ClientApplicationsFromVerifiedPublisherOnly
+        $ClientApplicationsFromVerifiedPublisherOnly,
+        
+        [Parameter()]
+        [System.Boolean]
+        $CertifiedClientApplicationsOnly
     )
 }
 
