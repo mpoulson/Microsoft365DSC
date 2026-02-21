@@ -209,6 +209,38 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Should -Invoke -CommandName New-MgBetaRoleManagementDirectoryRoleEligibilityScheduleRequest -Exactly 1
             }
         }
+        Context -Name 'Set-TargetResource should throw when Role Definition is not found' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DirectoryScopeId     = "/";
+                    Ensure               = "Present";
+                    Principal            = "John.Smith@contoso.com";
+                    PrincipalType        = "User"
+                    RoleDefinition       = "NonExistentRole";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AADRoleEligibilityScheduleRequestSchedule -Property @{
+                        startDateTime = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AADRoleEligibilityScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = '2025-10-31T02:40:09Z'
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleEligibilitySchedule -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleDefinition -MockWith {
+                    return $null
+                }
+            }
+
+            It 'Should throw when Role Definition lookup fails' {
+                { Set-TargetResource @testParams } | Should -Throw -ExpectedMessage "*Couldn't find Role Definition*"
+            }
+        }
+
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true

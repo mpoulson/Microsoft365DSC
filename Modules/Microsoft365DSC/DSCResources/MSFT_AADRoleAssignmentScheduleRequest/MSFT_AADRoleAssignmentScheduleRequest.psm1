@@ -460,17 +460,22 @@ function Set-TargetResource
 
     if ($null -eq $PrincipalIdValue)
     {
-        throw "Couldn't find Principal {$PrincipalId} of type {$PrincipalType}"
+        throw "Couldn't find Principal {$Principal} of type {$PrincipalType}"
     }
     elseif ($PrincipalIdValue.Length -gt 1)
     {
-        throw "Multiple Principal with ID {$PrincipalId} of type {$PrincipalType} were found. Cannot create schedule."
+        throw "Multiple Principal with ID {$Principal} of type {$PrincipalType} were found. Cannot create schedule."
     }
 
     $ParametersOps.Add('PrincipalId', $PrincipalIdValue[0])
     $ParametersOps.Remove('Principal') | Out-Null
 
     $RoleDefinitionIdValue = (Get-MgBetaRoleManagementDirectoryRoleDefinition -Filter "DisplayName eq '$($RoleDefinition -replace "'", "''")'").Id
+    if ($null -eq $RoleDefinitionIdValue)
+    {
+        throw "Couldn't find Role Definition {$RoleDefinition}"
+    }
+
     $ParametersOps.Add('RoleDefinitionId', $RoleDefinitionIdValue)
     $ParametersOps.Remove('RoleDefinition') | Out-Null
 
@@ -744,7 +749,7 @@ function Export-TargetResource
         }
         if ($null -eq $Script:RoleDefinitions)
         {
-            $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[string, object]]::new()
+            $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
             $roleDefinitions = Get-MgBetaRoleManagementDirectoryRoleDefinition -All -ErrorAction SilentlyContinue
             foreach ($roleDefinition in $roleDefinitions)
             {
