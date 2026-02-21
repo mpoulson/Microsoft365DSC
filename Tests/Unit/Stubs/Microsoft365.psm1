@@ -87145,6 +87145,10 @@ function Get-MgBetaPolicyPermissionGrantPolicy
         $Filter,
         
         [Parameter()]
+        [System.String[]]
+        $ExpandProperty,
+
+        [Parameter()]
         [Switch]
         $All
     )
