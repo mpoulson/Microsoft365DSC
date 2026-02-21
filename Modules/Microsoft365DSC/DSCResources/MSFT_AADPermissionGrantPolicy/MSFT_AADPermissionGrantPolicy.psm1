@@ -739,9 +739,7 @@ function Get-PermissionGrantConditionSetAsParameters
         $ConditionSet
     )
 
-    $params = @{
-        PermissionGrantConditionSetId = $ConditionSet.Id
-    }
+    $params = @{}
 
     if ($null -ne $ConditionSet.CertifiedClientApplicationsOnly)
     {
