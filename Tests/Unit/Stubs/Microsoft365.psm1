@@ -37285,6 +37285,39 @@ function Get-MgBetaDirectoryObjectById
         $WhatIf
     )
 }
+function Get-MgBetaDirectoryObjectAvailableExtensionProperty
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Collections.Hashtable]
+        $AdditionalProperties,
+
+        [Parameter()]
+        [PSObject]
+        $BodyParameter,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Collections.IDictionary]
+        $Headers,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $IsSyncedFromOnPremises,
+
+        [Parameter()]
+        [System.String]
+        $ResponseHeadersVariable,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $WhatIf
+    )
+}
 #endregion
 
 #region Microsoft.Graph.Beta.Identity.DirectoryManagement

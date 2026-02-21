@@ -1,0 +1,16 @@
+[ClassVersion("1.0.0.0"), FriendlyName("AADAvailableExtensionProperty")]
+class MSFT_AADAvailableExtensionProperty : OMI_BaseResource
+{
+    [Key, Description("The name of the extension property.")] String Name;
+    [Write, Description("The data type of the extension property.")] String DataType;
+    [Write, Description("Indicates if the extension property is synced from on-premises Active Directory.")] Boolean IsSyncedFromOnPremises;
+    [Write, Description("The target objects for the extension property.")] String TargetObjects[];
+    [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Present"}, Values{"Present"}] string Ensure;
+    [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Secret of the Azure Active Directory tenant used for authentication."), EmbeddedInstance("MSFT_Credential")] String ApplicationSecret;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};
