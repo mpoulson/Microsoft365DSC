@@ -585,6 +585,79 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name 'Helper function ConvertTo-PermissionName' -Fixture {
+            It 'Should pass through wildcard all unchanged' {
+                $result = ConvertTo-PermissionName -PermissionId 'all'
+                $result | Should -Be 'all'
+            }
+
+            It 'Should pass through wildcard any unchanged' {
+                $result = ConvertTo-PermissionName -PermissionId 'any'
+                $result | Should -Be 'any'
+            }
+
+            It 'Should pass through asterisk wildcard unchanged' {
+                $result = ConvertTo-PermissionName -PermissionId '*'
+                $result | Should -Be '*'
+            }
+
+            It 'Should pass through non-GUID value as already a name' {
+                $result = ConvertTo-PermissionName -PermissionId 'User.Read'
+                $result | Should -Be 'User.Read'
+            }
+
+            It 'Should resolve delegated permission GUID to name' {
+                $Script:ServicePrincipalCache = @{}
+                $result = ConvertTo-PermissionName -PermissionId 'e1fe6dd8-ba31-4d61-89e7-88639da4683d' `
+                    -ResourceApplicationId '00000003-0000-0000-c000-000000000000' `
+                    -PermissionType 'delegated'
+                $result | Should -Be 'User.Read'
+            }
+
+            It 'Should resolve application permission GUID to name' {
+                $Script:ServicePrincipalCache = @{}
+                $result = ConvertTo-PermissionName -PermissionId 'df021288-bdef-4463-88db-98f22de89214' `
+                    -ResourceApplicationId '00000003-0000-0000-c000-000000000000' `
+                    -PermissionType 'application'
+                $result | Should -Be 'User.Read.All'
+            }
+
+            It 'Should return GUID when ResourceApplication is any' {
+                $result = ConvertTo-PermissionName -PermissionId 'e1fe6dd8-ba31-4d61-89e7-88639da4683d' `
+                    -ResourceApplicationId 'any' `
+                    -PermissionType 'delegated'
+                $result | Should -Be 'e1fe6dd8-ba31-4d61-89e7-88639da4683d'
+            }
+
+            It 'Should return GUID when ResourceApplication is not specified' {
+                $result = ConvertTo-PermissionName -PermissionId 'e1fe6dd8-ba31-4d61-89e7-88639da4683d'
+                $result | Should -Be 'e1fe6dd8-ba31-4d61-89e7-88639da4683d'
+            }
+
+            It 'Should resolve GUID even without PermissionType by searching both collections' {
+                $Script:ServicePrincipalCache = @{}
+                $result = ConvertTo-PermissionName -PermissionId 'e1fe6dd8-ba31-4d61-89e7-88639da4683d' `
+                    -ResourceApplicationId '00000003-0000-0000-c000-000000000000'
+                $result | Should -Be 'User.Read'
+            }
+
+            It 'Should return GUID when permission is not found in service principal' {
+                $Script:ServicePrincipalCache = @{}
+                $result = ConvertTo-PermissionName -PermissionId 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+                    -ResourceApplicationId '00000003-0000-0000-c000-000000000000' `
+                    -PermissionType 'delegated'
+                $result | Should -Be 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+            }
+
+            It 'Should resolve SP name as ResourceApplicationId and resolve permission' {
+                $Script:ServicePrincipalCache = @{}
+                $result = ConvertTo-PermissionName -PermissionId 'e1fe6dd8-ba31-4d61-89e7-88639da4683d' `
+                    -ResourceApplicationId 'Microsoft Graph' `
+                    -PermissionType 'delegated'
+                $result | Should -Be 'User.Read'
+            }
+        }
+
         Context -Name 'Helper function Resolve-ResourceApplicationName' -Fixture {
             It 'Should resolve GUID to service principal display name' {
                 $Script:ServicePrincipalCache = @{}
@@ -744,6 +817,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $result = Get-PermissionGrantConditionSetAsHashtable -ConditionSet $conditionSet
                 $result.ResourceApplication | Should -Be 'any'
             }
+
+            It 'Should resolve permission GUIDs to names' {
+                $Script:ServicePrincipalCache = @{}
+                $conditionSet = [PSCustomObject]@{
+                    Id                  = 'test-id'
+                    PermissionType      = 'delegated'
+                    ResourceApplication = '00000003-0000-0000-c000-000000000000'
+                    Permissions         = @('e1fe6dd8-ba31-4d61-89e7-88639da4683d', '37f7f235-527c-4136-accd-4a02d197296e')
+                }
+
+                $result = Get-PermissionGrantConditionSetAsHashtable -ConditionSet $conditionSet
+                $result.Permissions | Should -Be @('User.Read', 'openid')
+            }
+
+            It 'Should pass through all wildcard for Permissions' {
+                $conditionSet = [PSCustomObject]@{
+                    Id                  = 'test-id'
+                    PermissionType      = 'delegated'
+                    ResourceApplication = 'any'
+                    Permissions         = @('all')
+                }
+
+                $result = Get-PermissionGrantConditionSetAsHashtable -ConditionSet $conditionSet
+                $result.Permissions | Should -Be @('all')
+            }
         }
 
         Context -Name 'Get-PermissionGrantConditionSetAsParameters resolves name to GUID' -Fixture {
@@ -772,7 +870,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-        Context -Name 'Get-TargetResource resolves ResourceApplication to SP name' -Fixture {
+        Context -Name 'Get-TargetResource resolves ResourceApplication and Permissions to names' -Fixture {
             BeforeAll {
                 Mock -CommandName Get-MgBetaPolicyPermissionGrantPolicy -MockWith {
                     return @{
@@ -785,7 +883,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 PermissionType       = 'delegated'
                                 ClientApplicationIds = @('all')
                                 ResourceApplication  = '00000003-0000-0000-c000-000000000000'
-                                Permissions          = @('all')
+                                Permissions          = @('e1fe6dd8-ba31-4d61-89e7-88639da4683d', '37f7f235-527c-4136-accd-4a02d197296e')
                             }
                         )
                         Excludes    = @(
@@ -794,7 +892,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 PermissionType       = 'application'
                                 ClientApplicationIds = @('all')
                                 ResourceApplication  = '00000003-0000-0000-c000-000000000000'
-                                Permissions          = @('all')
+                                Permissions          = @('df021288-bdef-4463-88db-98f22de89214')
                             }
                         )
                     }
@@ -809,6 +907,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should resolve ResourceApplication GUID to name in Excludes' {
                 $result = Get-TargetResource -Id 'name-test-policy' -Credential $Credential
                 $result.Excludes[0].ResourceApplication | Should -Be 'Microsoft Graph'
+            }
+
+            It 'Should resolve Permission GUIDs to names in Includes' {
+                $Script:ServicePrincipalCache = @{}
+                $result = Get-TargetResource -Id 'name-test-policy' -Credential $Credential
+                $result.Includes[0].Permissions | Should -Be @('User.Read', 'openid')
+            }
+
+            It 'Should resolve Permission GUIDs to names in Excludes' {
+                $Script:ServicePrincipalCache = @{}
+                $result = Get-TargetResource -Id 'name-test-policy' -Credential $Credential
+                $result.Excludes[0].Permissions | Should -Be @('User.Read.All')
             }
         }
 
