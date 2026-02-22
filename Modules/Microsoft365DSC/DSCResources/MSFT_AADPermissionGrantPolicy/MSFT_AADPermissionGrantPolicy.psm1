@@ -596,11 +596,42 @@ function Export-TargetResource
             $Script:exportedInstance = $policy
             $Results = Get-TargetResource @Params
 
+            if ($null -ne $Results.Includes)
+            {
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.Includes `
+                    -CIMInstanceName 'MSFT_AADPermissionGrantConditionSet'
+                if (-not [System.String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                {
+                    $Results.Includes = $complexTypeStringResult
+                }
+                else
+                {
+                    $Results.Remove('Includes') | Out-Null
+                }
+            }
+
+            if ($null -ne $Results.Excludes)
+            {
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.Excludes `
+                    -CIMInstanceName 'MSFT_AADPermissionGrantConditionSet'
+                if (-not [System.String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                {
+                    $Results.Excludes = $complexTypeStringResult
+                }
+                else
+                {
+                    $Results.Remove('Excludes') | Out-Null
+                }
+            }
+
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
                 -Results $Results `
-                -Credential $Credential
+                -Credential $Credential `
+                -NoEscape @('Includes', 'Excludes')
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
