@@ -628,6 +628,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Should -Invoke -CommandName 'Get-MgServicePrincipal' -Exactly 1
             }
+
+            It 'Should also cache by DisplayName so name lookups can find cached entries' {
+                $Script:ServicePrincipalCache = @{}
+                Mock -CommandName Get-MgServicePrincipal -MockWith {
+                    return @{
+                        AppId       = '00000003-0000-0000-c000-000000000000'
+                        DisplayName = 'Microsoft Graph'
+                    }
+                }
+
+                $null = Resolve-ResourceApplicationName -ResourceApplication '00000003-0000-0000-c000-000000000000'
+                $Script:ServicePrincipalCache.ContainsKey('Microsoft Graph') | Should -BeTrue
+            }
         }
 
         Context -Name 'Helper function Resolve-ResourceApplicationId' -Fixture {
@@ -655,6 +668,39 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgServicePrincipal -MockWith { return $null }
                 $result = Resolve-ResourceApplicationId -ResourceApplication 'NonExistentApp'
                 $result | Should -Be 'NonExistentApp'
+            }
+
+            It 'Should use cache for repeated name-based lookups' {
+                $Script:ServicePrincipalCache = @{}
+                Mock -CommandName Get-MgServicePrincipal -MockWith {
+                    return @{
+                        AppId       = '00000003-0000-0000-c000-000000000000'
+                        DisplayName = 'Microsoft Graph'
+                    }
+                }
+
+                $null = Resolve-ResourceApplicationId -ResourceApplication 'Microsoft Graph'
+                $null = Resolve-ResourceApplicationId -ResourceApplication 'Microsoft Graph'
+
+                Should -Invoke -CommandName 'Get-MgServicePrincipal' -Exactly 1
+            }
+
+            It 'Should find cached entry after GUID-based lookup by Resolve-ResourceApplicationName' {
+                $Script:ServicePrincipalCache = @{}
+                Mock -CommandName Get-MgServicePrincipal -MockWith {
+                    return @{
+                        AppId       = '00000003-0000-0000-c000-000000000000'
+                        DisplayName = 'Microsoft Graph'
+                    }
+                }
+
+                # First lookup by GUID populates cache with both GUID and name keys
+                $null = Resolve-ResourceApplicationName -ResourceApplication '00000003-0000-0000-c000-000000000000'
+                # Second lookup by name should use cache
+                $result = Resolve-ResourceApplicationId -ResourceApplication 'Microsoft Graph'
+                $result | Should -Be '00000003-0000-0000-c000-000000000000'
+
+                Should -Invoke -CommandName 'Get-MgServicePrincipal' -Exactly 1
             }
         }
 
