@@ -1,8 +1,5 @@
 Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADPermissionGrantPolicy'
 
-# Module-level constants
-$script:ExpandProperties = 'includes,excludes'
-
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -87,9 +84,9 @@ function Get-TargetResource
             $nullResult = $PSBoundParameters
             $nullResult.Ensure = 'Absent'
 
-            $getValue = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $Id `
-                -ExpandProperty $script:ExpandProperties `
-                -ErrorAction SilentlyContinue
+            $getValue = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $Id #`
+                #-ExpandProperty $script:ExpandProperties `
+                #-ErrorAction SilentlyContinue
         }
         else
         {
@@ -334,7 +331,7 @@ function Set-TargetResource
                             Remove-MgBetaPolicyPermissionGrantPolicyInclude `
                                 -PermissionGrantPolicyId $Id `
                                 -PermissionGrantConditionSetId $include.Id | Out-Null
-                            
+
                             $includeParams = Get-PermissionGrantConditionSetAsParameters -ConditionSet $include
                             New-MgBetaPolicyPermissionGrantPolicyInclude -PermissionGrantPolicyId $Id @includeParams | Out-Null
                         }
@@ -389,7 +386,7 @@ function Set-TargetResource
                             Remove-MgBetaPolicyPermissionGrantPolicyExclude `
                                 -PermissionGrantPolicyId $Id `
                                 -PermissionGrantConditionSetId $exclude.Id | Out-Null
-                            
+
                             $excludeParams = Get-PermissionGrantConditionSetAsParameters -ConditionSet $exclude
                             New-MgBetaPolicyPermissionGrantPolicyExclude -PermissionGrantPolicyId $Id @excludeParams | Out-Null
                         }
@@ -557,9 +554,9 @@ function Export-TargetResource
     {
         $Script:ExportMode = $true
 
-        [array] $Script:exportedInstances = Get-MgBetaPolicyPermissionGrantPolicy -All:$true `
-            -ExpandProperty $script:ExpandProperties `
-            -ErrorAction Stop
+        [array] $Script:exportedInstances = Get-MgBetaPolicyPermissionGrantPolicy -All:$true #`
+            #-ExpandProperty $script:ExpandProperties `
+            #-ErrorAction Stop
 
         $dscContent = ''
         $i = 1
