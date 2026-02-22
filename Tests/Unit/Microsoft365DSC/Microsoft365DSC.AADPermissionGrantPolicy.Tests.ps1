@@ -64,6 +64,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Get-MgServicePrincipal -MockWith {
                 return @{
                     AppId                  = '00000003-0000-0000-c000-000000000000'
+                    DisplayName            = 'Microsoft Graph'
                     Oauth2PermissionScopes = @(
                         @{ Id = 'e1fe6dd8-ba31-4d61-89e7-88639da4683d'; Value = 'User.Read' }
                         @{ Id = '37f7f235-527c-4136-accd-4a02d197296e'; Value = 'openid' }
@@ -581,6 +582,187 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $result3 | Should -Be 'df021288-bdef-4463-88db-98f22de89214'
 
                 Should -Invoke -CommandName 'Get-MgServicePrincipal' -Exactly 1
+            }
+        }
+
+        Context -Name 'Helper function Resolve-ResourceApplicationName' -Fixture {
+            It 'Should resolve GUID to service principal display name' {
+                $Script:ServicePrincipalCache = @{}
+                $result = Resolve-ResourceApplicationName -ResourceApplication '00000003-0000-0000-c000-000000000000'
+                $result | Should -Be 'Microsoft Graph'
+            }
+
+            It 'Should pass through wildcard any unchanged' {
+                $result = Resolve-ResourceApplicationName -ResourceApplication 'any'
+                $result | Should -Be 'any'
+            }
+
+            It 'Should pass through wildcard asterisk unchanged' {
+                $result = Resolve-ResourceApplicationName -ResourceApplication '*'
+                $result | Should -Be '*'
+            }
+
+            It 'Should pass through non-GUID value as already a name' {
+                $result = Resolve-ResourceApplicationName -ResourceApplication 'Microsoft Graph'
+                $result | Should -Be 'Microsoft Graph'
+            }
+
+            It 'Should return GUID when service principal is not found' {
+                Mock -CommandName Get-MgServicePrincipal -MockWith { return $null }
+                $Script:ServicePrincipalCache = @{}
+                $result = Resolve-ResourceApplicationName -ResourceApplication 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+                $result | Should -Be 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+            }
+
+            It 'Should use cache for repeated lookups' {
+                $Script:ServicePrincipalCache = @{}
+                Mock -CommandName Get-MgServicePrincipal -MockWith {
+                    return @{
+                        AppId       = '00000003-0000-0000-c000-000000000000'
+                        DisplayName = 'Microsoft Graph'
+                    }
+                }
+
+                $null = Resolve-ResourceApplicationName -ResourceApplication '00000003-0000-0000-c000-000000000000'
+                $null = Resolve-ResourceApplicationName -ResourceApplication '00000003-0000-0000-c000-000000000000'
+
+                Should -Invoke -CommandName 'Get-MgServicePrincipal' -Exactly 1
+            }
+        }
+
+        Context -Name 'Helper function Resolve-ResourceApplicationId' -Fixture {
+            It 'Should resolve service principal name to AppId GUID' {
+                $result = Resolve-ResourceApplicationId -ResourceApplication 'Microsoft Graph'
+                $result | Should -Be '00000003-0000-0000-c000-000000000000'
+            }
+
+            It 'Should pass through GUID value unchanged' {
+                $result = Resolve-ResourceApplicationId -ResourceApplication '00000003-0000-0000-c000-000000000000'
+                $result | Should -Be '00000003-0000-0000-c000-000000000000'
+            }
+
+            It 'Should pass through wildcard any unchanged' {
+                $result = Resolve-ResourceApplicationId -ResourceApplication 'any'
+                $result | Should -Be 'any'
+            }
+
+            It 'Should pass through wildcard asterisk unchanged' {
+                $result = Resolve-ResourceApplicationId -ResourceApplication '*'
+                $result | Should -Be '*'
+            }
+
+            It 'Should return name when service principal is not found' {
+                Mock -CommandName Get-MgServicePrincipal -MockWith { return $null }
+                $result = Resolve-ResourceApplicationId -ResourceApplication 'NonExistentApp'
+                $result | Should -Be 'NonExistentApp'
+            }
+        }
+
+        Context -Name 'ConvertTo-PermissionGuid with SP name as ResourceApplicationId' -Fixture {
+            It 'Should resolve SP name and then resolve permission' {
+                $Script:ServicePrincipalCache = @{}
+                $result = ConvertTo-PermissionGuid -PermissionName 'User.Read' `
+                    -ResourceApplicationId 'Microsoft Graph' `
+                    -PermissionType 'delegated'
+                $result | Should -Be 'e1fe6dd8-ba31-4d61-89e7-88639da4683d'
+            }
+
+            It 'Should resolve SP name for application permission' {
+                $Script:ServicePrincipalCache = @{}
+                $result = ConvertTo-PermissionGuid -PermissionName 'User.Read.All' `
+                    -ResourceApplicationId 'Microsoft Graph' `
+                    -PermissionType 'application'
+                $result | Should -Be 'df021288-bdef-4463-88db-98f22de89214'
+            }
+        }
+
+        Context -Name 'Get-PermissionGrantConditionSetAsHashtable resolves ResourceApplication to name' -Fixture {
+            It 'Should resolve GUID to display name in result' {
+                $conditionSet = [PSCustomObject]@{
+                    Id                  = 'test-id'
+                    PermissionType      = 'delegated'
+                    ResourceApplication = '00000003-0000-0000-c000-000000000000'
+                }
+
+                $result = Get-PermissionGrantConditionSetAsHashtable -ConditionSet $conditionSet
+                $result.ResourceApplication | Should -Be 'Microsoft Graph'
+            }
+
+            It 'Should pass through any wildcard for ResourceApplication' {
+                $conditionSet = [PSCustomObject]@{
+                    Id                  = 'test-id'
+                    PermissionType      = 'delegated'
+                    ResourceApplication = 'any'
+                }
+
+                $result = Get-PermissionGrantConditionSetAsHashtable -ConditionSet $conditionSet
+                $result.ResourceApplication | Should -Be 'any'
+            }
+        }
+
+        Context -Name 'Get-PermissionGrantConditionSetAsParameters resolves name to GUID' -Fixture {
+            It 'Should resolve display name to AppId GUID in parameters' {
+                $conditionSet = [PSCustomObject]@{
+                    Id                  = 'test-id'
+                    PermissionType      = 'delegated'
+                    Permissions         = @('all')
+                    ResourceApplication = 'Microsoft Graph'
+                }
+
+                $result = Get-PermissionGrantConditionSetAsParameters -ConditionSet $conditionSet
+                $result.ResourceApplication | Should -Be '00000003-0000-0000-c000-000000000000'
+            }
+
+            It 'Should pass through GUID for ResourceApplication' {
+                $conditionSet = [PSCustomObject]@{
+                    Id                  = 'test-id'
+                    PermissionType      = 'delegated'
+                    Permissions         = @('all')
+                    ResourceApplication = '00000003-0000-0000-c000-000000000000'
+                }
+
+                $result = Get-PermissionGrantConditionSetAsParameters -ConditionSet $conditionSet
+                $result.ResourceApplication | Should -Be '00000003-0000-0000-c000-000000000000'
+            }
+        }
+
+        Context -Name 'Get-TargetResource resolves ResourceApplication to SP name' -Fixture {
+            BeforeAll {
+                Mock -CommandName Get-MgBetaPolicyPermissionGrantPolicy -MockWith {
+                    return @{
+                        Id          = 'name-test-policy'
+                        DisplayName = 'Name Test Policy'
+                        Description = 'Policy for name resolution test'
+                        Includes    = @(
+                            @{
+                                Id                   = 'include-1'
+                                PermissionType       = 'delegated'
+                                ClientApplicationIds = @('all')
+                                ResourceApplication  = '00000003-0000-0000-c000-000000000000'
+                                Permissions          = @('all')
+                            }
+                        )
+                        Excludes    = @(
+                            @{
+                                Id                   = 'exclude-1'
+                                PermissionType       = 'application'
+                                ClientApplicationIds = @('all')
+                                ResourceApplication  = '00000003-0000-0000-c000-000000000000'
+                                Permissions          = @('all')
+                            }
+                        )
+                    }
+                }
+            }
+
+            It 'Should resolve ResourceApplication GUID to name in Includes' {
+                $result = Get-TargetResource -Id 'name-test-policy' -Credential $Credential
+                $result.Includes[0].ResourceApplication | Should -Be 'Microsoft Graph'
+            }
+
+            It 'Should resolve ResourceApplication GUID to name in Excludes' {
+                $result = Get-TargetResource -Id 'name-test-policy' -Credential $Credential
+                $result.Excludes[0].ResourceApplication | Should -Be 'Microsoft Graph'
             }
         }
 
