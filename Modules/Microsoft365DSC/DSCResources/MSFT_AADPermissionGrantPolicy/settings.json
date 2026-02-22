@@ -1,6 +1,6 @@
 {
   "resourceName": "AADPermissionGrantPolicy",
-  "description": "This resource configures an Azure Active Directory Permission Grant Policy.",
+  "description": "This resource configures an Entra ID Permission Grant Policy.",
   "roles": {
     "read": [
       "Security Reader"
@@ -38,6 +38,7 @@
     }
   },
   "requiredModules": [
+    "Microsoft.Graph.Applications",
     "Microsoft.Graph.Authentication",
     "Microsoft.Graph.Beta.Identity.SignIns",
     "MSCloudLoginAssistant"
@@ -48,6 +49,12 @@
   ],
   "mode": "Configuration",
   "commands": [
+    {
+      "module": "Microsoft.Graph.Applications",
+      "cmdlets": [
+        "Get-MgServicePrincipal"
+      ]
+    },
     {
       "module": "Microsoft.Graph.Beta.Identity.SignIns",
       "cmdlets": [
