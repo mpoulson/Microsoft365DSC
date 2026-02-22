@@ -60,7 +60,7 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Getting configuration of Azure AD Permission Grant Policy {$Id}"
+    Write-Verbose -Message "Getting configuration of Entra Permission Grant Policy {$Id}"
 
     try
     {
@@ -84,9 +84,8 @@ function Get-TargetResource
             $nullResult = $PSBoundParameters
             $nullResult.Ensure = 'Absent'
 
-            $getValue = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $Id #`
-                #-ExpandProperty $script:ExpandProperties `
-                #-ErrorAction SilentlyContinue
+            $getValue = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $Id `
+                -ErrorAction SilentlyContinue
         }
         else
         {
@@ -95,11 +94,11 @@ function Get-TargetResource
 
         if ($null -eq $getValue)
         {
-            Write-Verbose -Message "No Azure AD Permission Grant Policy with Id {$Id} was found"
+            Write-Verbose -Message "No Entra Permission Grant Policy with Id {$Id} was found"
             return $nullResult
         }
 
-        Write-Verbose -Message "Found Azure AD Permission Grant Policy with Id {$Id}"
+        Write-Verbose -Message "Found Entra Permission Grant Policy with Id {$Id}"
 
         # Convert Includes collection to hashtable array
         $includesArray = @()
@@ -210,7 +209,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Setting configuration of Azure AD Permission Grant Policy {$Id}"
+    Write-Verbose -Message "Setting configuration of Entra Permission Grant Policy {$Id}"
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -235,7 +234,9 @@ function Set-TargetResource
 
         if ($Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Absent')
         {
-            Write-Verbose -Message "Creating new Azure AD Permission Grant Policy {$Id}"
+            Write-Verbose -Message "=============================================="
+            Write-Verbose -Message "Creating new Entra Permission Grant Policy {$Id}"
+            Write-Verbose -Message "=============================================="
 
             $createParameters = @{
                 Id          = $Id
@@ -269,7 +270,9 @@ function Set-TargetResource
         }
         elseif ($Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Present')
         {
-            Write-Verbose -Message "Updating Azure AD Permission Grant Policy {$Id}"
+            Write-Verbose -Message "=============================================="
+            Write-Verbose -Message "Updating Entra Permission Grant Policy {$Id}"
+            Write-Verbose -Message "=============================================="
 
             $updateParameters = @{
                 PermissionGrantPolicyId = $Id
@@ -291,6 +294,7 @@ function Set-TargetResource
             }
 
             # Sync Includes
+            Write-Verbose -Message "Syncing Includes"
             if ($null -ne $Includes)
             {
                 $desiredIncludes = @()
@@ -346,6 +350,7 @@ function Set-TargetResource
             }
 
             # Sync Excludes
+            Write-Verbose - Message "Syncing Excludes"
             if ($null -ne $Excludes)
             {
                 $desiredExcludes = @()
@@ -402,7 +407,7 @@ function Set-TargetResource
         }
         elseif ($Ensure -eq 'Absent' -and $currentPolicy.Ensure -eq 'Present')
         {
-            Write-Verbose -Message "Removing Azure AD Permission Grant Policy {$Id}"
+            Write-Verbose -Message "Removing Entra Permission Grant Policy {$Id}"
             Remove-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $Id | Out-Null
         }
     }
@@ -490,7 +495,7 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Azure AD Permission Grant Policy {$Id}"
+    Write-Verbose -Message "Testing configuration of Entra Permission Grant Policy {$Id}"
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
@@ -554,9 +559,8 @@ function Export-TargetResource
     {
         $Script:ExportMode = $true
 
-        [array] $Script:exportedInstances = Get-MgBetaPolicyPermissionGrantPolicy -All:$true #`
-            #-ExpandProperty $script:ExpandProperties `
-            #-ErrorAction Stop
+        [array] $Script:exportedInstances = Get-MgBetaPolicyPermissionGrantPolicy -All:$true `
+            -ErrorAction Stop
 
         $dscContent = ''
         $i = 1
@@ -593,11 +597,42 @@ function Export-TargetResource
             $Script:exportedInstance = $policy
             $Results = Get-TargetResource @Params
 
+            if ($null -ne $Results.Includes)
+            {
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.Includes `
+                    -CIMInstanceName 'MSFT_AADPermissionGrantConditionSet'
+                if (-not [System.String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                {
+                    $Results.Includes = $complexTypeStringResult
+                }
+                else
+                {
+                    $Results.Remove('Includes') | Out-Null
+                }
+            }
+
+            if ($null -ne $Results.Excludes)
+            {
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.Excludes `
+                    -CIMInstanceName 'MSFT_AADPermissionGrantConditionSet'
+                if (-not [System.String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                {
+                    $Results.Excludes = $complexTypeStringResult
+                }
+                else
+                {
+                    $Results.Remove('Excludes') | Out-Null
+                }
+            }
+
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
                 -Results $Results `
-                -Credential $Credential
+                -Credential $Credential `
+                -NoEscape @('Includes', 'Excludes')
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName

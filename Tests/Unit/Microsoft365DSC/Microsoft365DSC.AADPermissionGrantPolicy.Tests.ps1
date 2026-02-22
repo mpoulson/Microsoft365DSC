@@ -505,6 +505,57 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $result | Should -Not -BeNullOrEmpty
             }
         }
+
+        Context -Name 'ReverseDSC Tests - Export with Condition Sets' -Fixture {
+            BeforeAll {
+                $Global:CurrentModeIsExport = $true
+                $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
+                $testParams = @{
+                    Credential = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaPolicyPermissionGrantPolicy -MockWith {
+                    if ($All)
+                    {
+                        return @(
+                            @{
+                                Id          = 'microsoft-all-application-permissions'
+                                DisplayName = 'All application permissions, for any client app'
+                                Description = 'Includes all application permissions for all APIs.'
+                                Includes    = @(
+                                    @{
+                                        Id                                          = 'include-1'
+                                        PermissionType                              = 'application'
+                                        PermissionClassification                    = 'all'
+                                        ClientApplicationIds                        = @('all')
+                                        ClientApplicationPublisherIds               = @('all')
+                                        ClientApplicationTenantIds                  = @('all')
+                                        ClientApplicationsFromVerifiedPublisherOnly = $false
+                                        ResourceApplication                         = 'any'
+                                        Permissions                                 = @('all')
+                                    }
+                                )
+                                Excludes    = @(
+                                    @{
+                                        Id                   = 'exclude-1'
+                                        PermissionType       = 'application'
+                                        ClientApplicationIds = @('all')
+                                        ResourceApplication  = 'any'
+                                        Permissions          = @('all')
+                                    }
+                                )
+                            }
+                        )
+                    }
+                    return $null
+                }
+            }
+
+            It 'Should Reverse Engineer resource with condition sets from the Export method' {
+                $result = Export-TargetResource @testParams
+                $result | Should -Not -BeNullOrEmpty
+            }
+        }
     }
 }
 
