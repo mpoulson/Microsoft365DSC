@@ -922,6 +922,194 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name 'Test-ConditionSetsEqual ignores Id for content-based matching' -Fixture {
+            It 'Should return true when condition sets match by content but have different Ids' {
+                $set1 = @{
+                    PermissionType           = 'delegated'
+                    PermissionClassification = 'all'
+                    ClientApplicationIds     = @('all')
+                    Permissions              = @('User.Read')
+                    ResourceApplication      = 'Microsoft Graph'
+                }
+
+                $set2 = @{
+                    Id                       = 'auto-generated-guid'
+                    PermissionType           = 'delegated'
+                    PermissionClassification = 'all'
+                    ClientApplicationIds     = @('all')
+                    Permissions              = @('User.Read')
+                    ResourceApplication      = 'Microsoft Graph'
+                }
+
+                Test-ConditionSetsEqual -ConditionSet1 $set1 -ConditionSet2 $set2 | Should -Be $true
+            }
+
+            It 'Should return true when both have Ids but content matches' {
+                $set1 = @{
+                    Id                       = 'id-1'
+                    PermissionType           = 'delegated'
+                    ClientApplicationIds     = @('all')
+                    Permissions              = @('User.Read')
+                }
+
+                $set2 = @{
+                    Id                       = 'id-2'
+                    PermissionType           = 'delegated'
+                    ClientApplicationIds     = @('all')
+                    Permissions              = @('User.Read')
+                }
+
+                Test-ConditionSetsEqual -ConditionSet1 $set1 -ConditionSet2 $set2 | Should -Be $true
+            }
+
+            It 'Should return false when content differs even with same Id' {
+                $set1 = @{
+                    Id             = 'same-id'
+                    PermissionType = 'delegated'
+                }
+
+                $set2 = @{
+                    Id             = 'same-id'
+                    PermissionType = 'application'
+                }
+
+                Test-ConditionSetsEqual -ConditionSet1 $set1 -ConditionSet2 $set2 | Should -Be $false
+            }
+        }
+
+        Context -Name 'Set-TargetResource uses content-based matching for includes' -Fixture {
+            It 'Should match desired include without Id to current include with Id via Test-ConditionSetsEqual' {
+                # Simulate: desired state has no Id (like real DSC config CIM instances)
+                $desiredInclude = @{
+                    PermissionType                              = 'delegated'
+                    PermissionClassification                    = 'all'
+                    ClientApplicationIds                        = @('all')
+                    ClientApplicationPublisherIds               = @('all')
+                    ClientApplicationTenantIds                  = @('all')
+                    ClientApplicationsFromVerifiedPublisherOnly = $false
+                    Permissions                                 = @('User.Read')
+                    ResourceApplication                         = 'Microsoft Graph'
+                }
+
+                # Simulate: current state has auto-generated Id from Graph API
+                # and uses GUIDs for ResourceApplication and Permissions
+                $currentInclude = @{
+                    Id                                          = 'a83c7b01-2f79-4200-945a-fcd91cb8e083'
+                    PermissionType                              = 'delegated'
+                    PermissionClassification                    = 'all'
+                    ClientApplicationIds                        = @('all')
+                    ClientApplicationPublisherIds               = @('all')
+                    ClientApplicationTenantIds                  = @('all')
+                    ClientApplicationsFromVerifiedPublisherOnly = $false
+                    Permissions                                 = @('e1fe6dd8-ba31-4d61-89e7-88639da4683d')
+                    ResourceApplication                         = '00000003-0000-0000-c000-000000000000'
+                }
+
+                # This should return true because both resolve to the same display names
+                # and Id is skipped during comparison
+                Test-ConditionSetsEqual -ConditionSet1 $desiredInclude -ConditionSet2 $currentInclude | Should -Be $true
+            }
+
+            It 'Should match multiple desired includes without Ids to current includes with Ids' {
+                $desiredIncludes = @(
+                    @{
+                        PermissionType           = 'delegated'
+                        PermissionClassification = 'all'
+                        ClientApplicationIds     = @('all')
+                        Permissions              = @('User.Read')
+                        ResourceApplication      = 'Microsoft Graph'
+                    },
+                    @{
+                        PermissionType           = 'application'
+                        PermissionClassification = 'all'
+                        ClientApplicationIds     = @('all')
+                        Permissions              = @('User.Read.All')
+                        ResourceApplication      = 'Microsoft Graph'
+                    }
+                )
+
+                $currentIncludes = @(
+                    @{
+                        Id                       = 'a83c7b01-guid-1'
+                        PermissionType           = 'delegated'
+                        PermissionClassification = 'all'
+                        ClientApplicationIds     = @('all')
+                        Permissions              = @('e1fe6dd8-ba31-4d61-89e7-88639da4683d')
+                        ResourceApplication      = '00000003-0000-0000-c000-000000000000'
+                    },
+                    @{
+                        Id                       = '05eada6b-guid-2'
+                        PermissionType           = 'application'
+                        PermissionClassification = 'all'
+                        ClientApplicationIds     = @('all')
+                        Permissions              = @('df021288-bdef-4463-88db-98f22de89214')
+                        ResourceApplication      = '00000003-0000-0000-c000-000000000000'
+                    }
+                )
+
+                # Simulate the content-based matching loop from Set-TargetResource
+                $matchedCurrentIds = @()
+                foreach ($desired in $desiredIncludes)
+                {
+                    foreach ($current in $currentIncludes)
+                    {
+                        if ($current.Id -notin $matchedCurrentIds -and
+                            (Test-ConditionSetsEqual -ConditionSet1 $desired -ConditionSet2 $current))
+                        {
+                            $matchedCurrentIds += $current.Id
+                            break
+                        }
+                    }
+                }
+
+                # All current includes should be matched
+                $matchedCurrentIds.Count | Should -Be 2
+                $matchedCurrentIds | Should -Contain 'a83c7b01-guid-1'
+                $matchedCurrentIds | Should -Contain '05eada6b-guid-2'
+            }
+
+            It 'Should detect unmatched desired includes when content differs' {
+                $desiredIncludes = @(
+                    @{
+                        PermissionType           = 'delegated'
+                        PermissionClassification = 'all'
+                        ClientApplicationIds     = @('all')
+                        Permissions              = @('User.Read', 'openid')
+                        ResourceApplication      = 'Microsoft Graph'
+                    }
+                )
+
+                $currentIncludes = @(
+                    @{
+                        Id                       = 'existing-guid'
+                        PermissionType           = 'delegated'
+                        PermissionClassification = 'all'
+                        ClientApplicationIds     = @('all')
+                        Permissions              = @('e1fe6dd8-ba31-4d61-89e7-88639da4683d')
+                        ResourceApplication      = '00000003-0000-0000-c000-000000000000'
+                    }
+                )
+
+                # The desired has 2 permissions, current has 1 - should NOT match
+                $matchedCurrentIds = @()
+                foreach ($desired in $desiredIncludes)
+                {
+                    foreach ($current in $currentIncludes)
+                    {
+                        if ($current.Id -notin $matchedCurrentIds -and
+                            (Test-ConditionSetsEqual -ConditionSet1 $desired -ConditionSet2 $current))
+                        {
+                            $matchedCurrentIds += $current.Id
+                            break
+                        }
+                    }
+                }
+
+                # No match should be found since permissions differ
+                $matchedCurrentIds.Count | Should -Be 0
+            }
+        }
+
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
