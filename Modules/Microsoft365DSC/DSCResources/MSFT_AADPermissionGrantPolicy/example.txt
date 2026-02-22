@@ -1,0 +1,35 @@
+$policy = New-MgBetaPolicyPermissionGrantPolicy `
+  -Id "foo-bar-consent-policy" `
+  -DisplayName "Foo Bar Consent Policy" `
+  -Description "Allows admin consent for all Microsoft Graph permissions on all apps"
+
+New-MgBetaPolicyPermissionGrantPolicyInclude `
+  -PermissionGrantPolicyId "foo-bar-consent-policy" `
+  -BodyParameter @{
+      permissionType       = "Delegated"
+      resourceApplication  = "00000003-0000-0000-c000-000000000000"
+      permissionIds        = @("*")
+  }
+
+
+New-MgBetaPolicyPermissionGrantPolicyInclude `
+  -PermissionGrantPolicyId "foo-bar-consent-policy" `
+  -BodyParameter @{
+      permissionType       = "Application"
+      resourceApplication  = "00000003-0000-0000-c000-000000000000"
+      permissionIds        = @("*")
+  }
+
+
+$group = Get-MgGroup -Filter "displayName eq 'sg-foo'"
+
+Update-MgBetaPolicyPermissionGrantPolicy `
+  -PermissionGrantPolicyId $policy.Id `
+  -BodyParameter @{
+      appliesTo = @(
+          @{
+              id   = $group.Id
+              type = "Group"
+          }
+      )
+  }
