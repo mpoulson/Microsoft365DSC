@@ -61,6 +61,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MgBetaPolicyPermissionGrantPolicyExclude -MockWith {
             }
 
+            Mock -CommandName Get-MgServicePrincipal -MockWith {
+                return @{
+                    AppId                  = '00000003-0000-0000-c000-000000000000'
+                    Oauth2PermissionScopes = @(
+                        @{ Id = 'e1fe6dd8-ba31-4d61-89e7-88639da4683d'; Value = 'User.Read' }
+                        @{ Id = '37f7f235-527c-4136-accd-4a02d197296e'; Value = 'openid' }
+                        @{ Id = '14dad69e-099b-42c9-810b-d002981feec1'; Value = 'profile' }
+                    )
+                    AppRoles               = @(
+                        @{ Id = 'df021288-bdef-4463-88db-98f22de89214'; Value = 'User.Read.All' }
+                        @{ Id = '19dbc75e-c2e2-444c-a770-ec596d83d9ad'; Value = 'Directory.Read.All' }
+                    )
+                }
+            }
+
             Mock -CommandName Get-MgBetaPolicyPermissionGrantPolicy -MockWith {
                 if ($All)
                 {
@@ -444,7 +459,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Id                   = 'test-id'
                     PermissionType       = 'delegated'
                     ClientApplicationIds = @('all')
-                    Permissions          = @('User.Read')
+                    Permissions          = @('all')
                     ResourceApplication  = 'any'
                 }
 
@@ -465,6 +480,87 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $result = Get-PermissionGrantConditionSetAsParameters -ConditionSet $conditionSet
 
                 $result.ContainsKey('ClientApplicationIds') | Should -Be $false
+            }
+
+            It 'Should normalize asterisk wildcard to all for array properties' {
+                $conditionSet = [PSCustomObject]@{
+                    Id                            = 'test-id'
+                    PermissionType                = 'delegated'
+                    ClientApplicationIds          = @('*')
+                    ClientApplicationPublisherIds = @('*')
+                    ClientApplicationTenantIds    = @('*')
+                    Permissions                   = @('*')
+                    ResourceApplication           = 'any'
+                }
+
+                $result = Get-PermissionGrantConditionSetAsParameters -ConditionSet $conditionSet
+
+                $result.ClientApplicationIds | Should -Be @('all')
+                $result.ClientApplicationPublisherIds | Should -Be @('all')
+                $result.ClientApplicationTenantIds | Should -Be @('all')
+                $result.Permissions | Should -Be @('all')
+            }
+
+            It 'Should normalize asterisk to any for ResourceApplication' {
+                $conditionSet = [PSCustomObject]@{
+                    Id                  = 'test-id'
+                    PermissionType      = 'delegated'
+                    Permissions         = @('all')
+                    ResourceApplication = '*'
+                }
+
+                $result = Get-PermissionGrantConditionSetAsParameters -ConditionSet $conditionSet
+
+                $result.ResourceApplication | Should -Be 'any'
+            }
+        }
+
+        Context -Name 'Complex Scenario - Helper function ConvertTo-PermissionGuid' -Fixture {
+            It 'Should pass through wildcard all as all' {
+                $result = ConvertTo-PermissionGuid -PermissionName 'all'
+                $result | Should -Be 'all'
+            }
+
+            It 'Should convert asterisk wildcard to all' {
+                $result = ConvertTo-PermissionGuid -PermissionName '*'
+                $result | Should -Be 'all'
+            }
+
+            It 'Should convert any wildcard to all' {
+                $result = ConvertTo-PermissionGuid -PermissionName 'any'
+                $result | Should -Be 'all'
+            }
+
+            It 'Should pass through existing GUIDs unchanged' {
+                $guid = 'e1fe6dd8-ba31-4d61-89e7-88639da4683d'
+                $result = ConvertTo-PermissionGuid -PermissionName $guid
+                $result | Should -Be $guid
+            }
+
+            It 'Should resolve delegated permission name to GUID' {
+                $result = ConvertTo-PermissionGuid -PermissionName 'User.Read' `
+                    -ResourceApplicationId '00000003-0000-0000-c000-000000000000' `
+                    -PermissionType 'delegated'
+                $result | Should -Be 'e1fe6dd8-ba31-4d61-89e7-88639da4683d'
+            }
+
+            It 'Should resolve application permission name to GUID' {
+                $result = ConvertTo-PermissionGuid -PermissionName 'User.Read.All' `
+                    -ResourceApplicationId '00000003-0000-0000-c000-000000000000' `
+                    -PermissionType 'application'
+                $result | Should -Be 'df021288-bdef-4463-88db-98f22de89214'
+            }
+
+            It 'Should return name when ResourceApplication is any' {
+                $result = ConvertTo-PermissionGuid -PermissionName 'User.Read' `
+                    -ResourceApplicationId 'any' `
+                    -PermissionType 'delegated'
+                $result | Should -Be 'User.Read'
+            }
+
+            It 'Should return name when ResourceApplication is not specified' {
+                $result = ConvertTo-PermissionGuid -PermissionName 'User.Read'
+                $result | Should -Be 'User.Read'
             }
         }
 
