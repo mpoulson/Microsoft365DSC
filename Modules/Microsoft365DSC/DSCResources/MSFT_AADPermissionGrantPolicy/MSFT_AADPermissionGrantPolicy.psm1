@@ -726,9 +726,17 @@ function ConvertTo-PermissionGuid
         return $PermissionName
     }
 
+    # Validate ResourceApplicationId is a valid GUID before using in filter
+    $appIdGuid = [System.Guid]::Empty
+    if (-not [System.Guid]::TryParse($ResourceApplicationId, [ref]$appIdGuid))
+    {
+        Write-Verbose -Message "ResourceApplication '$ResourceApplicationId' is not a valid GUID."
+        return $PermissionName
+    }
+
     try
     {
-        $servicePrincipal = Get-MgServicePrincipal -Filter "AppId eq '$ResourceApplicationId'" -ErrorAction SilentlyContinue
+        $servicePrincipal = Get-MgServicePrincipal -Filter "AppId eq '$($appIdGuid.ToString())'" -ErrorAction SilentlyContinue
 
         if ($null -eq $servicePrincipal)
         {
@@ -947,13 +955,19 @@ function Get-PermissionGrantConditionSetAsParameters
     # Convert permission names to GUIDs and normalize wildcards
     if ($null -ne $ConditionSet.Permissions -and $ConditionSet.Permissions.Count -gt 0)
     {
+        $resourceAppValue = $ConditionSet.ResourceApplication
+        if ($resourceAppValue -eq '*')
+        {
+            $resourceAppValue = 'any'
+        }
+
         $resolvedPermissions = @()
         foreach ($permission in $ConditionSet.Permissions)
         {
             $resolvedPermissions += ConvertTo-PermissionGuid `
                 -PermissionName $permission `
-                -ResourceApplicationId $params['ResourceApplication'] `
-                -PermissionType $params['PermissionType']
+                -ResourceApplicationId $resourceAppValue `
+                -PermissionType $ConditionSet.PermissionType
         }
         $params.Add('Permissions', [string[]]$resolvedPermissions)
     }
