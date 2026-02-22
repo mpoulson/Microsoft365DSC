@@ -562,6 +562,26 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $result = ConvertTo-PermissionGuid -PermissionName 'User.Read'
                 $result | Should -Be 'User.Read'
             }
+
+            It 'Should cache service principal and only call Get-MgServicePrincipal once for same ResourceApplication' {
+                $Script:ServicePrincipalCache = @{}
+
+                $result1 = ConvertTo-PermissionGuid -PermissionName 'User.Read' `
+                    -ResourceApplicationId '00000003-0000-0000-c000-000000000000' `
+                    -PermissionType 'delegated'
+                $result2 = ConvertTo-PermissionGuid -PermissionName 'openid' `
+                    -ResourceApplicationId '00000003-0000-0000-c000-000000000000' `
+                    -PermissionType 'delegated'
+                $result3 = ConvertTo-PermissionGuid -PermissionName 'User.Read.All' `
+                    -ResourceApplicationId '00000003-0000-0000-c000-000000000000' `
+                    -PermissionType 'application'
+
+                $result1 | Should -Be 'e1fe6dd8-ba31-4d61-89e7-88639da4683d'
+                $result2 | Should -Be '37f7f235-527c-4136-accd-4a02d197296e'
+                $result3 | Should -Be 'df021288-bdef-4463-88db-98f22de89214'
+
+                Should -Invoke -CommandName 'Get-MgServicePrincipal' -Exactly 1
+            }
         }
 
         Context -Name 'ReverseDSC Tests' -Fixture {

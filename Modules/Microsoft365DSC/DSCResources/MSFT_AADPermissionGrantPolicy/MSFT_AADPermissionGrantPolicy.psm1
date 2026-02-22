@@ -1,5 +1,8 @@
 Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADPermissionGrantPolicy'
 
+# Cache for service principal lookups to avoid redundant Graph API calls
+$Script:ServicePrincipalCache = @{}
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -225,6 +228,9 @@ function Set-TargetResource
 
     try
     {
+        # Clear the service principal cache for fresh lookups
+        $Script:ServicePrincipalCache = @{}
+
         $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
 
@@ -736,7 +742,17 @@ function ConvertTo-PermissionGuid
 
     try
     {
-        $servicePrincipal = Get-MgServicePrincipal -Filter "AppId eq '$($appIdGuid.ToString())'" -ErrorAction SilentlyContinue
+        $cacheKey = $appIdGuid.ToString()
+        if ($Script:ServicePrincipalCache.ContainsKey($cacheKey))
+        {
+            Write-Verbose -Message "Using cached service principal for ResourceApplication '$ResourceApplicationId'."
+            $servicePrincipal = $Script:ServicePrincipalCache[$cacheKey]
+        }
+        else
+        {
+            $servicePrincipal = Get-MgServicePrincipal -Filter "AppId eq '$cacheKey'" -ErrorAction SilentlyContinue
+            $Script:ServicePrincipalCache[$cacheKey] = $servicePrincipal
+        }
 
         if ($null -eq $servicePrincipal)
         {
