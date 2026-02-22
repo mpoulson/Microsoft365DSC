@@ -1,7 +1,7 @@
 Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADPermissionGrantPolicy'
 
 # Cache for service principal lookups to avoid redundant Graph API calls
-$Script:ServicePrincipalCache = @{}
+$Script:ServicePrincipalCache = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
 
 function Get-TargetResource
 {
@@ -229,7 +229,7 @@ function Set-TargetResource
     try
     {
         # Clear the service principal cache for fresh lookups
-        $Script:ServicePrincipalCache = @{}
+        $Script:ServicePrincipalCache = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
 
         $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
