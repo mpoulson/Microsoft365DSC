@@ -980,6 +980,151 @@ function ConvertTo-PermissionGuid
 
 <#
 .SYNOPSIS
+Converts a permission GUID to its display name.
+
+.DESCRIPTION
+This helper function takes a permission GUID and resolves it to its display name
+by looking up the service principal's Oauth2PermissionScopes (delegated) and AppRoles (application).
+Values that are already display names (non-GUID strings) and wildcard values ('all', '*', 'any')
+are returned unchanged.
+
+.PARAMETER PermissionId
+The permission GUID to resolve.
+
+.PARAMETER ResourceApplicationId
+The AppId GUID of the resource application (service principal) that defines the permission.
+Required for resolution. If not provided or set to a wildcard, the original value is returned.
+
+.PARAMETER PermissionType
+The type of permission: 'delegated' or 'application'. Used to search the correct collection first.
+
+.OUTPUTS
+System.String
+Returns the permission display name, or the original value if it cannot be resolved.
+
+.EXAMPLE
+$name = ConvertTo-PermissionName -PermissionId 'e1fe6dd8-ba31-4d61-89e7-88639da4683d' -ResourceApplicationId '00000003-0000-0000-c000-000000000000' -PermissionType 'delegated'
+# Returns 'User.Read'
+#>
+function ConvertTo-PermissionName
+{
+    [CmdletBinding()]
+    [OutputType([System.String])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $PermissionId,
+
+        [Parameter()]
+        [System.String]
+        $ResourceApplicationId,
+
+        [Parameter()]
+        [System.String]
+        $PermissionType
+    )
+
+    # Pass through wildcard values
+    if ($PermissionId -eq 'all' -or $PermissionId -eq '*' -or $PermissionId -eq 'any')
+    {
+        return $PermissionId
+    }
+
+    # If not a GUID, assume it is already a display name
+    $guidResult = [System.Guid]::Empty
+    if (-not [System.Guid]::TryParse($PermissionId, [ref]$guidResult))
+    {
+        return $PermissionId
+    }
+
+    # Cannot resolve without a specific resource application
+    if ([System.String]::IsNullOrEmpty($ResourceApplicationId) -or
+        $ResourceApplicationId -eq 'any' -or $ResourceApplicationId -eq '*')
+    {
+        Write-Verbose -Message "Cannot resolve permission GUID '$PermissionId' without a specific ResourceApplication."
+        return $PermissionId
+    }
+
+    # If ResourceApplicationId is not a GUID, try to resolve it as a service principal name
+    $appIdGuid = [System.Guid]::Empty
+    if (-not [System.Guid]::TryParse($ResourceApplicationId, [ref]$appIdGuid))
+    {
+        $resolvedId = Resolve-ResourceApplicationId -ResourceApplication $ResourceApplicationId
+        if (-not [System.Guid]::TryParse($resolvedId, [ref]$appIdGuid))
+        {
+            Write-Verbose -Message "ResourceApplication '$ResourceApplicationId' could not be resolved to a valid GUID."
+            return $PermissionId
+        }
+        $ResourceApplicationId = $resolvedId
+    }
+
+    try
+    {
+        $cacheKey = $appIdGuid.ToString()
+        if ($Script:ServicePrincipalCache.ContainsKey($cacheKey))
+        {
+            Write-Verbose -Message "Using cached service principal for ResourceApplication '$ResourceApplicationId'."
+            $servicePrincipal = $Script:ServicePrincipalCache[$cacheKey]
+        }
+        else
+        {
+            $servicePrincipal = Get-MgServicePrincipal -Filter "AppId eq '$cacheKey'" -ErrorAction SilentlyContinue
+            $Script:ServicePrincipalCache[$cacheKey] = $servicePrincipal
+        }
+
+        if ($null -eq $servicePrincipal)
+        {
+            Write-Verbose -Message "Service principal for ResourceApplication '$ResourceApplicationId' not found."
+            return $PermissionId
+        }
+
+        if ($PermissionType -eq 'delegated')
+        {
+            $scope = $servicePrincipal.Oauth2PermissionScopes | Where-Object { $_.Id -eq $guidResult }
+            if ($null -ne $scope)
+            {
+                Write-Verbose -Message "Resolved delegated permission GUID '$PermissionId' to name '$($scope.Value)'."
+                return $scope.Value
+            }
+        }
+        elseif ($PermissionType -eq 'application')
+        {
+            $role = $servicePrincipal.AppRoles | Where-Object { $_.Id -eq $guidResult }
+            if ($null -ne $role)
+            {
+                Write-Verbose -Message "Resolved application permission GUID '$PermissionId' to name '$($role.Value)'."
+                return $role.Value
+            }
+        }
+
+        # Try both collections if PermissionType is not specified or not found
+        $scope = $servicePrincipal.Oauth2PermissionScopes | Where-Object { $_.Id -eq $guidResult }
+        if ($null -ne $scope)
+        {
+            Write-Verbose -Message "Resolved permission GUID '$PermissionId' to name '$($scope.Value)' from Oauth2PermissionScopes."
+            return $scope.Value
+        }
+
+        $role = $servicePrincipal.AppRoles | Where-Object { $_.Id -eq $guidResult }
+        if ($null -ne $role)
+        {
+            Write-Verbose -Message "Resolved permission GUID '$PermissionId' to name '$($role.Value)' from AppRoles."
+            return $role.Value
+        }
+
+        Write-Verbose -Message "Permission GUID '$PermissionId' not found in service principal for '$ResourceApplicationId'."
+    }
+    catch
+    {
+        Write-Verbose -Message "Error resolving permission GUID '$PermissionId': $_"
+    }
+
+    return $PermissionId
+}
+
+<#
+.SYNOPSIS
 Converts a permission grant condition set object to a hashtable representation.
 
 .DESCRIPTION
@@ -1042,11 +1187,6 @@ function Get-PermissionGrantConditionSetAsHashtable
         $result.Add('PermissionClassification', $ConditionSet.PermissionClassification)
     }
 
-    if ($null -ne $ConditionSet.Permissions)
-    {
-        $result.Add('Permissions', [string[]]$ConditionSet.Permissions)
-    }
-
     if ($null -ne $ConditionSet.PermissionType)
     {
         $result.Add('PermissionType', $ConditionSet.PermissionType)
@@ -1056,6 +1196,19 @@ function Get-PermissionGrantConditionSetAsHashtable
     {
         $resolvedName = Resolve-ResourceApplicationName -ResourceApplication $ConditionSet.ResourceApplication
         $result.Add('ResourceApplication', $resolvedName)
+    }
+
+    if ($null -ne $ConditionSet.Permissions)
+    {
+        $resolvedPermissions = @()
+        foreach ($permission in $ConditionSet.Permissions)
+        {
+            $resolvedPermissions += ConvertTo-PermissionName `
+                -PermissionId $permission `
+                -ResourceApplicationId $ConditionSet.ResourceApplication `
+                -PermissionType $ConditionSet.PermissionType
+        }
+        $result.Add('Permissions', [string[]]$resolvedPermissions)
     }
 
     return $result
