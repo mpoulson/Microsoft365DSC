@@ -503,8 +503,31 @@ function Test-TargetResource
 
     Write-Verbose -Message "Testing configuration of Entra Permission Grant Policy {$Id}"
 
+    # Normalize ResourceApplication in desired values so that both name and GUID inputs
+    # compare correctly against the current values (which use SP display names).
+    $postProcessingScript = {
+        param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+
+        foreach ($propertyName in @('Includes', 'Excludes'))
+        {
+            if ($null -ne $ValuesToCheck[$propertyName])
+            {
+                $normalizedSets = @()
+                foreach ($conditionSet in $ValuesToCheck[$propertyName])
+                {
+                    $normalizedSets += Get-PermissionGrantConditionSetAsHashtable -ConditionSet $conditionSet
+                }
+                $ValuesToCheck[$propertyName] = [Array]$normalizedSets
+                $DesiredValues[$propertyName] = [Array]$normalizedSets
+            }
+        }
+
+        return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+    }
+
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+        -PostProcessing $postProcessingScript
 
     Write-Verbose -Message "Test-TargetResource returned $result"
 
@@ -667,6 +690,152 @@ function Export-TargetResource
 
 <#
 .SYNOPSIS
+Resolves a ResourceApplication AppId GUID to the service principal display name.
+
+.DESCRIPTION
+This helper function takes a ResourceApplication value (typically an AppId GUID returned by the
+Microsoft Graph API) and resolves it to the service principal's display name. Wildcard values
+('any', '*') and values that are already names (not GUIDs) are returned unchanged.
+Uses the module-scoped ServicePrincipalCache for performance.
+
+.PARAMETER ResourceApplication
+The ResourceApplication value to resolve. Can be an AppId GUID, a display name, or a wildcard.
+
+.OUTPUTS
+System.String
+Returns the service principal display name, or the original value if it cannot be resolved.
+
+.EXAMPLE
+$name = Resolve-ResourceApplicationName -ResourceApplication '00000003-0000-0000-c000-000000000000'
+# Returns 'Microsoft Graph'
+#>
+function Resolve-ResourceApplicationName
+{
+    [CmdletBinding()]
+    [OutputType([System.String])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $ResourceApplication
+    )
+
+    # Pass through wildcards
+    if ($ResourceApplication -eq 'any' -or $ResourceApplication -eq '*')
+    {
+        return $ResourceApplication
+    }
+
+    # If not a GUID, assume it is already a display name
+    $guidResult = [System.Guid]::Empty
+    if (-not [System.Guid]::TryParse($ResourceApplication, [ref]$guidResult))
+    {
+        return $ResourceApplication
+    }
+
+    try
+    {
+        $cacheKey = $guidResult.ToString()
+        if ($Script:ServicePrincipalCache.ContainsKey($cacheKey))
+        {
+            $servicePrincipal = $Script:ServicePrincipalCache[$cacheKey]
+        }
+        else
+        {
+            $servicePrincipal = Get-MgServicePrincipal -Filter "AppId eq '$cacheKey'" -ErrorAction SilentlyContinue
+            $Script:ServicePrincipalCache[$cacheKey] = $servicePrincipal
+        }
+
+        if ($null -ne $servicePrincipal)
+        {
+            Write-Verbose -Message "Resolved ResourceApplication '$ResourceApplication' to name '$($servicePrincipal.DisplayName)'."
+            return $servicePrincipal.DisplayName
+        }
+    }
+    catch
+    {
+        Write-Verbose -Message "Error resolving ResourceApplication '$ResourceApplication': $_"
+    }
+
+    return $ResourceApplication
+}
+
+<#
+.SYNOPSIS
+Resolves a ResourceApplication display name to the service principal AppId GUID.
+
+.DESCRIPTION
+This helper function takes a ResourceApplication value (a service principal display name or AppId GUID)
+and resolves it to the AppId GUID. Values that are already GUIDs and wildcard values ('any', '*')
+are returned unchanged. The resolved service principal is added to the module-scoped
+ServicePrincipalCache for subsequent lookups.
+
+.PARAMETER ResourceApplication
+The ResourceApplication value to resolve. Can be a display name, an AppId GUID, or a wildcard.
+
+.OUTPUTS
+System.String
+Returns the AppId GUID, or the original value if it cannot be resolved.
+
+.EXAMPLE
+$appId = Resolve-ResourceApplicationId -ResourceApplication 'Microsoft Graph'
+# Returns '00000003-0000-0000-c000-000000000000'
+#>
+function Resolve-ResourceApplicationId
+{
+    [CmdletBinding()]
+    [OutputType([System.String])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $ResourceApplication
+    )
+
+    # Pass through wildcards
+    if ($ResourceApplication -eq 'any' -or $ResourceApplication -eq '*')
+    {
+        return $ResourceApplication
+    }
+
+    # If already a GUID, return as-is
+    $guidResult = [System.Guid]::Empty
+    if ([System.Guid]::TryParse($ResourceApplication, [ref]$guidResult))
+    {
+        return $ResourceApplication
+    }
+
+    try
+    {
+        # Look up the service principal by display name
+        $escapedName = $ResourceApplication -replace "'", "''"
+        $servicePrincipal = Get-MgServicePrincipal -Filter "DisplayName eq '$escapedName'" -ErrorAction SilentlyContinue
+
+        if ($null -ne $servicePrincipal)
+        {
+            # Handle array result (multiple SPs with same name)
+            if ($servicePrincipal -is [Array])
+            {
+                Write-Verbose -Message "Multiple service principals found for DisplayName '$ResourceApplication'. Using the first match."
+                $servicePrincipal = $servicePrincipal[0]
+            }
+
+            $Script:ServicePrincipalCache[$servicePrincipal.AppId] = $servicePrincipal
+            Write-Verbose -Message "Resolved ResourceApplication name '$ResourceApplication' to AppId '$($servicePrincipal.AppId)'."
+            return $servicePrincipal.AppId
+        }
+    }
+    catch
+    {
+        Write-Verbose -Message "Error resolving ResourceApplication name '$ResourceApplication': $_"
+    }
+
+    Write-Verbose -Message "Could not resolve ResourceApplication name '$ResourceApplication' to an AppId."
+    return $ResourceApplication
+}
+
+<#
+.SYNOPSIS
 Converts a permission display name to its GUID using the resource application's service principal.
 
 .DESCRIPTION
@@ -732,12 +901,17 @@ function ConvertTo-PermissionGuid
         return $PermissionName
     }
 
-    # Validate ResourceApplicationId is a valid GUID before using in filter
+    # If ResourceApplicationId is not a GUID, try to resolve it as a service principal name
     $appIdGuid = [System.Guid]::Empty
     if (-not [System.Guid]::TryParse($ResourceApplicationId, [ref]$appIdGuid))
     {
-        Write-Verbose -Message "ResourceApplication '$ResourceApplicationId' is not a valid GUID."
-        return $PermissionName
+        $resolvedId = Resolve-ResourceApplicationId -ResourceApplication $ResourceApplicationId
+        if (-not [System.Guid]::TryParse($resolvedId, [ref]$appIdGuid))
+        {
+            Write-Verbose -Message "ResourceApplication '$ResourceApplicationId' could not be resolved to a valid GUID."
+            return $PermissionName
+        }
+        $ResourceApplicationId = $resolvedId
     }
 
     try
@@ -880,7 +1054,8 @@ function Get-PermissionGrantConditionSetAsHashtable
 
     if ($null -ne $ConditionSet.ResourceApplication)
     {
-        $result.Add('ResourceApplication', $ConditionSet.ResourceApplication)
+        $resolvedName = Resolve-ResourceApplicationName -ResourceApplication $ConditionSet.ResourceApplication
+        $result.Add('ResourceApplication', $resolvedName)
     }
 
     return $result
@@ -952,13 +1127,17 @@ function Get-PermissionGrantConditionSetAsParameters
         $params.Add('PermissionClassification', $ConditionSet.PermissionClassification)
     }
 
-    # Normalize ResourceApplication: '*' → 'any'
+    # Normalize ResourceApplication: '*' → 'any', name → GUID
     if (-not [string]::IsNullOrEmpty($ConditionSet.ResourceApplication))
     {
         $resourceApp = $ConditionSet.ResourceApplication
         if ($resourceApp -eq '*')
         {
             $resourceApp = 'any'
+        }
+        else
+        {
+            $resourceApp = Resolve-ResourceApplicationId -ResourceApplication $resourceApp
         }
         $params.Add('ResourceApplication', $resourceApp)
     }
