@@ -808,13 +808,15 @@ function Resolve-ResourceApplicationId
     try
     {
         # Look up the service principal by display name
-        $servicePrincipal = Get-MgServicePrincipal -Filter "DisplayName eq '$ResourceApplication'" -ErrorAction SilentlyContinue
+        $escapedName = $ResourceApplication -replace "'", "''"
+        $servicePrincipal = Get-MgServicePrincipal -Filter "DisplayName eq '$escapedName'" -ErrorAction SilentlyContinue
 
         if ($null -ne $servicePrincipal)
         {
             # Handle array result (multiple SPs with same name)
             if ($servicePrincipal -is [Array])
             {
+                Write-Verbose -Message "Multiple service principals found for DisplayName '$ResourceApplication'. Using the first match."
                 $servicePrincipal = $servicePrincipal[0]
             }
 
