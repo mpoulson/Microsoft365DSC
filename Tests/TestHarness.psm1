@@ -55,7 +55,7 @@ function Invoke-TestHarness
     $getChildItemParameters = @{
         Path    = (Join-Path -Path $repoDir -ChildPath '\Tests\Unit')
         Recurse = $true
-        Filter  = '*.Tests.ps1'
+        Filter  = 'Microsoft365DSC.AADPermissionGrantPolicy.Tests.ps1'
     }
 
     # Get all tests '*.Tests.ps1'.

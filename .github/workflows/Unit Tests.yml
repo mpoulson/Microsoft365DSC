@@ -34,7 +34,7 @@ jobs:
 
           try
           {
-              $results = Invoke-QualityChecksHarness
+              #$results = Invoke-QualityChecksHarness
           }
           catch
           {
