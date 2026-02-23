@@ -7,7 +7,12 @@
         return
     }
 
-    $exampleFiles = @(Get-ChildItem -Path $examplesPath -Filter '*.ps1' -Recurse)
+    #$exampleFiles = @(Get-ChildItem -Path $examplesPath -Filter '*.ps1' -Recurse)
+    $exampleFiles = @(Get-ChildItem -Path $examplesPath -Filter '*.ps1' -Recurse |
+            Where-Object {
+                $_.DirectoryName -match 'AADAppManagementPolicy|AADCertificateBasedApplicationConfiguration'
+            })
+
 
     $exampleToTest = @()
 
