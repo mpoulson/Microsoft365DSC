@@ -57,9 +57,16 @@ function Invoke-TestHarness
         Recurse = $true
         Filter  = '*.Tests.ps1'
     }
+    $files = Get-ChildItem @getChildItemParameters |
+        Where-Object {
+            $_.Name -in @(
+                'Microsoft365DSC.AADAppManagementPolicy.Tests.ps1',
+                'Microsoft365DSC.AADCertificateBasedApplicationConfiguration.Tests.ps1'
+            )
+        }
 
     # Get all tests '*.Tests.ps1'.
-    $commonTestFiles = Get-ChildItem @getChildItemParameters
+    $commonTestFiles = $files
 
     # Remove DscResource.Tests unit tests.
     $commonTestFiles = $commonTestFiles | Where-Object -FilterScript {
