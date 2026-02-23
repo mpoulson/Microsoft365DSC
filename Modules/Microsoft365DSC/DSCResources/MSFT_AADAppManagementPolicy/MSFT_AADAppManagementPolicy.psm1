@@ -664,11 +664,11 @@ function Set-TargetResource
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating new App Management Policy {$DisplayName} with:`r`n$(ConvertTo-Json $setParameters -Depth 10)"
-        New-MgBetaPolicyAppManagementPolicy @SetParameters
+        $newPolicy = New-MgBetaPolicyAppManagementPolicy @SetParameters
 
         if ($null -ne $AssignedApplications -and $AssignedApplications.Count -gt 0)
         {
-            Sync-AppPolicyAssignments -PolicyDisplayName $DisplayName -DesiredAssignments $AssignedApplications
+            Sync-AppPolicyAssignments -PolicyId $newPolicy.Id -DesiredAssignments $AssignedApplications
         }
     }
     # UPDATE
