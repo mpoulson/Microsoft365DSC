@@ -56,6 +56,8 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of Default App Management Policy"
+
     $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -246,6 +248,8 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    Write-Verbose -Message "Setting configuration of Default App Management Policy"
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies

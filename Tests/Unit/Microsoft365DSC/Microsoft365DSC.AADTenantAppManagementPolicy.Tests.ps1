@@ -53,7 +53,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 state = "enabled"
                             },
                             @{
-                                maxLifetime = "P90DT0H0M0S"
+                                maxLifetime = @{
+                                    Days    = 90
+                                    Hours   = 0
+                                    Minutes = 0
+                                    Seconds = 0
+                                }
                                 restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
                                 restrictionType = "passwordLifetime"
                                 state = "enabled"
@@ -64,7 +69,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 state = "enabled"
                             },
                             @{
-                                maxLifetime = "P90DT0H0M0S"
+                                maxLifetime = @{
+                                    Days    = 90
+                                    Hours   = 0
+                                    Minutes = 0
+                                    Seconds = 0
+                                }
                                 restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
                                 restrictionType = "symmetricKeyLifetime"
                                 state = "enabled"
@@ -96,6 +106,26 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
+            }
+        }
+
+        Context -Name "Get-TargetResource returns ApplicationRestrictions with maxLifetime converted to ISO 8601" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DisplayName         = "MyPolicy"
+                    Description         = "MyDescription"
+                    Ensure              = 'Present'
+                    Credential          = $Credential;
+                }
+            }
+
+            It 'Should return maxLifetime in ISO 8601 format from the Get method' {
+                $result = Get-TargetResource @testParams
+                $result.Ensure | Should -Be 'Present'
+                $result.ApplicationRestrictions.passwordCredentials | Should -HaveCount 4
+                $lifetimeCred = $result.ApplicationRestrictions.passwordCredentials | Where-Object { $_.restrictionType -eq 'passwordLifetime' }
+                $lifetimeCred | Should -Not -BeNullOrEmpty
+                $lifetimeCred.maxLifetime | Should -Be 'P90DT0H0M0S'
             }
         }
 
