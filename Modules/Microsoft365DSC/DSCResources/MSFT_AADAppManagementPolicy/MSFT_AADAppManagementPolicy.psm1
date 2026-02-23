@@ -77,6 +77,7 @@ function Get-TargetResource
     $nullResult.Ensure = 'Absent'
     try
     {
+        $isDefaultPolicy = $false
         if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
         {
             $instance = $Script:exportedInstances | Where-Object -FilterScript {$_.Id -eq $Id}
@@ -93,18 +94,39 @@ function Get-TargetResource
                 $instance = Get-MgBetaPolicyAppManagementPolicy | Where-Object -FilterScript {$_.DisplayName -eq $DisplayName}
             }
 
+            if ($null -eq $instance)
+            {
+                $defaultPolicy = Get-MgBetaPolicyDefaultAppManagementPolicy -ErrorAction SilentlyContinue
+                if ($null -ne $defaultPolicy -and
+                    ($defaultPolicy.DisplayName -eq $DisplayName -or
+                     (-not [System.String]::IsNullOrEmpty($Id) -and $defaultPolicy.Id -eq $Id)))
+                {
+                    $instance = $defaultPolicy
+                    $isDefaultPolicy = $true
+                }
+            }
         }
         if ($null -eq $instance)
         {
             return $nullResult
         }
 
+        # Determine the source of restrictions based on policy type.
+        # This also handles the export mode path where the instance comes from
+        # the cached list and the $isDefaultPolicy flag may not have been set above.
+        if ($null -ne $instance.ApplicationRestrictions)
+        {
+            $isDefaultPolicy = $true
+        }
+        $passwordCredentialsSource = if ($isDefaultPolicy) { $instance.ApplicationRestrictions.PasswordCredentials } else { $instance.Restrictions.PasswordCredentials }
+        $keyCredentialsSource = if ($isDefaultPolicy) { $instance.ApplicationRestrictions.KeyCredentials } else { $instance.Restrictions.KeyCredentials }
+
         $restrictionsValue = @{
             passwordCredentials     = @()
             keyCredentials          = @()
         }
 
-        foreach ($passwordCred in $instance.Restrictions.PasswordCredentials)
+        foreach ($passwordCred in $passwordCredentialsSource)
         {
             $newItem = @{
                 restrictForAppsCreatedAfterDateTime = $passwordCred.RestrictForAppsCreatedAfterDateTime.ToString("o")
@@ -119,7 +141,7 @@ function Get-TargetResource
             $restrictionsValue.passwordCredentials += $newItem
         }
 
-        foreach ($keyCred in $instance.Restrictions.KeyCredentials)
+        foreach ($keyCred in $keyCredentialsSource)
         {
             $newItem = @{
                 restrictForAppsCreatedAfterDateTime = $keyCred.RestrictForAppsCreatedAfterDateTime.ToString("o")
@@ -278,23 +300,59 @@ function Set-TargetResource
 
     $setParameters.Restrictions = $restrictionsValue
 
+    # Determine if the current instance is the default policy
+    $isDefaultPolicy = $false
+    $defaultPolicy = Get-MgBetaPolicyDefaultAppManagementPolicy -ErrorAction SilentlyContinue
+    if ($null -ne $defaultPolicy -and $null -ne $currentInstance.Id -and $currentInstance.Id -eq $defaultPolicy.Id)
+    {
+        $isDefaultPolicy = $true
+    }
+
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating new App Management Policy {$DisplayName} with:`r`n$(ConvertTo-Json $setParameters -Depth 10)"
-        New-MgBetaPolicyAppManagementPolicy @SetParameters
+        ### Using Invoke-MgGraphRequest because New-MgBetaPolicyAppManagementPolicy is broken
+        $graphBaseUri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl
+        $uri = $graphBaseUri + 'beta/policies/appManagementPolicies'
+        Invoke-MgGraphRequest -Method POST -Uri $uri -Body ($setParameters | ConvertTo-Json -Depth 10)
     }
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
-        Write-Verbose -Message "Updating App Management Policy {$DisplayName} with:`r`n$(ConvertTo-Json $setParameters -Depth 10)"
-        Update-MgBetaPolicyAppManagementPolicy @SetParameters -AppManagementPolicyId $currentInstance.Id
+        if ($isDefaultPolicy)
+        {
+            Write-Verbose -Message "Updating Default App Management Policy with:`r`n$(ConvertTo-Json $setParameters -Depth 10)"
+            $defaultParams = @{}
+            if ($setParameters.ContainsKey('Description'))
+            {
+                $defaultParams.Description = $setParameters.Description
+            }
+            if ($setParameters.ContainsKey('IsEnabled'))
+            {
+                $defaultParams.IsEnabled = $setParameters.IsEnabled
+            }
+            $defaultParams.ApplicationRestrictions = $setParameters.Restrictions
+            Update-MgBetaPolicyDefaultAppManagementPolicy @defaultParams
+        }
+        else
+        {
+            Write-Verbose -Message "Updating App Management Policy {$DisplayName} with:`r`n$(ConvertTo-Json $setParameters -Depth 10)"
+            Update-MgBetaPolicyAppManagementPolicy @SetParameters -AppManagementPolicyId $currentInstance.Id
+        }
     }
     # REMOVE
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
-        Write-Verbose -Message "Removing App Management Policy {$DisplayName}"
-        Remove-MgBetaPolicyAppManagementPolicy -AppManagementPolicyId $currentInstance.Id
+        if ($isDefaultPolicy)
+        {
+            Write-Warning -Message "The default App Management Policy cannot be removed."
+        }
+        else
+        {
+            Write-Verbose -Message "Removing App Management Policy {$DisplayName}"
+            Remove-MgBetaPolicyAppManagementPolicy -AppManagementPolicyId $currentInstance.Id
+        }
     }
 }
 
@@ -422,6 +480,12 @@ function Export-TargetResource
     {
         $Script:ExportMode = $true
         [array] $Script:exportedInstances = Get-MgBetaPolicyAppManagementPolicy -ErrorAction Stop
+
+        $defaultPolicy = Get-MgBetaPolicyDefaultAppManagementPolicy -ErrorAction SilentlyContinue
+        if ($null -ne $defaultPolicy)
+        {
+            $Script:exportedInstances = @($defaultPolicy) + $Script:exportedInstances
+        }
 
         $i = 1
         $dscContent = ''
