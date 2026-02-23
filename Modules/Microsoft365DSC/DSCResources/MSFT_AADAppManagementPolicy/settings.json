@@ -51,10 +51,8 @@
       "module": "Microsoft.Graph.Beta.Identity.SignIns",
       "cmdlets": [
         "Get-MgBetaPolicyAppManagementPolicy",
-        "Get-MgBetaPolicyDefaultAppManagementPolicy",
         "Remove-MgBetaPolicyAppManagementPolicy",
-        "Update-MgBetaPolicyAppManagementPolicy",
-        "Update-MgBetaPolicyDefaultAppManagementPolicy"
+        "Update-MgBetaPolicyAppManagementPolicy"
       ]
     }
   ]
