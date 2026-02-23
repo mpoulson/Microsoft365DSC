@@ -111,7 +111,9 @@ function Get-TargetResource
             return $nullResult
         }
 
-        # Determine the source of restrictions based on policy type
+        # Determine the source of restrictions based on policy type.
+        # This also handles the export mode path where the instance comes from
+        # the cached list and the $isDefaultPolicy flag may not have been set above.
         if ($null -ne $instance.ApplicationRestrictions)
         {
             $isDefaultPolicy = $true
