@@ -37,6 +37,15 @@ function Remove-MgBetaApplicationAppManagementPolicyByRef
     )
 }
 
+function Get-MgPolicyAppManagementPolicyApplyTo
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String] $AppManagementPolicyId
+    )
+}
+
 function Get-AzSentinelSetting
 {
     [CmdletBinding()]
