@@ -16,7 +16,7 @@ App management policies can reference certificate-based application configuratio
   - Multiple policies can reference the same configuration
   - The referenced configurations must exist before being referenced by a policy
 - **Restrictions.KeyCredentials.TrustedCertificateAuthority**: Optional reference (GUID or display name) to the certificate-based application configuration root chain. If a display name is provided, the resource resolves it to the corresponding configuration Id.
-- **Restrictions.KeyCredentials.CertificateBasedApplicationConfigurationIds**: Array of certificate-based application configuration IDs to associate with a specific key credential restriction. Used with `restrictionType = "trustedCertificateAuthority"` to enforce certificate chain validation. Accepts GUIDs or display names.
+- **Restrictions.KeyCredentials.CertificateBasedApplicationConfigurationIds**: Array of certificate-based application configuration IDs to associate with a specific key credential restriction. Used with `restrictionType = "trustedCertificateAuthority"` to enforce certificate chain validation. Accepts GUIDs or display names; display names are resolved to configuration IDs during processing.
 - **AssignedApplications**: Optional list of application display names or object GUIDs to which the policy should be assigned. Names are resolved to IDs during processing.
 
 ### Example
