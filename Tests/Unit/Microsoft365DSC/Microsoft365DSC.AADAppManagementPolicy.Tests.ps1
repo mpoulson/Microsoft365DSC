@@ -89,6 +89,22 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -Command Remove-MgBetaPolicyAppManagementPolicy -MockWith {
             }
 
+            Mock -Command Get-MgBetaPolicyDefaultAppManagementPolicy -MockWith {
+                return $null
+            }
+
+            Mock -Command Update-MgBetaPolicyDefaultAppManagementPolicy -MockWith {
+            }
+
+            Mock -Command Invoke-MgGraphRequest -MockWith {
+            }
+
+            Mock -Command Get-MSCloudLoginConnectionProfile -MockWith {
+                return @{
+                    ResourceUrl = 'https://graph.microsoft.com/'
+                }
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -135,6 +151,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith {
                     return $null
                 }
+
+                Mock -CommandName Get-MgBetaPolicyDefaultAppManagementPolicy -MockWith {
+                    return $null
+                }
             }
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
@@ -145,7 +165,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create a new instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaPolicyAppManagementPolicy -Exactly 1
+                Should -Invoke -CommandName Invoke-MgGraphRequest -Exactly 1 -ParameterFilter { $Method -eq 'POST' }
             }
         }
 
@@ -419,12 +439,136 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name "The default policy exists and values are in the desired state" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DisplayName         = "Tenant App Management Policy"
+                    Description         = "Default App Management Policy"
+                    IsEnabled           = $true
+                    Restrictions          = (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictions -Property @{
+                        passwordCredentials = [CimInstance[]]@(
+                            (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
+                                restrictionType = "passwordAddition"
+                                state = "enabled"
+                            } -ClientOnly);
+                        )
+                    } -ClientOnly);
+                    Ensure              = 'Present'
+                    Credential          = $Credential;
+                }
+
+                Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Get-MgBetaPolicyDefaultAppManagementPolicy -MockWith {
+                    return @{
+                        DisplayName  = "Tenant App Management Policy"
+                        Description  = "Default App Management Policy"
+                        Id           = "00000000-0000-0000-0000-000000000000"
+                        IsEnabled    = $true
+                        ApplicationRestrictions = @{
+                            passwordCredentials = @(
+                                @{
+                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
+                                    restrictionType = "passwordAddition"
+                                    state = "enabled"
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            It 'Should return Values from the Get method with ApplicationRestrictions mapped to Restrictions' {
+                $result = Get-TargetResource @testParams
+                $result.Ensure | Should -Be 'Present'
+                $result.DisplayName | Should -Be 'Tenant App Management Policy'
+                $result.Restrictions.passwordCredentials | Should -HaveCount 1
+            }
+
+            It 'Should return true from the Test method' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+        }
+
+        Context -Name "The default policy exists and values are NOT in the desired state" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DisplayName         = "Tenant App Management Policy"
+                    Description         = "Updated Description"
+                    IsEnabled           = $true
+                    Restrictions          = (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictions -Property @{
+                        passwordCredentials = [CimInstance[]]@(
+                            (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
+                                restrictForAppsCreatedAfterDateTime = "0001-01-01T00:00:00.0000000"
+                                restrictionType = "passwordAddition"
+                                state = "enabled"
+                            } -ClientOnly);
+                        )
+                    } -ClientOnly);
+                    Ensure              = 'Present'
+                    Credential          = $Credential;
+                }
+
+                Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Get-MgBetaPolicyDefaultAppManagementPolicy -MockWith {
+                    return @{
+                        DisplayName  = "Tenant App Management Policy"
+                        Description  = "Default App Management Policy"
+                        Id           = "00000000-0000-0000-0000-000000000000"
+                        IsEnabled    = $true
+                        ApplicationRestrictions = @{
+                            passwordCredentials = @(
+                                @{
+                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
+                                    restrictionType = "passwordAddition"
+                                    state = "enabled"
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                Test-TargetResource @testParams | Should -Be $false
+            }
+
+            It 'Should call Update-MgBetaPolicyDefaultAppManagementPolicy from the Set method' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName Update-MgBetaPolicyDefaultAppManagementPolicy -Exactly 1
+            }
+        }
+
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
+                }
+
+                Mock -CommandName Get-MgBetaPolicyDefaultAppManagementPolicy -MockWith {
+                    return @{
+                        DisplayName  = "Tenant App Management Policy"
+                        Description  = "Default App Management Policy"
+                        Id           = "00000000-0000-0000-0000-000000000000"
+                        IsEnabled    = $true
+                        ApplicationRestrictions = @{
+                            passwordCredentials = @(
+                                @{
+                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
+                                    restrictionType = "passwordAddition"
+                                    state = "enabled"
+                                }
+                            )
+                        }
+                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {
