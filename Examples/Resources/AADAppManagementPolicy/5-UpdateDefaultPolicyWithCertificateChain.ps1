@@ -1,8 +1,7 @@
 <#
-This example creates an app management policy that references a certificate-based application
-configuration. It demonstrates using the trustedCertificateAuthority restriction type with
-certificateBasedApplicationConfigurationIds to enforce certificate chain validation for
-key credentials on newly created applications.
+This example updates the default app management policy to enforce trusted certificate
+authority restrictions. It configures the policy so that key credentials on applications
+created after a specific date must use certificates from a trusted certificate chain.
 #>
 
 Configuration Example
@@ -23,13 +22,13 @@ Configuration Example
     Import-DscResource -ModuleName Microsoft365DSC
     node localhost
     {
-        # First, create the certificate-based application configuration with a certificate chain
-        AADCertificateBasedApplicationConfiguration "ContosoRootCA"
+        # Manage the certificate-based application configuration with root + intermediate CAs
+        AADCertificateBasedApplicationConfiguration "ContosoCertChain"
         {
             ApplicationId         = $ApplicationId;
             CertificateThumbprint = $CertificateThumbprint;
-            Description           = "Trusted certificate authorities from Contoso";
-            DisplayName           = "Contoso Root CA Configuration";
+            Description           = "Full certificate chain from Contoso";
+            DisplayName           = "Contoso Certificate Chain";
             Ensure                = "Present";
             TenantId              = $TenantId;
             TrustedCertificateAuthorities = @(
@@ -48,35 +47,27 @@ Configuration Example
             );
         }
 
-        # Then create the app management policy with a trustedCertificateAuthority restriction
-        AADAppManagementPolicy "MyAppManagementPolicyWithCA"
+        # Update the default tenant app management policy with certificate chain restrictions
+        AADAppManagementPolicy "DefaultAppManagementPolicy"
         {
             ApplicationId         = $ApplicationId;
             CertificateThumbprint = $CertificateThumbprint;
-            Description           = "Policy with certificate authority restrictions";
-            DisplayName           = "AppManagementPolicyWithCA";
+            Description           = "Default tenant policy with certificate authority restrictions";
+            DisplayName           = "Tenant Default Policy";
             Ensure                = "Present";
             IsEnabled             = $True;
             Restrictions          = MSFT_AADAppManagementPolicyRestrictions{
-                passwordCredentials = @(
-                    MSFT_AADAppManagementPolicyRestrictionsCredential{
-                        restrictForAppsCreatedAfterDateTime = "01/01/0001 00:00:00"
-                        restrictionType = "passwordAddition"
-                        state = "enabled"
-                    }
-                );
                 keyCredentials = @(
                     MSFT_AADAppManagementPolicyRestrictionsCredential{
                         restrictForAppsCreatedAfterDateTime = "2024-08-01T00:00:00Z"
                         restrictionType = "trustedCertificateAuthority"
                         state = "enabled"
-                        certificateBasedApplicationConfigurationIds = @("Contoso Root CA Configuration")
+                        certificateBasedApplicationConfigurationIds = @("Contoso Certificate Chain")
                     }
                 )
             };
-            AssignedApplications = @("ContosoApp1","11111111-2222-3333-4444-555555555555")
             TenantId              = $TenantId;
-            DependsOn             = "[AADCertificateBasedApplicationConfiguration]ContosoRootCA"
+            DependsOn             = "[AADCertificateBasedApplicationConfiguration]ContosoCertChain"
         }
     }
 }

@@ -353,6 +353,70 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name "TrustedCertificateAuthority restriction type with certificateBasedApplicationConfigurationIds" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DisplayName         = "MyPolicy"
+                    Description         = "MyDescription"
+                    IsEnabled           = $true
+                    Restrictions        = (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictions -Property @{
+                        keyCredentials = @(
+                            (New-CimInstance -ClassName MSFT_AADAppManagementPolicyRestrictionsCredential -Property @{
+                                restrictForAppsCreatedAfterDateTime = "2024-08-01T00:00:00Z"
+                                restrictionType = "trustedCertificateAuthority"
+                                state = "enabled"
+                                certificateBasedApplicationConfigurationIds = @("Contoso Root CA Configuration")
+                            } -ClientOnly)
+                        )
+                    } -ClientOnly);
+                    Ensure              = 'Present'
+                    Credential          = $Credential;
+                }
+            }
+
+            It 'Should resolve certificateBasedApplicationConfigurationIds names to Ids when creating' {
+                Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith { return $null }
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName New-MgBetaPolicyAppManagementPolicy -ParameterFilter {
+                    $Restrictions.keyCredentials[0].certificateBasedApplicationConfigurationIds -contains 'config-guid-123'
+                } -Exactly 1
+            }
+
+            It 'Should return config names in Get when API returns trustedCertificateAuthority restriction' {
+                Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith {
+                    return @{
+                        DisplayName = "MyPolicy"
+                        Description = "MyDescription"
+                        Id          = "12345-12345-12345-12345-12345"
+                        IsEnabled   = $true
+                        Restrictions = @{
+                            passwordCredentials = @()
+                            keyCredentials = @(
+                                @{
+                                    restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("2024-08-01T00:00:00Z")
+                                    restrictionType = "trustedCertificateAuthority"
+                                    state = "enabled"
+                                    CertificateBasedApplicationConfigurationIds = @("aabbccdd-1122-3344-5566-778899001122")
+                                }
+                            )
+                        }
+                    }
+                }
+                Mock -CommandName Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -MockWith {
+                    return @(
+                        [pscustomobject]@{
+                            Id = 'aabbccdd-1122-3344-5566-778899001122'
+                            DisplayName = 'Contoso Root CA Configuration'
+                        }
+                    )
+                }
+                $result = Get-TargetResource @testParams
+                $result.Ensure | Should -Be 'Present'
+                $result.Restrictions.keyCredentials[0].restrictionType | Should -Be 'trustedCertificateAuthority'
+                $result.Restrictions.keyCredentials[0].certificateBasedApplicationConfigurationIds | Should -Contain 'Contoso Root CA Configuration'
+            }
+        }
+
         Context -Name "The instance exists and values are already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
