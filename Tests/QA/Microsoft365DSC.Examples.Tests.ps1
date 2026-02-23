@@ -7,12 +7,7 @@
         return
     }
 
-    #$exampleFiles = @(Get-ChildItem -Path $examplesPath -Filter '*.ps1' -Recurse)
-    $exampleFiles = @(Get-ChildItem -Path $examplesPath -Filter '*.ps1' -Recurse |
-            Where-Object {
-                $_.DirectoryName -match 'AADAppManagementPolicy|AADCertificateBasedApplicationConfiguration'
-            })
-
+    $exampleFiles = @(Get-ChildItem -Path $examplesPath -Filter '*.ps1' -Recurse)
 
     $exampleToTest = @()
 
@@ -214,11 +209,7 @@ Describe -Name 'Check examples for all resources' {
             return
         }
 
-        #$exampleFiles = @(Get-ChildItem -Path $examplesPath -Filter '*.ps1' -Recurse)
-        $exampleFiles = @(Get-ChildItem -Path $examplesPath -Filter '*.ps1' -Recurse |
-            Where-Object {
-                $_.DirectoryName -match 'AADAppManagementPolicy|AADCertificateBasedApplicationConfiguration'
-            })
+        $exampleFiles = @(Get-ChildItem -Path $examplesPath -Filter '*.ps1' -Recurse)
 
         $exampleToTest = @()
 
