@@ -93,7 +93,7 @@ function Get-TargetResource
         foreach ($passwordCred in $instance.ApplicationRestrictions.PasswordCredentials)
         {
             $newItem = [ordered]@{
-                restrictForAppsCreatedAfterDateTime = $passwordCred.RestrictForAppsCreatedAfterDateTime.ToString()
+                restrictForAppsCreatedAfterDateTime = $passwordCred.RestrictForAppsCreatedAfterDateTime.ToString("o")
                 restrictionType                     = $passwordCred.RestrictionType
                 state                               = $passwordCred.State
             }
@@ -108,7 +108,7 @@ function Get-TargetResource
         foreach ($keyCred in $instance.ApplicationRestrictions.KeyCredentials)
         {
             $newItem = [ordered]@{
-                restrictForAppsCreatedAfterDateTime = $keyCred.RestrictForAppsCreatedAfterDateTime.ToString()
+                restrictForAppsCreatedAfterDateTime = $keyCred.RestrictForAppsCreatedAfterDateTime.ToString("o")
                 restrictionType                     = $keyCred.RestrictionType
                 state                               = $keyCred.State
             }
@@ -134,7 +134,7 @@ function Get-TargetResource
         foreach ($passwordCred in $instance.ServicePrincipalRestrictions.PasswordCredentials)
         {
             $newItem = [ordered]@{
-                restrictForAppsCreatedAfterDateTime = $passwordCred.RestrictForAppsCreatedAfterDateTime.ToString()
+                restrictForAppsCreatedAfterDateTime = $passwordCred.RestrictForAppsCreatedAfterDateTime.ToString("o")
                 restrictionType                     = $passwordCred.RestrictionType
                 state                               = $passwordCred.State
             }
@@ -149,7 +149,7 @@ function Get-TargetResource
         foreach ($keyCred in $instance.ServicePrincipalRestrictions.KeyCredentials)
         {
             $newItem = [ordered]@{
-                restrictForAppsCreatedAfterDateTime = $keyCred.RestrictForAppsCreatedAfterDateTime.ToString()
+                restrictForAppsCreatedAfterDateTime = $keyCred.RestrictForAppsCreatedAfterDateTime.ToString("o")
                 restrictionType                     = $keyCred.RestrictionType
                 state                               = $keyCred.State
             }
