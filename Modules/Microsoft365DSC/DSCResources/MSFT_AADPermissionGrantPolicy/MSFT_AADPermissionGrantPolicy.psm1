@@ -683,8 +683,8 @@ Resolves a ResourceApplication AppId GUID to the service principal display name.
 
 .DESCRIPTION
 This helper function takes a ResourceApplication value (typically an AppId GUID returned by the
-Microsoft Graph API) and resolves it to the service principal's display name. Wildcard values
-('any', '*') and values that are already names (not GUIDs) are returned unchanged.
+Microsoft Graph API) and resolves it to the service principal's display name. The wildcard value
+'any' and values that are already names (not GUIDs) are returned unchanged.
 Uses the module-scoped ServicePrincipalCache for performance.
 
 .PARAMETER ResourceApplication
@@ -709,8 +709,8 @@ function Resolve-ResourceApplicationName
         $ResourceApplication
     )
 
-    # Pass through wildcards
-    if ($ResourceApplication -eq 'any' -or $ResourceApplication -eq '*')
+    # Pass through wildcard
+    if ($ResourceApplication -eq 'any')
     {
         return $ResourceApplication
     }
@@ -759,7 +759,7 @@ Resolves a ResourceApplication display name to the service principal AppId GUID.
 
 .DESCRIPTION
 This helper function takes a ResourceApplication value (a service principal display name or AppId GUID)
-and resolves it to the AppId GUID. Values that are already GUIDs and wildcard values ('any', '*')
+and resolves it to the AppId GUID. Values that are already GUIDs and the wildcard value 'any'
 are returned unchanged. The resolved service principal is added to the module-scoped
 ServicePrincipalCache for subsequent lookups.
 
@@ -785,8 +785,8 @@ function Resolve-ResourceApplicationId
         $ResourceApplication
     )
 
-    # Pass through wildcards
-    if ($ResourceApplication -eq 'any' -or $ResourceApplication -eq '*')
+    # Pass through wildcard
+    if ($ResourceApplication -eq 'any')
     {
         return $ResourceApplication
     }
@@ -847,7 +847,7 @@ Converts a permission display name to its GUID using the resource application's 
 This helper function resolves permission names (e.g., 'User.Read') to their corresponding
 GUIDs by looking up the resource application's service principal and checking both
 Oauth2PermissionScopes (delegated) and AppRoles (application) collections.
-Wildcard values ('all', '*', 'any') and existing GUIDs are passed through unchanged.
+Wildcard values ('all', 'any') and existing GUIDs are passed through unchanged.
 
 .PARAMETER PermissionName
 The permission name or GUID to resolve.
@@ -886,7 +886,7 @@ function ConvertTo-PermissionGuid
     )
 
     # Pass through wildcard values
-    if ($PermissionName -eq 'all' -or $PermissionName -eq '*' -or $PermissionName -eq 'any')
+    if ($PermissionName -eq 'all' -or $PermissionName -eq 'any')
     {
         return 'all'
     }
@@ -900,7 +900,7 @@ function ConvertTo-PermissionGuid
 
     # Cannot resolve without a specific resource application
     if ([System.String]::IsNullOrEmpty($ResourceApplicationId) -or
-        $ResourceApplicationId -eq 'any' -or $ResourceApplicationId -eq '*')
+        $ResourceApplicationId -eq 'any')
     {
         Write-Verbose -Message "Cannot resolve permission name '$PermissionName' without a specific ResourceApplication."
         return $PermissionName
@@ -994,7 +994,7 @@ Converts a permission GUID to its display name.
 .DESCRIPTION
 This helper function takes a permission GUID and resolves it to its display name
 by looking up the service principal's Oauth2PermissionScopes (delegated) and AppRoles (application).
-Values that are already display names (non-GUID strings) and wildcard values ('all', '*', 'any')
+Values that are already display names (non-GUID strings) and wildcard values ('all', 'any')
 are returned unchanged.
 
 .PARAMETER PermissionId
@@ -1035,7 +1035,7 @@ function ConvertTo-PermissionName
     )
 
     # Pass through wildcard values
-    if ($PermissionId -eq 'all' -or $PermissionId -eq '*' -or $PermissionId -eq 'any')
+    if ($PermissionId -eq 'all' -or $PermissionId -eq 'any')
     {
         return $PermissionId
     }
@@ -1049,7 +1049,7 @@ function ConvertTo-PermissionName
 
     # Cannot resolve without a specific resource application
     if ([System.String]::IsNullOrEmpty($ResourceApplicationId) -or
-        $ResourceApplicationId -eq 'any' -or $ResourceApplicationId -eq '*')
+        $ResourceApplicationId -eq 'any')
     {
         Write-Verbose -Message "Cannot resolve permission GUID '$PermissionId' without a specific ResourceApplication."
         return $PermissionId
@@ -1260,23 +1260,19 @@ function Get-PermissionGrantConditionSetAsParameters
         $params.Add('CertifiedClientApplicationsOnly', [bool]$ConditionSet.CertifiedClientApplicationsOnly)
     }
 
-    # Normalize wildcard values for array properties: '*' → 'all'
     if ($null -ne $ConditionSet.ClientApplicationIds -and $ConditionSet.ClientApplicationIds.Count -gt 0)
     {
-        $normalizedIds = [string[]]($ConditionSet.ClientApplicationIds | ForEach-Object { if ($_ -eq '*') { 'all' } else { $_ } })
-        $params.Add('ClientApplicationIds', $normalizedIds)
+        $params.Add('ClientApplicationIds', [string[]]$ConditionSet.ClientApplicationIds)
     }
 
     if ($null -ne $ConditionSet.ClientApplicationPublisherIds -and $ConditionSet.ClientApplicationPublisherIds.Count -gt 0)
     {
-        $normalizedPubIds = [string[]]($ConditionSet.ClientApplicationPublisherIds | ForEach-Object { if ($_ -eq '*') { 'all' } else { $_ } })
-        $params.Add('ClientApplicationPublisherIds', $normalizedPubIds)
+        $params.Add('ClientApplicationPublisherIds', [string[]]$ConditionSet.ClientApplicationPublisherIds)
     }
 
     if ($null -ne $ConditionSet.ClientApplicationTenantIds -and $ConditionSet.ClientApplicationTenantIds.Count -gt 0)
     {
-        $normalizedTenantIds = [string[]]($ConditionSet.ClientApplicationTenantIds | ForEach-Object { if ($_ -eq '*') { 'all' } else { $_ } })
-        $params.Add('ClientApplicationTenantIds', $normalizedTenantIds)
+        $params.Add('ClientApplicationTenantIds', [string[]]$ConditionSet.ClientApplicationTenantIds)
     }
 
     if ($null -ne $ConditionSet.ClientApplicationsFromVerifiedPublisherOnly)
@@ -1289,18 +1285,10 @@ function Get-PermissionGrantConditionSetAsParameters
         $params.Add('PermissionClassification', $ConditionSet.PermissionClassification)
     }
 
-    # Normalize ResourceApplication: '*' → 'any', name → GUID
+    # Resolve ResourceApplication name → GUID
     if (-not [string]::IsNullOrEmpty($ConditionSet.ResourceApplication))
     {
-        $resourceApp = $ConditionSet.ResourceApplication
-        if ($resourceApp -eq '*')
-        {
-            $resourceApp = 'any'
-        }
-        else
-        {
-            $resourceApp = Resolve-ResourceApplicationId -ResourceApplication $resourceApp
-        }
+        $resourceApp = Resolve-ResourceApplicationId -ResourceApplication $ConditionSet.ResourceApplication
         $params.Add('ResourceApplication', $resourceApp)
     }
 
@@ -1309,14 +1297,10 @@ function Get-PermissionGrantConditionSetAsParameters
         $params.Add('PermissionType', $ConditionSet.PermissionType)
     }
 
-    # Convert permission names to GUIDs and normalize wildcards
+    # Convert permission names to GUIDs
     if ($null -ne $ConditionSet.Permissions -and $ConditionSet.Permissions.Count -gt 0)
     {
         $resourceAppValue = $ConditionSet.ResourceApplication
-        if ($resourceAppValue -eq '*')
-        {
-            $resourceAppValue = 'any'
-        }
 
         $resolvedPermissions = @()
         foreach ($permission in $ConditionSet.Permissions)

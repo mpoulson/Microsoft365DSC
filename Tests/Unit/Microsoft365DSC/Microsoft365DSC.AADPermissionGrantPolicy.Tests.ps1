@@ -483,47 +483,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $result.ContainsKey('ClientApplicationIds') | Should -Be $false
             }
 
-            It 'Should normalize asterisk wildcard to all for array properties' {
-                $conditionSet = [PSCustomObject]@{
-                    Id                            = 'test-id'
-                    PermissionType                = 'delegated'
-                    ClientApplicationIds          = @('*')
-                    ClientApplicationPublisherIds = @('*')
-                    ClientApplicationTenantIds    = @('*')
-                    Permissions                   = @('*')
-                    ResourceApplication           = 'any'
-                }
-
-                $result = Get-PermissionGrantConditionSetAsParameters -ConditionSet $conditionSet
-
-                $result.ClientApplicationIds | Should -Be @('all')
-                $result.ClientApplicationPublisherIds | Should -Be @('all')
-                $result.ClientApplicationTenantIds | Should -Be @('all')
-                $result.Permissions | Should -Be @('all')
-            }
-
-            It 'Should normalize asterisk to any for ResourceApplication' {
-                $conditionSet = [PSCustomObject]@{
-                    Id                  = 'test-id'
-                    PermissionType      = 'delegated'
-                    Permissions         = @('all')
-                    ResourceApplication = '*'
-                }
-
-                $result = Get-PermissionGrantConditionSetAsParameters -ConditionSet $conditionSet
-
-                $result.ResourceApplication | Should -Be 'any'
-            }
         }
 
         Context -Name 'Complex Scenario - Helper function ConvertTo-PermissionGuid' -Fixture {
             It 'Should pass through wildcard all as all' {
                 $result = ConvertTo-PermissionGuid -PermissionName 'all'
-                $result | Should -Be 'all'
-            }
-
-            It 'Should convert asterisk wildcard to all' {
-                $result = ConvertTo-PermissionGuid -PermissionName '*'
                 $result | Should -Be 'all'
             }
 
@@ -596,11 +560,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $result | Should -Be 'any'
             }
 
-            It 'Should pass through asterisk wildcard unchanged' {
-                $result = ConvertTo-PermissionName -PermissionId '*'
-                $result | Should -Be '*'
-            }
-
             It 'Should pass through non-GUID value as already a name' {
                 $result = ConvertTo-PermissionName -PermissionId 'User.Read'
                 $result | Should -Be 'User.Read'
@@ -670,11 +629,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $result | Should -Be 'any'
             }
 
-            It 'Should pass through wildcard asterisk unchanged' {
-                $result = Resolve-ResourceApplicationName -ResourceApplication '*'
-                $result | Should -Be '*'
-            }
-
             It 'Should pass through non-GUID value as already a name' {
                 $result = Resolve-ResourceApplicationName -ResourceApplication 'Microsoft Graph'
                 $result | Should -Be 'Microsoft Graph'
@@ -730,11 +684,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should pass through wildcard any unchanged' {
                 $result = Resolve-ResourceApplicationId -ResourceApplication 'any'
                 $result | Should -Be 'any'
-            }
-
-            It 'Should pass through wildcard asterisk unchanged' {
-                $result = Resolve-ResourceApplicationId -ResourceApplication '*'
-                $result | Should -Be '*'
             }
 
             It 'Should return name when service principal is not found' {
