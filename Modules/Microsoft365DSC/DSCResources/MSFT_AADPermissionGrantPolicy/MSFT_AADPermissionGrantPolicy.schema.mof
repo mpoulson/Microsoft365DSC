@@ -8,9 +8,9 @@ class MSFT_AADPermissionGrantConditionSet
     [Write, Description("A list of Entra ID tenant IDs in which the client application is registered, or a list with the single value all to match with client apps registered in any tenant.")] String ClientApplicationTenantIds[];
     [Write, Description("Set to true to only match on client applications with a verified publisher. Set to false to match on any client app. Default is false.")] Boolean ClientApplicationsFromVerifiedPublisherOnly;
     [Write, Description("The permission classification for the permission being granted, or all to match with any permission classification (including permissions which are not classified). Default is all.")] String PermissionClassification;
-    [Write, Description("The list of permission GUIDs or display names to match with, or a list with the single value all (or * or any) to match with any permission.")] String Permissions[];
+    [Write, Description("The list of permissiondisplay names to match with, or a list with the single value all (or * or any) to match with any permission.")] String Permissions[];
     [Write, Description("The permission type of the permission being granted. Possible values: application for application permissions, or delegated for delegated permissions.")] String PermissionType;
-    [Write, Description("The AppId GUID or display name of the resource application (e.g. the API) for which a permission is being granted, or any (or *) to match with any resource application or API.")] String ResourceApplication;
+    [Write, Description("The display name of the resource application (e.g. the API) for which a permission is being granted")] String ResourceApplication;
 };
 
 [ClassVersion("1.0.0.1"), FriendlyName("AADPermissionGrantPolicy")]

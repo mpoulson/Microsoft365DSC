@@ -65,30 +65,39 @@ function Get-TargetResource
 
     Write-Verbose -Message "Getting configuration of Entra Permission Grant Policy {$Id}"
 
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
+
+    #Ensure the proper dependencies are installed in the current environment.
+    Confirm-M365DSCDependencies
+
+    #region Telemetry
+    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $CommandName = $MyInvocation.MyCommand
+    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+        -CommandName $CommandName `
+        -Parameters $PSBoundParameters
+    Add-M365DSCTelemetryEvent -Data $data
+    #endregion
+
+    $nullResult = $PSBoundParameters
+    $nullResult.Ensure = 'Absent'
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                -InboundParameters $PSBoundParameters
 
-            #Ensure the proper dependencies are installed in the current environment.
-            Confirm-M365DSCDependencies
-
-            #region Telemetry
-            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-            $CommandName = $MyInvocation.MyCommand
-            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-                -CommandName $CommandName `
-                -Parameters $PSBoundParameters
-            Add-M365DSCTelemetryEvent -Data $data
-            #endregion
-
-            $nullResult = $PSBoundParameters
-            $nullResult.Ensure = 'Absent'
-
-            $getValue = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $Id `
-                -ErrorAction SilentlyContinue
+            if (-not [System.String]::IsNullOrEmpty($Id))
+            {
+                $getValue = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $Id `
+                    -ErrorAction SilentlyContinue
+            }
+            else
+            {
+                $getValue = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $Id `
+                    -ErrorAction SilentlyContinue
+            }
         }
         else
         {
@@ -149,7 +158,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -236,13 +245,10 @@ function Set-TargetResource
 
         $currentPolicy = Get-TargetResource @PSBoundParameters
 
-        $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-
+        # CREATE
         if ($Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Absent')
         {
-            Write-Verbose -Message "=============================================="
-            Write-Verbose -Message "Creating new Entra Permission Grant Policy {$Id}"
-            Write-Verbose -Message "=============================================="
+            Write-Verbose -Message "Creating new Entra Permission Grant Policy with Id {$Id} and DisplayName {$DisplayName}"
 
             $createParameters = @{
                 Id          = $Id
@@ -274,11 +280,10 @@ function Set-TargetResource
                 }
             }
         }
+        # UPDATE
         elseif ($Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Present')
         {
-            Write-Verbose -Message "=============================================="
-            Write-Verbose -Message "Updating Entra Permission Grant Policy {$Id}"
-            Write-Verbose -Message "=============================================="
+            Write-Verbose -Message "Updating Entra Permission Grant Policy with Id {$Id} and DisplayName {$DisplayName}"
 
             $updateParameters = @{
                 PermissionGrantPolicyId = $Id
@@ -385,6 +390,7 @@ function Set-TargetResource
                 }
             }
         }
+        # REMOVE
         elseif ($Ensure -eq 'Absent' -and $currentPolicy.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Removing Entra Permission Grant Policy {$Id}"
@@ -477,31 +483,10 @@ function Test-TargetResource
 
     Write-Verbose -Message "Testing configuration of Entra Permission Grant Policy {$Id}"
 
-    # Normalize ResourceApplication in desired values so that both name and GUID inputs
-    # compare correctly against the current values (which use SP display names).
-    $postProcessingScript = {
-        param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
-
-        foreach ($propertyName in @('Includes', 'Excludes'))
-        {
-            if ($null -ne $ValuesToCheck[$propertyName])
-            {
-                $normalizedSets = @()
-                foreach ($conditionSet in $ValuesToCheck[$propertyName])
-                {
-                    $normalizedSets += Get-PermissionGrantConditionSetAsHashtable -ConditionSet $conditionSet
-                }
-                $ValuesToCheck[$propertyName] = [Array]$normalizedSets
-                $DesiredValues[$propertyName] = [Array]$normalizedSets
-            }
-        }
-
-        return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
-    }
-
+    $compareParameters = Get-CompareParameters
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
-        -PostProcessing $postProcessingScript
+        @compareParameters
 
     Write-Verbose -Message "Test-TargetResource returned $result"
 
@@ -656,11 +641,41 @@ function Export-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 #region Helper Functions
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    # Normalize ResourceApplication in desired values so that both name and GUID inputs
+    # compare correctly against the current values (which use SP display names).
+    return @{
+        PostProcessing = {
+            param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+
+            foreach ($propertyName in @('Includes', 'Excludes'))
+            {
+                if ($null -ne $ValuesToCheck[$propertyName])
+                {
+                    $normalizedSets = @()
+                    foreach ($conditionSet in $ValuesToCheck[$propertyName])
+                    {
+                        $normalizedSets += Get-PermissionGrantConditionSetAsHashtable -ConditionSet $conditionSet
+                    }
+                    $ValuesToCheck[$propertyName] = [Array]$normalizedSets
+                    $DesiredValues[$propertyName] = [Array]$normalizedSets
+                }
+            }
+
+            return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+        }
+    }
+}
 
 <#
 .SYNOPSIS
