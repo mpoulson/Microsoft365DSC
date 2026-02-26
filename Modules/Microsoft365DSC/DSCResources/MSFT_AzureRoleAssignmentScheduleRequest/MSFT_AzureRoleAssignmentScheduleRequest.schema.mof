@@ -1,0 +1,36 @@
+[ClassVersion("1.0.0")]
+class MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration
+{
+    [Write, Description("The requestor's desired duration of access represented in ISO 8601 format for durations. For example, PT3H refers to three hours. If specified in a request, endDateTime should not be present and the type property should be set to afterDuration.")] String duration;
+    [Write, Description("Timestamp of date and time information using ISO 8601 format and is always in UTC time. For example, midnight UTC on Jan 1, 2014 is 2014-01-01T00:00:00Z.")] String endDateTime;
+    [Write, Description("The requestor's desired expiration pattern type. The possible values are: notSpecified, noExpiration, afterDateTime, afterDuration."), ValueMap{"notSpecified","noExpiration","afterDateTime","afterDuration"}, Values{"notSpecified","noExpiration","afterDateTime","afterDuration"}] String type;
+};
+
+[ClassVersion("1.0.0")]
+class MSFT_AzureRoleAssignmentScheduleRequestSchedule
+{
+    [Write, Description("When the role assignment expires."), EmbeddedInstance("MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration")] String expiration;
+    [Write, Description("When the role assignment becomes active.")] String startDateTime;
+};
+
+[ClassVersion("1.0.0.0"), FriendlyName("AzureRoleAssignmentScheduleRequest")]
+class MSFT_AzureRoleAssignmentScheduleRequest : OMI_BaseResource
+{
+    [Key, Description("User Principal Name or Object ID of the principal.")] String Principal;
+    [Key, Description("Display name of the Azure role (e.g., 'Owner', 'Contributor').")] String RoleDefinitionName;
+    [Key, Description("The full scope path (subscription, management group, resource group, or resource).")] String Scope;
+    [Write, Description("Type of principal: User, Group, ServicePrincipal."), ValueMap{"User","Group","ServicePrincipal"}, Values{"User","Group","ServicePrincipal"}] String PrincipalType;
+    [Write, Description("Directory scope identifier (if applicable).")] String DirectoryScopeId;
+    [Write, Description("Request type: adminAssign, adminUpdate, adminRemove, selfActivate, etc."), ValueMap{"adminAssign","adminUpdate","adminRemove","selfActivate","selfDeactivate","adminExtend","adminRenew","selfExtend","selfRenew"}, Values{"adminAssign","adminUpdate","adminRemove","selfActivate","selfDeactivate","adminExtend","adminRenew","selfExtend","selfRenew"}] String RequestType;
+    [Write, Description("Justification for the request.")] String Justification;
+    [Write, Description("The period of the role assignment."), EmbeddedInstance("MSFT_AzureRoleAssignmentScheduleRequestSchedule")] String ScheduleInfo;
+    [Write, Description("Status of the request.")] String Status;
+    [Write, Description("Identifier for the Role Assignment Schedule Request.")] String Id;
+    [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] string Ensure;
+    [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};
