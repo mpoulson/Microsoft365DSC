@@ -272,7 +272,7 @@ function Get-TargetResource
         if ($null -eq $schedule)
         {
             $schedule = $Script:AllSchedules | Where-Object -FilterScript {
-                $_.properties.principalId -eq $request.properties.principalId -and
+                $_.properties.principalId -eq $PrincipalInstance.Id -and
                 $_.properties.roleDefinitionId -eq $RoleDefinitionId
             }
         }
@@ -1059,7 +1059,8 @@ function Get-CompareParameters
         ExcludedProperties = @('Action', 'IsValidationOnly', 'Justification', 'TicketInfo')
         PostProcessing = {
             param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
-            if (-not [System.String]::IsNullOrEmpty($DesiredValues.ScheduleInfo.StartDateTime))
+            if ($null -ne $DesiredValues.ScheduleInfo -and
+                -not [System.String]::IsNullOrEmpty($DesiredValues.ScheduleInfo.StartDateTime))
             {
                 $parsedDesiredDate = [System.DateTime]::MinValue
                 $parseResultDesired = [System.DateTime]::TryParse($DesiredValues.ScheduleInfo.StartDateTime, [ref]$parsedDesiredDate)

@@ -169,7 +169,7 @@ function Get-TargetResource
         {
             $schedule = $Script:exportedInstance
             # To keep performance good, only assign the current instance
-            $Script:AllSchedules = $Script:exportedInstance
+            $Script:AllSchedules = @($Script:exportedInstance)
         }
 
         Write-Verbose -Message 'Getting Role Eligibility by PrincipalId and RoleDefinitionId'
@@ -264,7 +264,7 @@ function Get-TargetResource
         if ($null -eq $schedule)
         {
             $schedule = $Script:AllSchedules | Where-Object -FilterScript {
-                $_.properties.principalId -eq $request.properties.principalId -and
+                $_.properties.principalId -eq $PrincipalInstance.Id -and
                 $_.properties.roleDefinitionId -eq $RoleDefinitionId
             }
         }
@@ -1010,6 +1010,30 @@ function Get-CompareParameters
 
     return @{
         ExcludedProperties = @('Action', 'IsValidationOnly', 'Justification')
+        PostProcessing = {
+            param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+            if ($null -ne $DesiredValues.ScheduleInfo -and
+                -not [System.String]::IsNullOrEmpty($DesiredValues.ScheduleInfo.StartDateTime))
+            {
+                $parsedDesiredDate = [System.DateTime]::MinValue
+                $parseResultDesired = [System.DateTime]::TryParse($DesiredValues.ScheduleInfo.StartDateTime, [ref]$parsedDesiredDate)
+
+                $parsedCurrentDate = [System.DateTime]::MinValue
+                $parseResultCurrent = [System.DateTime]::TryParse($CurrentValues.ScheduleInfo.StartDateTime, [ref]$parsedCurrentDate)
+
+                if ($parseResultDesired -and $parseResultCurrent)
+                {
+                    Write-Verbose -Message "Parsed Desired StartDateTime: $parsedDesiredDate, Parsed Current StartDateTime: $parsedCurrentDate"
+                    if ($parsedDesiredDate -ne $parsedCurrentDate -and $parsedDesiredDate -lt [System.DateTime]::UtcNow)
+                    {
+                        Write-Verbose -Message "Ignoring StartDateTime in ScheduleInfo as it is in the past. StartDateTime cannot be set to a past date."
+                        Write-Verbose -Message "Aligning the Desired and Current StartDateTime values for comparison."
+                        $DesiredValues.ScheduleInfo.StartDateTime = $CurrentValues.ScheduleInfo.StartDateTime
+                    }
+                }
+            }
+            return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+        }
     }
 }
 
