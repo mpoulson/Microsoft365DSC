@@ -151,7 +151,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Script:AzureRoleDefinitions = $null
 
                 Mock -CommandName Invoke-AzRest -MockWith {
-                    if ($Uri -match 'roleAssignmentSchedules[^R]')
+                    if ($Uri -match 'roleAssignmentSchedules\?')
                     {
                         return @{
                             StatusCode = 200
