@@ -358,6 +358,10 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
+    # Reset caches to ensure fresh data
+    $Script:AllAzureSchedules = $null
+    $Script:AzureRoleDefinitions = $null
+
     $currentInstance = Get-TargetResource @PSBoundParameters
 
     # Get Azure Management endpoint
@@ -570,8 +574,10 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
+    $compareParameters = Get-CompareParameters
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                             -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+                                             -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+                                             @compareParameters
     return $result
 }
 
@@ -628,23 +634,23 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        
+
         # Get Azure Management endpoint
         $endpoints = Get-M365DSCAPIEndpoint -TenantId $TenantId
         $azureManagementEndpoint = $endpoints.AzureManagement
+
+        [array] $Script:exportedInstances = @()
 
         # Get all subscriptions to export from
         $subscriptionsUri = "$azureManagementEndpoint/subscriptions?api-version=2020-01-01"
         $subscriptionsResponse = Invoke-AzRest -Uri $subscriptionsUri -Method GET
         $subscriptions = (ConvertFrom-Json $subscriptionsResponse.Content).value
 
-        [array] $Script:exportedInstances = @()
-        
         foreach ($subscription in $subscriptions)
         {
             $scope = $subscription.id
             Write-Verbose -Message "Retrieving role eligibility schedules for subscription: $($subscription.displayName)"
-            
+
             $schedulesUri = "$azureManagementEndpoint$scope/providers/Microsoft.Authorization/roleEligibilitySchedules?api-version=2020-10-01"
             try
             {
@@ -658,15 +664,45 @@ function Export-TargetResource
             }
         }
 
+        # Get management groups and export their schedules
+        $mgGroupsUri = "$azureManagementEndpoint/providers/Microsoft.Management/managementGroups?api-version=2020-05-01"
+        try
+        {
+            $mgGroupsResponse = Invoke-AzRest -Uri $mgGroupsUri -Method GET
+            $managementGroups = (ConvertFrom-Json $mgGroupsResponse.Content).value
+
+            foreach ($mgGroup in $managementGroups)
+            {
+                $scope = $mgGroup.id
+                Write-Verbose -Message "Retrieving role eligibility schedules for management group: $($mgGroup.properties.displayName)"
+
+                $schedulesUri = "$azureManagementEndpoint$scope/providers/Microsoft.Authorization/roleEligibilitySchedules?api-version=2020-10-01"
+                try
+                {
+                    $schedulesResponse = Invoke-AzRest -Uri $schedulesUri -Method GET
+                    $schedules = (ConvertFrom-Json $schedulesResponse.Content).value
+                    $Script:exportedInstances += $schedules
+                }
+                catch
+                {
+                    Write-Verbose -Message "Failed to retrieve schedules for management group $($mgGroup.properties.displayName): $_"
+                }
+            }
+        }
+        catch
+        {
+            Write-Verbose -Message "Failed to retrieve management groups: $_"
+        }
+
         $i = 1
         $dscContent = ''
         if ($Script:exportedInstances.Count -eq 0)
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         else
         {
-            Write-M365DSCHost -Message "`r`n"
+            Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
 
         foreach ($config in $Script:exportedInstances)
@@ -677,7 +713,7 @@ function Export-TargetResource
             }
 
             $displayedKey = $config.name
-            Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey"
+            Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
 
             # Resolve principal
             $principalId = $config.properties.principalId
@@ -749,7 +785,7 @@ function Export-TargetResource
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
             $i++
-            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         return $dscContent
     }
@@ -966,4 +1002,38 @@ function Get-AzureRoleDefinitionName
     }
 }
 
-Export-ModuleMember -Function @('*-TargetResource')
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return @{
+        ExcludedProperties = @('RequestType', 'Justification', 'Status', 'Id', 'DirectoryScopeId')
+        PostProcessing = {
+            param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+            if (-not [System.String]::IsNullOrEmpty($DesiredValues.ScheduleInfo.StartDateTime))
+            {
+                $parsedDesiredDate = [System.DateTime]::MinValue
+                $parseResultDesired = [System.DateTime]::TryParse($DesiredValues.ScheduleInfo.StartDateTime, [ref]$parsedDesiredDate)
+
+                $parsedCurrentDate = [System.DateTime]::MinValue
+                $parseResultCurrent = [System.DateTime]::TryParse($CurrentValues.ScheduleInfo.StartDateTime, [ref]$parsedCurrentDate)
+
+                if ($parseResultDesired -and $parseResultCurrent)
+                {
+                    Write-Verbose -Message "Parsed Desired StartDateTime: $parsedDesiredDate, Parsed Current StartDateTime: $parsedCurrentDate"
+                    if ($parsedDesiredDate -ne $parsedCurrentDate -and $parsedDesiredDate -lt [System.DateTime]::UtcNow)
+                    {
+                        Write-Verbose -Message "Ignoring StartDateTime in ScheduleInfo as it is in the past. StartDateTime cannot be set to a past date."
+                        Write-Verbose -Message "Aligning the Desired and Current StartDateTime values for comparison."
+                        $DesiredValues.ScheduleInfo.StartDateTime = $CurrentValues.ScheduleInfo.StartDateTime
+                    }
+                }
+            }
+            return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+        }
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

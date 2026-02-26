@@ -272,6 +272,53 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name 'Management group scope handling' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Principal             = 'AdeleV@contoso.onmicrosoft.com'
+                    RoleDefinitionName    = 'Reader'
+                    Scope                 = '/providers/Microsoft.Management/managementGroups/mg-root'
+                    PrincipalType         = 'User'
+                    Ensure                = 'Present'
+                    ApplicationId         = '12345678-1234-1234-1234-123456789012'
+                    TenantId              = '12345678-1234-1234-1234-123456789012'
+                    CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
+                }
+
+                $Script:AllAzureSchedules = $null
+                $Script:AzureRoleDefinitions = $null
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    if ($Uri -match 'roleEligibilitySchedules')
+                    {
+                        return @{
+                            StatusCode = 200
+                            Content    = '{"value": [{"name": "mgschedule1", "properties": {"principalId": "12345678-1234-1234-1234-123456789012", "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7", "scope": "/providers/Microsoft.Management/managementGroups/mg-root", "status": "Provisioned", "startDateTime": "2024-01-15T08:00:00Z", "endDateTime": null}}]}'
+                        }
+                    }
+                    elseif ($Uri -match 'roleDefinitions')
+                    {
+                        return @{
+                            StatusCode = 200
+                            Content    = '{"value": [{"id": "/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7", "properties": {"roleName": "Reader"}}]}'
+                        }
+                    }
+                    return @{
+                        StatusCode = 200
+                        Content    = '{}'
+                    }
+                }
+            }
+
+            It 'Should return Present for management group scoped eligibility' {
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
+            }
+
+            It 'Should return true from the Test method for management group scope' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+        }
+
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
@@ -288,6 +335,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         return @{
                             StatusCode = 200
                             Content    = '{"value": [{"id": "/subscriptions/12345678-1234-1234-1234-123456789012", "displayName": "Test Subscription"}]}'
+                        }
+                    }
+                    elseif ($Uri -match 'managementGroups\?')
+                    {
+                        return @{
+                            StatusCode = 200
+                            Content    = '{"value": []}'
                         }
                     }
                     elseif ($Uri -match 'roleEligibilitySchedules')
