@@ -1012,7 +1012,8 @@ function Get-CompareParameters
         ExcludedProperties = @('RequestType', 'Justification', 'Status', 'Id', 'DirectoryScopeId')
         PostProcessing = {
             param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
-            if (-not [System.String]::IsNullOrEmpty($DesiredValues.ScheduleInfo.StartDateTime))
+            if ($null -ne $DesiredValues.ScheduleInfo -and
+                -not [System.String]::IsNullOrEmpty($DesiredValues.ScheduleInfo.StartDateTime))
             {
                 $parsedDesiredDate = [System.DateTime]::MinValue
                 $parseResultDesired = [System.DateTime]::TryParse($DesiredValues.ScheduleInfo.StartDateTime, [ref]$parsedDesiredDate)
