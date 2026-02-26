@@ -92,8 +92,6 @@ function Get-TargetResource
         {
             $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
-            $null = New-M365DSCConnection -Workload 'Azure' `
-                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -110,63 +108,27 @@ function Get-TargetResource
             $nullResult = $PSBoundParameters
             $nullResult.Ensure = 'Absent'
 
-            # Get Azure Management endpoint
-            $endpoints = Get-M365DSCAPIEndpoint -TenantId $TenantId
-            $azureManagementEndpoint = $endpoints.AzureManagement
-
-            # Cache role definitions via ARM API
-            if ($null -eq $Script:AzureRoleDefinitions)
+            if ($null -eq $Script:AllSchedules)
             {
-                Write-Verbose -Message 'Retrieving all Azure role definitions'
-                $Script:AzureRoleDefinitions = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
-
-                if ($DirectoryScopeId -match '^/providers/Microsoft.Management/managementGroups/')
+                Write-Verbose -Message 'Retrieving all role assignment schedules'
+                $Script:AllSchedules = Get-MgBetaRoleManagementAzureResourceRoleAssignmentSchedule -All `
+                    -ErrorAction SilentlyContinue
+            }
+            if ($null -eq $Script:RoleDefinitions)
+            {
+                $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
+                $allRoleDefinitions = Get-MgBetaRoleManagementAzureResourceRoleDefinition -All -ErrorAction SilentlyContinue
+                foreach ($singleRoleDefinition in $allRoleDefinitions)
                 {
-                    $roleDefsUri = "$azureManagementEndpoint/providers/Microsoft.Authorization/roleDefinitions?api-version=2022-04-01"
-                }
-                else
-                {
-                    $roleDefsUri = "$azureManagementEndpoint$DirectoryScopeId/providers/Microsoft.Authorization/roleDefinitions?api-version=2022-04-01"
-                }
-
-                try
-                {
-                    $roleDefsResponse = Invoke-AzRest -Uri $roleDefsUri -Method GET
-                    $roleDefinitions = (ConvertFrom-Json $roleDefsResponse.Content).value
-                    foreach ($roleDef in $roleDefinitions)
-                    {
-                        if (-not $Script:AzureRoleDefinitions.ContainsKey($roleDef.id))
-                        {
-                            $Script:AzureRoleDefinitions.Add($roleDef.id, $roleDef)
-                        }
-                        $roleDefName = $roleDef.properties.roleName
-                        if (-not $Script:AzureRoleDefinitions.ContainsKey($roleDefName))
-                        {
-                            $Script:AzureRoleDefinitions.Add($roleDefName, $roleDef)
-                        }
-                    }
-                }
-                catch
-                {
-                    Write-Verbose -Message "Failed to retrieve role definitions: $_"
+                    $Script:RoleDefinitions.Add($singleRoleDefinition.Id, $singleRoleDefinition)
                 }
             }
 
-            # Cache schedules via ARM API
-            if ($null -eq $Script:AllSchedules)
+            if (-not [System.String]::IsNullOrEmpty($Id))
             {
-                Write-Verbose -Message 'Retrieving all Azure role assignment schedules'
-                $schedulesUri = "$azureManagementEndpoint$DirectoryScopeId/providers/Microsoft.Authorization/roleAssignmentSchedules?api-version=2020-10-01"
-                try
-                {
-                    $schedulesResponse = Invoke-AzRest -Uri $schedulesUri -Method GET
-                    $Script:AllSchedules = (ConvertFrom-Json $schedulesResponse.Content).value
-                }
-                catch
-                {
-                    Write-Verbose -Message "Failed to retrieve schedules: $_"
-                    $Script:AllSchedules = @()
-                }
+                Write-Verbose -Message "Getting Role Assignment by Id {$Id}"
+                $schedule = Get-MgBetaRoleManagementAzureResourceRoleAssignmentSchedule -UnifiedRoleAssignmentScheduleId $Id `
+                    -ErrorAction SilentlyContinue
             }
         }
         else
@@ -196,62 +158,47 @@ function Get-TargetResource
             $PrincipalValue = $PrincipalInstance.DisplayName
         }
 
-        if ([System.String]::IsNullOrEmpty($PrincipalValue))
-        {
+        if ([System.String]::IsNullOrEmpty($PrincipalValue)) {
             return $nullResult
         }
 
         Write-Verbose -Message 'Found Principal'
-        $RoleDefinitionId = $null
-        $roleDefEntry = $Script:AzureRoleDefinitions.GetEnumerator() | Where-Object -FilterScript { $_.Value.properties.roleName -eq $RoleDefinition } | Select-Object -First 1
-        if ($null -ne $roleDefEntry)
-        {
-            $RoleDefinitionId = $roleDefEntry.Value.id
-        }
+        $RoleDefinitionId = $Script:RoleDefinitions.GetEnumerator() | Where-Object { $_.Value.DisplayName -eq $RoleDefinition } | Select-Object -ExpandProperty Key
         Write-Verbose -Message "Retrieved role definition {$RoleDefinition} with ID {$RoleDefinitionId}"
 
         if ($null -eq $schedule)
         {
             Write-Verbose -Message "Retrieving the request by PrincipalId {$($PrincipalInstance.Id)}, RoleDefinitionId {$($RoleDefinitionId)} and DirectoryScopeId {$($DirectoryScopeId)}"
             [array]$requests = $Script:AllSchedules | Where-Object -FilterScript {
-                $_.properties.principalId -eq $PrincipalInstance.Id -and
-                $_.properties.roleDefinitionId -eq $RoleDefinitionId -and
-                $_.properties.scope -eq $DirectoryScopeId
+                $_.PrincipalId -eq $PrincipalInstance.Id -and
+                $_.RoleDefinitionId -eq $RoleDefinitionId -and
+                $_.DirectoryScopeId -eq $DirectoryScopeId
             }
             if ($requests.Count -eq 0)
             {
-                # Check for custom roles with different IDs
+                # We need to make sure we're not ending up here because the role is a custom role (which has a different id).
+                # We start by retrieving all schedules for the given principal.
                 [array]$schedulesForPrincipal = $Script:AllSchedules | Where-Object -FilterScript {
-                    $_.properties.principalId -eq $PrincipalInstance.Id -and
-                    $_.properties.scope -eq $DirectoryScopeId
+                    $_.PrincipalId -eq $PrincipalInstance.Id -and
+                    $_.DirectoryScopeId -eq $DirectoryScopeId
                 }
 
+                # Loop through the role associated with each schedule to check and see if we have a match on the name.
                 $schedule = $null
                 foreach ($foundSchedule in $schedulesForPrincipal)
                 {
-                    $scheduleRoleId = $foundSchedule.properties.roleDefinitionId
-                    $roleEntry = $Script:AzureRoleDefinitions[$scheduleRoleId]
+                    $scheduleRoleId = $foundSchedule.RoleDefinitionId
+                    $roleEntry = $Script:RoleDefinitions[$scheduleRoleId]
                     if ($null -eq $roleEntry)
                     {
-                        $endpoints = Get-M365DSCAPIEndpoint -TenantId $TenantId
-                        $azureManagementEndpoint = $endpoints.AzureManagement
-                        $roleDefUri = "$azureManagementEndpoint$scheduleRoleId`?api-version=2022-04-01"
-                        try
-                        {
-                            $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
-                            $roleEntry = ConvertFrom-Json $roleDefResponse.Content
-                        }
-                        catch
-                        {
-                            Write-Verbose -Message "Failed to retrieve role definition: $_"
-                        }
+                        $roleEntry = Get-MgBetaRoleManagementAzureResourceRoleDefinition -UnifiedRoleDefinitionId $scheduleRoleId
                     }
-                    if ($null -ne $roleEntry -and $roleEntry.properties.roleName -eq $RoleDefinition)
+                    if ($roleEntry.DisplayName -eq $RoleDefinition)
                     {
-                        $RoleDefinitionId = $roleEntry.id
-                        if (-not $Script:AzureRoleDefinitions.ContainsKey($scheduleRoleId))
+                        $RoleDefinitionId = $roleEntry.Id
+                        if (-not $Script:RoleDefinitions.ContainsKey($scheduleRoleId))
                         {
-                            $Script:AzureRoleDefinitions.Add($scheduleRoleId, $roleEntry)
+                            $Script:RoleDefinitions.Add($scheduleRoleId, $roleEntry)
                         }
                         $schedule = $foundSchedule
                         break
@@ -272,16 +219,16 @@ function Get-TargetResource
         if ($null -eq $schedule)
         {
             $schedule = $Script:AllSchedules | Where-Object -FilterScript {
-                $_.properties.principalId -eq $PrincipalInstance.Id -and
-                $_.properties.roleDefinitionId -eq $RoleDefinitionId
+                $_.PrincipalId -eq $request.PrincipalId -and
+                $_.RoleDefinitionId -eq $RoleDefinitionId
             }
         }
         if ($null -eq $schedule)
         {
-            foreach ($instance in $Script:AllSchedules)
+            foreach ($instance in $schedules)
             {
-                $roleDefinitionInfo = $Script:AzureRoleDefinitions[$instance.properties.roleDefinitionId]
-                if ($null -ne $roleDefinitionInfo -and $roleDefinitionInfo.properties.roleName -eq $RoleDefinition)
+                $roleDefinitionInfo = $Script:RoleDefinitions[$instance.RoleDefinitionId]
+                if ($null -ne $roleDefinitionInfo -and $RoleDefinitionInfo.DisplayName -eq $RoleDefinition)
                 {
                     $schedule = $instance
                     break
@@ -291,41 +238,70 @@ function Get-TargetResource
 
         if ($null -eq $schedule)
         {
-            Write-Verbose -Message "Could not retrieve the schedule for {$($PrincipalInstance.Id)} & RoleDefinitionId {$RoleDefinitionId}"
+            if ($null -eq $schedule)
+            {
+                Write-Verbose -Message "Could not retrieve the schedule for {$($request.PrincipalId)} & RoleDefinitionId {$RoleDefinitionId}"
+            }
             return $nullResult
         }
 
         $ScheduleInfoValue = @{}
 
-        if ($null -ne $schedule.properties.endDateTime)
+        if ($null -ne $schedule.ScheduleInfo.Expiration)
         {
             $expirationValue = [ordered]@{
-                type        = 'afterDateTime'
-                endDateTime = $schedule.properties.endDateTime
+                type     = $schedule.ScheduleInfo.Expiration.Type
+            }
+            if ($null -ne $schedule.ScheduleInfo.Expiration.Duration)
+            {
+                $expirationValue.Add('duration', $schedule.ScheduleInfo.Expiration.Duration)
+            }
+            if ($null -ne $schedule.ScheduleInfo.Expiration.EndDateTime)
+            {
+                $expirationValue.Add('endDateTime', $schedule.ScheduleInfo.Expiration.EndDateTime.ToString('yyyy-MM-ddThh:mm:ssZ'))
             }
             $ScheduleInfoValue.Add('expiration', $expirationValue)
         }
-        else
+        if ($null -ne $schedule.ScheduleInfo.Recurrence)
         {
-            $expirationValue = [ordered]@{
-                type = 'noExpiration'
+            if (Test-M365DSCRecurrenceIsConfigured -RecurrenceSettings $schedule.ScheduleInfo.Recurrence)
+            {
+                $recurrenceValue = [ordered]@{
+                    pattern = [ordered]@{
+                        dayOfMonth     = $schedule.ScheduleInfo.Recurrence.Pattern.dayOfMonth
+                        daysOfWeek     = $schedule.ScheduleInfo.Recurrence.Pattern.daysOfWeek
+                        firstDayOfWeek = $schedule.ScheduleInfo.Recurrence.Pattern.firstDayOfWeek
+                        index          = $schedule.ScheduleInfo.Recurrence.Pattern.index
+                        interval       = $schedule.ScheduleInfo.Recurrence.Pattern.interval
+                        month          = $schedule.ScheduleInfo.Recurrence.Pattern.month
+                        type           = $schedule.ScheduleInfo.Recurrence.Pattern.type
+                    }
+                    range   = [ordered]@{
+                        endDate             = $schedule.ScheduleInfo.Recurrence.Range.endDate
+                        numberOfOccurrences = $schedule.ScheduleInfo.Recurrence.Range.numberOfOccurrences
+                        recurrenceTimeZone  = $schedule.ScheduleInfo.Recurrence.Range.recurrenceTimeZone
+                        startDate           = $schedule.ScheduleInfo.Recurrence.Range.startDate
+                        type                = $schedule.ScheduleInfo.Recurrence.Range.type
+                    }
+                }
+                $ScheduleInfoValue.Add('Recurrence', $recurrenceValue)
             }
-            $ScheduleInfoValue.Add('expiration', $expirationValue)
         }
-
-        if ($null -ne $schedule.properties.startDateTime)
+        if ($null -ne $schedule.ScheduleInfo.StartDateTime)
         {
-            $ScheduleInfoValue.Add('StartDateTime', $schedule.properties.startDateTime)
+            $ScheduleInfoValue.Add('StartDateTime', $schedule.ScheduleInfo.StartDateTime.ToString('yyyy-MM-ddThh:mm:ssZ'))
         }
 
         $results = @{
             Principal             = $PrincipalValue
             PrincipalType         = $PrincipalType
             RoleDefinition        = $RoleDefinition
-            DirectoryScopeId      = $schedule.properties.scope
-            AppScopeId            = $AppScopeId
-            Id                    = $schedule.name
+            DirectoryScopeId      = $request.DirectoryScopeId
+            AppScopeId            = $request.AppScopeId
+            #Action                = $request.Action
+            Id                    = $request.Id
             Justification         = "Assignment of Azure role '$RoleDefinition' to principal '$PrincipalValue' of type '$PrincipalType'."
+            #IsValidationOnly      = $request.IsValidationOnly
             ScheduleInfo          = $ScheduleInfoValue
             Ensure                = 'Present'
             Credential            = $Credential
@@ -465,15 +441,11 @@ function Set-TargetResource
 
     # Reset caches to ensure fresh data
     $Script:AllSchedules = $null
-    $Script:AzureRoleDefinitions = $null
+    $Script:RoleDefinitions = $null
 
     $currentInstance = Get-TargetResource @PSBoundParameters
+    $ParametersOps = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
-    # Get Azure Management endpoint
-    $endpoints = Get-M365DSCAPIEndpoint -TenantId $TenantId
-    $azureManagementEndpoint = $endpoints.AzureManagement
-
-    # Resolve principal using Graph cmdlets
     if ($PrincipalType -eq 'User')
     {
         Write-Verbose -Message "Retrieving Principal by UserPrincipalName {$Principal}"
@@ -499,119 +471,95 @@ function Set-TargetResource
         throw "Multiple Principal with ID {$Principal} of type {$PrincipalType} were found. Cannot create schedule."
     }
 
-    # Resolve role definition via ARM API
-    $RoleDefinitionIdValue = $null
-    if ($null -ne $Script:AzureRoleDefinitions -and $Script:AzureRoleDefinitions.ContainsKey($RoleDefinition))
-    {
-        $RoleDefinitionIdValue = $Script:AzureRoleDefinitions[$RoleDefinition].id
-    }
-    else
-    {
-        $roleDefsUri = "$azureManagementEndpoint$DirectoryScopeId/providers/Microsoft.Authorization/roleDefinitions?api-version=2022-04-01&`$filter=roleName eq '$RoleDefinition'"
-        $roleDefsResponse = Invoke-AzRest -Uri $roleDefsUri -Method GET
-        $roleDefs = (ConvertFrom-Json $roleDefsResponse.Content).value
-        if ($roleDefs.Count -gt 0)
-        {
-            $RoleDefinitionIdValue = $roleDefs[0].id
-        }
-    }
+    $ParametersOps.Add('PrincipalId', $PrincipalIdValue[0])
+    $ParametersOps.Remove('Principal') | Out-Null
 
+    $RoleDefinitionIdValue = (Get-MgBetaRoleManagementAzureResourceRoleDefinition -Filter "DisplayName eq '$($RoleDefinition -replace "'", "''")'").Id
     if ($null -eq $RoleDefinitionIdValue)
     {
         throw "Couldn't find Role Definition {$RoleDefinition}"
     }
 
-    # Build ARM API request body
-    $requestBody = @{
-        properties = @{
-            principalId      = $PrincipalIdValue[0]
-            roleDefinitionId = $RoleDefinitionIdValue
-            requestType      = 'AdminAssign'
-            justification    = if ($Justification) { $Justification } else { 'Managed by Microsoft365DSC' }
-            scheduleInfo     = @{}
-        }
-    }
+    $ParametersOps.Add('RoleDefinitionId', $RoleDefinitionIdValue)
+    $ParametersOps.Remove('RoleDefinition') | Out-Null
 
     if ($null -ne $ScheduleInfo)
     {
+        $ScheduleInfoValue = @{}
         if ($ScheduleInfo.StartDateTime)
         {
-            $requestBody.properties.scheduleInfo.Add('startDateTime', $ScheduleInfo.StartDateTime)
+            $ScheduleInfoValue.Add('startDateTime', $ScheduleInfo.StartDateTime)
         }
 
         if ($ScheduleInfo.Expiration)
         {
             $expirationValue = @{
-                type = $ScheduleInfo.Expiration.type
+                endDateTime = $ScheduleInfo.Expiration.endDateTime
+                type        = $ScheduleInfo.Expiration.type
             }
             if ($ScheduleInfo.Expiration.duration)
             {
                 $expirationValue.Add('duration', $ScheduleInfo.Expiration.duration)
             }
-            if ($ScheduleInfo.Expiration.endDateTime)
-            {
-                $expirationValue.Add('endDateTime', $ScheduleInfo.Expiration.endDateTime)
-            }
-            $requestBody.properties.scheduleInfo.Add('expiration', $expirationValue)
+            $ScheduleInfoValue.Add('Expiration', $expirationValue)
         }
-    }
 
+        $RecurrenceInfo = @{}
+        $foundRecurrenceItem = $false
+        if ($null -ne $ScheduleInfo.Recurrence.Pattern.Type)
+        {
+            $Pattern = @{
+                dayOfMonth     = $ScheduleInfo.Recurrence.Pattern.DayOfMonth
+                daysOfWeek     = $ScheduleInfo.Recurrence.Pattern.DaysOfWeek
+                firstDayOfWeek = $ScheduleInfo.Recurrence.Pattern.FirstDayOfWeek
+                index          = $ScheduleInfo.Recurrence.Pattern.Index
+                month          = $ScheduleInfo.Recurrence.Pattern.Month
+                type           = $ScheduleInfo.Recurrence.Pattern.Type
+            }
+            $RecurrenceInfo.Add('pattern', $Pattern)
+            $foundRecurrenceItem = $true
+        }
+        if ($null -ne $ScheduleInfo.Recurrence.Range.Type)
+        {
+            $Range = @{
+                endDate             = $ScheduleInfo.Recurrence.Range.EndDate
+                numberOfOccurrences = $ScheduleInfo.Recurrence.Range.NumberOfOccurrences
+                recurrenceTimeZone  = $ScheduleInfo.Recurrence.Range.RecurrenceTimeZone
+                startDate           = $ScheduleInfo.Recurrence.Range.StartDate
+                type                = $ScheduleInfo.Recurrence.Range.Type
+            }
+            $RecurrenceInfo.Add('range', $Range)
+            $foundRecurrenceItem = $true
+        }
+        if ($foundRecurrenceItem)
+        {
+            $ScheduleInfoValue.Add('recurrence', $RecurrenceInfo)
+        }
+
+        Write-Verbose -Message "ScheduleInfo: $(Convert-M365DscHashtableToString -Hashtable $ScheduleInfoValue)"
+        $ParametersOps.ScheduleInfo = $ScheduleInfoValue
+    }
+    $ParametersOps.Remove('PrincipalType') | Out-Null
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating a Role Assignment Schedule Request for principal {$Principal} and role {$RoleDefinition}"
-        $requestBody.properties.requestType = 'AdminAssign'
-
-        $requestId = (New-Guid).ToString()
-        $uri = "$azureManagementEndpoint$DirectoryScopeId/providers/Microsoft.Authorization/roleAssignmentScheduleRequests/$($requestId)?api-version=2020-10-01"
-        $jsonBody = ConvertTo-Json $requestBody -Depth 10
-
-        Write-Verbose -Message "Request URI: $uri"
-        Write-Verbose -Message "Request Body: $jsonBody"
-
-        $response = Invoke-AzRest -Uri $uri -Method PUT -Payload $jsonBody
-
-        if ($response.StatusCode -notin @(200, 201))
-        {
-            throw "Failed to create role assignment schedule: $($response.Content)"
-        }
+        $ParametersOps.Remove('Id') | Out-Null
+        $ParametersOps.Action = 'AdminAssign'
+        New-MgBetaRoleManagementAzureResourceRoleAssignmentScheduleRequest @ParametersOps
     }
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating the Role Assignment Schedule Request for principal {$Principal} and role {$RoleDefinition}"
-        $requestBody.properties.requestType = 'AdminUpdate'
-
-        $requestId = (New-Guid).ToString()
-        $uri = "$azureManagementEndpoint$DirectoryScopeId/providers/Microsoft.Authorization/roleAssignmentScheduleRequests/$($requestId)?api-version=2020-10-01"
-        $jsonBody = ConvertTo-Json $requestBody -Depth 10
-
-        Write-Verbose -Message "Request URI: $uri"
-        Write-Verbose -Message "Request Body: $jsonBody"
-
-        $response = Invoke-AzRest -Uri $uri -Method PUT -Payload $jsonBody
-
-        if ($response.StatusCode -notin @(200, 201))
-        {
-            throw "Failed to update role assignment schedule: $($response.Content)"
-        }
+        $ParametersOps.Remove('Id') | Out-Null
+        $ParametersOps.Action = 'AdminUpdate'
+        New-MgBetaRoleManagementAzureResourceRoleAssignmentScheduleRequest @ParametersOps
     }
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Removing the Role Assignment Schedule Request for principal {$Principal} and role {$RoleDefinition}"
-        $requestBody.properties.requestType = 'AdminRemove'
-
-        $requestId = (New-Guid).ToString()
-        $uri = "$azureManagementEndpoint$DirectoryScopeId/providers/Microsoft.Authorization/roleAssignmentScheduleRequests/$($requestId)?api-version=2020-10-01"
-        $jsonBody = ConvertTo-Json $requestBody -Depth 10
-
-        Write-Verbose -Message "Request URI: $uri"
-        Write-Verbose -Message "Request Body: $jsonBody"
-
-        $response = Invoke-AzRest -Uri $uri -Method PUT -Payload $jsonBody
-
-        if ($response.StatusCode -notin @(200, 201))
-        {
-            throw "Failed to remove role assignment schedule: $($response.Content)"
-        }
+        $ParametersOps.Remove('Id') | Out-Null
+        $ParametersOps.Action = 'AdminRemove'
+        New-MgBetaRoleManagementAzureResourceRoleAssignmentScheduleRequest @ParametersOps
     }
 }
 
@@ -728,8 +676,8 @@ function Test-TargetResource
 
     $compareParameters = Get-CompareParameters
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
-                                         @compareParameters
+                                          -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+                                          @compareParameters
     return $result
 }
 
@@ -774,8 +722,6 @@ function Export-TargetResource
 
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
-    $null = New-M365DSCConnection -Workload 'Azure' `
-        -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -792,65 +738,8 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-
-        # Get Azure Management endpoint
-        $endpoints = Get-M365DSCAPIEndpoint -TenantId $TenantId
-        $azureManagementEndpoint = $endpoints.AzureManagement
-
-        [array] $Script:exportedInstances = @()
-
-        # Get all subscriptions
-        $subscriptionsUri = "$azureManagementEndpoint/subscriptions?api-version=2020-01-01"
-        $subscriptionsResponse = Invoke-AzRest -Uri $subscriptionsUri -Method GET
-        $subscriptions = (ConvertFrom-Json $subscriptionsResponse.Content).value
-
-        foreach ($subscription in $subscriptions)
-        {
-            $scope = $subscription.id
-            Write-Verbose -Message "Retrieving role assignment schedules for subscription: $($subscription.displayName)"
-
-            $schedulesUri = "$azureManagementEndpoint$scope/providers/Microsoft.Authorization/roleAssignmentSchedules?api-version=2020-10-01"
-            try
-            {
-                $schedulesResponse = Invoke-AzRest -Uri $schedulesUri -Method GET
-                $schedules = (ConvertFrom-Json $schedulesResponse.Content).value
-                $Script:exportedInstances += $schedules
-            }
-            catch
-            {
-                Write-Verbose -Message "Failed to retrieve schedules for subscription $($subscription.displayName): $_"
-            }
-        }
-
-        # Get management groups
-        $mgGroupsUri = "$azureManagementEndpoint/providers/Microsoft.Management/managementGroups?api-version=2020-05-01"
-        try
-        {
-            $mgGroupsResponse = Invoke-AzRest -Uri $mgGroupsUri -Method GET
-            $managementGroups = (ConvertFrom-Json $mgGroupsResponse.Content).value
-
-            foreach ($mgGroup in $managementGroups)
-            {
-                $scope = $mgGroup.id
-                Write-Verbose -Message "Retrieving role assignment schedules for management group: $($mgGroup.properties.displayName)"
-
-                $schedulesUri = "$azureManagementEndpoint$scope/providers/Microsoft.Authorization/roleAssignmentSchedules?api-version=2020-10-01"
-                try
-                {
-                    $schedulesResponse = Invoke-AzRest -Uri $schedulesUri -Method GET
-                    $schedules = (ConvertFrom-Json $schedulesResponse.Content).value
-                    $Script:exportedInstances += $schedules
-                }
-                catch
-                {
-                    Write-Verbose -Message "Failed to retrieve schedules for management group $($mgGroup.properties.displayName): $_"
-                }
-            }
-        }
-        catch
-        {
-            Write-Verbose -Message "Failed to retrieve management groups: $_"
-        }
+        #region resource generator code
+        [array] $Script:exportedInstances = Get-MgBetaRoleManagementAzureResourceRoleAssignmentSchedule -All -Filter $Filter -ErrorAction SilentlyContinue
 
         $i = 1
         $dscContent = ''
@@ -862,13 +751,15 @@ function Export-TargetResource
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
-
-        # Cache role definitions
-        if ($null -eq $Script:AzureRoleDefinitions)
+        if ($null -eq $Script:RoleDefinitions)
         {
-            $Script:AzureRoleDefinitions = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
+            $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
+            $roleDefinitions = Get-MgBetaRoleManagementAzureResourceRoleDefinition -All -ErrorAction SilentlyContinue
+            foreach ($roleDefinition in $roleDefinitions)
+            {
+                $Script:RoleDefinitions.Add($roleDefinition.Id, $roleDefinition)
+            }
         }
-
         foreach ($request in $Script:exportedInstances)
         {
             if ($null -ne $Global:M365DSCExportResourceInstancesCount)
@@ -876,12 +767,12 @@ function Export-TargetResource
                 $Global:M365DSCExportResourceInstancesCount++
             }
 
-            $displayedKey = $request.name
+            $displayedKey = $request.Id
             Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
 
-            # Find the Principal Type using Get-MgBetaDirectoryObjectById (same as AAD pattern)
+            # Find the Principal Type
             $principalType = 'User'
-            $userInfo = Get-MgBetaDirectoryObjectById -Ids $request.properties.principalId -ErrorAction SilentlyContinue
+            $userInfo = Get-MgBetaDirectoryObjectById -Ids $request.PrincipalId -ErrorAction SilentlyContinue
             $principalType = $userInfo.AdditionalProperties['@odata.type'].Split('.')[2]
             $PrincipalValue = if ($principalType -eq 'user')
             {
@@ -894,46 +785,27 @@ function Export-TargetResource
 
             if ($null -ne $PrincipalValue)
             {
-                # Resolve role definition
-                $roleDefinitionId = $request.properties.roleDefinitionId
-                $roleDefinitionName = $null
-                if ($Script:AzureRoleDefinitions.ContainsKey($roleDefinitionId))
+                $roleDefinition = $Script:RoleDefinitions[$request.RoleDefinitionId]
+                if ($null -eq $roleDefinition)
                 {
-                    $roleDefinitionName = $Script:AzureRoleDefinitions[$roleDefinitionId].properties.roleName
+                    $roleDefinition = Get-MgBetaRoleManagementAzureResourceRoleDefinition -UnifiedRoleDefinitionId $request.RoleDefinitionId `
+                        -ErrorAction SilentlyContinue
+                    $Script:RoleDefinitions.Add($request.RoleDefinitionId, $roleDefinition)
                 }
-                else
-                {
-                    $roleDefUri = "$azureManagementEndpoint$roleDefinitionId`?api-version=2022-04-01"
-                    try
-                    {
-                        $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
-                        $roleDef = ConvertFrom-Json $roleDefResponse.Content
-                        $roleDefinitionName = $roleDef.properties.roleName
-                        $Script:AzureRoleDefinitions.Add($roleDefinitionId, $roleDef)
-                    }
-                    catch
-                    {
-                        Write-Verbose -Message "Failed to retrieve role definition: $_"
-                    }
-                }
-
-                if ($null -ne $roleDefinitionName)
-                {
-                    $params = @{
-                        Id                    = $request.name
-                        Principal             = $PrincipalValue
-                        PrincipalType         = $principalType
-                        DirectoryScopeId      = $request.properties.scope
-                        RoleDefinition        = $roleDefinitionName
-                        Ensure                = 'Present'
-                        Credential            = $Credential
-                        ApplicationId         = $ApplicationId
-                        TenantId              = $TenantId
-                        ApplicationSecret     = $ApplicationSecret
-                        CertificateThumbprint = $CertificateThumbprint
-                        ManagedIdentity       = $ManagedIdentity.IsPresent
-                        AccessTokens          = $AccessTokens
-                    }
+                $params = @{
+                    Id                    = $request.Id
+                    Principal             = $PrincipalValue
+                    PrincipalType         = $principalType
+                    DirectoryScopeId      = $request.DirectoryScopeId
+                    RoleDefinition        = $roleDefinition.DisplayName
+                    Ensure                = 'Present'
+                    Credential            = $Credential
+                    ApplicationId         = $ApplicationId
+                    TenantId              = $TenantId
+                    ApplicationSecret     = $ApplicationSecret
+                    CertificateThumbprint = $CertificateThumbprint
+                    ManagedIdentity       = $ManagedIdentity.IsPresent
+                    AccessTokens          = $AccessTokens
                 }
             }
 

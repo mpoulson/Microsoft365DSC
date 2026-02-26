@@ -24,12 +24,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $Global:CurrentModeIsExport = $false
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
-            $Script:exportedInstance = $null
             $Script:exportedInstances = $null
-            $Script:ExportMode = $false
-            $Script:AllAzureSchedules = $null
-            $Script:AzureRoleDefinitions = $null
-
+            $Script:ExportMode = $null
             Mock -CommandName Add-M365DSCTelemetryEvent -MockWith {
             }
 
@@ -40,142 +36,105 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return 'Credentials'
             }
 
-            Mock -CommandName Get-M365DSCAPIEndpoint -MockWith {
-                return @{
-                    AzureManagement = 'https://management.azure.com'
-                }
+            Mock -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -MockWith {
             }
 
             Mock -CommandName Get-MgUser -MockWith {
                 return @{
-                    Id                = '12345678-1234-1234-1234-123456789012'
-                    UserPrincipalName = 'AdeleV@contoso.onmicrosoft.com'
+                    Id = '123456'
+                    UserPrincipalName = 'John.Smith@contoso.com'
                 }
             }
 
-            Mock -CommandName Get-MgGroup -MockWith {
+            Mock -CommandName Get-MgBetaDirectoryObjectById -MockWith {
                 return @{
-                    Id          = '12345678-1234-1234-1234-123456789012'
-                    DisplayName = 'SecurityGroup'
+                    Id = '123456'
+                    AdditionalProperties = @{
+                        '@odata.type' = '#microsoft.graph.user'
+                        userPrincipalName = 'John.Smith@contoso.com'
+                    }
                 }
             }
 
-            Mock -CommandName Get-MgServicePrincipal -MockWith {
+            Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleDefinition -MockWith {
                 return @{
-                    Id          = '12345678-1234-1234-1234-123456789012'
-                    DisplayName = 'TestServicePrincipal'
+                    DisplayName      = 'Owner'
+                    Id               = '12345'
+                    DirectoryScopeId = '/subscriptions/12345678-1234-1234-1234-123456789012'
+                }
+            }
+            Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+                return @{
+                    Id               = '12345-12345-12345-12345-12345'
+                    RoleDefinitionId = "12345"
+                    DirectoryScopeId = '/subscriptions/12345678-1234-1234-1234-123456789012'
+                    PrincipalId      = "123456"
+                    ScheduleInfo         = @{
+                        startDateTime = [System.DateTime]::Parse('2021-09-01T02:40:44Z')
+                        expiration    = @{
+                            endDateTime = [System.DateTime]::Parse('2025-10-31T02:40:09Z')
+                            type        = 'afterDateTime'
+                        }
+                    };
                 }
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
-
-            Mock -CommandName Save-M365DSCPartialExport -MockWith {
-            }
-
-            Mock -CommandName Get-M365DSCExportContentForResource -MockWith {
-                return 'Export content'
-            }
-
             $Script:exportedInstance = $null
             $Script:exportedInstances = $null
             $Script:ExportMode = $false
         }
-
         # Test contexts
         Context -Name 'The instance should exist but it DOES NOT' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Principal             = 'AdeleV@contoso.onmicrosoft.com'
-                    RoleDefinitionName    = 'Owner'
-                    Scope                 = '/subscriptions/12345678-1234-1234-1234-123456789012'
-                    PrincipalType         = 'User'
-                    Ensure                = 'Present'
-                    ApplicationId         = '12345678-1234-1234-1234-123456789012'
-                    TenantId              = '12345678-1234-1234-1234-123456789012'
-                    CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
+                    DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
+                    Ensure               = "Present";
+                    Principal            = "John.Smith@contoso.com";
+                    PrincipalType        = "User"
+                    RoleDefinition       = "Owner";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestSchedule -Property @{
+                        startDateTime             = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = '2025-10-31T02:40:09Z'
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
                 }
 
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    if ($Uri -match 'roleEligibilitySchedules')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": []}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleDefinitions')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"id": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "properties": {"roleName": "Owner"}}]}'
-                        }
-                    }
-                    return @{
-                        StatusCode = 200
-                        Content    = '{}'
-                    }
+                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+                    return $null
                 }
             }
-
             It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
             }
-
             It 'Should return false from the Test method' {
                 Test-TargetResource @testParams | Should -Be $false
             }
-
             It 'Should Create the instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-AzRest -AtLeast 1
+                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -Exactly 1
             }
         }
 
         Context -Name 'The instance exists but it SHOULD NOT' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Principal             = 'AdeleV@contoso.onmicrosoft.com'
-                    RoleDefinitionName    = 'Owner'
-                    Scope                 = '/subscriptions/12345678-1234-1234-1234-123456789012'
-                    PrincipalType         = 'User'
-                    Ensure                = 'Absent'
-                    ApplicationId         = '12345678-1234-1234-1234-123456789012'
-                    TenantId              = '12345678-1234-1234-1234-123456789012'
-                    CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
-                }
-
-                # Reset caches
-                $Script:AllAzureSchedules = @()
-                $Script:AzureRoleDefinitions = $null
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    if ($Uri -match 'roleEligibilitySchedules')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"name": "12345", "properties": {"principalId": "12345678-1234-1234-1234-123456789012", "roleDefinitionId": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "scope": "/subscriptions/12345678-1234-1234-1234-123456789012", "status": "Provisioned", "startDateTime": "2024-01-15T08:00:00Z", "endDateTime": "2025-12-31T23:59:59Z"}}]}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleDefinitions')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"id": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "properties": {"roleName": "Owner"}}]}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleEligibilityScheduleRequests' -and $Method -eq 'PUT')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"id": "12345", "properties": {}}'
-                        }
-                    }
-                    return @{
-                        StatusCode = 200
-                        Content    = '{}'
-                    }
+                    DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
+                    Ensure               = "Absent";
+                    PrincipalType        = "User"
+                    Principal            = "John.Smith@contoso.com";
+                    RoleDefinition       = "Owner";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestSchedule -Property @{
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration -Property @{
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
                 }
             }
 
@@ -189,133 +148,96 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-AzRest -AtLeast 1
+                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -Exactly 1
             }
         }
 
-        Context -Name 'The instance exists and values are already in the desired state' -Fixture {
+        Context -Name 'The instance Exists and Values are already in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Principal             = 'AdeleV@contoso.onmicrosoft.com'
-                    RoleDefinitionName    = 'Owner'
-                    Scope                 = '/subscriptions/12345678-1234-1234-1234-123456789012'
-                    PrincipalType         = 'User'
-                    Ensure                = 'Present'
-                    ApplicationId         = '12345678-1234-1234-1234-123456789012'
-                    TenantId              = '12345678-1234-1234-1234-123456789012'
-                    CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
+                    DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
+                    Ensure               = "Present";
+                    PrincipalType        = "User"
+                    Principal            = "John.Smith@contoso.com";
+                    RoleDefinition       = "Owner";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestSchedule -Property @{
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration -Property @{
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
                 }
+            }
 
-                # Reset caches
-                $Script:AllAzureSchedules = @()
-                $Script:AzureRoleDefinitions = $null
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    if ($Uri -match 'roleEligibilitySchedules')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"name": "12345", "properties": {"principalId": "12345678-1234-1234-1234-123456789012", "roleDefinitionId": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "scope": "/subscriptions/12345678-1234-1234-1234-123456789012", "status": "Provisioned", "startDateTime": "2024-01-15T08:00:00Z", "endDateTime": "2025-12-31T23:59:59Z"}}]}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleDefinitions')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"id": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "properties": {"roleName": "Owner"}}]}'
-                        }
-                    }
-                    return @{
-                        StatusCode = 200
-                        Content    = '{}'
-                    }
-                }
+            It 'Should return Values from the Get method' {
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
             }
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
             }
         }
-
-        Context -Name 'Azure Gov endpoint handling' -Fixture {
+        Context -Name 'The instance Exists and specified Values are NOT in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Principal             = 'AdeleV@contoso.onmicrosoft.com'
-                    RoleDefinitionName    = 'Owner'
-                    Scope                 = '/subscriptions/12345678-1234-1234-1234-123456789012'
-                    PrincipalType         = 'User'
-                    Ensure                = 'Present'
-                    ApplicationId         = '12345678-1234-1234-1234-123456789012'
-                    TenantId              = '12345678-1234-1234-1234-123456789012'
-                    CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
-                }
-
-                $Script:AllAzureSchedules = $null
-
-                Mock -CommandName Get-M365DSCAPIEndpoint -MockWith {
-                    return @{
-                        AzureManagement = 'https://management.usgovcloudapi.net'
-                    }
-                }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    return @{
-                        StatusCode = 200
-                        Content    = '{"value": []}'
-                    }
+                    DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
+                    Ensure               = "Present";
+                    PrincipalType        = "User"
+                    Principal            = "John.Smith@contoso.com";
+                    RoleDefinition       = "Owner";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestSchedule -Property @{
+                        startDateTime = '2023-01-01T02:40:44Z' # Drift
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = '2025-10-31T02:40:09Z'
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
                 }
             }
 
-            It 'Should use Azure Gov endpoint' {
-                Get-TargetResource @testParams
-                Should -Invoke -CommandName Get-M365DSCAPIEndpoint -Exactly 1
-            }
-        }
-
-        Context -Name 'Management group scope handling' -Fixture {
-            BeforeAll {
-                $testParams = @{
-                    Principal             = 'AdeleV@contoso.onmicrosoft.com'
-                    RoleDefinitionName    = 'Reader'
-                    Scope                 = '/providers/Microsoft.Management/managementGroups/mg-root'
-                    PrincipalType         = 'User'
-                    Ensure                = 'Present'
-                    ApplicationId         = '12345678-1234-1234-1234-123456789012'
-                    TenantId              = '12345678-1234-1234-1234-123456789012'
-                    CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
-                }
-
-                $Script:AllAzureSchedules = $null
-                $Script:AzureRoleDefinitions = $null
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    if ($Uri -match 'roleEligibilitySchedules')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"name": "mgschedule1", "properties": {"principalId": "12345678-1234-1234-1234-123456789012", "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7", "scope": "/providers/Microsoft.Management/managementGroups/mg-root", "status": "Provisioned", "startDateTime": "2024-01-15T08:00:00Z", "endDateTime": null}}]}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleDefinitions')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"id": "/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7", "properties": {"roleName": "Reader"}}]}'
-                        }
-                    }
-                    return @{
-                        StatusCode = 200
-                        Content    = '{}'
-                    }
-                }
-            }
-
-            It 'Should return Present for management group scoped eligibility' {
+            It 'Should return Values from the Get method' {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
             }
 
-            It 'Should return true from the Test method for management group scope' {
-                Test-TargetResource @testParams | Should -Be $true
+            It 'Should return false from the Test method' {
+                Test-TargetResource @testParams | Should -Be $false
+            }
+
+            It 'Should call the Set to Update the instance' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -Exactly 1
+            }
+        }
+        Context -Name 'Set-TargetResource should throw when Role Definition is not found' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
+                    Ensure               = "Present";
+                    Principal            = "John.Smith@contoso.com";
+                    PrincipalType        = "User"
+                    RoleDefinition       = "NonExistentRole";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestSchedule -Property @{
+                        startDateTime = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = '2025-10-31T02:40:09Z'
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleDefinition -MockWith {
+                    return $null
+                }
+            }
+
+            It 'Should throw when Role Definition lookup fails' {
+                { Set-TargetResource @testParams } | Should -Throw -ExpectedMessage "*Couldn't find Role Definition*"
             }
         }
 
@@ -324,44 +246,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:CurrentModeIsExport = $true
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
-                    ApplicationId         = '12345678-1234-1234-1234-123456789012'
-                    TenantId              = '12345678-1234-1234-1234-123456789012'
-                    CertificateThumbprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
-                }
-
-                Mock -CommandName Invoke-AzRest -MockWith {
-                    if ($Uri -match 'subscriptions\?')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"id": "/subscriptions/12345678-1234-1234-1234-123456789012", "displayName": "Test Subscription"}]}'
-                        }
-                    }
-                    elseif ($Uri -match 'managementGroups\?')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": []}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleEligibilitySchedules')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"value": [{"name": "12345", "properties": {"principalId": "12345678-1234-1234-1234-123456789012", "roleDefinitionId": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "scope": "/subscriptions/12345678-1234-1234-1234-123456789012", "status": "Provisioned", "startDateTime": "2024-01-15T08:00:00Z", "endDateTime": "2025-12-31T23:59:59Z"}}]}'
-                        }
-                    }
-                    elseif ($Uri -match 'roleDefinitions' -and $Uri -match '8e3af657')
-                    {
-                        return @{
-                            StatusCode = 200
-                            Content    = '{"id": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635", "properties": {"roleName": "Owner"}}'
-                        }
-                    }
-                    return @{
-                        StatusCode = 200
-                        Content    = '{}'
-                    }
+                    Credential = $Credential
                 }
             }
 

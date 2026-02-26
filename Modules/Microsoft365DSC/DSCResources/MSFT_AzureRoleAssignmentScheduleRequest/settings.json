@@ -49,34 +49,9 @@
           }
         ]
       }
-    },
-    "azure": {
-      "application": {
-        "read": [
-          {
-            "name": "Microsoft.Authorization/roleAssignmentSchedules/read"
-          },
-          {
-            "name": "Microsoft.Authorization/roleDefinitions/read"
-          }
-        ],
-        "update": [
-          {
-            "name": "Microsoft.Authorization/roleAssignmentScheduleRequests/write"
-          },
-          {
-            "name": "Microsoft.Authorization/roleAssignmentSchedules/read"
-          },
-          {
-            "name": "Microsoft.Authorization/roleDefinitions/read"
-          }
-        ]
-      }
     }
   },
   "requiredModules": [
-    "Az.Accounts",
-    "Az.Resources",
     "Microsoft.Graph.Applications",
     "Microsoft.Graph.Authentication",
     "Microsoft.Graph.Beta.DirectoryObjects",
@@ -92,19 +67,6 @@
   "mode": "Configuration",
   "commands": [
     {
-      "module": "Az.Accounts",
-      "cmdlets": [
-        "Invoke-AzRest",
-        "Connect-AzAccount"
-      ]
-    },
-    {
-      "module": "Az.Resources",
-      "cmdlets": [
-        "Get-AzRoleDefinition"
-      ]
-    },
-    {
       "module": "Microsoft.Graph.Applications",
       "cmdlets": [
         "Get-MgServicePrincipal"
@@ -114,6 +76,14 @@
       "module": "Microsoft.Graph.Beta.DirectoryObjects",
       "cmdlets": [
         "Get-MgBetaDirectoryObjectById"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Beta.Identity.Governance",
+      "cmdlets": [
+        "Get-MgBetaRoleManagementAzureResourceRoleAssignmentSchedule",
+        "Get-MgBetaRoleManagementAzureResourceRoleDefinition",
+        "New-MgBetaRoleManagementAzureResourceRoleAssignmentScheduleRequest"
       ]
     },
     {
