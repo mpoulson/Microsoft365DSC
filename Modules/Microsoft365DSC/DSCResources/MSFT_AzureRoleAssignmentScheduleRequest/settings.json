@@ -12,6 +12,44 @@
     ]
   },
   "permissions": {
+    "graph": {
+      "delegated": {
+        "read": [
+          {
+            "name": "Directory.Read.All"
+          },
+          {
+            "name": "RoleAssignmentSchedule.Read.Directory"
+          }
+        ],
+        "update": [
+          {
+            "name": "Directory.Read.All"
+          },
+          {
+            "name": "RoleAssignmentSchedule.ReadWrite.Directory"
+          }
+        ]
+      },
+      "application": {
+        "read": [
+          {
+            "name": "Directory.Read.All"
+          },
+          {
+            "name": "RoleAssignmentSchedule.Read.Directory"
+          }
+        ],
+        "update": [
+          {
+            "name": "Directory.Read.All"
+          },
+          {
+            "name": "RoleAssignmentSchedule.ReadWrite.Directory"
+          }
+        ]
+      }
+    },
     "azure": {
       "application": {
         "read": [
@@ -39,7 +77,12 @@
   "requiredModules": [
     "Az.Accounts",
     "Az.Resources",
-    "Microsoft.Graph.Authentication"
+    "Microsoft.Graph.Applications",
+    "Microsoft.Graph.Authentication",
+    "Microsoft.Graph.Beta.DirectoryObjects",
+    "Microsoft.Graph.Beta.Identity.Governance",
+    "Microsoft.Graph.Groups",
+    "Microsoft.Graph.Users"
   ],
   "supportedEnvironments": [
     "Global",
@@ -59,6 +102,30 @@
       "module": "Az.Resources",
       "cmdlets": [
         "Get-AzRoleDefinition"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Applications",
+      "cmdlets": [
+        "Get-MgServicePrincipal"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Beta.DirectoryObjects",
+      "cmdlets": [
+        "Get-MgBetaDirectoryObjectById"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Groups",
+      "cmdlets": [
+        "Get-MgGroup"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Users",
+      "cmdlets": [
+        "Get-MgUser"
       ]
     }
   ]
