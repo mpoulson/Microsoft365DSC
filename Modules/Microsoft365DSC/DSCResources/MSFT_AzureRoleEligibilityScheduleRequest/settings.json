@@ -16,36 +16,36 @@
       "delegated": {
         "read": [
           {
-            "name": "Directory.Read.All"
+            "name": "RoleManagement.Read.All"
           },
           {
-            "name": "RoleEligibilitySchedule.Read.Directory"
+            "name": "Directory.Read.All"
           }
         ],
         "update": [
           {
-            "name": "Directory.Read.All"
+            "name": "RoleManagement.ReadWrite.All"
           },
           {
-            "name": "RoleEligibilitySchedule.ReadWrite.Directory"
+            "name": "Directory.Read.All"
           }
         ]
       },
       "application": {
         "read": [
           {
-            "name": "Directory.Read.All"
+            "name": "RoleManagement.Read.All"
           },
           {
-            "name": "RoleEligibilitySchedule.Read.Directory"
+            "name": "Directory.Read.All"
           }
         ],
         "update": [
           {
-            "name": "Directory.Read.All"
+            "name": "RoleManagement.ReadWrite.All"
           },
           {
-            "name": "RoleEligibilitySchedule.ReadWrite.Directory"
+            "name": "Directory.Read.All"
           }
         ]
       }
