@@ -18,8 +18,8 @@ Configuration Example
         AzureRoleAssignmentScheduleRequest "RemoveAssignment"
         {
             Principal             = "AdeleV@contoso.onmicrosoft.com"
-            RoleDefinitionName    = "Owner"
-            Scope                 = "/subscriptions/12345678-1234-1234-1234-123456789012"
+            RoleDefinition        = "Owner"
+            DirectoryScopeId      = "/subscriptions/12345678-1234-1234-1234-123456789012"
             PrincipalType         = "User"
             Ensure                = "Absent"
             ApplicationId         = $ApplicationId
