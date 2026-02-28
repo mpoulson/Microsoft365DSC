@@ -2111,10 +2111,7 @@ function Get-M365DSCAPIEndpoint
         {
             'USGov'
             {
-                if ($null -ne $response.'tenant_region_sub_scope' -and $response.'tenant_region_sub_scope' -eq 'DODCON')
-                {
-                    $endpoints.AzureManagement = "https://management.usgovcloudapi.net"
-                }
+                $endpoints.AzureManagement = "https://management.usgovcloudapi.net"
             }
             default
             {

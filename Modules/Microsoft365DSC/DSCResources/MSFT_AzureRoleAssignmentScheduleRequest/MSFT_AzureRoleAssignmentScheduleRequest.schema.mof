@@ -1,15 +1,15 @@
 [ClassVersion("1.0.0")]
-class MSFT_AzureRoleEligibilityScheduleRequestScheduleRecurrenceRange
+class MSFT_AzureRoleAssignmentScheduleRequestScheduleRecurrenceRange
 {
-    [Required, Description("The date to stop applying the recurrence pattern. Depending on the recurrence pattern of the event, the last occurrence of the meeting may not be this date.")] String endDate;
+    [Required, Description("The date to stop applying the recurrence pattern. Depending on the recurrence pattern of the event, the last occurrence of the meeting may not be this date.")] DATETIME endDate;
     [Write, Description("The number of times to repeat the event. Required and must be positive if type is numbered.")] UInt32 numberOfOccurrences;
     [Write, Description("Time zone for the startDate and endDate properties.")] String recurrenceTimeZone;
-    [Required, Description("The date to start applying the recurrence pattern. The first occurrence of the meeting may be this date or later, depending on the recurrence pattern of the event. Must be the same value as the start property of the recurring event.")] String startDate;
+    [Required, Description("The date to start applying the recurrence pattern. The first occurrence of the meeting may be this date or later, depending on the recurrence pattern of the event. Must be the same value as the start property of the recurring event.")] DATETIME startDate;
     [Required, Description("The recurrence range. The possible values are: endDate, noEnd, numbered."),ValueMap{"endDate","noEnd","numbered"}, Values{"endDate","noEnd","numbered"}] String type;
 };
 
 [ClassVersion("1.0.0")]
-class MSFT_AzureRoleEligibilityScheduleRequestScheduleRecurrencePattern
+class MSFT_AzureRoleAssignmentScheduleRequestScheduleRecurrencePattern
 {
     [Write, Description("The day of the month on which the event occurs.")] UInt32 dayOfMonth;
     [Write, Description("A collection of the days of the week on which the event occurs. The possible values are: sunday, monday, tuesday, wednesday, thursday, friday, saturday"), ValueMap{"sunday","monday","tuesday","wednesday","thursday","friday","saturday"}, Values{"sunday","monday","tuesday","wednesday","thursday","friday","saturday"}] String daysOfWeek[];
@@ -21,14 +21,14 @@ class MSFT_AzureRoleEligibilityScheduleRequestScheduleRecurrencePattern
 };
 
 [ClassVersion("1.0.0")]
-class MSFT_AzureRoleEligibilityScheduleRequestScheduleRecurrence
+class MSFT_AzureRoleAssignmentScheduleRequestScheduleRecurrence
 {
-    [Write, Description("The frequency of an event."), EmbeddedInstance("MSFT_AzureRoleEligibilityScheduleRequestScheduleRecurrencePattern")] String pattern;
-    [Write, Description("The duration of an event."), EmbeddedInstance("MSFT_AzureRoleEligibilityScheduleRequestScheduleRecurrenceRange")] String range;
+    [Write, Description("The frequency of an event."), EmbeddedInstance("MSFT_AzureRoleAssignmentScheduleRequestScheduleRecurrencePattern")] String pattern;
+    [Write, Description("The duration of an event."), EmbeddedInstance("MSFT_AzureRoleAssignmentScheduleRequestScheduleRecurrenceRange")] String range;
 };
 
 [ClassVersion("1.0.0")]
-class MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration
+class MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration
 {
     [Write, Description("The requestor's desired duration of access represented in ISO 8601 format for durations. For example, PT3H refers to three hours. If specified in a request, endDateTime should not be present and the type property should be set to afterDuration.")] String duration;
     [Write, Description("Timestamp of date and time information using ISO 8601 format and is always in UTC time. For example, midnight UTC on Jan 1, 2014 is 2014-01-01T00:00:00Z.")] String endDateTime;
@@ -36,26 +36,34 @@ class MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration
 };
 
 [ClassVersion("1.0.0")]
-class MSFT_AzureRoleEligibilityScheduleRequestSchedule
+class MSFT_AzureRoleAssignmentScheduleRequestSchedule
 {
-    [Write, Description("When the eligible or active assignment expires."), EmbeddedInstance("MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration")] String expiration;
-    [Write, Description("The frequency of the eligible or active assignment. This property is currently unsupported in PIM."), EmbeddedInstance("MSFT_AzureRoleEligibilityScheduleRequestScheduleRecurrence")] String recurrence;
+    [Write, Description("When the eligible or active assignment expires."), EmbeddedInstance("MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration")] String expiration;
+    [Write, Description("The frequency of the eligible or active assignment. This property is currently unsupported in PIM."), EmbeddedInstance("MSFT_AzureRoleAssignmentScheduleRequestScheduleRecurrence")] String recurrence;
     [Write, Description("When the eligible or active assignment becomes active.")] String startDateTime;
 };
 
-[ClassVersion("1.0.0.0"), FriendlyName("AzureRoleEligibilityScheduleRequest")]
-class MSFT_AzureRoleEligibilityScheduleRequest : OMI_BaseResource
+[ClassVersion("1.0.0")]
+class MSFT_AzureRoleAssignmentScheduleRequestTicketInfo
 {
-    [Key, Description("User Principal Name of the Azure role eligibility request.")] String Principal;
-    [Key, Description("Azure role associated with the eligibility request (e.g., 'Owner', 'Contributor').")] String RoleDefinition;
+    [Write, Description("The ticket number.")] String ticketNumber;
+    [Write, Description("The description of the ticket system.")] String ticketSystem;
+};
+
+[ClassVersion("1.0.0.0"), FriendlyName("AzureRoleAssignmentScheduleRequest")]
+class MSFT_AzureRoleAssignmentScheduleRequest : OMI_BaseResource
+{
+    [Key, Description("User Principal Name of the Azure role assignment request.")] String Principal;
+    [Key, Description("Azure role associated with the assignment request (e.g., 'Owner', 'Contributor').")] String RoleDefinition;
     [Write, Description("Represented the type of principal to assign the request to. Accepted values are: Group, User and ServicePrincipal."), ValueMap{"Group","User","ServicePrincipal"}, Values{"Group","User","ServicePrincipal"}] String PrincipalType;
-    [Key, Description("Identifier of the scope representing the Azure resource (e.g., /subscriptions/{id}, /providers/Microsoft.Management/managementGroups/{id}). The scope determines the set of Azure resources for which the principal is eligible to access.")] String DirectoryScopeId;
-    [Write, Description("Identifier for the Role Eligibility Schedule Request.")] String Id;
-    [Write, Description("Identifier of the app-specific scope when the role eligibility is scoped to an app. Not commonly used for Azure RBAC roles.")] String AppScopeId;
-    [Write, Description("This parameter is deprecated and will be removed in a future release. Represents the type of operation on the role eligibility request.The possible values are: adminAssign, adminUpdate, adminRemove, selfActivate, selfDeactivate, adminExtend, adminRenew, selfExtend, selfRenew, unknownFutureValue."), ValueMap{"adminAssign","adminUpdate","adminRemove","selfActivate","selfDeactivate","adminExtend","adminRenew","selfExtend","selfRenew","unknownFutureValue"}, Values{"adminAssign","adminUpdate","adminRemove","selfActivate","selfDeactivate","adminExtend","adminRenew","selfExtend","selfRenew","unknownFutureValue"}] String Action;
+    [Key, Description("Identifier of the scope representing the Azure resource (e.g., /subscriptions/{id}, /providers/Microsoft.Management/managementGroups/{id}). The scope determines the set of Azure resources for which the principal has been granted access.")] String DirectoryScopeId;
+    [Write, Description("Identifier for the Role Assignment Schedule Request.")] String Id;
+    [Write, Description("Identifier of the app-specific scope when the role assignment is scoped to an app. Not commonly used for Azure RBAC roles.")] String AppScopeId;
+    [Write, Description("This parameter is deprecated and will be removed in a future release. Represents the type of operation on the role assignment request.The possible values are: adminAssign, adminUpdate, adminRemove, selfActivate, selfDeactivate, adminExtend, adminRenew, selfExtend, selfRenew, unknownFutureValue."), ValueMap{"adminAssign","adminUpdate","adminRemove","selfActivate","selfDeactivate","adminExtend","adminRenew","selfExtend","selfRenew","unknownFutureValue"}, Values{"adminAssign","adminUpdate","adminRemove","selfActivate","selfDeactivate","adminExtend","adminRenew","selfExtend","selfRenew","unknownFutureValue"}] String Action;
     [Write, Description("This parameter is deprecated and will be removed in a future release. Determines whether the call is a validation or an actual call. Only set this property if you want to check whether an activation is subject to additional rules like MFA before actually submitting the request.")] Boolean IsValidationOnly;
-    [Write, Description("A message provided by users and administrators when they create the role eligibility schedule request. Optional when action is adminRemove.")] String Justification;
-    [Write, Description("The period of the role eligibility. Optional when action is adminRemove. The period of eligibility is dependent on the settings of the Azure role."), EmbeddedInstance("MSFT_AzureRoleEligibilityScheduleRequestSchedule")] String ScheduleInfo;
+    [Write, Description("A message provided by users and administrators when they create the role assignment schedule request. Optional when action is adminRemove.")] String Justification;
+    [Write, Description("The period of the role assignment. Optional when action is adminRemove. The period of assignment is dependent on the settings of the Azure role."), EmbeddedInstance("MSFT_AzureRoleAssignmentScheduleRequestSchedule")] String ScheduleInfo;
+    [Write, Description("This parameter is deprecated and will be removed in a future release. Ticket details linked to the role assignment request including details of the ticket number and ticket system."), EmbeddedInstance("MSFT_AzureRoleAssignmentScheduleRequestTicketInfo")] String TicketInfo;
     [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] string Ensure;
     [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;

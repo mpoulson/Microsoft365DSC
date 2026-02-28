@@ -15,7 +15,7 @@ Import-Module -Name (Join-Path -Path $M365DSCTestFolder `
         -ChildPath '\UnitTestHelper.psm1' `
         -Resolve)
 $Global:DscHelper = New-M365DscUnitTestHelper -StubModule $CmdletModule `
-    -DscResource 'AzureRoleEligibilityScheduleRequest' -GenericStubModule $GenericStubPath
+    -DscResource 'AzureRoleAssignmentScheduleRequest' -GenericStubModule $GenericStubPath
 
 Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
     InModuleScope -ModuleName $Global:DscHelper.ModuleName -ScriptBlock {
@@ -36,7 +36,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return 'Credentials'
             }
 
-            Mock -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -MockWith {
+            Mock -CommandName New-MgBetaRoleManagementAzureResourceRoleAssignmentScheduleRequest -MockWith {
             }
 
             Mock -CommandName Get-MgUser -MockWith {
@@ -63,15 +63,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DirectoryScopeId = '/subscriptions/12345678-1234-1234-1234-123456789012'
                 }
             }
-            Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+
+            Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleAssignmentSchedule -MockWith {
                 return @{
-                    Id               = '12345-12345-12345-12345-12345'
-                    RoleDefinitionId = "12345"
-                    DirectoryScopeId = '/subscriptions/12345678-1234-1234-1234-123456789012'
-                    PrincipalId      = "123456"
+                    Action               = "AdminAssign";
+                    Id                   = '12345-12345-12345-12345-12345'
+                    DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
+                    IsValidationOnly     = $False;
+                    PrincipalId          = "123456";
+                    RoleDefinitionId     = "12345";
                     ScheduleInfo         = @{
-                        startDateTime = [System.DateTime]::Parse('2021-09-01T02:40:44Z')
-                        expiration    = @{
+                        startDateTime   = [System.DateTime]::Parse('2023-09-01T02:40:44Z')
+                        expiration      = @{
                             endDateTime = [System.DateTime]::Parse('2025-10-31T02:40:09Z')
                             type        = 'afterDateTime'
                         }
@@ -82,7 +85,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
-            $Script:exportedInstance = $null
             $Script:exportedInstances = $null
             $Script:ExportMode = $false
         }
@@ -95,9 +97,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Principal            = "John.Smith@contoso.com";
                     PrincipalType        = "User"
                     RoleDefinition       = "Owner";
-                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestSchedule -Property @{
-                        startDateTime             = '2023-09-01T02:40:44Z'
-                        expiration = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration -Property @{
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestSchedule -Property @{
+                        startDateTime   = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration -Property @{
                             endDateTime = '2025-10-31T02:40:09Z'
                             type        = 'afterDateTime'
                         } -ClientOnly
@@ -105,7 +107,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential  = $Credential
                 }
 
-                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleAssignmentSchedule -MockWith {
                     return $null
                 }
             }
@@ -117,7 +119,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -Exactly 1
+                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleAssignmentScheduleRequest -Exactly 1
             }
         }
 
@@ -129,8 +131,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PrincipalType        = "User"
                     Principal            = "John.Smith@contoso.com";
                     RoleDefinition       = "Owner";
-                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestSchedule -Property @{
-                        expiration = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration -Property @{
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestSchedule -Property @{
+                        startDateTime   = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = '2025-10-31T02:40:09Z'
                             type        = 'afterDateTime'
                         } -ClientOnly
                     } -ClientOnly
@@ -148,10 +152,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -Exactly 1
+                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleAssignmentScheduleRequest -Exactly 1
             }
         }
-
         Context -Name 'The instance Exists and Values are already in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
@@ -160,8 +163,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PrincipalType        = "User"
                     Principal            = "John.Smith@contoso.com";
                     RoleDefinition       = "Owner";
-                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestSchedule -Property @{
-                        expiration = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration -Property @{
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestSchedule -Property @{
+                        startDateTime   = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = '2025-10-31T02:40:09Z'
                             type        = 'afterDateTime'
                         } -ClientOnly
                     } -ClientOnly
@@ -185,10 +190,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PrincipalType        = "User"
                     Principal            = "John.Smith@contoso.com";
                     RoleDefinition       = "Owner";
-                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestSchedule -Property @{
-                        startDateTime = '2023-01-01T02:40:44Z' # Drift
-                        expiration = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration -Property @{
-                            endDateTime = '2025-10-31T02:40:09Z'
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestSchedule -Property @{
+                        startDateTime   = '2025-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = '2025-12-31T02:40:09Z' # Drift
                             type        = 'afterDateTime'
                         } -ClientOnly
                     } -ClientOnly
@@ -206,7 +211,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set to Update the instance' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -Exactly 1
+                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleAssignmentScheduleRequest -Exactly 1
             }
         }
         Context -Name 'Set-TargetResource should throw when Role Definition is not found' -Fixture {
@@ -217,9 +222,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Principal            = "John.Smith@contoso.com";
                     PrincipalType        = "User"
                     RoleDefinition       = "NonExistentRole";
-                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestSchedule -Property @{
-                        startDateTime = '2023-09-01T02:40:44Z'
-                        expiration = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration -Property @{
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestSchedule -Property @{
+                        startDateTime   = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration -Property @{
                             endDateTime = '2025-10-31T02:40:09Z'
                             type        = 'afterDateTime'
                         } -ClientOnly
@@ -227,7 +232,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential  = $Credential
                 }
 
-                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleAssignmentSchedule -MockWith {
                     return $null
                 }
 
@@ -238,6 +243,38 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should throw when Role Definition lookup fails' {
                 { Set-TargetResource @testParams } | Should -Throw -ExpectedMessage "*Couldn't find Role Definition*"
+            }
+        }
+
+        Context -Name 'Set-TargetResource should throw when Principal is not found' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
+                    Ensure               = "Present";
+                    Principal            = "NonExistent@contoso.com";
+                    PrincipalType        = "User"
+                    RoleDefinition       = "Owner";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestSchedule -Property @{
+                        startDateTime   = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = '2025-10-31T02:40:09Z'
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleAssignmentSchedule -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Get-MgUser -MockWith {
+                    return $null
+                }
+            }
+
+            It 'Should throw when Principal lookup fails' {
+                { Set-TargetResource @testParams } | Should -Throw -ExpectedMessage "*Couldn't find Principal*"
             }
         }
 
