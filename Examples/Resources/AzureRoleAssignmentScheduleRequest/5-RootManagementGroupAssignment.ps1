@@ -1,5 +1,5 @@
 <#
-This example updates an existing Azure PIM role assignment schedule.
+This example creates an Azure PIM role assignment schedule at the root management group level.
 #>
 
 Configuration Example
@@ -15,15 +15,15 @@ Configuration Example
 
     node localhost
     {
-        AzureRoleAssignmentScheduleRequest "ResourceGroupContributorAssignment"
+        AzureRoleAssignmentScheduleRequest "RootManagementGroupOwnerAssignment"
         {
-            Principal             = "SecurityGroup@contoso.onmicrosoft.com"
-            RoleDefinition        = "Contributor"
-            DirectoryScopeId      = "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/rg-production"
-            PrincipalType         = "Group"
+            Principal             = "AdeleV@contoso.onmicrosoft.com"
+            RoleDefinition        = "Owner"
+            DirectoryScopeId      = "/providers/Microsoft.Management/managementGroups/rootGroup"
+            PrincipalType         = "User"
             Ensure                = "Present"
             ScheduleInfo          = MSFT_AzureRoleAssignmentScheduleRequestSchedule {
-                startDateTime = '2024-01-01T00:00:00Z'
+                startDateTime = '2024-01-15T08:00:00Z'
                 expiration    = MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration
                 {
                     type        = 'noExpiration'

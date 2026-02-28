@@ -18,8 +18,8 @@ Configuration Example
         AzureRoleEligibilityScheduleRequest "ResourceGroupContributorEligibility"
         {
             Principal             = "SecurityGroup@contoso.onmicrosoft.com"
-            RoleDefinitionName    = "Contributor"
-            Scope                 = "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/rg-production"
+            RoleDefinition        = "Contributor"
+            DirectoryScopeId      = "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/rg-production"
             PrincipalType         = "Group"
             Ensure                = "Present"
             ScheduleInfo          = MSFT_AzureRoleEligibilityScheduleRequestSchedule {

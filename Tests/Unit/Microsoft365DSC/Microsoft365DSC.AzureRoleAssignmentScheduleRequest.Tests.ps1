@@ -166,7 +166,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestSchedule -Property @{
                         startDateTime   = '2023-09-01T02:40:44Z'
                         expiration = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration -Property @{
-                            endDateTime = '2025-10-31T02:40:09Z'
                             type        = 'afterDateTime'
                         } -ClientOnly
                     } -ClientOnly
@@ -193,7 +192,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestSchedule -Property @{
                         startDateTime   = '2025-09-01T02:40:44Z'
                         expiration = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration -Property @{
-                            endDateTime = '2025-12-31T02:40:09Z' # Drift
+                            endDateTime = (Get-Date).AddYears(1).ToString("yyyy-MM-ddTHH:mm:ssZ") # Drift
                             type        = 'afterDateTime'
                         } -ClientOnly
                     } -ClientOnly
@@ -275,6 +274,85 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should throw when Principal lookup fails' {
                 { Set-TargetResource @testParams } | Should -Throw -ExpectedMessage "*Couldn't find Principal*"
+            }
+        }
+
+        Context -Name 'Management Group scope - The instance should exist but it DOES NOT' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DirectoryScopeId     = "/providers/Microsoft.Management/managementGroups/MyManagementGroup";
+                    Ensure               = "Present";
+                    Principal            = "John.Smith@contoso.com";
+                    PrincipalType        = "User"
+                    RoleDefinition       = "Reader";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestSchedule -Property @{
+                        startDateTime   = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = (Get-Date).AddYears(1).ToString("yyyy-MM-ddTHH:mm:ssZ")
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleAssignmentSchedule -MockWith {
+                    return $null
+                }
+            }
+            It 'Should return Values from the Get method' {
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
+            }
+            It 'Should return false from the Test method' {
+                Test-TargetResource @testParams | Should -Be $false
+            }
+            It 'Should Create the instance from the Set method' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleAssignmentScheduleRequest -Exactly 1
+            }
+        }
+
+        Context -Name 'Root Management Group scope - The instance Exists and Values are already in the desired state' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DirectoryScopeId     = "/providers/Microsoft.Management/managementGroups/rootGroup";
+                    Ensure               = "Present";
+                    PrincipalType        = "User"
+                    Principal            = "John.Smith@contoso.com";
+                    RoleDefinition       = "Owner";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestSchedule -Property @{
+                        startDateTime   = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration -Property @{
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleAssignmentSchedule -MockWith {
+                    return @{
+                        Action               = "AdminAssign";
+                        Id                   = '12345-12345-12345-12345-12345'
+                        DirectoryScopeId     = "/providers/Microsoft.Management/managementGroups/rootGroup";
+                        IsValidationOnly     = $False;
+                        PrincipalId          = "123456";
+                        RoleDefinitionId     = "12345";
+                        ScheduleInfo         = @{
+                            startDateTime   = [System.DateTime]::Parse('2023-09-01T02:40:44Z')
+                            expiration      = @{
+                                endDateTime = [System.DateTime]::Parse('2025-10-31T02:40:09Z')
+                                type        = 'afterDateTime'
+                            }
+                        };
+                    }
+                }
+            }
+
+            It 'Should return Values from the Get method' {
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
+            }
+
+            It 'Should return true from the Test method' {
+                Test-TargetResource @testParams | Should -Be $true
             }
         }
 
