@@ -28,7 +28,7 @@ AADPermissionGrantPolicy 'CustomConsentPolicy'
             ClientApplicationTenantIds      = @($TenantId)
             ClientApplicationPublisherIds   = @("all")
             ClientApplicationsFromVerifiedPublisherOnly = $false
-            ResourceApplication             = "Microsoft Graph"
+            ResourceApplication             = "00000003-0000-0000-c000-000000000000"
             Permissions                     = @("User.Read", "openid", "profile")
         }
     )

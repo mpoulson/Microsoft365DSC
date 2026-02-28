@@ -10,7 +10,7 @@ class MSFT_AADPermissionGrantConditionSet
     [Write, Description("The permission classification for the permission being granted, or all to match with any permission classification (including permissions which are not classified). Default is all.")] String PermissionClassification;
     [Write, Description("The list of permission display names to match with (e.g. 'User.Read', 'Mail.Send'), or a list with the single value all to match with any permission. Do not use permission GUIDs.")] String Permissions[];
     [Write, Description("The permission type of the permission being granted. Possible values: application for application permissions, or delegated for delegated permissions.")] String PermissionType;
-    [Write, Description("The display name of the resource application (e.g. 'Microsoft Graph') for which a permission is being granted, or 'any' to match any resource application.")] String ResourceApplication;
+    [Write, Description("The appId of the resource application (e.g. '00000003-0000-0000-c000-000000000000' for Microsoft Graph) for which a permission is being granted, or 'any' to match any resource application. Use the AppId GUID, not the display name.")] String ResourceApplication;
 };
 
 [ClassVersion("1.0.0.1"), FriendlyName("AADPermissionGrantPolicy")]

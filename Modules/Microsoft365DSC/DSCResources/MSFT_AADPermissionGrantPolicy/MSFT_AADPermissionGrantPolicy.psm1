@@ -652,8 +652,8 @@ function Get-CompareParameters
     [OutputType([System.Collections.Hashtable])]
     param()
 
-    # Normalize ResourceApplication in desired values so that both name and GUID inputs
-    # compare correctly against the current values (which use SP display names).
+    # Normalize condition sets in desired values so that permission names
+    # compare correctly against the current values.
     return @{
         PostProcessing = {
             param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
@@ -1203,8 +1203,7 @@ function Get-PermissionGrantConditionSetAsHashtable
 
     if ($null -ne $ConditionSet.ResourceApplication)
     {
-        $resolvedName = Resolve-ResourceApplicationName -ResourceApplication $ConditionSet.ResourceApplication
-        $result.Add('ResourceApplication', $resolvedName)
+        $result.Add('ResourceApplication', $ConditionSet.ResourceApplication)
     }
 
     if ($null -ne $ConditionSet.Permissions)
@@ -1285,11 +1284,10 @@ function Get-PermissionGrantConditionSetAsParameters
         $params.Add('PermissionClassification', $ConditionSet.PermissionClassification)
     }
 
-    # Resolve ResourceApplication name -> GUID
+    # Pass through ResourceApplication as-is (expects GUID or 'any')
     if (-not [string]::IsNullOrEmpty($ConditionSet.ResourceApplication))
     {
-        $resourceApp = Resolve-ResourceApplicationId -ResourceApplication $ConditionSet.ResourceApplication
-        $params.Add('ResourceApplication', $resourceApp)
+        $params.Add('ResourceApplication', $ConditionSet.ResourceApplication)
     }
 
     if (-not [string]::IsNullOrEmpty($ConditionSet.PermissionType))
