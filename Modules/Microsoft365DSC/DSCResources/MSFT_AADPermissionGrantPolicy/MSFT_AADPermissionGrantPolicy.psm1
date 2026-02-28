@@ -65,26 +65,26 @@ function Get-TargetResource
 
     Write-Verbose -Message "Getting configuration of Entra Permission Grant Policy {$Id}"
 
-    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                -InboundParameters $PSBoundParameters
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullResult = $PSBoundParameters
-    $nullResult.Ensure = 'Absent'
-
     try
     {
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
+
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
+        $nullResult = $PSBoundParameters
+        $nullResult.Ensure = 'Absent'
+
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
 
@@ -1285,7 +1285,7 @@ function Get-PermissionGrantConditionSetAsParameters
         $params.Add('PermissionClassification', $ConditionSet.PermissionClassification)
     }
 
-    # Resolve ResourceApplication name → GUID
+    # Resolve ResourceApplication name -> GUID
     if (-not [string]::IsNullOrEmpty($ConditionSet.ResourceApplication))
     {
         $resourceApp = Resolve-ResourceApplicationId -ResourceApplication $ConditionSet.ResourceApplication
