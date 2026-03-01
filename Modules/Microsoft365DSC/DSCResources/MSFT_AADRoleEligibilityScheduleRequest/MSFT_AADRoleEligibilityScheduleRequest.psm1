@@ -32,17 +32,8 @@ function Get-TargetResource
         $AppScopeId,
 
         [Parameter()]
-        [ValidateSet('adminAssign', 'adminUpdate', 'adminRemove', 'selfActivate', 'selfDeactivate', 'adminExtend', 'adminRenew', 'selfExtend', 'selfRenew', 'unknownFutureValue')]
-        [System.String]
-        $Action,
-
-        [Parameter()]
         [System.String]
         $Justification,
-
-        [Parameter()]
-        [System.Boolean]
-        $IsValidationOnly,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
@@ -289,10 +280,8 @@ function Get-TargetResource
             RoleDefinition        = $RoleDefinition
             DirectoryScopeId      = $schedule.DirectoryScopeId
             AppScopeId            = $schedule.AppScopeId
-            #Action                = $schedule.Action
             Id                    = $schedule.Id
             Justification         = "Assignment of role eligibility '$RoleDefinition' to principal '$PrincipalValue' of type '$PrincipalType'."
-            #IsValidationOnly      = $schedule.IsValidationOnly
             ScheduleInfo          = $ScheduleInfoValue
             Ensure                = 'Present'
             Credential            = $Credential
@@ -348,17 +337,8 @@ function Set-TargetResource
         $AppScopeId,
 
         [Parameter()]
-        [ValidateSet('adminAssign', 'adminUpdate', 'adminRemove', 'selfActivate', 'selfDeactivate', 'adminExtend', 'adminRenew', 'selfExtend', 'selfRenew', 'unknownFutureValue')]
-        [System.String]
-        $Action,
-
-        [Parameter()]
         [System.String]
         $Justification,
-
-        [Parameter()]
-        [System.Boolean]
-        $IsValidationOnly,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
@@ -397,17 +377,6 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
-
-    # TODO: Remove during next breaking change
-    if ($PSBoundParameters.ContainsKey('Action'))
-    {
-        Write-Warning -Message "The parameter 'Action' is deprecated. It will be removed in the next breaking change release."
-    }
-
-    if ($PSBoundParameters.ContainsKey('IsValidationOnly'))
-    {
-        Write-Warning -Message "The parameter 'IsValidationOnly' is deprecated. It will be removed in the next breaking change release."
-    }
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -566,17 +535,8 @@ function Test-TargetResource
         $AppScopeId,
 
         [Parameter()]
-        [ValidateSet('adminAssign', 'adminUpdate', 'adminRemove', 'selfActivate', 'selfDeactivate', 'adminExtend', 'adminRenew', 'selfExtend', 'selfRenew', 'unknownFutureValue')]
-        [System.String]
-        $Action,
-
-        [Parameter()]
         [System.String]
         $Justification,
-
-        [Parameter()]
-        [System.Boolean]
-        $IsValidationOnly,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
@@ -615,17 +575,6 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-
-    # TODO: Remove during next breaking change
-    if ($PSBoundParameters.ContainsKey('Action'))
-    {
-        Write-Warning -Message "The parameter 'Action' is deprecated. It will be removed in the next breaking change release."
-    }
-
-    if ($PSBoundParameters.ContainsKey('IsValidationOnly'))
-    {
-        Write-Warning -Message "The parameter 'IsValidationOnly' is deprecated. It will be removed in the next breaking change release."
-    }
 
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
@@ -871,7 +820,7 @@ function Get-CompareParameters
     param()
 
     return @{
-        ExcludedProperties = @('Action', 'IsValidationOnly', 'Justification')
+        ExcludedProperties = @('Justification')
     }
 }
 
