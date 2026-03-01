@@ -66,10 +66,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleAssignmentSchedule -MockWith {
                 return @{
-                    Action               = "AdminAssign";
                     Id                   = '12345-12345-12345-12345-12345'
                     DirectoryScopeId     = "/";
-                    IsValidationOnly     = $False;
                     PrincipalId          = "123456";
                     RoleDefinitionId     = "12345";
                     ScheduleInfo         = @{
