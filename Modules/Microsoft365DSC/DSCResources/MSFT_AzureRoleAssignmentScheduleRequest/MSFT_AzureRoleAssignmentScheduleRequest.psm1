@@ -665,7 +665,65 @@ function Export-TargetResource
     {
         $Script:ExportMode = $true
         #region resource generator code
-        [array] $Script:exportedInstances = Get-AzRoleAssignmentSchedule -Scope '/' -Filter $Filter -ErrorAction SilentlyContinue
+        $AllSchedules = [System.Collections.Generic.List[System.Object]]::new()
+        $SeenScheduleNames = [System.Collections.Generic.HashSet[System.String]]::new()
+
+        # Root scope
+        $ScopeSchedules = Get-AzRoleAssignmentSchedule -Scope '/' -Filter $Filter -ErrorAction SilentlyContinue
+        foreach ($Schedule in $ScopeSchedules)
+        {
+            if ($SeenScheduleNames.Add($Schedule.Name))
+            {
+                $AllSchedules.Add($Schedule)
+            }
+        }
+
+        # Management Groups
+        $ManagementGroups = Get-AzManagementGroup -ErrorAction SilentlyContinue
+        foreach ($ManagementGroup in $ManagementGroups)
+        {
+            $MgScope = "/providers/Microsoft.Management/managementGroups/$($ManagementGroup.Name)"
+            $ScopeSchedules = Get-AzRoleAssignmentSchedule -Scope $MgScope -Filter $Filter -ErrorAction SilentlyContinue
+            foreach ($Schedule in $ScopeSchedules)
+            {
+                if ($SeenScheduleNames.Add($Schedule.Name))
+                {
+                    $AllSchedules.Add($Schedule)
+                }
+            }
+        }
+
+        # Subscriptions and their Resource Groups
+        $Subscriptions = Get-AzSubscription -ErrorAction SilentlyContinue
+        foreach ($Subscription in $Subscriptions)
+        {
+            $SubScope = "/subscriptions/$($Subscription.Id)"
+            $ScopeSchedules = Get-AzRoleAssignmentSchedule -Scope $SubScope -Filter $Filter -ErrorAction SilentlyContinue
+            foreach ($Schedule in $ScopeSchedules)
+            {
+                if ($SeenScheduleNames.Add($Schedule.Name))
+                {
+                    $AllSchedules.Add($Schedule)
+                }
+            }
+
+            $null = Set-AzContext -Subscription $Subscription.Id -ErrorAction SilentlyContinue
+            $ResourceGroups = Get-AzResourceGroup -ErrorAction SilentlyContinue
+            foreach ($ResourceGroup in $ResourceGroups)
+            {
+                $RgScope = "$SubScope/resourceGroups/$($ResourceGroup.ResourceGroupName)"
+                $ScopeSchedules = Get-AzRoleAssignmentSchedule -Scope $RgScope -Filter $Filter -ErrorAction SilentlyContinue
+                foreach ($Schedule in $ScopeSchedules)
+                {
+                    if ($SeenScheduleNames.Add($Schedule.Name))
+                    {
+                        $AllSchedules.Add($Schedule)
+                    }
+                }
+            }
+        }
+
+        [array] $Script:exportedInstances = $AllSchedules
 
         $i = 1
         $dscContent = ''
