@@ -724,8 +724,7 @@ function Export-TargetResource
             $principalType = 'User'
             $userInfo = Get-MgBetaDirectoryObjectById -Ids $config.PrincipalId -ErrorAction SilentlyContinue
             $principalType = $userInfo.AdditionalProperties['@odata.type'].Split('.')[2]
-            $principalType = $principalType.Substring(0, 1).ToUpper() + $principalType.Substring(1)
-            $PrincipalValue = if ($principalType -eq 'User' )
+            $PrincipalValue = if ($principalType -eq 'user' )
             {
                 $userInfo.AdditionalProperties['userPrincipalName']
             }
