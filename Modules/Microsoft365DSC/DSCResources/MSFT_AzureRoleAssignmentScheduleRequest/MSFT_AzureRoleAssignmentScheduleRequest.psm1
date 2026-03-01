@@ -171,6 +171,7 @@ function Get-TargetResource
             Write-Verbose -Message "Retrieving the request by PrincipalId {$($PrincipalInstance.Id)}, RoleDefinitionId {$($roleDefinitionId)} and DirectoryScopeId {$($DirectoryScopeId)}"
             [array]$requests = $Script:AllSchedules | Where-Object -FilterScript {
                 $_.PrincipalId -eq $PrincipalInstance.Id -and
+                $null -ne $_.RoleDefinitionId -and
                 $_.RoleDefinitionId.Split('/')[-1] -eq $roleDefinitionId -and
                 $_.Scope -eq $DirectoryScopeId
             }
@@ -181,6 +182,7 @@ function Get-TargetResource
                 Write-Verbose -Message "No cached schedules found, fetching with principalId, roleDefinitionId and directoryScopeId"
                 $requests = Get-AzRoleAssignmentSchedule -Scope $DirectoryScopeId -Filter "principalId eq '$($PrincipalInstance.Id)'" -ErrorAction SilentlyContinue
                 $requests = $requests | Where-Object -FilterScript {
+                    $null -ne $_.RoleDefinitionId -and
                     $_.RoleDefinitionId.Split('/')[-1] -eq $roleDefinitionId -and
                     $_.Scope -eq $DirectoryScopeId
                 }
@@ -204,6 +206,7 @@ function Get-TargetResource
                         Write-Verbose -Message "Fetching schedules for custom role definition with RoleDefinitionId {$roleDefinitionId}"
                         $requests = Get-AzRoleAssignmentSchedule -Scope $DirectoryScopeId -Filter "principalId eq '$($PrincipalInstance.Id)'" -ErrorAction SilentlyContinue
                         $requests = $requests | Where-Object -FilterScript {
+                            $null -ne $_.RoleDefinitionId -and
                             $_.RoleDefinitionId.Split('/')[-1] -eq $roleDefinitionId -and
                             $_.Scope -eq $DirectoryScopeId
                         }

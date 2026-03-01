@@ -164,17 +164,19 @@ function Get-TargetResource
             Write-Verbose -Message "Retrieving the request by PrincipalId {$($PrincipalInstance.Id)}, RoleDefinitionId {$($roleDefinitionId)} and DirectoryScopeId {$($DirectoryScopeId)}"
             [array]$requests = $Script:AllSchedules | Where-Object -FilterScript {
                 $_.PrincipalId -eq $PrincipalInstance.Id -and
+                $null -ne $_.RoleDefinitionId -and
                 $_.RoleDefinitionId.Split('/')[-1] -eq $roleDefinitionId -and
                 $_.Scope -eq $DirectoryScopeId
             }
 
             if ($requests.Count -eq 0)
             {
-                # Lookup in Graph - can be the case if a role was created in this configuration run
+                # Lookup in Azure - can be the case if a role was created in this configuration run
                 Write-Verbose -Message "No cached schedules found, fetching with principalId, roleDefinitionId and directoryScopeId"
                 $requests = Get-AzRoleEligibilitySchedule -Scope $DirectoryScopeId `
                     -Filter "principalId eq '$($PrincipalInstance.Id)'" -ErrorAction SilentlyContinue
                 $requests = $requests | Where-Object -FilterScript {
+                    $null -ne $_.RoleDefinitionId -and
                     $_.RoleDefinitionId.Split('/')[-1] -eq $roleDefinitionId
                 }
                 if ($requests.Count -eq 0)
@@ -198,6 +200,7 @@ function Get-TargetResource
                         $requests = Get-AzRoleEligibilitySchedule -Scope $DirectoryScopeId `
                             -Filter "principalId eq '$($PrincipalInstance.Id)'" -ErrorAction SilentlyContinue
                         $requests = $requests | Where-Object -FilterScript {
+                            $null -ne $_.RoleDefinitionId -and
                             $_.RoleDefinitionId.Split('/')[-1] -eq $roleDefinitionId
                         }
                         if ($requests.Count -eq 0)
