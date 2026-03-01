@@ -12,52 +12,28 @@
     ]
   },
   "permissions": {
-    "graph": {
+    "Azure Service Management": {
       "delegated": {
         "read": [
           {
-            "name": "RoleManagement.Read.All"
-          },
-          {
-            "name": "Directory.Read.All"
+            "name": "user_impersonation"
           }
         ],
         "update": [
           {
-            "name": "RoleManagement.ReadWrite.All"
-          },
-          {
-            "name": "Directory.Read.All"
+            "name": "user_impersonation"
           }
         ]
       },
       "application": {
-        "read": [
-          {
-            "name": "RoleManagement.Read.All"
-          },
-          {
-            "name": "Directory.Read.All"
-          }
-        ],
-        "update": [
-          {
-            "name": "RoleManagement.ReadWrite.All"
-          },
-          {
-            "name": "Directory.Read.All"
-          }
-        ]
+        "read": [],
+        "update": []
       }
     }
   },
   "requiredModules": [
-    "Microsoft.Graph.Applications",
-    "Microsoft.Graph.Authentication",
-    "Microsoft.Graph.Beta.DirectoryObjects",
-    "Microsoft.Graph.Beta.Identity.Governance",
-    "Microsoft.Graph.Groups",
-    "Microsoft.Graph.Users"
+    "Az.Accounts",
+    "Az.Resources"
   ],
   "supportedEnvironments": [
     "Global",
@@ -67,35 +43,14 @@
   "mode": "Configuration",
   "commands": [
     {
-      "module": "Microsoft.Graph.Applications",
+      "module": "Az.Resources",
       "cmdlets": [
-        "Get-MgServicePrincipal"
-      ]
-    },
-    {
-      "module": "Microsoft.Graph.Beta.DirectoryObjects",
-      "cmdlets": [
-        "Get-MgBetaDirectoryObjectById"
-      ]
-    },
-    {
-      "module": "Microsoft.Graph.Beta.Identity.Governance",
-      "cmdlets": [
-        "Get-MgBetaRoleManagementAzureResourceRoleDefinition",
-        "Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule",
-        "New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest"
-      ]
-    },
-    {
-      "module": "Microsoft.Graph.Groups",
-      "cmdlets": [
-        "Get-MgGroup"
-      ]
-    },
-    {
-      "module": "Microsoft.Graph.Users",
-      "cmdlets": [
-        "Get-MgUser"
+        "Get-AzADGroup",
+        "Get-AzADServicePrincipal",
+        "Get-AzADUser",
+        "Get-AzRoleDefinition",
+        "Get-AzRoleEligibilitySchedule",
+        "New-AzRoleEligibilityScheduleRequest"
       ]
     }
   ]
