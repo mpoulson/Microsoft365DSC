@@ -134,7 +134,8 @@ function Get-TargetResource
         else
         {
             $schedule = $Script:exportedInstance
-            $Script:AllSchedules = $Script:exportedInstances
+            # To keep performance good, only assign the current instance
+            $Script:AllSchedules = $Script:exportedInstance
         }
 
         Write-Verbose -Message 'Getting Role Assignment by PrincipalId and RoleDefinitionId'
@@ -233,15 +234,12 @@ function Get-TargetResource
         if ($null -ne $schedule.ScheduleInfo.Expiration)
         {
             $expirationValue = [ordered]@{
+                duration = $schedule.ScheduleInfo.Expiration.Duration
                 type     = $schedule.ScheduleInfo.Expiration.Type
-            }
-            if ($null -ne $schedule.ScheduleInfo.Expiration.Duration)
-            {
-                $expirationValue.Add('duration', $schedule.ScheduleInfo.Expiration.Duration)
             }
             if ($null -ne $schedule.ScheduleInfo.Expiration.EndDateTime)
             {
-                $expirationValue.Add('endDateTime', $schedule.ScheduleInfo.Expiration.EndDateTime.ToString('yyyy-MM-ddThh:mm:ssZ'))
+                $expirationValue.Add('endDateTime', $schedule.ScheduleInfo.Expiration.EndDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ'))
             }
             $ScheduleInfoValue.Add('expiration', $expirationValue)
         }
@@ -272,7 +270,7 @@ function Get-TargetResource
         }
         if ($null -ne $schedule.ScheduleInfo.StartDateTime)
         {
-            $ScheduleInfoValue.Add('StartDateTime', $schedule.ScheduleInfo.StartDateTime.ToString('yyyy-MM-ddThh:mm:ssZ'))
+            $ScheduleInfoValue.Add('StartDateTime', $schedule.ScheduleInfo.StartDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ'))
         }
 
         $results = @{

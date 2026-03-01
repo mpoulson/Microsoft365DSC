@@ -356,6 +356,52 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name 'noExpiration with root management group - The instance Exists and Values are already in the desired state' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DirectoryScopeId     = "/providers/Microsoft.Management/managementGroups/rootGroup";
+                    Ensure               = "Present";
+                    PrincipalType        = "User"
+                    Principal            = "John.Smith@contoso.com";
+                    RoleDefinition       = "Owner";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestSchedule -Property @{
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleAssignmentScheduleRequestScheduleExpiration -Property @{
+                            type = 'noExpiration'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleAssignmentSchedule -MockWith {
+                    return @{
+                        Id               = '12345-12345-12345-12345-12345'
+                        RoleDefinitionId = "12345"
+                        DirectoryScopeId = '/providers/Microsoft.Management/managementGroups/rootGroup'
+                        PrincipalId      = "123456"
+                        ScheduleInfo         = @{
+                            startDateTime = [System.DateTime]::Parse('2021-09-01T14:30:00Z')
+                            expiration    = @{
+                                type = 'noExpiration'
+                            }
+                        };
+                    }
+                }
+            }
+
+            It 'Should return Values from the Get method' {
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
+            }
+
+            It 'Should return true from the Test method' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+
+            It 'Should format PM StartDateTime with 24-hour format' {
+                $result = Get-TargetResource @testParams
+                $result.ScheduleInfo.StartDateTime | Should -Be '2021-09-01T14:30:00Z'
+            }
+        }
+
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
