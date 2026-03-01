@@ -398,6 +398,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential = $Credential
                 }
+
+                Mock -CommandName Get-AzManagementGroup -MockWith {
+                    return @()
+                }
+
+                Mock -CommandName Get-AzSubscription -MockWith {
+                    return @()
+                }
             }
 
             It 'Should Reverse Engineer resource from the Export method' {
