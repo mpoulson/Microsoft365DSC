@@ -134,7 +134,8 @@ function Get-TargetResource
         else
         {
             $schedule = $Script:exportedInstance
-            $Script:AllSchedules = $Script:exportedInstances
+            # To keep performance good, only assign the current instance
+            $Script:AllSchedules = $Script:exportedInstance
         }
 
         Write-Verbose -Message 'Getting Role Assignment by PrincipalId and RoleDefinitionId'
