@@ -79,7 +79,25 @@ function Get-AzManagementGroup
     param(
         [Parameter()]
         [System.String]
-        $GroupName
+        $GroupName,
+
+        [Parameter()]
+        [switch]
+        $Expand,
+
+        [Parameter()]
+        [switch]
+        $Recurse
+    )
+}
+
+function Get-AzTenant
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $TenantId
     )
 }
 
