@@ -399,8 +399,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential = $Credential
                 }
 
+                Mock -CommandName Get-AzTenant -MockWith {
+                    return @{
+                        TenantRootGroupId = 'rootTenantGroupId'
+                    }
+                }
+
                 Mock -CommandName Get-AzManagementGroup -MockWith {
-                    return @()
+                    return @{
+                        Name     = 'rootTenantGroupId'
+                        Type     = '/providers/Microsoft.Management/managementGroups'
+                        Children = @(
+                            @{
+                                Name = 'childMgGroup'
+                                Type = '/providers/Microsoft.Management/managementGroups'
+                                Children = @()
+                            }
+                        )
+                    }
                 }
 
                 Mock -CommandName Get-AzSubscription -MockWith {
@@ -411,6 +427,77 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty
+            }
+
+            It 'Should not call Get-AzRoleEligibilitySchedule with Scope /' {
+                Export-TargetResource @testParams
+                Should -Invoke -CommandName Get-AzRoleEligibilitySchedule -ParameterFilter {
+                    $Scope -eq '/'
+                } -Exactly 0
+            }
+
+            It 'Should call Get-AzRoleEligibilitySchedule with root management group scope' {
+                Export-TargetResource @testParams
+                Should -Invoke -CommandName Get-AzRoleEligibilitySchedule -ParameterFilter {
+                    $Scope -eq '/providers/Microsoft.Management/managementGroups/rootTenantGroupId'
+                } -Exactly 1
+            }
+
+            It 'Should call Get-AzRoleEligibilitySchedule with child management group scope' {
+                Export-TargetResource @testParams
+                Should -Invoke -CommandName Get-AzRoleEligibilitySchedule -ParameterFilter {
+                    $Scope -eq '/providers/Microsoft.Management/managementGroups/childMgGroup'
+                } -Exactly 1
+            }
+
+            It 'Should call Get-AzTenant to discover root management group' {
+                Export-TargetResource @testParams
+                Should -Invoke -CommandName Get-AzTenant -Exactly 1
+            }
+
+            It 'Should call Get-AzManagementGroup with root group ID for recursive expansion' {
+                Export-TargetResource @testParams
+                Should -Invoke -CommandName Get-AzManagementGroup -ParameterFilter {
+                    $GroupName -eq 'rootTenantGroupId' -and $Expand -eq $true -and $Recurse -eq $true
+                } -Exactly 1
+            }
+        }
+
+        Context -Name 'ReverseDSC Tests - Filter omission when empty' -Fixture {
+            BeforeAll {
+                $Global:CurrentModeIsExport = $true
+                $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
+                $testParams = @{
+                    Credential = $Credential
+                    Filter     = ''
+                }
+
+                Mock -CommandName Get-AzTenant -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Get-AzManagementGroup -MockWith {
+                    return @()
+                }
+
+                Mock -CommandName Get-AzSubscription -MockWith {
+                    return @(
+                        @{ Id = 'sub-001' }
+                    )
+                }
+
+                Mock -CommandName Set-AzContext -MockWith {}
+
+                Mock -CommandName Get-AzResourceGroup -MockWith {
+                    return @()
+                }
+            }
+
+            It 'Should call Get-AzRoleEligibilitySchedule without -Filter parameter when Filter is empty' {
+                Export-TargetResource @testParams
+                Should -Invoke -CommandName Get-AzRoleEligibilitySchedule -ParameterFilter {
+                    $null -eq $Filter
+                }
             }
         }
     }

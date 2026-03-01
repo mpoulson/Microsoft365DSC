@@ -645,22 +645,24 @@ function Export-TargetResource
         $AllSchedules = [System.Collections.Generic.List[System.Object]]::new()
         $SeenScheduleNames = [System.Collections.Generic.HashSet[System.String]]::new()
 
-        # Root scope
-        $ScopeSchedules = Get-AzRoleEligibilitySchedule -Scope '/' -Filter $Filter -ErrorAction SilentlyContinue
-        foreach ($Schedule in $ScopeSchedules)
-        {
-            if ($SeenScheduleNames.Add($Schedule.Name))
+        # Helper scriptblock to call Get-AzRoleEligibilitySchedule with optional Filter
+        $GetSchedules = {
+            param([System.String]$Scope)
+            if ([System.String]::IsNullOrWhiteSpace($Filter))
             {
-                $AllSchedules.Add($Schedule)
+                Get-AzRoleEligibilitySchedule -Scope $Scope -ErrorAction SilentlyContinue
+            }
+            else
+            {
+                Get-AzRoleEligibilitySchedule -Scope $Scope -Filter $Filter -ErrorAction SilentlyContinue
             }
         }
 
-        # Management Groups
-        $ManagementGroups = Get-AzManagementGroup -ErrorAction SilentlyContinue
-        foreach ($ManagementGroup in $ManagementGroups)
-        {
-            $MgScope = "/providers/Microsoft.Management/managementGroups/$($ManagementGroup.Name)"
-            $ScopeSchedules = Get-AzRoleEligibilitySchedule -Scope $MgScope -Filter $Filter -ErrorAction SilentlyContinue
+        # Helper function to collect schedules for a given scope and add new ones to the list
+        $CollectSchedules = {
+            param([System.String]$Scope)
+            Write-Verbose -Message "Enumerating role eligibility schedules for scope: $Scope"
+            $ScopeSchedules = & $GetSchedules -Scope $Scope
             foreach ($Schedule in $ScopeSchedules)
             {
                 if ($SeenScheduleNames.Add($Schedule.Name))
@@ -668,6 +670,56 @@ function Export-TargetResource
                     $AllSchedules.Add($Schedule)
                 }
             }
+        }
+
+        # Determine tenant root management group ID
+        $TenantRootGroupId = $null
+        $TenantInfo = Get-AzTenant -ErrorAction SilentlyContinue
+        if ($null -ne $TenantInfo -and $null -ne $TenantInfo.TenantRootGroupId)
+        {
+            $TenantRootGroupId = $TenantInfo.TenantRootGroupId
+            Write-Verbose -Message "Discovered tenant root management group ID: $TenantRootGroupId"
+        }
+
+        # Enumerate management groups recursively from tenant root
+        $ManagementGroupIds = [System.Collections.Generic.List[System.String]]::new()
+        if (-not [System.String]::IsNullOrWhiteSpace($TenantRootGroupId))
+        {
+            Write-Verbose -Message "Enumerating management groups recursively from root: $TenantRootGroupId"
+            $RootMg = Get-AzManagementGroup -GroupName $TenantRootGroupId -Expand -Recurse -ErrorAction SilentlyContinue
+            if ($null -ne $RootMg)
+            {
+                # Flatten management group tree recursively
+                $FlattenMg = {
+                    param($MgNode)
+                    $ManagementGroupIds.Add($MgNode.Name)
+                    foreach ($Child in $MgNode.Children)
+                    {
+                        if ($Child.Type -eq '/providers/Microsoft.Management/managementGroups')
+                        {
+                            & $FlattenMg $Child
+                        }
+                    }
+                }
+                & $FlattenMg $RootMg
+            }
+        }
+        else
+        {
+            # Fallback: enumerate all management groups without recursive expansion
+            Write-Verbose -Message 'Tenant root management group ID not available; falling back to flat management group enumeration.'
+            $ManagementGroups = Get-AzManagementGroup -ErrorAction SilentlyContinue
+            foreach ($ManagementGroup in $ManagementGroups)
+            {
+                $ManagementGroupIds.Add($ManagementGroup.Name)
+            }
+        }
+
+        # Query schedules for each management group scope
+        foreach ($MgId in $ManagementGroupIds)
+        {
+            $MgScope = "/providers/Microsoft.Management/managementGroups/$MgId"
+            & $CollectSchedules -Scope $MgScope
         }
 
         # Subscriptions and their Resource Groups
@@ -675,28 +727,14 @@ function Export-TargetResource
         foreach ($Subscription in $Subscriptions)
         {
             $SubScope = "/subscriptions/$($Subscription.Id)"
-            $ScopeSchedules = Get-AzRoleEligibilitySchedule -Scope $SubScope -Filter $Filter -ErrorAction SilentlyContinue
-            foreach ($Schedule in $ScopeSchedules)
-            {
-                if ($SeenScheduleNames.Add($Schedule.Name))
-                {
-                    $AllSchedules.Add($Schedule)
-                }
-            }
+            & $CollectSchedules -Scope $SubScope
 
             $null = Set-AzContext -Subscription $Subscription.Id -ErrorAction SilentlyContinue
             $ResourceGroups = Get-AzResourceGroup -ErrorAction SilentlyContinue
             foreach ($ResourceGroup in $ResourceGroups)
             {
                 $RgScope = "$SubScope/resourceGroups/$($ResourceGroup.ResourceGroupName)"
-                $ScopeSchedules = Get-AzRoleEligibilitySchedule -Scope $RgScope -Filter $Filter -ErrorAction SilentlyContinue
-                foreach ($Schedule in $ScopeSchedules)
-                {
-                    if ($SeenScheduleNames.Add($Schedule.Name))
-                    {
-                        $AllSchedules.Add($Schedule)
-                    }
-                }
+                & $CollectSchedules -Scope $RgScope
             }
         }
 
