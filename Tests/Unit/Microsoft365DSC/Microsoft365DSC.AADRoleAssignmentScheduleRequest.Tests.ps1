@@ -83,7 +83,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
-            $Script:exportedInstances =$null
+            $Script:exportedInstances = $null
             $Script:ExportMode = $false
         }
         # Test contexts
@@ -212,6 +212,70 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Should -Invoke -CommandName New-MgBetaRoleManagementDirectoryRoleAssignmentScheduleRequest -Exactly 1
             }
         }
+        Context -Name 'Set-TargetResource should throw when Role Definition is not found' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DirectoryScopeId     = "/";
+                    Ensure               = "Present";
+                    Principal            = "John.Smith@contoso.com";
+                    PrincipalType        = "User"
+                    RoleDefinition       = "NonExistentRole";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AADRoleAssignmentScheduleRequestSchedule -Property @{
+                        startDateTime   = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AADRoleAssignmentScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = '2025-10-31T02:40:09Z'
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleAssignmentSchedule -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleDefinition -MockWith {
+                    return $null
+                }
+            }
+
+            It 'Should throw when Role Definition lookup fails' {
+                { Set-TargetResource @testParams } | Should -Throw -ExpectedMessage "*Couldn't find Role Definition*"
+            }
+        }
+
+        Context -Name 'Set-TargetResource should throw when Principal is not found' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DirectoryScopeId     = "/";
+                    Ensure               = "Present";
+                    Principal            = "NonExistent@contoso.com";
+                    PrincipalType        = "User"
+                    RoleDefinition       = "Teams Communications Administrator";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AADRoleAssignmentScheduleRequestSchedule -Property @{
+                        startDateTime   = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AADRoleAssignmentScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = '2025-10-31T02:40:09Z'
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleAssignmentSchedule -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Get-MgUser -MockWith {
+                    return $null
+                }
+            }
+
+            It 'Should throw when Principal lookup fails' {
+                { Set-TargetResource @testParams } | Should -Throw -ExpectedMessage "*Couldn't find Principal*"
+            }
+        }
+
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
