@@ -744,8 +744,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-        Context -Name 'Get-PermissionGrantConditionSetAsHashtable resolves ResourceApplication to name' -Fixture {
-            It 'Should resolve GUID to display name in result' {
+        Context -Name 'Get-PermissionGrantConditionSetAsHashtable passes through ResourceApplication' -Fixture {
+            It 'Should pass through GUID for ResourceApplication' {
                 $conditionSet = [PSCustomObject]@{
                     Id                  = 'test-id'
                     PermissionType      = 'delegated'
@@ -753,7 +753,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 $result = Get-PermissionGrantConditionSetAsHashtable -ConditionSet $conditionSet
-                $result.ResourceApplication | Should -Be 'Microsoft Graph'
+                $result.ResourceApplication | Should -Be '00000003-0000-0000-c000-000000000000'
             }
 
             It 'Should pass through any wildcard for ResourceApplication' {
@@ -793,19 +793,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-        Context -Name 'Get-PermissionGrantConditionSetAsParameters resolves name to GUID' -Fixture {
-            It 'Should resolve display name to AppId GUID in parameters' {
-                $conditionSet = [PSCustomObject]@{
-                    Id                  = 'test-id'
-                    PermissionType      = 'delegated'
-                    Permissions         = @('all')
-                    ResourceApplication = 'Microsoft Graph'
-                }
-
-                $result = Get-PermissionGrantConditionSetAsParameters -ConditionSet $conditionSet
-                $result.ResourceApplication | Should -Be '00000003-0000-0000-c000-000000000000'
-            }
-
+        Context -Name 'Get-PermissionGrantConditionSetAsParameters passes through ResourceApplication' -Fixture {
             It 'Should pass through GUID for ResourceApplication' {
                 $conditionSet = [PSCustomObject]@{
                     Id                  = 'test-id'
@@ -816,6 +804,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 $result = Get-PermissionGrantConditionSetAsParameters -ConditionSet $conditionSet
                 $result.ResourceApplication | Should -Be '00000003-0000-0000-c000-000000000000'
+            }
+
+            It 'Should pass through any wildcard for ResourceApplication' {
+                $conditionSet = [PSCustomObject]@{
+                    Id                  = 'test-id'
+                    PermissionType      = 'delegated'
+                    Permissions         = @('all')
+                    ResourceApplication = 'any'
+                }
+
+                $result = Get-PermissionGrantConditionSetAsParameters -ConditionSet $conditionSet
+                $result.ResourceApplication | Should -Be 'any'
             }
         }
 
@@ -848,14 +848,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
-            It 'Should resolve ResourceApplication GUID to name in Includes' {
+            It 'Should keep ResourceApplication GUID as-is in Includes' {
                 $result = Get-TargetResource -Id 'name-test-policy' -Credential $Credential
-                $result.Includes[0].ResourceApplication | Should -Be 'Microsoft Graph'
+                $result.Includes[0].ResourceApplication | Should -Be '00000003-0000-0000-c000-000000000000'
             }
 
-            It 'Should resolve ResourceApplication GUID to name in Excludes' {
+            It 'Should keep ResourceApplication GUID as-is in Excludes' {
                 $result = Get-TargetResource -Id 'name-test-policy' -Credential $Credential
-                $result.Excludes[0].ResourceApplication | Should -Be 'Microsoft Graph'
+                $result.Excludes[0].ResourceApplication | Should -Be '00000003-0000-0000-c000-000000000000'
             }
 
             It 'Should resolve Permission GUIDs to names in Includes' {
@@ -878,7 +878,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PermissionClassification = 'all'
                     ClientApplicationIds     = @('all')
                     Permissions              = @('User.Read')
-                    ResourceApplication      = 'Microsoft Graph'
+                    ResourceApplication      = '00000003-0000-0000-c000-000000000000'
                 }
 
                 $set2 = @{
@@ -887,7 +887,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PermissionClassification = 'all'
                     ClientApplicationIds     = @('all')
                     Permissions              = @('User.Read')
-                    ResourceApplication      = 'Microsoft Graph'
+                    ResourceApplication      = '00000003-0000-0000-c000-000000000000'
                 }
 
                 Test-ConditionSetsEqual -ConditionSet1 $set1 -ConditionSet2 $set2 | Should -Be $true
@@ -937,7 +937,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ClientApplicationTenantIds                  = @('all')
                     ClientApplicationsFromVerifiedPublisherOnly = $false
                     Permissions                                 = @('User.Read')
-                    ResourceApplication                         = 'Microsoft Graph'
+                    ResourceApplication                         = '00000003-0000-0000-c000-000000000000'
                 }
 
                 # Simulate: current state has auto-generated Id from Graph API
@@ -954,8 +954,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ResourceApplication                         = '00000003-0000-0000-c000-000000000000'
                 }
 
-                # This should return true because both resolve to the same display names
-                # and Id is skipped during comparison
+                # This should return true because both use the same GUID for ResourceApplication,
+                # permissions resolve to the same display names, and Id is skipped during comparison
                 Test-ConditionSetsEqual -ConditionSet1 $desiredInclude -ConditionSet2 $currentInclude | Should -Be $true
             }
 
@@ -966,14 +966,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         PermissionClassification = 'all'
                         ClientApplicationIds     = @('all')
                         Permissions              = @('User.Read')
-                        ResourceApplication      = 'Microsoft Graph'
+                        ResourceApplication      = '00000003-0000-0000-c000-000000000000'
                     },
                     @{
                         PermissionType           = 'application'
                         PermissionClassification = 'all'
                         ClientApplicationIds     = @('all')
                         Permissions              = @('User.Read.All')
-                        ResourceApplication      = 'Microsoft Graph'
+                        ResourceApplication      = '00000003-0000-0000-c000-000000000000'
                     }
                 )
 
@@ -1024,7 +1024,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         PermissionClassification = 'all'
                         ClientApplicationIds     = @('all')
                         Permissions              = @('User.Read', 'openid')
-                        ResourceApplication      = 'Microsoft Graph'
+                        ResourceApplication      = '00000003-0000-0000-c000-000000000000'
                     }
                 )
 
