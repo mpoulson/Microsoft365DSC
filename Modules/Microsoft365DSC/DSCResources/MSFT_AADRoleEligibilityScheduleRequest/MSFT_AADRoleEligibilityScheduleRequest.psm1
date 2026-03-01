@@ -103,7 +103,7 @@ function Get-TargetResource
             }
             if ($null -eq $Script:RoleDefinitions)
             {
-                $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[string, object]]::new()
+                $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
                 $allRoleDefinitions = Get-MgBetaRoleManagementDirectoryRoleDefinition -All -ErrorAction SilentlyContinue
                 foreach ($singleRoleDefinition in $allRoleDefinitions)
                 {
@@ -415,6 +415,10 @@ function Set-TargetResource
 
     Write-Verbose -Message "Retrieving RoleDefinitionId from Set-TargetResource"
     $RoleDefinitionId = (Get-MgBetaRoleManagementDirectoryRoleDefinition -Filter "DisplayName eq '$($RoleDefinition -replace "'", "''")'").Id
+    if ($null -eq $RoleDefinitionId)
+    {
+        throw "Couldn't find Role Definition {$RoleDefinition}"
+    }
 
     $instanceParams = @{
         directoryScopeId = $DirectoryScopeId
@@ -663,7 +667,7 @@ function Export-TargetResource
         }
         if ($null -eq $Script:RoleDefinitions)
         {
-            $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[string, object]]::new()
+            $Script:RoleDefinitions = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
             $roleDefinitions = Get-MgBetaRoleManagementDirectoryRoleDefinition -All -ErrorAction SilentlyContinue
             foreach ($roleDefinition in $roleDefinitions)
             {
