@@ -231,7 +231,7 @@ function Get-TargetResource
             }
             if ($null -ne $schedule.ScheduleInfo.Expiration.EndDateTime)
             {
-                $expirationValue.Add('endDateTime', $schedule.ScheduleInfo.Expiration.EndDateTime.ToString('yyyy-MM-ddThh:mm:ssZ'))
+                $expirationValue.Add('endDateTime', $schedule.ScheduleInfo.Expiration.EndDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ'))
             }
             $ScheduleInfoValue.Add('expiration', $expirationValue)
         }
@@ -262,7 +262,7 @@ function Get-TargetResource
         }
         if ($null -ne $schedule.ScheduleInfo.StartDateTime)
         {
-            $ScheduleInfoValue.Add('StartDateTime', $schedule.ScheduleInfo.StartDateTime.ToString('yyyy-MM-ddThh:mm:ssZ'))
+            $ScheduleInfoValue.Add('StartDateTime', $schedule.ScheduleInfo.StartDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ'))
         }
 
         $results = @{
