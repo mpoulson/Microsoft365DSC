@@ -36,46 +36,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return 'Credentials'
             }
 
-            Mock -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -MockWith {
+            Mock -CommandName New-AzRoleEligibilityScheduleRequest -MockWith {
             }
 
-            Mock -CommandName Get-MgUser -MockWith {
+            Mock -CommandName Get-AzADUser -MockWith {
                 return @{
                     Id = '123456'
                     UserPrincipalName = 'John.Smith@contoso.com'
                 }
             }
 
-            Mock -CommandName Get-MgBetaDirectoryObjectById -MockWith {
+            Mock -CommandName Get-AzRoleDefinition -MockWith {
                 return @{
-                    Id = '123456'
-                    AdditionalProperties = @{
-                        '@odata.type' = '#microsoft.graph.user'
-                        userPrincipalName = 'John.Smith@contoso.com'
-                    }
+                    Name = 'Owner'
+                    Id   = '12345'
                 }
             }
-
-            Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleDefinition -MockWith {
+            Mock -CommandName Get-AzRoleEligibilitySchedule -MockWith {
                 return @{
-                    DisplayName      = 'Owner'
-                    Id               = '12345'
-                    DirectoryScopeId = '/subscriptions/12345678-1234-1234-1234-123456789012'
-                }
-            }
-            Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
-                return @{
-                    Id               = '12345-12345-12345-12345-12345'
-                    RoleDefinitionId = "12345"
-                    DirectoryScopeId = '/subscriptions/12345678-1234-1234-1234-123456789012'
-                    PrincipalId      = "123456"
-                    ScheduleInfo         = @{
-                        startDateTime = [System.DateTime]::Parse('2021-09-01T02:40:44Z')
-                        expiration    = @{
-                            endDateTime = [System.DateTime]::Parse('2025-10-31T02:40:09Z')
-                            type        = 'afterDateTime'
-                        }
-                    };
+                    Name             = '12345-12345-12345-12345-12345'
+                    RoleDefinitionId = '/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Authorization/roleDefinitions/12345'
+                    Scope            = '/subscriptions/12345678-1234-1234-1234-123456789012'
+                    PrincipalId      = '123456'
+                    PrincipalType    = 'User'
+                    StartDateTime    = [System.DateTime]::Parse('2021-09-01T02:40:44Z')
+                    EndDateTime      = [System.DateTime]::Parse('2025-10-31T02:40:09Z')
                 }
             }
 
@@ -105,7 +90,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential  = $Credential
                 }
 
-                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+                Mock -CommandName Get-AzRoleEligibilitySchedule -MockWith {
                     return $null
                 }
             }
@@ -117,7 +102,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -Exactly 1
+                Should -Invoke -CommandName New-AzRoleEligibilityScheduleRequest -Exactly 1
             }
         }
 
@@ -148,7 +133,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -Exactly 1
+                Should -Invoke -CommandName New-AzRoleEligibilityScheduleRequest -Exactly 1
             }
         }
 
@@ -206,7 +191,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set to Update the instance' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -Exactly 1
+                Should -Invoke -CommandName New-AzRoleEligibilityScheduleRequest -Exactly 1
             }
         }
         Context -Name 'Set-TargetResource should throw when Role Definition is not found' -Fixture {
@@ -227,11 +212,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential  = $Credential
                 }
 
-                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+                Mock -CommandName Get-AzRoleEligibilitySchedule -MockWith {
                     return $null
                 }
 
-                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleDefinition -MockWith {
+                Mock -CommandName Get-AzRoleDefinition -MockWith {
                     return $null
                 }
             }
@@ -259,7 +244,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential  = $Credential
                 }
 
-                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+                Mock -CommandName Get-AzRoleEligibilitySchedule -MockWith {
                     return $null
                 }
             }
@@ -271,7 +256,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -Exactly 1
+                Should -Invoke -CommandName New-AzRoleEligibilityScheduleRequest -Exactly 1
             }
         }
 
@@ -291,19 +276,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential  = $Credential
                 }
 
-                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+                Mock -CommandName Get-AzRoleEligibilitySchedule -MockWith {
                     return @{
-                        Id               = '12345-12345-12345-12345-12345'
-                        RoleDefinitionId = "12345"
-                        DirectoryScopeId = '/providers/Microsoft.Management/managementGroups/rootGroup'
-                        PrincipalId      = "123456"
-                        ScheduleInfo         = @{
-                            startDateTime = [System.DateTime]::Parse('2021-09-01T02:40:44Z')
-                            expiration    = @{
-                                endDateTime = [System.DateTime]::Parse('2025-10-31T02:40:09Z')
-                                type        = 'afterDateTime'
-                            }
-                        };
+                        Name             = '12345-12345-12345-12345-12345'
+                        RoleDefinitionId = '/providers/Microsoft.Management/managementGroups/rootGroup/providers/Microsoft.Authorization/roleDefinitions/12345'
+                        Scope            = '/providers/Microsoft.Management/managementGroups/rootGroup'
+                        PrincipalId      = '123456'
+                        PrincipalType    = 'User'
+                        StartDateTime    = [System.DateTime]::Parse('2021-09-01T02:40:44Z')
+                        EndDateTime      = [System.DateTime]::Parse('2025-10-31T02:40:09Z')
                     }
                 }
             }
@@ -334,21 +315,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential  = $Credential
                 }
 
-                Mock -CommandName Get-MgGroup -MockWith {
+                Mock -CommandName Get-AzADGroup -MockWith {
                     return @{
                         Id          = '654321'
                         DisplayName = 'SecurityGroup'
                     }
                 }
 
-                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleDefinition -MockWith {
+                Mock -CommandName Get-AzRoleDefinition -MockWith {
                     return @{
-                        DisplayName      = 'Contributor'
-                        Id               = '67890'
+                        Name = 'Contributor'
+                        Id   = '67890'
                     }
                 }
 
-                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+                Mock -CommandName Get-AzRoleEligibilitySchedule -MockWith {
                     return $null
                 }
             }
@@ -363,7 +344,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Create the instance from the Set method' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaRoleManagementAzureResourceRoleEligibilityScheduleRequest -Exactly 1
+                Should -Invoke -CommandName New-AzRoleEligibilityScheduleRequest -Exactly 1
             }
         }
 
@@ -383,18 +364,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential  = $Credential
                 }
 
-                Mock -CommandName Get-MgBetaRoleManagementAzureResourceRoleEligibilitySchedule -MockWith {
+                Mock -CommandName Get-AzRoleEligibilitySchedule -MockWith {
                     return @{
-                        Id               = '12345-12345-12345-12345-12345'
-                        RoleDefinitionId = "12345"
-                        DirectoryScopeId = '/providers/Microsoft.Management/managementGroups/rootGroup'
-                        PrincipalId      = "123456"
-                        ScheduleInfo         = @{
-                            startDateTime = [System.DateTime]::Parse('2021-09-01T14:30:00Z')
-                            expiration    = @{
-                                type = 'noExpiration'
-                            }
-                        };
+                        Name             = '12345-12345-12345-12345-12345'
+                        RoleDefinitionId = '/providers/Microsoft.Management/managementGroups/rootGroup/providers/Microsoft.Authorization/roleDefinitions/12345'
+                        Scope            = '/providers/Microsoft.Management/managementGroups/rootGroup'
+                        PrincipalId      = '123456'
+                        PrincipalType    = 'User'
+                        StartDateTime    = [System.DateTime]::Parse('2021-09-01T14:30:00Z')
+                        EndDateTime      = $null
                     }
                 }
             }
