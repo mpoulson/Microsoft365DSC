@@ -231,7 +231,7 @@ function Get-TargetResource
             }
             if ($null -ne $schedule.ScheduleInfo.Expiration.EndDateTime)
             {
-                $expirationValue.Add('endDateTime', $schedule.ScheduleInfo.Expiration.EndDateTime.ToString('yyyy-MM-ddThh:mm:ssZ'))
+                $expirationValue.Add('endDateTime', $schedule.ScheduleInfo.Expiration.EndDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ'))
             }
             $ScheduleInfoValue.Add('expiration', $expirationValue)
         }
@@ -262,7 +262,7 @@ function Get-TargetResource
         }
         if ($null -ne $schedule.ScheduleInfo.StartDateTime)
         {
-            $ScheduleInfoValue.Add('StartDateTime', $schedule.ScheduleInfo.StartDateTime.ToString('yyyy-MM-ddThh:mm:ssZ'))
+            $ScheduleInfoValue.Add('StartDateTime', $schedule.ScheduleInfo.StartDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ'))
         }
 
         $results = @{
@@ -724,7 +724,8 @@ function Export-TargetResource
             $principalType = 'User'
             $userInfo = Get-MgBetaDirectoryObjectById -Ids $config.PrincipalId -ErrorAction SilentlyContinue
             $principalType = $userInfo.AdditionalProperties['@odata.type'].Split('.')[2]
-            $PrincipalValue = if ($principalType -eq 'user' )
+            $principalType = $principalType.Substring(0, 1).ToUpper() + $principalType.Substring(1)
+            $PrincipalValue = if ($principalType -eq 'User' )
             {
                 $userInfo.AdditionalProperties['userPrincipalName']
             }
