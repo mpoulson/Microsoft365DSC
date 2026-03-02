@@ -32,25 +32,12 @@ function Get-TargetResource
         $AppScopeId,
 
         [Parameter()]
-        [ValidateSet('adminAssign', 'adminUpdate', 'adminRemove', 'selfActivate', 'selfDeactivate', 'adminExtend', 'adminRenew', 'selfExtend', 'selfRenew', 'unknownFutureValue')]
-        [System.String]
-        $Action,
-
-        [Parameter()]
         [System.String]
         $Justification,
 
         [Parameter()]
-        [System.Boolean]
-        $IsValidationOnly,
-
-        [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $ScheduleInfo,
-
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
-        $TicketInfo,
 
         [Parameter()]
         [System.String]
@@ -321,25 +308,12 @@ function Set-TargetResource
         $AppScopeId,
 
         [Parameter()]
-        [ValidateSet('adminAssign', 'adminUpdate', 'adminRemove', 'selfActivate', 'selfDeactivate', 'adminExtend', 'adminRenew', 'selfExtend', 'selfRenew', 'unknownFutureValue')]
-        [System.String]
-        $Action,
-
-        [Parameter()]
         [System.String]
         $Justification,
 
         [Parameter()]
-        [System.Boolean]
-        $IsValidationOnly,
-
-        [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $ScheduleInfo,
-
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
-        $TicketInfo,
 
         [Parameter()]
         [System.String]
@@ -374,22 +348,6 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
-
-    # TODO: Remove during next breaking change
-    if ($PSBoundParameters.ContainsKey('Action'))
-    {
-        Write-Warning -Message "The parameter 'Action' is deprecated. It will be removed in the next breaking change release."
-    }
-
-    if ($PSBoundParameters.ContainsKey('IsValidationOnly'))
-    {
-        Write-Warning -Message "The parameter 'IsValidationOnly' is deprecated. It will be removed in the next breaking change release."
-    }
-
-    if ($PSBoundParameters.ContainsKey('TicketInfo'))
-    {
-        Write-Warning -Message "The parameter 'TicketInfo' is deprecated. It will be removed in the next breaking change release."
-    }
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -522,25 +480,12 @@ function Test-TargetResource
         $AppScopeId,
 
         [Parameter()]
-        [ValidateSet('adminAssign', 'adminUpdate', 'adminRemove', 'selfActivate', 'selfDeactivate', 'adminExtend', 'adminRenew', 'selfExtend', 'selfRenew', 'unknownFutureValue')]
-        [System.String]
-        $Action,
-
-        [Parameter()]
         [System.String]
         $Justification,
 
         [Parameter()]
-        [System.Boolean]
-        $IsValidationOnly,
-
-        [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $ScheduleInfo,
-
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
-        $TicketInfo,
 
         [Parameter()]
         [System.String]
@@ -575,22 +520,6 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-
-    # TODO: Remove during next breaking change
-    if ($PSBoundParameters.ContainsKey('Action'))
-    {
-        Write-Warning -Message "The parameter 'Action' is deprecated. It will be removed in the next breaking change release."
-    }
-
-    if ($PSBoundParameters.ContainsKey('IsValidationOnly'))
-    {
-        Write-Warning -Message "The parameter 'IsValidationOnly' is deprecated. It will be removed in the next breaking change release."
-    }
-
-    if ($PSBoundParameters.ContainsKey('TicketInfo'))
-    {
-        Write-Warning -Message "The parameter 'TicketInfo' is deprecated. It will be removed in the next breaking change release."
-    }
 
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
@@ -919,7 +848,7 @@ function Get-CompareParameters
     param()
 
     return @{
-        ExcludedProperties = @('Action', 'IsValidationOnly', 'Justification', 'TicketInfo')
+        ExcludedProperties = @('Justification')
         PostProcessing = {
             param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
             if ($null -ne $DesiredValues.ScheduleInfo -and
