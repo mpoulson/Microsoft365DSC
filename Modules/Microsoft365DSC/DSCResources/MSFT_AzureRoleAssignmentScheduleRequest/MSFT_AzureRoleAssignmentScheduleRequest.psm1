@@ -73,6 +73,8 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of Azure Role Assignment Schedule Request"
+
     try
     {
         if (-not $Script:exportedInstance)
@@ -97,7 +99,7 @@ function Get-TargetResource
 
             if ($null -eq $Script:AllSchedules)
             {
-                Write-Verbose -Message 'Retrieving all role assignment schedules'
+                Write-Verbose -Message "Retrieving all role assignment schedules in scope {$DirectoryScopeId}"
                 $Script:AllSchedules = Get-AzRoleAssignmentSchedule -Scope $DirectoryScopeId `
                     -ErrorAction SilentlyContinue
             }
@@ -113,7 +115,7 @@ function Get-TargetResource
 
             if (-not [System.String]::IsNullOrEmpty($Id))
             {
-                Write-Verbose -Message "Getting Role Assignment by Id {$Id}"
+                Write-Verbose -Message "Getting Role Assignment with scope {$DirectoryScopeId} and by Id {$Id}"
                 $schedule = Get-AzRoleAssignmentSchedule -Scope $DirectoryScopeId -Name $Id `
                     -ErrorAction SilentlyContinue
             }
@@ -125,7 +127,7 @@ function Get-TargetResource
             $Script:AllSchedules = $Script:exportedInstance
         }
 
-        Write-Verbose -Message 'Getting Role Assignment by PrincipalId and RoleDefinitionId'
+        Write-Verbose -Message "Getting Role Assignment by PrincipalId and RoleDefinitionId for Principal {$Principal}"
         $PrincipalValue = $null
         if ($PrincipalType -eq 'User')
         {
