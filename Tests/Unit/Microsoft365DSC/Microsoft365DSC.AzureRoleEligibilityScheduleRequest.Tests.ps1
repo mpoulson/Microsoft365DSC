@@ -226,6 +226,38 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name 'Set-TargetResource should throw when Principal is not found' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
+                    Ensure               = "Present";
+                    Principal            = "NonExistent@contoso.com";
+                    PrincipalType        = "User"
+                    RoleDefinition       = "Owner";
+                    ScheduleInfo         = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestSchedule -Property @{
+                        startDateTime   = '2023-09-01T02:40:44Z'
+                        expiration = New-CimInstance -ClassName MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration -Property @{
+                            endDateTime = '2025-10-31T02:40:09Z'
+                            type        = 'afterDateTime'
+                        } -ClientOnly
+                    } -ClientOnly
+                    Credential  = $Credential
+                }
+
+                Mock -CommandName Get-AzRoleEligibilitySchedule -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Get-AzADUser -MockWith {
+                    return $null
+                }
+            }
+
+            It 'Should throw when Principal lookup fails' {
+                { Set-TargetResource @testParams } | Should -Throw -ExpectedMessage "*Couldn't find Principal*"
+            }
+        }
+
         Context -Name 'Management Group scope - The instance should exist but it DOES NOT' -Fixture {
             BeforeAll {
                 $testParams = @{
