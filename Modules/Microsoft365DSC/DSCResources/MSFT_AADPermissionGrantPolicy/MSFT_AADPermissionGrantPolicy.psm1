@@ -731,7 +731,7 @@ function Resolve-ResourceApplicationName
         }
         else
         {
-            $servicePrincipal = Get-MgServicePrincipal -Filter "AppId eq '$cacheKey'" -ErrorAction SilentlyContinue
+            $servicePrincipal = Get-MgBetaServicePrincipal -Filter "AppId eq '$cacheKey'" -ErrorAction SilentlyContinue
             $Script:ServicePrincipalCache[$cacheKey] = $servicePrincipal
             if ($null -ne $servicePrincipal -and -not [System.String]::IsNullOrEmpty($servicePrincipal.DisplayName))
             {
@@ -809,7 +809,7 @@ function Resolve-ResourceApplicationId
         {
             # Look up the service principal by display name
             $escapedName = $ResourceApplication -replace "'", "''"
-            $servicePrincipal = Get-MgServicePrincipal -Filter "DisplayName eq '$escapedName'" -ErrorAction SilentlyContinue
+            $servicePrincipal = Get-MgBetaServicePrincipal -Filter "DisplayName eq '$escapedName'" -ErrorAction SilentlyContinue
         }
 
         if ($null -ne $servicePrincipal)
@@ -929,7 +929,7 @@ function ConvertTo-PermissionGuid
         }
         else
         {
-            $servicePrincipal = Get-MgServicePrincipal -Filter "AppId eq '$cacheKey'" -ErrorAction SilentlyContinue
+            $servicePrincipal = Get-MgBetaServicePrincipal -Filter "AppId eq '$cacheKey'" -ErrorAction SilentlyContinue
             $Script:ServicePrincipalCache[$cacheKey] = $servicePrincipal
             if ($null -ne $servicePrincipal -and -not [System.String]::IsNullOrEmpty($servicePrincipal.DisplayName))
             {
@@ -1078,7 +1078,7 @@ function ConvertTo-PermissionName
         }
         else
         {
-            $servicePrincipal = Get-MgServicePrincipal -Filter "AppId eq '$cacheKey'" -ErrorAction SilentlyContinue
+            $servicePrincipal = Get-MgBetaServicePrincipal -Filter "AppId eq '$cacheKey'" -ErrorAction SilentlyContinue
             $Script:ServicePrincipalCache[$cacheKey] = $servicePrincipal
         }
 
