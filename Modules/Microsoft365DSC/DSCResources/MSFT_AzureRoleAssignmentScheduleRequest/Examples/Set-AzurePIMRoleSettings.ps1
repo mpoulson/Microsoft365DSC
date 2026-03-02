@@ -122,7 +122,7 @@ $mgContext = get-mgcontext
 
 if ([String]::IsNullOrWhiteSpace($mgContext)) {
     Write-Host "Connecting to Graph account..."
-    connect-mggraph -environment usgov -scope "Group.Read.All" -ErrorAction Stop | Out-Null
+    connect-mggraph -environment usgov -scope "User.Read.All","Group.Read.All" -ErrorAction Stop | Out-Null
     $mgContext = get-mgcontext
     Write-Host "Connected to Graph account."
 }
@@ -131,7 +131,7 @@ Write-Host "Confirm in Graph correct tenant"
 if ($mgContext.account -notlike "*@$TenantName") {
     Write-Host "Graph - Tenant name does not match logged in account $($mgContext.account)" -foregroundcolor red
     Disconnect-MgGraph
-    connect-mggraph -environment usgov -scope "Group.Read.All" -ErrorAction Stop | Out-Null
+    connect-mggraph -environment usgov -scope "User.Read.All","Group.Read.All" -ErrorAction Stop | Out-Null
 }
 
 # Get Resource Scope
@@ -197,7 +197,7 @@ foreach ($role in $roles)
     foreach ($user in $ApprovalUsers)
     {
         Write-Host "Adding Approval User $user"
-        $PrincipalId = (Get-MgUser -Filter "UserPrincipalName eq '$user'" -ErrorAction SilentlyContinue).id
+        $PrincipalId = (Get-MgBetaUser -Filter "UserPrincipalName eq '$user'" -ErrorAction SilentlyContinue).id
         if ([string]::IsNullOrEmpty($PrincipalId))
         {
             Write-Host "Failed to lookup User $user"
@@ -213,7 +213,7 @@ foreach ($role in $roles)
     foreach ($group in $ApprovalGroups)
     {
         Write-Host "Adding Approval Group $group"
-        $PrincipalId = (Get-MgGroup -Filter "DisplayName eq '$group'" -ErrorAction SilentlyContinue).id
+        $PrincipalId = (Get-MgBetaGroup -Filter "DisplayName eq '$group'" -ErrorAction SilentlyContinue).id
         if ([string]::IsNullOrEmpty($PrincipalId))
         {
             Write-Host "Failed to lookup Group $group" -foregroundcolor red
