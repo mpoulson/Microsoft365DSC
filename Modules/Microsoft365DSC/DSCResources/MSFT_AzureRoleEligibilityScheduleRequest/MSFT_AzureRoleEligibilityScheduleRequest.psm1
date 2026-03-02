@@ -73,6 +73,8 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of Azure Role Eligibility Schedule Request"
+
     try
     {
         if (-not $Script:exportedInstance)
@@ -97,7 +99,7 @@ function Get-TargetResource
 
             if ($null -eq $Script:AllSchedules)
             {
-                Write-Verbose -Message 'Retrieving all role eligibility schedules'
+                Write-Verbose -Message "Retrieving all role eligibility schedules in scope {$DirectoryScopeId}"
                 $Script:AllSchedules = Get-AzRoleEligibilitySchedule -Scope $DirectoryScopeId `
                     -ErrorAction SilentlyContinue
             }
@@ -113,7 +115,7 @@ function Get-TargetResource
 
             if (-not [System.String]::IsNullOrEmpty($Id))
             {
-                Write-Verbose -Message "Getting Role Eligibility by Id {$Id}"
+                Write-Verbose -Message "Getting Role Eligibility with scope {$DirectoryScopeId} and by Id {$Id}"
                 $schedule = Get-AzRoleEligibilitySchedule -Scope $DirectoryScopeId -Name $Id `
                     -ErrorAction SilentlyContinue
             }
@@ -125,7 +127,7 @@ function Get-TargetResource
             $Script:AllSchedules = $Script:exportedInstance
         }
 
-        Write-Verbose -Message 'Getting Role Eligibility by PrincipalId and RoleDefinitionId'
+        Write-Verbose -Message "Getting Role Eligibility by PrincipalId and RoleDefinitionId for Principal {$Principal}"
         $PrincipalValue = $null
         if ($PrincipalType -eq 'User')
         {
@@ -146,6 +148,10 @@ function Get-TargetResource
             $PrincipalValue = $PrincipalInstance.DisplayName
         }
 
+        if ([System.String]::IsNullOrEmpty($PrincipalValue)) {
+            return $nullResult
+        }
+
         Write-Verbose -Message "Found Principal {$PrincipalValue}"
         $roleDefinitionId = $Script:RoleDefinitions.GetEnumerator() | Where-Object { $_.Value.Name -eq $RoleDefinition } | Select-Object -ExpandProperty Key
         Write-Verbose -Message "Retrieved role definition {$RoleDefinition} with ID {$roleDefinitionId}"
@@ -164,11 +170,11 @@ function Get-TargetResource
             {
                 # Lookup in Azure - can be the case if a role was created in this configuration run
                 Write-Verbose -Message "No cached schedules found, fetching with principalId, roleDefinitionId and directoryScopeId"
-                $requests = Get-AzRoleEligibilitySchedule -Scope $DirectoryScopeId `
-                    -Filter "principalId eq '$($PrincipalInstance.Id)'" -ErrorAction SilentlyContinue
+                $requests = Get-AzRoleEligibilitySchedule -Scope $DirectoryScopeId -Filter "principalId eq '$($PrincipalInstance.Id)'" -ErrorAction SilentlyContinue
                 $requests = $requests | Where-Object -FilterScript {
                     $null -ne $_.RoleDefinitionId -and
-                    $_.RoleDefinitionId.Split('/')[-1] -eq $roleDefinitionId
+                    $_.RoleDefinitionId.Split('/')[-1] -eq $roleDefinitionId -and
+                    $_.Scope -eq $DirectoryScopeId
                 }
                 if ($requests.Count -eq 0)
                 {
@@ -188,11 +194,11 @@ function Get-TargetResource
                         }
                         # The TemplateId is the id of the custom role definition
                         Write-Verbose -Message "Fetching schedules for custom role definition with RoleDefinitionId {$roleDefinitionId}"
-                        $requests = Get-AzRoleEligibilitySchedule -Scope $DirectoryScopeId `
-                            -Filter "principalId eq '$($PrincipalInstance.Id)'" -ErrorAction SilentlyContinue
+                        $requests = Get-AzRoleEligibilitySchedule -Scope $DirectoryScopeId -Filter "principalId eq '$($PrincipalInstance.Id)'" -ErrorAction SilentlyContinue
                         $requests = $requests | Where-Object -FilterScript {
                             $null -ne $_.RoleDefinitionId -and
-                            $_.RoleDefinitionId.Split('/')[-1] -eq $roleDefinitionId
+                            $_.RoleDefinitionId.Split('/')[-1] -eq $roleDefinitionId -and
+                            $_.Scope -eq $DirectoryScopeId
                         }
                         if ($requests.Count -eq 0)
                         {
@@ -247,9 +253,8 @@ function Get-TargetResource
             PrincipalType         = $PrincipalType
             RoleDefinition        = $RoleDefinition
             DirectoryScopeId      = $schedule.Scope
-            AppScopeId            = $null
             Id                    = $schedule.Name
-            Justification         = "Assignment of Azure role eligibility '$RoleDefinition' to principal '$PrincipalValue' of type '$PrincipalType'."
+            Justification         = "Eligibility of Azure role '$RoleDefinition' to principal '$PrincipalValue' of type '$PrincipalType'."
             ScheduleInfo          = $ScheduleInfoValue
             Ensure                = 'Present'
             Credential            = $Credential
@@ -364,30 +369,33 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    Write-Verbose -Message "Retrieving Principal Id from Set-TargetResource"
-    $PrincipalId = $null
     if ($PrincipalType -eq 'User')
     {
         Write-Verbose -Message "Retrieving Principal by UserPrincipalName {$Principal}"
-        $PrincipalInstance = Get-AzADUser -UserPrincipalName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue
-        $PrincipalId = $PrincipalInstance.Id
+        [Array]$PrincipalIdValue = (Get-AzADUser -UserPrincipalName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue).Id
     }
     elseif ($PrincipalType -eq 'Group')
     {
         Write-Verbose -Message "Retrieving Principal by DisplayName {$Principal}"
-        $PrincipalInstance = Get-AzADGroup -DisplayName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue
-        $PrincipalId = $PrincipalInstance.Id
+        [Array]$PrincipalIdValue = (Get-AzADGroup -DisplayName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue).Id
     }
-    else
+    elseif ($PrincipalType -eq 'ServicePrincipal')
     {
         Write-Verbose -Message "Retrieving Principal by DisplayName {$Principal}"
-        $PrincipalInstance = Get-AzADServicePrincipal -DisplayName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue
-        $PrincipalId = $PrincipalInstance.Id
+        [Array]$PrincipalIdValue = (Get-AzADServicePrincipal -DisplayName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue).Id
     }
 
-    Write-Verbose -Message "Retrieving RoleDefinitionId from Set-TargetResource"
-    $RoleDefinitionId = (Get-AzRoleDefinition -Name ($RoleDefinition -replace "'", "''") -ErrorAction SilentlyContinue).Id
-    if ($null -eq $RoleDefinitionId)
+    if ($null -eq $PrincipalIdValue)
+    {
+        throw "Couldn't find Principal {$Principal} of type {$PrincipalType}"
+    }
+    elseif ($PrincipalIdValue.Length -gt 1)
+    {
+        throw "Multiple Principal with ID {$Principal} of type {$PrincipalType} were found. Cannot create schedule."
+    }
+
+    $RoleDefinitionIdValue = (Get-AzRoleDefinition -Name ($RoleDefinition -replace "'", "''") -ErrorAction SilentlyContinue).Id
+    if ($null -eq $RoleDefinitionIdValue)
     {
         throw "Couldn't find Role Definition {$RoleDefinition}"
     }
@@ -395,52 +403,49 @@ function Set-TargetResource
     $instanceParams = @{
         Name             = [guid]::NewGuid().ToString()
         Scope            = $DirectoryScopeId
-        PrincipalId      = $PrincipalId
-        RoleDefinitionId = "$DirectoryScopeId/providers/Microsoft.Authorization/roleDefinitions/$RoleDefinitionId"
+        PrincipalId      = $PrincipalIdValue[0]
+        RoleDefinitionId = "$DirectoryScopeId/providers/Microsoft.Authorization/roleDefinitions/$RoleDefinitionIdValue"
     }
 
-    if (-not [System.String]::IsNullOrEmpty($ScheduleInfo.StartDateTime))
+    if ($null -ne $ScheduleInfo)
     {
-        $instanceParams.Add('ScheduleInfoStartDateTime', $ScheduleInfo.StartDateTime)
+        if (-not [System.String]::IsNullOrEmpty($ScheduleInfo.StartDateTime))
+        {
+            $instanceParams.Add('ScheduleInfoStartDateTime', $ScheduleInfo.StartDateTime)
+        }
+        if (-not [System.String]::IsNullOrEmpty($ScheduleInfo.Expiration.Type))
+        {
+            $instanceParams.Add('ExpirationType', $ScheduleInfo.Expiration.Type)
+        }
+        if (-not [System.String]::IsNullOrEmpty($ScheduleInfo.Expiration.Duration))
+        {
+            $instanceParams.Add('ExpirationDuration', $ScheduleInfo.Expiration.Duration)
+        }
+        if (-not [System.String]::IsNullOrEmpty($ScheduleInfo.Expiration.EndDateTime))
+        {
+            $instanceParams.Add('ExpirationEndDateTime', $ScheduleInfo.Expiration.EndDateTime)
+        }
     }
 
-    if (-not [System.String]::IsNullOrEmpty($ScheduleInfo.Expiration.Type))
-    {
-        $instanceParams.Add('ExpirationType', $ScheduleInfo.Expiration.Type)
-    }
-
-    if (-not [System.String]::IsNullOrEmpty($ScheduleInfo.Expiration.Duration))
-    {
-        $instanceParams.Add('ExpirationDuration', $ScheduleInfo.Expiration.Duration)
-    }
-
-    if (-not [System.String]::IsNullOrEmpty($ScheduleInfo.Expiration.EndDateTime))
-    {
-        $instanceParams.Add('ExpirationEndDateTime', $ScheduleInfo.Expiration.EndDateTime)
-    }
-
-    # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         $instanceParams.Add('RequestType', 'AdminAssign')
         $instanceParams.Add('Justification', 'AdminAssign by Microsoft365DSC')
-        Write-Verbose -Message "Creating new role eligibility Schedule with parameters:`r`n$(ConvertTo-Json $instanceParams -Depth 10)"
+        Write-Verbose -Message "Creating a Role Eligibility Schedule Request for principal {$Principal} and role {$RoleDefinition}"
         New-AzRoleEligibilityScheduleRequest @instanceParams
     }
-    # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         $instanceParams.Add('RequestType', 'AdminUpdate')
         $instanceParams.Add('Justification', 'AdminUpdate by Microsoft365DSC')
-        Write-Verbose -Message "Updating role eligibility Schedule with parameters:`r`n$(ConvertTo-Json $instanceParams -Depth 10)"
+        Write-Verbose -Message "Updating the Role Eligibility Schedule Request for principal {$Principal} and role {$RoleDefinition}"
         New-AzRoleEligibilityScheduleRequest @instanceParams
     }
-    # REMOVE
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
         $instanceParams.Add('RequestType', 'AdminRemove')
         $instanceParams.Add('Justification', 'AdminRemove by Microsoft365DSC')
-        Write-Verbose -Message "Removing role eligibility Schedule with parameters:`r`n$(ConvertTo-Json $instanceParams -Depth 10)"
+        Write-Verbose -Message "Removing the Role Eligibility Schedule Request for principal {$Principal} and role {$RoleDefinition}"
         New-AzRoleEligibilityScheduleRequest @instanceParams
     }
 }
@@ -591,6 +596,7 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
+        #region resource generator code
         $AllSchedules = [System.Collections.Generic.List[System.Object]]::new()
         $SeenScheduleNames = [System.Collections.Generic.HashSet[System.String]]::new()
 
@@ -708,37 +714,37 @@ function Export-TargetResource
                 $Script:RoleDefinitions.Add($roleDefinition.Id, $roleDefinition)
             }
         }
-        foreach ($config in $Script:exportedInstances)
+        foreach ($request in $Script:exportedInstances)
         {
             if ($null -ne $Global:M365DSCExportResourceInstancesCount)
             {
                 $Global:M365DSCExportResourceInstancesCount++
             }
 
-            $displayedKey = $config.Name
+            $displayedKey = $request.Name
             Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
+
             # Find the Principal Type
-            $principalType = $config.PrincipalType
-            $PrincipalValue = $null
+            $principalType = $request.PrincipalType
             if ($principalType -eq 'User')
             {
-                $principalInfo = Get-AzADUser -ObjectId $config.PrincipalId -ErrorAction SilentlyContinue
+                $principalInfo = Get-AzADUser -ObjectId $request.PrincipalId -ErrorAction SilentlyContinue
                 $PrincipalValue = $principalInfo.UserPrincipalName
             }
             elseif ($principalType -eq 'Group')
             {
-                $principalInfo = Get-AzADGroup -ObjectId $config.PrincipalId -ErrorAction SilentlyContinue
+                $principalInfo = Get-AzADGroup -ObjectId $request.PrincipalId -ErrorAction SilentlyContinue
                 $PrincipalValue = $principalInfo.DisplayName
             }
             else
             {
-                $principalInfo = Get-AzADServicePrincipal -ObjectId $config.PrincipalId -ErrorAction SilentlyContinue
+                $principalInfo = Get-AzADServicePrincipal -ObjectId $request.PrincipalId -ErrorAction SilentlyContinue
                 $PrincipalValue = $principalInfo.DisplayName
             }
 
             if ($null -ne $PrincipalValue)
             {
-                $roleDefinitionGuid = $config.RoleDefinitionId.Split('/')[-1]
+                $roleDefinitionGuid = $request.RoleDefinitionId.Split('/')[-1]
                 $roleDefinition = $Script:RoleDefinitions[$roleDefinitionGuid]
                 if ($null -eq $roleDefinition)
                 {
@@ -747,10 +753,10 @@ function Export-TargetResource
                     $Script:RoleDefinitions.Add($roleDefinitionGuid, $roleDefinition)
                 }
                 $params = @{
-                    Id                    = $config.Name
+                    Id                    = $request.Name
                     Principal             = $PrincipalValue
                     PrincipalType         = $principalType
-                    DirectoryScopeId      = $config.Scope
+                    DirectoryScopeId      = $request.Scope
                     RoleDefinition        = $roleDefinition.Name
                     Ensure                = 'Present'
                     Credential            = $Credential
@@ -763,37 +769,44 @@ function Export-TargetResource
                 }
             }
 
-            $Script:exportedInstance = $config
+            $Script:exportedInstance = $request
             $Results = Get-TargetResource @Params
 
-            if ($Results.ScheduleInfo)
+            if ($null -ne $Results.ScheduleInfo)
             {
                 $complexMapping = @(
                     @{
+                        Name            = 'ScheduleInfo'
+                        CimInstanceName = 'MSFT_AzureRoleEligibilityScheduleRequestSchedule'
+                        IsRequired      = $False
+                    },
+                    @{
                         Name            = 'expiration'
-                        CimInstanceName = 'AzureRoleEligibilityScheduleRequestScheduleExpiration'
+                        CimInstanceName = 'MSFT_AzureRoleEligibilityScheduleRequestScheduleExpiration'
                         IsRequired      = $False
-                    }
+                    },
                     @{
-                        Name            = 'Recurrence'
-                        CimInstanceName = 'AzureRoleEligibilityScheduleRequestScheduleRecurrence'
+                        Name            = 'recurrence'
+                        CimInstanceName = 'MSFT_AzureRoleEligibilityScheduleRequestScheduleRecurrence'
                         IsRequired      = $False
-                    }
+                    },
                     @{
-                        Name            = "range"
-                        CimInstanceName = 'AzureRoleEligibilityScheduleRequestScheduleRecurrenceRange'
+                        Name            = 'pattern'
+                        CimInstanceName = 'MSFT_AzureRoleEligibilityScheduleRequestScheduleRecurrencePattern'
                         IsRequired      = $False
-                    }
+                    },
                     @{
-                        Name            = "pattern"
-                        CimInstanceName = 'AzureRoleEligibilityScheduleRequestScheduleRecurrencePattern'
+                        Name            = 'range'
+                        CimInstanceName = 'MSFT_AzureRoleEligibilityScheduleRequestScheduleRecurrenceRange'
                         IsRequired      = $False
                     }
                 )
-                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString -ComplexObject $Results.ScheduleInfo `
-                        -CIMInstanceName 'AzureRoleEligibilityScheduleRequestSchedule' `
-                        -ComplexTypeMapping $complexMapping
-                if ($complexTypeStringResult)
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.ScheduleInfo `
+                    -CIMInstanceName 'MSFT_AzureRoleEligibilityScheduleRequestSchedule' `
+                    -ComplexTypeMapping $complexMapping
+
+                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.ScheduleInfo = $complexTypeStringResult
                 }
@@ -808,6 +821,7 @@ function Export-TargetResource
                 -Results $Results `
                 -Credential $Credential `
                 -NoEscape @('ScheduleInfo')
+
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
@@ -818,13 +832,22 @@ function Export-TargetResource
     }
     catch
     {
-        New-M365DSCLogEntry -Message 'Error during Export:' `
-            -Exception $_ `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -TenantId $TenantId `
-            -Credential $Credential
+        if ($_.ErrorDetails.Message -like '*The tenant needs an AAD Premium*' -or `
+                $_.ErrorDetails.Message -like '*[AadPremiumLicenseRequired]*')
+        {
+            Write-M365DSCHost -Message "`r`n    $($Global:M365DSCEmojiYellowCircle) Tenant does not meet license requirement to extract this component."
+            return ''
+        }
+        else
+        {
+            New-M365DSCLogEntry -Message 'Error during Export:' `
+                -Exception $_ `
+                -Source $($MyInvocation.MyCommand.Source) `
+                -TenantId $TenantId `
+                -Credential $Credential
 
-        throw
+            throw
+        }
     }
 }
 
