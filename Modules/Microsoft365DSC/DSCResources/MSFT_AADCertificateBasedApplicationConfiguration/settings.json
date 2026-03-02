@@ -39,7 +39,7 @@
             "name": "Directory.Read.All"
           },
           {
-            "name": "AppCertTrustConfiguration.Read.All"
+            "name": ""
           }
         ],
         "update": [
@@ -47,7 +47,7 @@
             "name": "Directory.ReadWrite.All"
           },
           {
-            "name": "AppCertTrustConfiguration.ReadWrite.All"
+            "name": ""
           },
           {
             "name": "Organization.ReadWrite.All"
