@@ -116,8 +116,9 @@ function Get-TargetResource
             if (-not [System.String]::IsNullOrEmpty($Id))
             {
                 Write-Verbose -Message "Getting Role Eligibility with scope {$DirectoryScopeId} and by Id {$Id}"
-                $schedule = Get-AzRoleEligibilitySchedule -Scope $DirectoryScopeId -Name $Id `
-                    -ErrorAction SilentlyContinue
+                $schedule = $Script:AllSchedules | Where-Object -FilterScript {
+                    $_.id -eq $Id -and $_.Scope -eq $DirectoryScopeId
+                }
             }
         }
         else
