@@ -116,8 +116,9 @@ function Get-TargetResource
             if (-not [System.String]::IsNullOrEmpty($Id))
             {
                 Write-Verbose -Message "Getting Role Assignment with scope {$DirectoryScopeId} and by Id {$Id}"
-                $schedule = Get-AzRoleAssignmentSchedule -Scope $DirectoryScopeId -Name $Id `
-                    -ErrorAction SilentlyContinue
+                $schedule = $Script:AllSchedules | Where-Object -FilterScript {
+                    $_.Name -eq $Id -and $_.Scope -eq $DirectoryScopeId
+                }
             }
         }
         else
@@ -128,23 +129,45 @@ function Get-TargetResource
         }
 
         Write-Verbose -Message "Getting Role Assignment by PrincipalId and RoleDefinitionId for Principal {$Principal}"
-        $PrincipalValue = $null
-        if ($PrincipalType -eq 'User')
+        if ($null -eq $Script:PrincipalByNameCache)
         {
-            Write-Verbose -Message "Retrieving Principal by UserPrincipalName {$Principal}"
-            $PrincipalInstance = Get-AzADUser -UserPrincipalName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue
-            $PrincipalValue = $PrincipalInstance.UserPrincipalName
+            $Script:PrincipalByNameCache = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
         }
-        elseif ($PrincipalType -eq 'Group')
+        $cacheKey = "$PrincipalType|$Principal"
+        $PrincipalValue = $null
+        if ($Script:PrincipalByNameCache.ContainsKey($cacheKey))
         {
-            Write-Verbose -Message "Retrieving Principal by DisplayName {$Principal}"
-            $PrincipalInstance = Get-AzADGroup -DisplayName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue
-            $PrincipalValue = $PrincipalInstance.DisplayName
+            Write-Verbose -Message "Using cached principal for {$Principal}"
+            $PrincipalInstance = $Script:PrincipalByNameCache[$cacheKey]
         }
         else
         {
-            Write-Verbose -Message "Retrieving Principal by DisplayName {$Principal}"
-            $PrincipalInstance = Get-AzADServicePrincipal -DisplayName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue
+            if ($PrincipalType -eq 'User')
+            {
+                Write-Verbose -Message "Retrieving Principal by UserPrincipalName {$Principal}"
+                $PrincipalInstance = Get-AzADUser -UserPrincipalName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue
+            }
+            elseif ($PrincipalType -eq 'Group')
+            {
+                Write-Verbose -Message "Retrieving Principal by DisplayName {$Principal}"
+                $PrincipalInstance = Get-AzADGroup -DisplayName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue
+            }
+            else
+            {
+                Write-Verbose -Message "Retrieving Principal by DisplayName {$Principal}"
+                $PrincipalInstance = Get-AzADServicePrincipal -DisplayName ($Principal -replace "'", "''") -ErrorAction SilentlyContinue
+            }
+            if ($null -ne $PrincipalInstance)
+            {
+                $Script:PrincipalByNameCache[$cacheKey] = $PrincipalInstance
+            }
+        }
+        if ($PrincipalType -eq 'User')
+        {
+            $PrincipalValue = $PrincipalInstance.UserPrincipalName
+        }
+        elseif ($null -ne $PrincipalInstance)
+        {
             $PrincipalValue = $PrincipalInstance.DisplayName
         }
 
@@ -366,6 +389,8 @@ function Set-TargetResource
     # Reset caches to ensure fresh data
     $Script:AllSchedules = $null
     $Script:RoleDefinitions = $null
+    $Script:PrincipalByNameCache = $null
+    $Script:PrincipalByIdCache = $null
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
@@ -676,6 +701,7 @@ function Export-TargetResource
                 $Script:RoleDefinitions.Add($roleDefinition.Id, $roleDefinition)
             }
         }
+        $Script:PrincipalByIdCache = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new()
         foreach ($request in $Script:exportedInstances)
         {
             if ($null -ne $Global:M365DSCExportResourceInstancesCount)
@@ -688,19 +714,37 @@ function Export-TargetResource
 
             # Find the Principal Type
             $principalType = $request.PrincipalType
-            if ($principalType -eq 'User')
+            $principalInfo = $null
+            $PrincipalValue = $null
+            if ($Script:PrincipalByIdCache.ContainsKey($request.PrincipalId))
             {
-                $principalInfo = Get-AzADUser -ObjectId $request.PrincipalId -ErrorAction SilentlyContinue
-                $PrincipalValue = $principalInfo.UserPrincipalName
-            }
-            elseif ($principalType -eq 'Group')
-            {
-                $principalInfo = Get-AzADGroup -ObjectId $request.PrincipalId -ErrorAction SilentlyContinue
-                $PrincipalValue = $principalInfo.DisplayName
+                $principalInfo = $Script:PrincipalByIdCache[$request.PrincipalId]
             }
             else
             {
-                $principalInfo = Get-AzADServicePrincipal -ObjectId $request.PrincipalId -ErrorAction SilentlyContinue
+                if ($principalType -eq 'User')
+                {
+                    $principalInfo = Get-AzADUser -ObjectId $request.PrincipalId -ErrorAction SilentlyContinue
+                }
+                elseif ($principalType -eq 'Group')
+                {
+                    $principalInfo = Get-AzADGroup -ObjectId $request.PrincipalId -ErrorAction SilentlyContinue
+                }
+                else
+                {
+                    $principalInfo = Get-AzADServicePrincipal -ObjectId $request.PrincipalId -ErrorAction SilentlyContinue
+                }
+                if ($null -ne $principalInfo)
+                {
+                    $Script:PrincipalByIdCache[$request.PrincipalId] = $principalInfo
+                }
+            }
+            if ($principalType -eq 'User')
+            {
+                $PrincipalValue = $principalInfo.UserPrincipalName
+            }
+            elseif ($null -ne $principalInfo)
+            {
                 $PrincipalValue = $principalInfo.DisplayName
             }
 

@@ -70,6 +70,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             $Script:exportedInstances = $null
             $Script:ExportMode = $false
+            $Script:PrincipalByNameCache = $null
+            $Script:PrincipalByIdCache = $null
         }
         # Test contexts
         Context -Name 'The instance should exist but it DOES NOT' -Fixture {
