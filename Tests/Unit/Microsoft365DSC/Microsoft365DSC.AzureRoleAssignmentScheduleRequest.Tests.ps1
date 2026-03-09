@@ -72,10 +72,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $Script:ExportMode = $false
             $Script:PrincipalByNameCache = $null
             $Script:PrincipalByIdCache = $null
+            $Script:RoleDefinitions = $null
+            $Script:AllSchedules = $null
         }
         # Test contexts
         Context -Name 'The instance should exist but it DOES NOT' -Fixture {
             BeforeAll {
+                $Script:RoleDefinitions = $null
+                $Script:AllSchedules = $null
                 $testParams = @{
                     DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
                     Ensure               = "Present";
@@ -110,6 +114,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'The instance exists but it SHOULD NOT' -Fixture {
             BeforeAll {
+                $Script:RoleDefinitions = $null
+                $Script:AllSchedules = $null
                 $testParams = @{
                     DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
                     Ensure               = "Absent";
@@ -142,6 +148,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         }
         Context -Name 'The instance Exists and Values are already in the desired state' -Fixture {
             BeforeAll {
+                $Script:RoleDefinitions = $null
+                $Script:AllSchedules = $null
                 $testParams = @{
                     DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
                     Ensure               = "Present";
@@ -168,6 +176,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         }
         Context -Name 'The instance Exists and specified Values are NOT in the desired state' -Fixture {
             BeforeAll {
+                $Script:RoleDefinitions = $null
+                $Script:AllSchedules = $null
                 $testParams = @{
                     DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
                     Ensure               = "Present";
@@ -200,6 +210,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         }
         Context -Name 'Set-TargetResource should throw when Role Definition is not found' -Fixture {
             BeforeAll {
+                $Script:RoleDefinitions = $null
+                $Script:AllSchedules = $null
                 $testParams = @{
                     DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
                     Ensure               = "Present";
@@ -232,6 +244,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'Set-TargetResource should throw when Principal is not found' -Fixture {
             BeforeAll {
+                $Script:RoleDefinitions = $null
+                $Script:AllSchedules = $null
                 $testParams = @{
                     DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012";
                     Ensure               = "Present";
@@ -264,6 +278,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'Management Group scope - The instance should exist but it DOES NOT' -Fixture {
             BeforeAll {
+                $Script:RoleDefinitions = $null
+                $Script:AllSchedules = $null
                 $testParams = @{
                     DirectoryScopeId     = "/providers/Microsoft.Management/managementGroups/MyManagementGroup";
                     Ensure               = "Present";
@@ -298,6 +314,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'Root Management Group scope - The instance Exists and Values are already in the desired state' -Fixture {
             BeforeAll {
+                $Script:RoleDefinitions = $null
+                $Script:AllSchedules = $null
                 $testParams = @{
                     DirectoryScopeId     = "/providers/Microsoft.Management/managementGroups/rootGroup";
                     Ensure               = "Present";
@@ -337,6 +355,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'Group principal with noExpiration - The instance should exist but it DOES NOT' -Fixture {
             BeforeAll {
+                $Script:RoleDefinitions = $null
+                $Script:AllSchedules = $null
                 $testParams = @{
                     DirectoryScopeId     = "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/rg-production";
                     Ensure               = "Present";
@@ -387,6 +407,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'noExpiration with root management group - The instance Exists and Values are already in the desired state' -Fixture {
             BeforeAll {
+                $Script:RoleDefinitions = $null
+                $Script:AllSchedules = $null
                 $testParams = @{
                     DirectoryScopeId     = "/providers/Microsoft.Management/managementGroups/rootGroup";
                     Ensure               = "Present";
@@ -430,6 +452,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
+                $Script:RoleDefinitions = $null
+                $Script:AllSchedules = $null
                 $Global:CurrentModeIsExport = $true
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{

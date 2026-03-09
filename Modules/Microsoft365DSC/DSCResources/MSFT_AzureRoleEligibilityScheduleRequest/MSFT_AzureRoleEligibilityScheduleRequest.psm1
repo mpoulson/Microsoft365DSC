@@ -203,6 +203,11 @@ function Get-TargetResource
                 {
                     # We need to make sure we're not ending up here because the role is a custom role (which has a different id).
                     Write-Verbose -Message "No schedules found, testing for custom role definitions"
+                    if ($null -eq $roleDefinitionId)
+                    {
+                        Write-Verbose -Message "Role definition Id is null, returning null result"
+                        return $nullResult
+                    }
                     $roleEntry = $Script:RoleDefinitions[$roleDefinitionId]
                     if ($null -eq $roleEntry)
                     {
