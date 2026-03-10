@@ -83,8 +83,8 @@ function Get-TargetResource
     {
         if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
         {
-            $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.name -eq 'default' -and `
-                    $_.id -like "*$BillingAccount*" }
+            $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.id -eq `
+                    "/providers/Microsoft.Billing/billingAccounts/$BillingAccount/policies/default" }
         }
         else
         {
