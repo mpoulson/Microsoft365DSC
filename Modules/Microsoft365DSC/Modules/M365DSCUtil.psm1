@@ -811,11 +811,11 @@ function Test-M365DSCParameterState
                                     Write-Verbose -Message "$($_.InputObject) - $($_.SideIndicator)"
                                 }
 
-                                $EventValue = "<CurrentValue>$($CurrentValues.$fieldName)</CurrentValue>"
-                                $EventValue += "<DesiredValue>$($DesiredValues.$fieldName)</DesiredValue>"
+                                $EventValue = "<CurrentValue>$($CurrentValues.$fieldName -join ", ")</CurrentValue>"
+                                $EventValue += "<DesiredValue>$($DesiredValues.$fieldName -join ", ")</DesiredValue>"
                                 $DriftObject.DriftInfo.Add($fieldName, @{
-                                    CurrentValue = $CurrentValues.$fieldName
-                                    DesiredValue = $DesiredValues.$fieldName
+                                    CurrentValue = $CurrentValues.$fieldName -join ", "
+                                    DesiredValue = $DesiredValues.$fieldName -join ", "
                                 })
                                 $DriftedParameters.Add($fieldName, $EventValue)
                                 $returnValue = $false
@@ -1636,6 +1636,12 @@ function Export-M365DSCConfiguration
     # Suppress Progress overlays
     $Global:ProgressPreference = 'SilentlyContinue'
 
+    # Check ErrorActionPreference - Azure DevOps and other Pipeline environments set it to 'Stop' by default
+    if ($ErrorActionPreference -eq 'Stop' -and -not $PSBoundParameters.ContainsKey('ErrorAction'))
+    {
+        $ErrorActionPreference = 'Continue'
+    }
+
     ##### FIRST CHECK AUTH PARAMETERS
     if ($PSBoundParameters.ContainsKey('Credential') -eq $true -and `
         -not [System.String]::IsNullOrEmpty($Credential))
@@ -2319,8 +2325,8 @@ function New-M365DSCConnection
         $Url,
 
         [Parameter()]
-        [System.Boolean]
-        $SkipModuleReload = $false
+        [switch]
+        $EnableSearchOnlySession
     )
 
     foreach ($requiredModule in $Script:M365DSCRequiredModules)
@@ -2343,15 +2349,6 @@ function New-M365DSCConnection
 
     Write-Verbose -Message "Attempting connection to {$Workload} with:"
     Write-Verbose -Message "$($InboundParameters | Out-String)"
-
-    if ($SkipModuleReload -eq $true)
-    {
-        $Global:CurrentModeIsExport = $true
-    }
-    else
-    {
-        $Global:CurrentModeIsExport = $false
-    }
 
     #region Telemetry
     $data = [System.Collections.Generic.Dictionary[[String], [String]]]::new()
@@ -2421,7 +2418,7 @@ function New-M365DSCConnection
             }
             Connect-M365Tenant -Workload $Workload `
                 -Credential $InboundParameters.Credential `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
 
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-Credential")
             {
@@ -2459,7 +2456,8 @@ function New-M365DSCConnection
             Connect-M365Tenant -Workload $Workload `
                 -Credential $InboundParameters.Credential `
                 -Url $Url `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
+
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-Credential")
             {
                 $data.Add('ConnectionMode', 'Credential')
@@ -2505,7 +2503,8 @@ function New-M365DSCConnection
             Connect-M365Tenant -Workload $Workload `
                 -ApplicationId $InboundParameters.ApplicationId `
                 -Credential $InboundParameters.Credential `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
+
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-CredentialsWithApplicationId")
             {
                 $data.Add('ConnectionMode', 'CredentialsWithApplicationId')
@@ -2546,7 +2545,8 @@ function New-M365DSCConnection
                 -ApplicationId $InboundParameters.ApplicationId `
                 -Credential $InboundParameters.Credential `
                 -Url $Url `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
+
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-CredentialsWithApplicationId")
             {
                 $data.Add('ConnectionMode', 'CredentialsWithApplicationId')
@@ -2606,7 +2606,7 @@ function New-M365DSCConnection
                 -TenantId $InboundParameters.TenantId `
                 -CertificatePassword $InboundParameters.CertificatePassword.Password `
                 -CertificatePath $InboundParameters.CertificatePath `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
 
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-ServicePrincipalWithPath")
             {
@@ -2686,7 +2686,7 @@ function New-M365DSCConnection
                 -ApplicationId $InboundParameters.ApplicationId `
                 -TenantId $InboundParameters.TenantId `
                 -ApplicationSecret $InboundParameters.ApplicationSecret `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
 
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-ServicePrincipalWithSecret")
             {
@@ -2719,7 +2719,7 @@ function New-M365DSCConnection
                 -TenantId $InboundParameters.TenantId `
                 -ApplicationSecret $InboundParameters.ApplicationSecret `
                 -Url $Url `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
 
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-ServicePrincipalWithSecret")
             {
@@ -2755,8 +2755,9 @@ function New-M365DSCConnection
             -ApplicationId $InboundParameters.ApplicationId `
             -TenantId $InboundParameters.TenantId `
             -CertificateThumbprint $InboundParameters.CertificateThumbprint `
-            -SkipModuleReload $Global:CurrentModeIsExport `
-            -Url $Url
+            -Url $Url `
+            -EnableSearchOnlySession:$EnableSearchOnlySession
+
         Write-Verbose -Message "Connection initiated."
         if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-ServicePrincipalWithThumbprint")
         {
@@ -2786,7 +2787,8 @@ function New-M365DSCConnection
             -TenantId $InboundParameters.TenantId `
             -Credential $InboundParameters.Credential `
             -Url $Url `
-            -SkipModuleReload $Global:CurrentModeIsExport
+            -EnableSearchOnlySession:$EnableSearchOnlySession
+
         if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-CredentialsWithTenantId")
         {
             $data.Add('ConnectionMode', 'CredentialsWithTenantId')
@@ -2816,7 +2818,7 @@ function New-M365DSCConnection
         Connect-M365Tenant -Workload $Workload `
             -Identity `
             -TenantId $InboundParameters.TenantId `
-            -SkipModuleReload $Global:CurrentModeIsExport
+            -EnableSearchOnlySession:$EnableSearchOnlySession
 
         if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-ManagedIdentity")
         {
@@ -2848,7 +2850,7 @@ function New-M365DSCConnection
         Connect-M365Tenant -Workload $Workload `
             -AccessTokens $InboundParameters.AccessTokens `
             -TenantId $InboundParameters.TenantId `
-            -SkipModuleReload $Global:CurrentModeIsExport
+            -EnableSearchOnlySession:$EnableSearchOnlySession
 
         if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-AccessTokens")
         {
@@ -5101,7 +5103,26 @@ function Update-M365DSCModule
             if ($null -ne (Get-Module -Name Microsoft.PowerShell.PSResourceGet -ListAvailable))
             {
                 Write-Verbose -Message "Updating the Microsoft365DSC module using Update-PSResource..."
-                Update-PSResource -Name 'Microsoft365DSC' -Scope $Scope -TrustRepository -AcceptLicense -SkipDependencyCheck -Repository $BaseRepository
+                try
+                {
+                    Update-PSResource -Name 'Microsoft365DSC' -Scope $Scope `
+                        -TrustRepository -AcceptLicense -SkipDependencyCheck `
+                        -Repository $BaseRepository -ErrorAction Stop
+                }
+                catch
+                {
+                    if ($_.Exception.Message -like "*No installed packages*")
+                    {
+                        Write-Verbose -Message "Microsoft365DSC was neither installed using Install-Module nor Install-PSResource. Skipping update check."
+                    }
+                    else
+                    {
+                        New-M365DSCLogEntry -Message 'Error Updating Module:' `
+                            -Exception $_ `
+                            -Source $($MyInvocation.MyCommand.Source)
+                        throw $_
+                    }
+                }
             }
         }
     }

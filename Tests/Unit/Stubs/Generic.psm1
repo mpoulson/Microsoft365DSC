@@ -474,10 +474,6 @@ function Connect-M365Tenant
         $CertificatePath,
 
         [Parameter()]
-        [System.Boolean]
-        $SkipModuleReload = $false,
-
-        [Parameter()]
         [Switch]
         $Identity,
 
@@ -515,8 +511,8 @@ function New-M365DSCConnection
         $Url,
 
         [Parameter()]
-        [System.Boolean]
-        $SkipModuleReload
+        [switch]
+        $EnableSearchOnlySession
     )
 }
 

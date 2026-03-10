@@ -294,14 +294,37 @@ function Get-TargetResource
         $response = Invoke-PnPSPRestMethod -Method Get `
             -Url "$((Get-MSCloudLoginConnectionProfile -Workload PnP).AdminUrl)/_api/SPO.Tenant?`$select=$($parametersToRetrieve -join ',')"
 
+        $AllowSelectSGsInODBListInTenantValue = @()
+        if ($response.AllowSelectSGsInODBListInTenant -ne $null)
+        {
+            $AllowSelectSGsInODBListInTenantValue = [System.String[]]$response.AllowSelectSGsInODBListInTenant
+        }
+
+        $DenySelectSGsInODBListInTenantValue = @()
+        if ($response.DenySelectSGsInODBListInTenant -ne $null)
+        {
+            $DenySelectSGsInODBListInTenantValue = [System.String[]]$response.DenySelectSGsInODBListInTenant
+        }
+
+        $DenySelectSecurityGroupsInSPSitesListValue = @()
+        if ($response.DenySelectSecurityGroupsInSPSitesList -ne $null)
+        {
+            $DenySelectSecurityGroupsInSPSitesListValue = [System.String[]]$response.DenySelectSecurityGroupsInSPSitesList
+        }
+
+        $AllowSelectSecurityGroupsInSPSitesListValue = @()
+        if ($response.AllowSelectSecurityGroupsInSPSitesList -ne $null)
+        {
+            $AllowSelectSecurityGroupsInSPSitesListValue = [System.String[]]$response.AllowSelectSecurityGroupsInSPSitesList
+        }
 
         return @{
             IsSingleInstance                                       = 'Yes'
             ExemptNativeUsersFromTenantLevelRestricedAccessControl = $response.ExemptNativeUsersFromTenantLevelRestricedAccessControl
-            AllowSelectSGsInODBListInTenant                        = $response.AllowSelectSGsInODBListInTenant
-            DenySelectSGsInODBListInTenant                         = $response.DenySelectSGsInODBListInTenant
-            DenySelectSecurityGroupsInSPSitesList                  = $response.DenySelectSecurityGroupsInSPSitesList
-            AllowSelectSecurityGroupsInSPSitesList                 = $response.AllowSelectSecurityGroupsInSPSitesList
+            AllowSelectSGsInODBListInTenant                        = $AllowSelectSGsInODBListInTenantValue
+            DenySelectSGsInODBListInTenant                         = $DenySelectSGsInODBListInTenantValue
+            DenySelectSecurityGroupsInSPSitesList                  = $DenySelectSecurityGroupsInSPSitesListValue
+            AllowSelectSecurityGroupsInSPSitesList                 = $AllowSelectSecurityGroupsInSPSitesListValue
             EnableAzureADB2BIntegration                            = $response.EnableAzureADB2BIntegration
             HideSyncButtonOnODB                                    = $response.HideSyncButtonOnODB
             MobileFriendlyUrlEnabledInTenant                       = $response.MobileFriendlyUrlEnabledInTenant
