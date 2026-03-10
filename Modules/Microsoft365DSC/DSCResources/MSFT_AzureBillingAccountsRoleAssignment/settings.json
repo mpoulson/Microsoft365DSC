@@ -1,5 +1,5 @@
 {
-  "resourceName": "AzureBillingaccountsRoleAssignment",
+  "resourceName": "AzureBillingAccountsRoleAssignment",
   "description": "Manages roles on billing accounts.",
   "roles": {
     "read": [],

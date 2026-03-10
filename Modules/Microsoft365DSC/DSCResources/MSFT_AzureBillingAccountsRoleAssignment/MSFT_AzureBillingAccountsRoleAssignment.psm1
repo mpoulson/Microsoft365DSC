@@ -378,7 +378,7 @@ function Export-TargetResource
 
         $i = 1
         $dscContent = ''
-        if ($Script:exportedInstances.Length -eq 0)
+        if ($accounts.value.Length -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
@@ -389,7 +389,7 @@ function Export-TargetResource
         foreach ($config in $accounts.value)
         {
             $displayedKey = $config.properties.displayName
-            Write-M365DSCHost -Message "    |---[$i/$($accounts.Count)] $displayedKey"
+            Write-M365DSCHost -Message "    |---[$i/$($accounts.value.Length)] $displayedKey"
 
             $assignments = Get-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $config.name
 

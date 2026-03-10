@@ -25,6 +25,8 @@
       }
     }
   },
-  "requiredModules": [],
+  "requiredModules": [
+    "Az.Accounts"
+  ],
   "mode": "Configuration"
 }

@@ -216,6 +216,9 @@ function Set-TargetResource
 
     Write-Verbose -Message "Setting configuration of Azure Billing Account Scheduled Action for Billing Account $BillingAccount with Display Name $DisplayName"
 
+    $null = New-M365DSCConnection -Workload 'Azure' `
+        -InboundParameters $PSBoundParameters
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 

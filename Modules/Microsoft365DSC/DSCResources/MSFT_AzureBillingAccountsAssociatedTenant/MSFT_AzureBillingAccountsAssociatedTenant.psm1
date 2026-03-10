@@ -175,6 +175,9 @@ function Set-TargetResource
 
     Write-Verbose -Message "Setting configuration for Azure Billing Accounts Associated Tenant for Billing Account {$BillingAccount} and Display Name {$DisplayName}"
 
+    $null = New-M365DSCConnection -Workload 'Azure' `
+        -InboundParameters $PSBoundParameters
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -353,7 +356,7 @@ function Export-TargetResource
 
         $i = 1
         $dscContent = ''
-        if ($Script:exportedInstances.Length -eq 0)
+        if ($accounts.value.Length -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
@@ -361,13 +364,12 @@ function Export-TargetResource
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
-        [array] $Script:exportedInstances = @()
         foreach ($config in $accounts.value)
         {
             $displayedKey = $config.properties.displayName
-            Write-M365DSCHost -Message "    |---[$i/$($accounts.Count)] $displayedKey"
+            Write-M365DSCHost -Message "    |---[$i/$($accounts.value.Length)] $displayedKey"
 
-            $associatedTenants += Get-M365DSCAzureBillingAccountsAssociatedTenant -BillingAccountId $config.name
+            $associatedTenants = Get-M365DSCAzureBillingAccountsAssociatedTenant -BillingAccountId $config.name
 
             $j = 1
             foreach ($associatedTenant in $associatedTenants.value)
