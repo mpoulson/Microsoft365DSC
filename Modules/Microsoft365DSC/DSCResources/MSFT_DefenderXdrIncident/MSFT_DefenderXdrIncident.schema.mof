@@ -1,0 +1,20 @@
+[ClassVersion("1.0.0.0"), FriendlyName("DefenderXdrIncident")]
+class MSFT_DefenderXdrIncident : OMI_BaseResource
+{
+    [Key, Description("The unique incident identifier from Defender XDR.")] String IncidentId;
+    [Write, Description("The display name of the incident.")] String IncidentName;
+    [Write, Description("The severity of the incident."), ValueMap{"Informational","Low","Medium","High"}, Values{"Informational","Low","Medium","High"}] String Severity;
+    [Write, Description("The current status of the incident."), ValueMap{"Active","Resolved","Redirected"}, Values{"Active","Resolved","Redirected"}] String Status;
+    [Write, Description("The Azure AD user ID of the incident assignee.")] String AssignedTo;
+    [Write, Description("The classification of the incident."), ValueMap{"Unknown","FalsePositive","TruePositive","InformationalExpectedActivity"}, Values{"Unknown","FalsePositive","TruePositive","InformationalExpectedActivity"}] String Classification;
+    [Write, Description("The time when the incident was created.")] String CreatedTime;
+    [Write, Description("The time when the incident was last updated.")] String LastUpdateTime;
+
+    [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Present"}, Values{"Present"}] string Ensure;
+    [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};

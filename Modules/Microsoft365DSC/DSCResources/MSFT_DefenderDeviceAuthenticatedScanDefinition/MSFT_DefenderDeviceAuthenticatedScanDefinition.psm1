@@ -92,7 +92,8 @@ function Get-TargetResource
             $nullResult = $PSBoundParameters
             $nullResult.Ensure = 'Absent'
 
-            $instances = (Invoke-M365DSCDefenderREST -Uri 'https://api.securitycenter.microsoft.com/api/DeviceAuthenticatedScanDefinitions' `
+            $mdeBaseUrl = Get-M365DSCDefenderMdeBaseUrl
+            $instances = (Invoke-M365DSCDefenderREST -Uri "$mdeBaseUrl/api/DeviceAuthenticatedScanDefinitions" `
                     -Method GET).value
             if (-not [System.String]::IsNullOrEmpty($Id))
             {
@@ -326,7 +327,8 @@ function Set-TargetResource
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating new device authenticated scan definition {$Name} with payload:`r`n$(ConvertTo-Json $instanceParams -Depth 10)"
-        $response = Invoke-M365DSCDefenderREST -Uri 'https://api.securitycenter.microsoft.com/api/DeviceAuthenticatedScanDefinitions' `
+        $mdeBaseUrl = Get-M365DSCDefenderMdeBaseUrl
+        $response = Invoke-M365DSCDefenderREST -Uri "$mdeBaseUrl/api/DeviceAuthenticatedScanDefinitions" `
             -Method POST `
             -Body $instanceParams
         Write-Verbose -Message "Response:`r`n$($response.Content)"
@@ -335,7 +337,8 @@ function Set-TargetResource
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating device authenticated scan definition {$Name} with payload:`r`n$(ConvertTo-Json $instanceParams -Depth 10)"
-        $response = Invoke-M365DSCDefenderREST -Uri "https://api.securitycenter.microsoft.com/api/DeviceAuthenticatedScanDefinitions/$($currentInstance.Id)" `
+        $mdeBaseUrl = Get-M365DSCDefenderMdeBaseUrl
+        $response = Invoke-M365DSCDefenderREST -Uri "$mdeBaseUrl/api/DeviceAuthenticatedScanDefinitions/$($currentInstance.Id)" `
             -Method PATCH `
             -Body $instanceParams
         Write-Verbose -Message "Response:`r`n$($response.Content)"
@@ -347,7 +350,8 @@ function Set-TargetResource
             ScanDefinitionIds = @($currentInstance.Id)
         }
         Write-Verbose -Message "Deleting device authenticated scan definition {$Name} with payload:`r`n$(ConvertTo-Json $instanceParams -Depth 10)"
-        $response = Invoke-M365DSCDefenderREST -Uri 'https://api.securitycenter.microsoft.com/api/DeviceAuthenticatedScanDefinitions/BatchDelete' `
+        $mdeBaseUrl = Get-M365DSCDefenderMdeBaseUrl
+        $response = Invoke-M365DSCDefenderREST -Uri "$mdeBaseUrl/api/DeviceAuthenticatedScanDefinitions/BatchDelete" `
             -Method POST `
             -Body $instanceParams
         Write-Verbose -Message "Response:`r`n$($response.Content)"
@@ -490,7 +494,8 @@ function Export-TargetResource
 
     try
     {
-        [array] $Script:exportedInstances = (Invoke-M365DSCDefenderREST -Uri 'https://api.securitycenter.microsoft.com/api/DeviceAuthenticatedScanDefinitions' `
+        $mdeBaseUrl = Get-M365DSCDefenderMdeBaseUrl
+        [array] $Script:exportedInstances = (Invoke-M365DSCDefenderREST -Uri "$mdeBaseUrl/api/DeviceAuthenticatedScanDefinitions" `
                 -Method GET).value
 
         $i = 1

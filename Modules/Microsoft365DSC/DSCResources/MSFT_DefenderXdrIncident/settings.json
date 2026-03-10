@@ -1,0 +1,26 @@
+{
+  "resourceName": "DefenderXdrIncident",
+  "description": "Retrieves incident information from Microsoft Defender XDR.",
+  "roles": {
+    "read": [],
+    "update": []
+  },
+  "permissions": {
+    "WindowsDefenderATP": {
+      "delegated": {
+        "read": [
+          "Incident.Read.All"
+        ],
+        "update": []
+      },
+      "application": {
+        "read": [
+          "Incident.Read.All"
+        ],
+        "update": []
+      }
+    }
+  },
+  "requiredModules": [],
+  "mode": "Data"
+}

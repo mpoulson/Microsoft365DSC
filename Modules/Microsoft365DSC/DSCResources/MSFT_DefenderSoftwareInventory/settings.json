@@ -1,0 +1,26 @@
+{
+  "resourceName": "DefenderSoftwareInventory",
+  "description": "Retrieves software inventory information from Microsoft Defender for Endpoint.",
+  "roles": {
+    "read": [],
+    "update": []
+  },
+  "permissions": {
+    "WindowsDefenderATP": {
+      "delegated": {
+        "read": [
+          "Software.Read"
+        ],
+        "update": []
+      },
+      "application": {
+        "read": [
+          "Software.Read.All"
+        ],
+        "update": []
+      }
+    }
+  },
+  "requiredModules": [],
+  "mode": "Data"
+}
