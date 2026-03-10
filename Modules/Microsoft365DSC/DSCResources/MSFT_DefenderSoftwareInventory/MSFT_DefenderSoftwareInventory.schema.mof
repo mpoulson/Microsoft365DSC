@@ -5,7 +5,7 @@ class MSFT_DefenderSoftwareInventory : OMI_BaseResource
     [Write, Description("The display name of the software.")] String SoftwareName;
     [Write, Description("The vendor of the software.")] String SoftwareVendor;
     [Write, Description("The number of weaknesses discovered for this software.")] UInt32 Weaknesses;
-    [Write, Description("The number of devices where this software is installed.")] UInt32 ActiveAlert;
+    [Write, Description("The number of active alerts for this software.")] UInt32 ActiveAlert;
     [Write, Description("The number of exposed devices for this software.")] UInt32 ExposedMachines;
     [Write, Description("The impact score for this software.")] String ImpactScore;
 

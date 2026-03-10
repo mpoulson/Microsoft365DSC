@@ -106,40 +106,52 @@ Describe 'M365DSCDefenderHelper' {
         It 'Should throw when no authentication method is provided' {
             { Get-M365DSCDefenderToken -ResourceUrl 'https://api.securitycenter.microsoft.com' } | Should -Throw '*No valid authentication method*'
         }
+    }
+
+    Context 'Get-M365DSCDefenderToken - Managed identity unreachable' {
+        BeforeAll {
+            Mock -ModuleName M365DSCDefenderHelper -CommandName Invoke-WebRequest -MockWith {
+                throw [System.Net.WebException]::new('Connection refused')
+            }
+        }
 
         It 'Should throw with a clear message when managed identity endpoint is unreachable' {
-            Mock -ModuleName M365DSCDefenderHelper -CommandName Invoke-WebRequest -MockWith {
-                throw 'Connection refused'
-            }
-
             { Get-M365DSCDefenderToken -ResourceUrl 'https://api.securitycenter.microsoft.com' `
                     -UseManagedIdentity $true } | Should -Throw '*managed identity*'
+        }
+    }
+
+    Context 'Get-M365DSCDefenderToken - Client secret failure' {
+        BeforeAll {
+            Mock -ModuleName M365DSCDefenderHelper -CommandName Invoke-WebRequest -MockWith {
+                throw [System.Net.WebException]::new('Unauthorized')
+            }
         }
 
         It 'Should throw with a clear message when client secret auth fails' {
             $secSecret = ConvertTo-SecureString 'TestSecret' -AsPlainText -Force
             $clientSecretCred = New-Object System.Management.Automation.PSCredential ('clientid', $secSecret)
 
-            Mock -ModuleName M365DSCDefenderHelper -CommandName Invoke-WebRequest -MockWith {
-                throw 'Unauthorized'
-            }
-
             { Get-M365DSCDefenderToken -TenantId 'test-tenant' `
                     -ClientId 'test-client' `
                     -ClientSecret $clientSecretCred `
                     -ResourceUrl 'https://api.securitycenter.microsoft.com' } | Should -Throw '*client secret*'
         }
+    }
 
-        It 'Should return a bearer token when client secret auth succeeds' {
-            $secSecret = ConvertTo-SecureString 'TestSecret' -AsPlainText -Force
-            $clientSecretCred = New-Object System.Management.Automation.PSCredential ('clientid', $secSecret)
-
+    Context 'Get-M365DSCDefenderToken - Client secret success' {
+        BeforeAll {
             Mock -ModuleName M365DSCDefenderHelper -CommandName Invoke-WebRequest -MockWith {
                 $mockResponse = [PSCustomObject]@{
                     Content = '{"access_token": "mock-token-12345", "token_type": "Bearer", "expires_in": 3600}'
                 }
                 return $mockResponse
             }
+        }
+
+        It 'Should return a bearer token when client secret auth succeeds' {
+            $secSecret = ConvertTo-SecureString 'TestSecret' -AsPlainText -Force
+            $clientSecretCred = New-Object System.Management.Automation.PSCredential ('clientid', $secSecret)
 
             $result = Get-M365DSCDefenderToken -TenantId 'test-tenant' `
                 -ClientId 'test-client' `
@@ -148,22 +160,21 @@ Describe 'M365DSCDefenderHelper' {
 
             $result | Should -Be 'Bearer mock-token-12345'
         }
+    }
 
-        It 'Should use the correct authority host for GCC High' {
-            $secSecret = ConvertTo-SecureString 'TestSecret' -AsPlainText -Force
-            $clientSecretCred = New-Object System.Management.Automation.PSCredential ('clientid', $secSecret)
-
+    Context 'Get-M365DSCDefenderToken - GCC High authority host' {
+        BeforeAll {
             Mock -ModuleName M365DSCDefenderHelper -CommandName Invoke-WebRequest -MockWith {
-                param($Uri)
-                if ($Uri -notlike '*login.microsoftonline.us*')
-                {
-                    throw "Expected GCC High authority URL but got $Uri"
-                }
                 $mockResponse = [PSCustomObject]@{
                     Content = '{"access_token": "gcc-token", "token_type": "Bearer", "expires_in": 3600}'
                 }
                 return $mockResponse
             }
+        }
+
+        It 'Should use the correct authority host for GCC High' {
+            $secSecret = ConvertTo-SecureString 'TestSecret' -AsPlainText -Force
+            $clientSecretCred = New-Object System.Management.Automation.PSCredential ('clientid', $secSecret)
 
             $result = Get-M365DSCDefenderToken -TenantId 'test-tenant' `
                 -ClientId 'test-client' `
@@ -173,15 +184,19 @@ Describe 'M365DSCDefenderHelper' {
 
             $result | Should -Be 'Bearer gcc-token'
         }
+    }
 
-        It 'Should return a bearer token when managed identity auth succeeds' {
+    Context 'Get-M365DSCDefenderToken - Managed identity success' {
+        BeforeAll {
             Mock -ModuleName M365DSCDefenderHelper -CommandName Invoke-WebRequest -MockWith {
                 $mockResponse = [PSCustomObject]@{
                     Content = '{"access_token": "mi-token-67890", "token_type": "Bearer"}'
                 }
                 return $mockResponse
             }
+        }
 
+        It 'Should return a bearer token when managed identity auth succeeds' {
             $result = Get-M365DSCDefenderToken -ResourceUrl 'https://api.securitycenter.microsoft.com' `
                 -UseManagedIdentity $true
 

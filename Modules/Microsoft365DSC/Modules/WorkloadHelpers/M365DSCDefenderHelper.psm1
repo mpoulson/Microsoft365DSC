@@ -252,7 +252,7 @@ function Get-M365DSCDefenderToken
         $headerHash = @{
             alg = 'RS256'
             typ = 'JWT'
-            x5t = [System.Convert]::ToBase64String($Certificate.GetCertHash()) -replace '\+', '-' -replace '/', '_' -replace '='
+            x5t = [System.Convert]::ToBase64String($Certificate.GetCertHash([System.Security.Cryptography.HashAlgorithmName]::SHA1)) -replace '\+', '-' -replace '/', '_' -replace '='
         }
         $payloadHash = @{
             aud = $tokenEndpoint
