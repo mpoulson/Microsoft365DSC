@@ -188,6 +188,12 @@ function Set-TargetResource
 
     Write-Verbose -Message "Setting configuration of Azure Billing Accounts Role Assignment for Billing Account {$BillingAccount} and Principal Name {$PrincipalName}"
 
+    $null = New-M365DSCConnection -Workload 'Azure' `
+        -InboundParameters $PSBoundParameters
+
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        -InboundParameters $PSBoundParameters
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -233,7 +239,7 @@ function Set-TargetResource
         $instances = Get-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name -ErrorAction Stop
         $instance = $instances.value | Where-Object -FilterScript { $_.properties.principalId -eq $PrincipalIdValue }
         $AssignmentId = $instance.Id.Split('/')
-        $AssignmentId = $AssignmentId[$roleDefinitionId.Length - 1]
+        $AssignmentId = $AssignmentId[$AssignmentId.Length - 1]
         Write-Verbose -Message "Removing role assignment for user {$PrincipalName} for role {$RoleDefinition}"
         Remove-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name `
             -AssignmentId $AssignmentId
@@ -348,7 +354,7 @@ function Export-TargetResource
     $ConnectionMode = New-M365DSCConnection -Workload 'Azure' `
         -InboundParameters $PSBoundParameters
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.

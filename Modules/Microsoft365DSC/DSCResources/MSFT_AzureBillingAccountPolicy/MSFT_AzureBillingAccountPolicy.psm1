@@ -81,9 +81,9 @@ function Get-TargetResource
     $nullResult.Ensure = 'Absent'
     try
     {
-        $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/policies/default?api-version=2024-04-01"
+        $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/policies/default?api-version=2024-04-01"
         $response = Invoke-AzRest -Uri $uri -Method GET
-        $instance = (ConvertFrom-Json ($response.Content)).value
+        $instance = ConvertFrom-Json ($response.Content)
 
         if ($null -eq $instance)
         {
@@ -219,7 +219,7 @@ function Set-TargetResource
     }
     $payload = ConvertTo-Json $instanceParams -Depth 5 -Compress
     Write-Verbose -Message "Updating billing account policy for {$BillingAccount} with payload:`r`n$($payload)"
-    $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/policies/default?api-version=2024-04-01"
+    $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/policies/default?api-version=2024-04-01"
     $response = Invoke-AzRest -Uri $uri -Method 'PUT' -Payload $payload
     if (-not [System.String]::IsNullOrEmpty($response.Error))
     {
