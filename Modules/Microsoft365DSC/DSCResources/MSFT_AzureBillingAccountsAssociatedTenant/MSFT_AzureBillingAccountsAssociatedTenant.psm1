@@ -77,13 +77,20 @@ function Get-TargetResource
     $nullResult.Ensure = 'Absent'
     try
     {
-        $accounts = Get-M365DSCAzureBillingAccount
-        $currentAccount = $accounts.value | Where-Object -FilterScript { $_.properties.displayName -eq $BillingAccount }
-
-        if ($null -ne $currentAccount)
+        if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
         {
-            $instances = Get-M365DSCAzureBillingAccountsAssociatedTenant -BillingAccountId $currentAccount.Name -ErrorAction Stop
-            $instance = $instances.value | Where-Object -FilterScript { $_.properties.displayName -eq $DisplayName }
+            $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.properties.displayName -eq $DisplayName }
+        }
+        else
+        {
+            $accounts = Get-M365DSCAzureBillingAccount
+            $currentAccount = $accounts.value | Where-Object -FilterScript { $_.properties.displayName -eq $BillingAccount }
+
+            if ($null -ne $currentAccount)
+            {
+                $instances = Get-M365DSCAzureBillingAccountsAssociatedTenant -BillingAccountId $currentAccount.Name -ErrorAction Stop
+                $instance = $instances.value | Where-Object -FilterScript { $_.properties.displayName -eq $DisplayName }
+            }
         }
         if ($null -eq $instance)
         {
@@ -350,6 +357,7 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
+        [array] $Script:exportedInstances = @()
 
         #Get all billing account
         $accounts = Get-M365DSCAzureBillingAccount
@@ -370,6 +378,7 @@ function Export-TargetResource
             Write-M365DSCHost -Message "    |---[$i/$($accounts.value.Length)] $displayedKey"
 
             $associatedTenants = Get-M365DSCAzureBillingAccountsAssociatedTenant -BillingAccountId $config.name
+            [array] $Script:exportedInstances += $associatedTenants.value
 
             $j = 1
             foreach ($associatedTenant in $associatedTenants.value)

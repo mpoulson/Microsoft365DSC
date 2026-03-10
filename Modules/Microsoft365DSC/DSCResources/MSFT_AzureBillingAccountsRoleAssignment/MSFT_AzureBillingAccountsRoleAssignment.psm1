@@ -83,19 +83,36 @@ function Get-TargetResource
         $accounts = Get-M365DSCAzureBillingAccount
         $currentAccount = $accounts.value | Where-Object -FilterScript { $_.properties.displayName -eq $BillingAccount }
 
-        if ($null -ne $currentAccount)
+        if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
         {
-            $instances = Get-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $currentAccount.Name -ErrorAction Stop
             $PrincipalIdValue = Get-M365DSCPrincipalIdFromName -PrincipalName $PrincipalName `
                 -PrincipalType $PrincipalType
-            $instance = $instances.value | Where-Object -FilterScript { $_.properties.principalId -eq $PrincipalIdValue }
+            $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.properties.principalId -eq $PrincipalIdValue }
 
-            if ($null -ne $instance)
+            if ($null -ne $instance -and $null -ne $currentAccount)
             {
                 $roleDefinitionId = $instance.properties.roleDefinitionId.Split('/')
                 $roleDefinitionId = $roleDefinitionId[$roleDefinitionId.Length - 1]
                 $RoleDefinitionValue = Get-M365DSCAzureBillingAccountsRoleDefinition -BillingAccountId $currentAccount.Name `
                     -RoleDefinitionId $roleDefinitionId
+            }
+        }
+        else
+        {
+            if ($null -ne $currentAccount)
+            {
+                $instances = Get-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $currentAccount.Name -ErrorAction Stop
+                $PrincipalIdValue = Get-M365DSCPrincipalIdFromName -PrincipalName $PrincipalName `
+                    -PrincipalType $PrincipalType
+                $instance = $instances.value | Where-Object -FilterScript { $_.properties.principalId -eq $PrincipalIdValue }
+
+                if ($null -ne $instance)
+                {
+                    $roleDefinitionId = $instance.properties.roleDefinitionId.Split('/')
+                    $roleDefinitionId = $roleDefinitionId[$roleDefinitionId.Length - 1]
+                    $RoleDefinitionValue = Get-M365DSCAzureBillingAccountsRoleDefinition -BillingAccountId $currentAccount.Name `
+                        -RoleDefinitionId $roleDefinitionId
+                }
             }
         }
         if ($null -eq $instance)
@@ -372,6 +389,7 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
+        [array] $Script:exportedInstances = @()
 
         #Get all billing account
         $accounts = Get-M365DSCAzureBillingAccount
@@ -392,6 +410,7 @@ function Export-TargetResource
             Write-M365DSCHost -Message "    |---[$i/$($accounts.value.Length)] $displayedKey"
 
             $assignments = Get-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $config.name
+            [array] $Script:exportedInstances += $assignments.value
 
             $j = 1
             foreach ($assignment in $assignments.value)

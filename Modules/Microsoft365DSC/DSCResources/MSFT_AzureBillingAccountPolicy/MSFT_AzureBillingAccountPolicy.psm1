@@ -81,9 +81,17 @@ function Get-TargetResource
     $nullResult.Ensure = 'Absent'
     try
     {
-        $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/policies/default?api-version=2024-04-01"
-        $response = Invoke-AzRest -Uri $uri -Method GET
-        $instance = ConvertFrom-Json ($response.Content)
+        if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
+        {
+            $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.name -eq 'default' -and `
+                    $_.id -like "*$BillingAccount*" }
+        }
+        else
+        {
+            $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/policies/default?api-version=2024-04-01"
+            $response = Invoke-AzRest -Uri $uri -Method GET
+            $instance = ConvertFrom-Json ($response.Content)
+        }
 
         if ($null -eq $instance)
         {
@@ -354,6 +362,9 @@ function Export-TargetResource
 
     try
     {
+        $Script:ExportMode = $true
+        [array] $Script:exportedInstances = @()
+
         # Get all billing account
         $accounts = Get-M365DSCAzureBillingAccount
 
@@ -371,6 +382,14 @@ function Export-TargetResource
         {
             $displayedKey = $account.properties.displayName
             Write-M365DSCHost -Message "    |---[$i/$($accounts.value.Length)] $displayedKey" -DeferWrite
+
+            $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($account.name)/policies/default?api-version=2024-04-01"
+            $response = Invoke-AzRest -Uri $uri -Method GET
+            $policy = ConvertFrom-Json ($response.Content)
+            if ($null -ne $policy)
+            {
+                [array] $Script:exportedInstances += $policy
+            }
 
             if ($null -ne $Global:M365DSCExportResourceInstancesCount)
             {

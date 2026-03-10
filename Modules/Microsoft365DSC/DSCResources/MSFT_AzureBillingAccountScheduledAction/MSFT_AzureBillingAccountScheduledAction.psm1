@@ -86,11 +86,18 @@ function Get-TargetResource
         $nullResult = $PSBoundParameters
         $nullResult.Ensure = 'Absent'
 
-        $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/providers/Microsoft.CostManagement/scheduledActions?api-version=2023-11-01"
-        $response = Invoke-AzRest -Uri $uri -Method GET
-        $actions = (ConvertFrom-Json ($response.Content)).value
+        if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
+        {
+            $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.properties.displayName -eq $DisplayName }
+        }
+        else
+        {
+            $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/providers/Microsoft.CostManagement/scheduledActions?api-version=2023-11-01"
+            $response = Invoke-AzRest -Uri $uri -Method GET
+            $actions = (ConvertFrom-Json ($response.Content)).value
 
-        $instance = $actions | Where-Object -FilterScript { $_.properties.displayName -eq $DisplayName }
+            $instance = $actions | Where-Object -FilterScript { $_.properties.displayName -eq $DisplayName }
+        }
 
         if ($null -eq $instance)
         {
@@ -415,6 +422,7 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
+        [array] $Script:exportedInstances = @()
 
         #Get all billing account
         $accounts = Get-M365DSCAzureBillingAccount
@@ -437,6 +445,7 @@ function Export-TargetResource
             $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($account.name)/providers/Microsoft.CostManagement/scheduledActions?api-version=2023-11-01"
             $response = Invoke-AzRest -Uri $uri -Method GET
             $actions = (ConvertFrom-Json ($response.Content)).value
+            [array] $Script:exportedInstances += $actions
             $j = 1
             if ($actions.Length -eq 0)
             {
