@@ -1,0 +1,32 @@
+{
+  "resourceName": "AzurePolicyAssignment",
+  "description": "Manages Azure Policy assignments.",
+  "roles": {
+    "read": [],
+    "update": []
+  },
+  "permissions": {
+    "Azure Service Management": {
+      "delegated": {
+        "read": [
+          {
+            "name": "user_impersonation"
+          }
+        ],
+        "update": [
+          {
+            "name": "user_impersonation"
+          }
+        ]
+      },
+      "application": {
+        "read": [],
+        "update": []
+      }
+    }
+  },
+  "requiredModules": [
+    "Az.Accounts"
+  ],
+  "mode": "Configuration"
+}

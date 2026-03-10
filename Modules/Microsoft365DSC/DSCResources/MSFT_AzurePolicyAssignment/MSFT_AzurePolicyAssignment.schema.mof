@@ -1,0 +1,30 @@
+[ClassVersion("1.0.0.0")]
+class MSFT_AzurePolicyAssignmentNonComplianceMessage
+{
+    [Write, Description("The non-compliance message text.")] String Message;
+    [Write, Description("The policy definition reference id the message applies to.")] String PolicyDefinitionReferenceId;
+};
+
+[ClassVersion("1.0.0.0"), FriendlyName("AzurePolicyAssignment")]
+class MSFT_AzurePolicyAssignment : OMI_BaseResource
+{
+    [Key, Description("The name of the policy assignment.")] String PolicyAssignmentName;
+    [Required, Description("The scope at which the policy assignment is applied, e.g. /subscriptions/{subId} or /subscriptions/{subId}/resourceGroups/{rgName}.")] String Scope;
+    [Write, Description("The display name of the policy assignment.")] String DisplayName;
+    [Write, Description("The description of the policy assignment.")] String Description;
+    [Write, Description("The resource ID of the policy definition or policy set definition to assign.")] String PolicyDefinitionId;
+    [Write, Description("The enforcement mode of the policy assignment."), ValueMap{"Default","DoNotEnforce"}, Values{"Default","DoNotEnforce"}] String EnforcementMode;
+    [Write, Description("JSON string of the parameter values for the policy assignment.")] String PolicyParameterValues;
+    [Write, Description("The list of excluded scopes for the policy assignment.")] String NotScopes[];
+    [Write, Description("The non-compliance messages for the policy assignment."), EmbeddedInstance("MSFT_AzurePolicyAssignmentNonComplianceMessage")] String NonComplianceMessages[];
+    [Write, Description("The location for the policy assignment. Required when using managed identity.")] String Location;
+    [Write, Description("The type of managed identity for the policy assignment."), ValueMap{"None","SystemAssigned"}, Values{"None","SystemAssigned"}] String IdentityType;
+
+    [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Absent","Present"}, Values{"Absent","Present"}] string Ensure;
+    [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};
