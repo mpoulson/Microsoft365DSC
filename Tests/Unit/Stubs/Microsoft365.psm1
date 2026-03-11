@@ -87126,4 +87126,102 @@ function Update-MgBetaDeviceManagementReusableSetting
     )
 }
 
+#region MgBetaDomainFederationConfiguration
+function Get-MgBetaDomainFederationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $DomainId,
+
+        [Parameter()]
+        [System.String]
+        $InternalDomainFederationId,
+
+        [Parameter()]
+        [System.String]
+        $Filter,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $All,
+
+        [Parameter()]
+        [System.String[]]
+        $Property,
+
+        [Parameter()]
+        [System.String]
+        $ErrorAction
+    )
+}
+
+function New-MgBetaDomainFederationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $DomainId,
+
+        [Parameter()]
+        [PSObject]
+        $BodyParameter,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm
+    )
+}
+
+function Update-MgBetaDomainFederationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $DomainId,
+
+        [Parameter()]
+        [System.String]
+        $InternalDomainFederationId,
+
+        [Parameter()]
+        [PSObject]
+        $BodyParameter,
+
+        [Parameter()]
+        [System.String]
+        $NextSigningCertificate,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm
+    )
+}
+
+function Remove-MgBetaDomainFederationConfiguration
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $DomainId,
+
+        [Parameter()]
+        [System.String]
+        $InternalDomainFederationId,
+
+        [Parameter()]
+        [System.String]
+        $ErrorAction,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm
+    )
+}
+#endregion
+
 #endregion

@@ -453,7 +453,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     # Simulate the validation logic
                     param($Certificate, $CertificateName)
                     
-                    if ([string]::IsNullOrWhiteSpace($Certificate)) {
+                    if ([System.String]::IsNullOrWhiteSpace($Certificate)) {
                         Write-Verbose -Message "Certificate string is empty or null"
                         return
                     }

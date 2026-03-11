@@ -548,7 +548,7 @@ function Test-TargetResource
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
                                          -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
-    
+
     Write-Verbose -Message "Test-TargetResource returned $result"
     return $result
 }
@@ -665,7 +665,7 @@ function Export-TargetResource
             $displayedKey = "$($config.DomainId) - $($config.DisplayName)"
             Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
             
-            $params = @{
+            $Params = @{
                 DomainId              = $config.DomainId
                 Id                    = $config.Id
                 Credential            = $Credential
@@ -751,7 +751,7 @@ function Write-CertificateDebugInfo
     try
     {
         # Validate certificate string is not empty and appears to be base64
-        if ([string]::IsNullOrWhiteSpace($Certificate))
+        if ([System.String]::IsNullOrWhiteSpace($Certificate))
         {
             Write-Verbose -Message "Certificate string is empty or null"
             return
@@ -766,14 +766,14 @@ function Write-CertificateDebugInfo
 
         $verifyCert = [System.Security.Cryptography.X509Certificates.X509Certificate2][Convert]::FromBase64String($Certificate)
         
-        Write-M365DSCHost "====================="
-        Write-M365DSCHost "$CertificateName Information"
-        Write-M365DSCHost "====================="
-        Write-M365DSCHost "Thumbprint: $($verifyCert.Thumbprint)"
-        Write-M365DSCHost "Subject: $($verifyCert.Subject)"
-        Write-M365DSCHost "Issuer: $($verifyCert.Issuer)"
-        Write-M365DSCHost "Expires: $($verifyCert.NotAfter)"
-        Write-M365DSCHost "====================="
+        Write-M365DSCHost -Message "====================="
+        Write-M365DSCHost -Message "$CertificateName Information"
+        Write-M365DSCHost -Message "====================="
+        Write-M365DSCHost -Message "Thumbprint: $($verifyCert.Thumbprint)"
+        Write-M365DSCHost -Message "Subject: $($verifyCert.Subject)"
+        Write-M365DSCHost -Message "Issuer: $($verifyCert.Issuer)"
+        Write-M365DSCHost -Message "Expires: $($verifyCert.NotAfter)"
+        Write-M365DSCHost -Message "====================="
     }
     catch
     {
