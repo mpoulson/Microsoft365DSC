@@ -925,7 +925,7 @@ function Get-AzureRoleManagementPolicyRuleObject
 
     if ($values.ruleType -eq 'RoleManagementPolicyEnablementRule')
     {
-        $enablementRule = @{
+        $enablementRule = [ordered]@{
             enabledRules = [array]$Rule.enabledRules
         }
         $values.Add('enablementRule', $enablementRule)
@@ -974,7 +974,7 @@ function Get-AzureRoleManagementPolicyRuleObject
             isRequestorJustificationRequired = $Rule.setting.isRequestorJustificationRequired
             approvalStages                   = [array]$approvalStages
         }
-        $approvalRule = @{
+        $approvalRule = [ordered]@{
             setting = $setting
         }
         $values.Add('ApprovalRule', $approvalRule)
