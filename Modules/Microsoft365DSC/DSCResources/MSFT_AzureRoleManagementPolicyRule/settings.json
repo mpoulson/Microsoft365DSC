@@ -1,0 +1,32 @@
+{
+  "resourceName": "AzureRoleManagementPolicyRule",
+  "description": "Configures Azure PIM (Privileged Identity Management) role management policy rules for Management Groups, Subscriptions, and Resource Groups.",
+  "roles": {
+    "read": [],
+    "update": []
+  },
+  "permissions": {
+    "Azure Service Management": {
+      "delegated": {
+        "read": [
+          {
+            "name": "user_impersonation"
+          }
+        ],
+        "update": [
+          {
+            "name": "user_impersonation"
+          }
+        ]
+      },
+      "application": {
+        "read": [],
+        "update": []
+      }
+    }
+  },
+  "requiredModules": [
+    "Az.Accounts"
+  ],
+  "mode": "Configuration"
+}
