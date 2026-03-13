@@ -88,8 +88,9 @@ function Get-TargetResource
             $nullResult = $PSBoundParameters
             $nullResult.Ensure = 'Absent'
 
-            $response = Invoke-AzRest -Uri 'https://management.azure.com/providers/microsoft.aadiam/diagnosticsettings?api-version=2017-04-01-preview' `
-                -Method Get
+            $uri = (Get-M365DSCAzureManagementUri) + "providers/microsoft.aadiam/diagnosticsettings?api-version=2017-04-01-preview"
+            $response = Invoke-AzRest -Uri $uri -Method Get
+
             $instances = (ConvertFrom-Json $response.Content).value
             $instance = $instances | Where-Object -FilterScript { $_.name -eq $Name }
         }
