@@ -373,7 +373,7 @@ function Export-TargetResource
             $i = 1
             foreach ($authority in $authorities.value)
             {
-                $$uri = (Get-M365DSCAzureManagementUri) + "/$($resourceGroup.ResourceId)/providers/Microsoft.VerifiedId/authorities/$($authority.id)?api-version=2024-01-26-preview"
+                $uri = (Get-M365DSCAzureManagementUri) + "/$($resourceGroup.ResourceId)/providers/Microsoft.VerifiedId/authorities/$($authority.id)?api-version=2024-01-26-preview"
                 $response = Invoke-AzRest -Uri $uri -Method Get
 
                 $Global:M365DSCExportResourceInstancesCount++
