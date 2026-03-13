@@ -413,8 +413,11 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        $response = Invoke-AzRest -Uri 'https://management.azure.com/providers/microsoft.aadiam/diagnosticsettings?api-version=2017-04-01-preview' `
-            -Method Get
+
+        $azContext = get-azcontext #required to make cloud agnostic, better if MSCloudLoginassistant gets this at login
+
+        $uri = $azContext.Environment.ResourceManagerUrl + 'providers/microsoft.aadiam/diagnosticsettings?api-version=2017-04-01-preview'
+        $response = Invoke-AzRest -Uri $uri -Method Get
         [array] $Script:exportedInstances = (ConvertFrom-Json $response.Content).value
         $i = 1
         $dscContent = ''

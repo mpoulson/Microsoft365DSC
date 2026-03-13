@@ -1,10 +1,15 @@
+function Get-M365DSCAzureManagementUri
+{
+	$uri = (Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl
+    return $uri
+}
+
 function Get-M365DSCAzureBillingAccount
 {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
     param()
-
-    $uri = 'https://management.azure.com/providers/Microsoft.Billing/billingAccounts?api-version=2024-04-01&?includeAll=true'
+    $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts?api-version=2024-04-01&?includeAll=true"
     $response = Invoke-AzRest -Method GET -Uri $uri
     $result = ConvertFrom-Json $response.Content
     return $result
@@ -20,7 +25,7 @@ function Get-M365DSCAzureBillingAccountsAssociatedTenant
         $BillingAccountId
     )
 
-    $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/associatedTenants?api-version=2024-04-01"
+    $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/associatedTenants?api-version=2024-04-01"
     $response = Invoke-AzRest -Method GET -Uri $uri
     $result = ConvertFrom-Json $response.Content
     return $result
@@ -40,7 +45,7 @@ function Remove-M365DSCAzureBillingAccountsAssociatedTenant
         $AssociatedTenantId
     )
 
-    $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/associatedTenants/$($AssociatedTenantId)?api-version=2024-04-01"
+    $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/associatedTenants/$($AssociatedTenantId)?api-version=2024-04-01"
     $response = Invoke-AzRest -Method DELETE -Uri $uri
     $result = ConvertFrom-Json $response.Content
     return $result
@@ -63,7 +68,7 @@ function New-M365DSCAzureBillingAccountsAssociatedTenant
         $Body
     )
 
-    $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/associatedTenants/$($AssociatedTenantId)?api-version=2024-04-01"
+    $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/associatedTenants/$($AssociatedTenantId)?api-version=2024-04-01"
     $payload = ConvertTo-Json $body -Depth 10 -Compress
     $response = Invoke-AzRest -Method PUT -Uri $uri -Payload $payload
     $result = ConvertFrom-Json $response.Content
@@ -80,7 +85,7 @@ function Get-M365DSCAzureBillingAccountsRoleAssignment
         $BillingAccountId
     )
 
-    $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/billingRoleAssignments?api-version=2024-04-01"
+    $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/billingRoleAssignments?api-version=2024-04-01"
     $response = Invoke-AzRest -Method GET -Uri $uri
     $result = ConvertFrom-Json $response.Content
     return $result
@@ -102,11 +107,11 @@ function Get-M365DSCAzureBillingAccountsRoleDefinition
 
     if ($null -eq $RoleDefinitionId)
     {
-        $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/billingRoleDefinitions?api-version=2024-04-01"
+        $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/billingRoleDefinitions?api-version=2024-04-01"
     }
     else
     {
-        $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/billingRoleDefinitions/$($RoleDefinitionId)?api-version=2024-04-01"
+        $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/billingRoleDefinitions/$($RoleDefinitionId)?api-version=2024-04-01"
     }
     $response = Invoke-AzRest -Method GET -Uri $uri
     $result = ConvertFrom-Json $response.Content
@@ -127,7 +132,7 @@ function New-M365DSCAzureBillingAccountsRoleAssignment
         $Body
     )
 
-    $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/createBillingRoleAssignment?api-version=2024-04-01"
+    $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/createBillingRoleAssignment?api-version=2024-04-01"
     $payload = ConvertTo-Json $Body -Depth 10 -Compress
     $response = Invoke-AzRest -Method POST -Uri $uri -Payload $payload
     $result = ConvertFrom-Json $response.Content
@@ -148,7 +153,7 @@ function Remove-M365DSCAzureBillingAccountsRoleAssignment
         $AssignmentId
     )
 
-    $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/billingRoleAssignments/$($AssignmentId)?api-version=2024-04-01"
+    $uri = (Get-M365DSCAzureManagementUri) + "providers/Microsoft.Billing/billingAccounts/$($BillingAccountId)/billingRoleAssignments/$($AssignmentId)?api-version=2024-04-01"
     $response = Invoke-AzRest -Method DELETE -Uri $uri
     $result = ConvertFrom-Json $response.Content
     return $result
