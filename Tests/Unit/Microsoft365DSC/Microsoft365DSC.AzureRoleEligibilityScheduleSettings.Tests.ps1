@@ -706,7 +706,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-        Context -Name 'ReverseDSC Tests - Skip unmodified policies' -Fixture {
+        Context -Name 'ReverseDSC Tests - Export includes unmodified policies' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
@@ -781,9 +781,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 } -ParameterFilter { $Uri -like "*roleManagementPolicies`?*" -and $Uri -notlike "*Assignments*" }
             }
 
-            It 'Should return empty string when all policies are unmodified Azure defaults' {
+            It 'Should export unmodified Azure default policies' {
                 $result = Export-TargetResource @testParams
-                $result | Should -BeNullOrEmpty
+                $result | Should -Not -BeNullOrEmpty
             }
         }
     }

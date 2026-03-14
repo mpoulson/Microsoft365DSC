@@ -1629,16 +1629,22 @@ function Export-TargetResource
                     continue
                 }
 
-                # Skip policies that have not been modified from Azure defaults.
-                # When lastModifiedBy and lastModifiedDateTime are both null, the policy is unchanged.
-                $lastModifiedBy = $policyContent.properties.lastModifiedBy
-                $lastModifiedDateTime = $policyContent.properties.lastModifiedDateTime
-                if ($null -eq $lastModifiedBy -and $null -eq $lastModifiedDateTime)
-                {
-                    Write-Verbose -Message "Policy {$assignmentPolicyId} has not been modified from Azure defaults. Skipping."
-                    $i++
-                    continue
-                }
+                # To filter out policies that have not been modified from Azure defaults,
+                # enable the block below. When lastModifiedBy and lastModifiedDateTime are
+                # both null, the policy is unchanged. Other DSC resources support a $Filter
+                # parameter (e.g., OData filters passed to Graph API calls). For this resource,
+                # the Azure REST API does not support server-side filtering by lastModifiedDateTime,
+                # so filtering must be done client-side. Uncomment the following block to skip
+                # unmodified policies:
+                #
+                # $lastModifiedBy = $policyContent.properties.lastModifiedBy
+                # $lastModifiedDateTime = $policyContent.properties.lastModifiedDateTime
+                # if ($null -eq $lastModifiedBy -and $null -eq $lastModifiedDateTime)
+                # {
+                #     Write-Verbose -Message "Policy {$assignmentPolicyId} has not been modified from Azure defaults. Skipping."
+                #     $i++
+                #     continue
+                # }
 
                 $rules = $policyContent.properties.rules
 
