@@ -1568,17 +1568,25 @@ function Export-TargetResource
             # Bulk-fetch all role management policies for this scope in a single API call
             $bulkPolicyUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$currentScope/providers/Microsoft.Authorization/roleManagementPolicies?api-version=$apiVersion"
             $bulkPolicyResponse = Invoke-AzRest -Uri $bulkPolicyUri -Method GET
-            $allPolicies = (ConvertFrom-Json $bulkPolicyResponse.Content).value
-
-            # Build a lookup hashtable keyed by policy short id for fast matching
-            $policyLookup = @{}
-            if ($null -ne $allPolicies)
+            $allPolicies = $null
+            if ($null -ne $bulkPolicyResponse -and -not [System.String]::IsNullOrEmpty($bulkPolicyResponse.Content))
             {
-                foreach ($pol in $allPolicies)
-                {
-                    $polShortId = $pol.name
-                    $policyLookup[$polShortId] = $pol
-                }
+                $allPolicies = (ConvertFrom-Json $bulkPolicyResponse.Content).value
+            }
+
+            if ($null -eq $allPolicies)
+            {
+                Write-Verbose -Message "Could not retrieve role management policies at scope {$currentScope}. Skipping."
+                $j++
+                continue
+            }
+
+            # Build a lookup hashtable keyed by policy name for fast matching
+            $policyLookup = @{}
+            foreach ($pol in $allPolicies)
+            {
+                $policyName = $pol.name
+                $policyLookup[$policyName] = $pol
             }
 
             $i = 1
@@ -1616,6 +1624,7 @@ function Export-TargetResource
 
                 if ($null -eq $policyContent -or $null -eq $policyContent.properties -or $null -eq $policyContent.properties.rules)
                 {
+                    Write-Verbose -Message "Policy {$assignmentPolicyId} not found in bulk response for scope {$currentScope}. Skipping."
                     $i++
                     continue
                 }
