@@ -1108,11 +1108,16 @@ function Set-TargetResource
             if ($PSBoundParameters.ContainsKey('ActivationReqAuthContext'))
             {
                 Write-Verbose -Message 'Handle Activation: Require authentication context'
+                $claimValue = $currentRule.claimValue
+                if ($PSBoundParameters.ContainsKey('ActivationAuthContextId'))
+                {
+                    $claimValue = $ActivationAuthContextId
+                }
                 $params = @{
                     ruleType   = $currentRule.ruleType
                     id         = $currentRule.id
                     isEnabled  = $ActivationReqAuthContext
-                    claimValue = if ($PSBoundParameters.ContainsKey('ActivationAuthContextId')) { $ActivationAuthContextId } else { $currentRule.claimValue }
+                    claimValue = $claimValue
                     target     = $currentRule.target
                 }
             }
