@@ -1629,6 +1629,17 @@ function Export-TargetResource
                     continue
                 }
 
+                # Skip policies that have not been modified from Azure defaults.
+                # When lastModifiedBy and lastModifiedDateTime are both null, the policy is unchanged.
+                $lastModifiedBy = $policyContent.properties.lastModifiedBy
+                $lastModifiedDateTime = $policyContent.properties.lastModifiedDateTime
+                if ($null -eq $lastModifiedBy -and $null -eq $lastModifiedDateTime)
+                {
+                    Write-Verbose -Message "Policy {$assignmentPolicyId} has not been modified from Azure defaults. Skipping."
+                    $i++
+                    continue
+                }
+
                 $rules = $policyContent.properties.rules
 
                 if ($null -ne $Global:M365DSCExportResourceInstancesCount)
