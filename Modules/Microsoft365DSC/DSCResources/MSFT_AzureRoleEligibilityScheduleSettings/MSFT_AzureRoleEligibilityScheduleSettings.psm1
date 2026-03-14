@@ -977,20 +977,23 @@ function Set-TargetResource
         elseif ($currentRule.id -eq 'Enablement_EndUser_Assignment')
         {
             if ($PSBoundParameters.ContainsKey('ActivationReqJustification') `
-                    -and $PSBoundParameters.ContainsKey('ActivationReqTicket') `
-                    -and $PSBoundParameters.ContainsKey('ActivationReqMFA'))
+                    -or $PSBoundParameters.ContainsKey('ActivationReqTicket') `
+                    -or $PSBoundParameters.ContainsKey('ActivationReqMFA'))
             {
                 Write-Verbose -Message 'Handle Activation: Require justification / ticket / MFA on activation'
+                $reqJustification = if ($PSBoundParameters.ContainsKey('ActivationReqJustification')) { $ActivationReqJustification } else { ($currentRule.enabledRules) -contains 'Justification' }
+                $reqTicket = if ($PSBoundParameters.ContainsKey('ActivationReqTicket')) { $ActivationReqTicket } else { ($currentRule.enabledRules) -contains 'Ticketing' }
+                $reqMFA = if ($PSBoundParameters.ContainsKey('ActivationReqMFA')) { $ActivationReqMFA } else { ($currentRule.enabledRules) -contains 'MultiFactorAuthentication' }
                 [String[]]$enabledrules = @()
-                if ($ActivationReqJustification)
+                if ($reqJustification)
                 {
                     $enabledrules += 'Justification'
                 }
-                if ($ActivationReqTicket)
+                if ($reqTicket)
                 {
                     $enabledrules += 'Ticketing'
                 }
-                if ($ActivationReqMFA)
+                if ($reqMFA)
                 {
                     $enabledrules += 'MultiFactorAuthentication'
                 }
@@ -1102,15 +1105,17 @@ function Set-TargetResource
         elseif ($currentRule.id -eq 'Enablement_Admin_Assignment')
         {
             if ($PSBoundParameters.ContainsKey('AssignmentReqJustification') `
-                    -and $PSBoundParameters.ContainsKey('AssignmentReqMFA'))
+                    -or $PSBoundParameters.ContainsKey('AssignmentReqMFA'))
             {
                 Write-Verbose -Message 'Handle Assignment: Require MFA / justification on active assignment'
+                $reqJustification = if ($PSBoundParameters.ContainsKey('AssignmentReqJustification')) { $AssignmentReqJustification } else { ($currentRule.enabledRules) -contains 'Justification' }
+                $reqMFA = if ($PSBoundParameters.ContainsKey('AssignmentReqMFA')) { $AssignmentReqMFA } else { ($currentRule.enabledRules) -contains 'MultiFactorAuthentication' }
                 [String[]]$enabledrules = @()
-                if ($AssignmentReqJustification)
+                if ($reqJustification)
                 {
                     $enabledrules += 'Justification'
                 }
-                if ($AssignmentReqMFA)
+                if ($reqMFA)
                 {
                     $enabledrules += 'MultiFactorAuthentication'
                 }
@@ -1125,15 +1130,17 @@ function Set-TargetResource
         elseif ($currentRule.id -eq 'Enablement_Admin_Eligibility')
         {
             if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqJustification') `
-                    -and $PSBoundParameters.ContainsKey('ElegibilityAssignmentReqMFA'))
+                    -or $PSBoundParameters.ContainsKey('ElegibilityAssignmentReqMFA'))
             {
                 Write-Verbose -Message 'Handle Assignment: Require MFA / justification on eligible assignment'
+                $reqJustification = if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqJustification')) { $ElegibilityAssignmentReqJustification } else { ($currentRule.enabledRules) -contains 'Justification' }
+                $reqMFA = if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqMFA')) { $ElegibilityAssignmentReqMFA } else { ($currentRule.enabledRules) -contains 'MultiFactorAuthentication' }
                 [String[]]$enabledrules = @()
-                if ($ElegibilityAssignmentReqJustification)
+                if ($reqJustification)
                 {
                     $enabledrules += 'Justification'
                 }
-                if ($ElegibilityAssignmentReqMFA)
+                if ($reqMFA)
                 {
                     $enabledrules += 'MultiFactorAuthentication'
                 }

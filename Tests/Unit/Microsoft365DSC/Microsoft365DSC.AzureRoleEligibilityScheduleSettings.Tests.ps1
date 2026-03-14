@@ -397,6 +397,52 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name "Partial enablement: only Justification and Ticketing specified for EndUser Assignment" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    RoleDefinitionDisplayName = "Owner"
+                    ScopeId                   = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ActivationReqJustification = $true
+                    ActivationReqTicket       = $true
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should call the Set method without error when MFA is not specified' {
+                { Set-TargetResource @testParams } | Should -Not -Throw
+            }
+        }
+
+        Context -Name "Partial enablement: only Justification specified for Admin Assignment" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    RoleDefinitionDisplayName = "Owner"
+                    ScopeId                   = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    AssignmentReqJustification = $true
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should call the Set method without error when MFA is not specified' {
+                { Set-TargetResource @testParams } | Should -Not -Throw
+            }
+        }
+
+        Context -Name "Partial enablement: only MFA specified for Admin Assignment" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    RoleDefinitionDisplayName = "Owner"
+                    ScopeId                   = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    AssignmentReqMFA          = $true
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should call the Set method without error when Justification is not specified' {
+                { Set-TargetResource @testParams } | Should -Not -Throw
+            }
+        }
+
         Context -Name "The approval settings with user approver are in the desired state" -Fixture {
             BeforeAll {
                 $Script:mockRulesWithUserApprover = $Script:mockRules | ForEach-Object {
