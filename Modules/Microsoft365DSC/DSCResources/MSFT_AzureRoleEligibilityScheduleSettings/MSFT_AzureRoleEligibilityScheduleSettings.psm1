@@ -1545,14 +1545,16 @@ function Export-TargetResource
             }
         }
 
-        $dscContent = [System.Text.StringBuilder]::new()
-        Write-M365DSCHost -Message "`r`n" -DeferWrite
-        $j = 1
+        # Phase 1: Collect all export items across all scopes.
+        # Each item contains the role display name, scope, policy data and rules
+        # needed for export. This enables client-side filtering and caching via
+        # $Script:exportedInstances, similar to how AADGroup caches groups.
+        [System.Collections.Generic.List[hashtable]] $Script:exportedInstances = [System.Collections.Generic.List[hashtable]]::new()
 
         foreach ($scopeInfo in $scopes)
         {
             $currentScope = $scopeInfo.ScopeId
-            Write-M365DSCHost -Message "    |---[$j/$($scopes.Count)] $($scopeInfo.ScopeType): $($scopeInfo.DisplayName)`r`n" -DeferWrite
+            Write-Verbose -Message "Collecting assignments for $($scopeInfo.ScopeType): $($scopeInfo.DisplayName)"
 
             # Get role management policy assignments for this scope
             $assignUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$currentScope/providers/Microsoft.Authorization/roleManagementPolicyAssignments?api-version=$apiVersion"
@@ -1561,7 +1563,6 @@ function Export-TargetResource
 
             if ($null -eq $assignments -or $assignments.Count -eq 0)
             {
-                $j++
                 continue
             }
 
@@ -1577,7 +1578,6 @@ function Export-TargetResource
             if ($null -eq $allPolicies)
             {
                 Write-Verbose -Message "Could not retrieve role management policies at scope {$currentScope}. Skipping."
-                $j++
                 continue
             }
 
@@ -1585,11 +1585,9 @@ function Export-TargetResource
             $policyLookup = @{}
             foreach ($pol in $allPolicies)
             {
-                $policyName = $pol.name
-                $policyLookup[$policyName] = $pol
+                $policyLookup[$pol.name] = $pol
             }
 
-            $i = 1
             foreach ($assignment in $assignments)
             {
                 $roleDisplayName = $null
@@ -1613,7 +1611,6 @@ function Export-TargetResource
 
                 if ([System.String]::IsNullOrEmpty($roleDisplayName))
                 {
-                    $i++
                     continue
                 }
 
@@ -1625,61 +1622,88 @@ function Export-TargetResource
                 if ($null -eq $policyContent -or $null -eq $policyContent.properties -or $null -eq $policyContent.properties.rules)
                 {
                     Write-Verbose -Message "Policy {$assignmentPolicyId} not found in bulk response for scope {$currentScope}. Skipping."
-                    $i++
                     continue
                 }
 
-                # Skip policies that have not been modified from Azure defaults.
-                # When lastModifiedBy and lastModifiedDateTime are both null, the policy is unchanged.
-                $lastModifiedBy = $policyContent.properties.lastModifiedBy
-                $lastModifiedDateTime = $policyContent.properties.lastModifiedDateTime
-                if ($null -eq $lastModifiedBy -and $null -eq $lastModifiedDateTime)
-                {
-                    Write-Verbose -Message "Policy {$assignmentPolicyId} has not been modified from Azure defaults. Skipping."
-                    $i++
-                    continue
-                }
-
-                $rules = $policyContent.properties.rules
-
-                if ($null -ne $Global:M365DSCExportResourceInstancesCount)
-                {
-                    $Global:M365DSCExportResourceInstancesCount++
-                }
-
-                Write-M365DSCHost -Message "        |---[$i/$($assignments.Count)] $roleDisplayName" -DeferWrite
-
-                $Params = @{
-                    RoleDefinitionDisplayName = $roleDisplayName
-                    ScopeId                   = $currentScope
-                    ApplicationId             = $ApplicationId
-                    TenantId                  = $TenantId
-                    CertificateThumbprint     = $CertificateThumbprint
-                    ApplicationSecret         = $ApplicationSecret
-                    Credential                = $Credential
-                    ManagedIdentity           = $ManagedIdentity.IsPresent
-                    AccessTokens              = $AccessTokens
-                }
-
-                $Script:exportedInstance = @{
-                    rules    = $rules
-                    policyId = $assignmentPolicyId
-                }
-                $Results = Get-TargetResource @Params
-
-                $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
-                    -ConnectionMode $ConnectionMode `
-                    -ModulePath $PSScriptRoot `
-                    -Results $Results `
-                    -Credential $Credential
-
-                $dscContent.Append($currentDSCBlock) | Out-Null
-                Save-M365DSCPartialExport -Content $currentDSCBlock `
-                    -FileName $Global:PartialExportFileName
-                Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
-                $i++
+                $Script:exportedInstances.Add(@{
+                    RoleDisplayName      = $roleDisplayName
+                    ScopeId              = $currentScope
+                    ScopeType            = $scopeInfo.ScopeType
+                    ScopeDisplayName     = $scopeInfo.DisplayName
+                    PolicyId             = $assignmentPolicyId
+                    Rules                = $policyContent.properties.rules
+                    LastModifiedBy       = $policyContent.properties.lastModifiedBy
+                    LastModifiedDateTime = $policyContent.properties.lastModifiedDateTime
+                })
             }
-            $j++
+        }
+
+        # Apply client-side filter if provided. The Azure REST API for
+        # roleManagementPolicies does not support server-side OData filtering,
+        # so the $Filter parameter is evaluated as a PowerShell Where-Object
+        # script block (same pattern as EXORoleGroup).
+        # Available properties for filtering:
+        #   RoleDisplayName, ScopeId, ScopeType, ScopeDisplayName,
+        #   LastModifiedBy, LastModifiedDateTime
+        # Examples:
+        #   Filter by scope:    '$_.ScopeId -like "subscriptions/00000000*"'
+        #   Filter by role:     '$_.RoleDisplayName -eq "Owner"'
+        #   Filter modified:    '$null -ne $_.LastModifiedDateTime'
+        if (-not [System.String]::IsNullOrEmpty($Filter))
+        {
+            Write-Verbose -Message "Applying client-side filter: $Filter"
+            $filterScriptBlock = [ScriptBlock]::Create($Filter)
+            [array] $Script:exportedInstances = @($Script:exportedInstances | Where-Object -FilterScript $filterScriptBlock)
+        }
+
+        # Phase 2: Export the collected (and optionally filtered) instances
+        $dscContent = [System.Text.StringBuilder]::new()
+        Write-M365DSCHost -Message "`r`n" -DeferWrite
+        $i = 1
+
+        if ($Script:exportedInstances.Count -eq 0)
+        {
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+        }
+
+        foreach ($exportItem in $Script:exportedInstances)
+        {
+            if ($null -ne $Global:M365DSCExportResourceInstancesCount)
+            {
+                $Global:M365DSCExportResourceInstancesCount++
+            }
+
+            Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $($exportItem.RoleDisplayName) ($($exportItem.ScopeType): $($exportItem.ScopeDisplayName))" -DeferWrite
+
+            $Params = @{
+                RoleDefinitionDisplayName = $exportItem.RoleDisplayName
+                ScopeId                   = $exportItem.ScopeId
+                ApplicationId             = $ApplicationId
+                TenantId                  = $TenantId
+                CertificateThumbprint     = $CertificateThumbprint
+                ApplicationSecret         = $ApplicationSecret
+                Credential                = $Credential
+                ManagedIdentity           = $ManagedIdentity.IsPresent
+                AccessTokens              = $AccessTokens
+            }
+
+            $Script:exportedInstance = @{
+                rules    = $exportItem.Rules
+                policyId = $exportItem.PolicyId
+            }
+            $Results = Get-TargetResource @Params
+
+            $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
+                -ConnectionMode $ConnectionMode `
+                -ModulePath $PSScriptRoot `
+                -Results $Results `
+                -Credential $Credential
+
+            $dscContent.Append($currentDSCBlock) | Out-Null
+            Save-M365DSCPartialExport -Content $currentDSCBlock `
+                -FileName $Global:PartialExportFileName
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+            $i++
         }
         return $dscContent.ToString()
     }

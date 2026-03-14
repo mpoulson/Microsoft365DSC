@@ -706,7 +706,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-        Context -Name 'ReverseDSC Tests - Skip unmodified policies' -Fixture {
+        Context -Name 'ReverseDSC Tests - Export includes unmodified policies' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
@@ -781,9 +781,103 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 } -ParameterFilter { $Uri -like "*roleManagementPolicies`?*" -and $Uri -notlike "*Assignments*" }
             }
 
-            It 'Should return empty string when all policies are unmodified Azure defaults' {
+            It 'Should export unmodified Azure default policies' {
+                $result = Export-TargetResource @testParams
+                $result | Should -Not -BeNullOrEmpty
+            }
+        }
+
+        Context -Name 'ReverseDSC Tests - Filter by role name' -Fixture {
+            BeforeAll {
+                $Global:CurrentModeIsExport = $true
+                $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    subscriptionId = "00000000-0000-0000-0000-000000000000"
+                                    displayName = "TestSubscription"
+                                }
+                            )
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*subscriptions?*" }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @()
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*resourcegroups*" }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @()
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*managementGroups*" }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
+                                    properties = @{
+                                        roleDefinitionId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
+                                        policyId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
+                                        policyAssignmentProperties = @{
+                                            roleDefinition = @{
+                                                displayName = "Owner"
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*roleManagementPolicyAssignments*" }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    name = "test_policy_id"
+                                    properties = @{
+                                        lastModifiedBy = @{
+                                            displayName = "Admin"
+                                        }
+                                        lastModifiedDateTime = "2024-01-15T10:00:00Z"
+                                        rules = $Script:mockRules
+                                    }
+                                }
+                            )
+                        }) -Depth 20
+                    }
+                } -ParameterFilter { $Uri -like "*roleManagementPolicies`?*" -and $Uri -notlike "*Assignments*" }
+            }
+
+            It 'Should return empty when filter excludes all roles' {
+                $testParams = @{
+                    Credential = $Credential
+                    Filter     = '$_.RoleDisplayName -eq "Contributor"'
+                }
                 $result = Export-TargetResource @testParams
                 $result | Should -BeNullOrEmpty
+            }
+
+            It 'Should return results when filter matches a role' {
+                $testParams = @{
+                    Credential = $Credential
+                    Filter     = '$_.RoleDisplayName -eq "Owner"'
+                }
+                $result = Export-TargetResource @testParams
+                $result | Should -Not -BeNullOrEmpty
             }
         }
     }
