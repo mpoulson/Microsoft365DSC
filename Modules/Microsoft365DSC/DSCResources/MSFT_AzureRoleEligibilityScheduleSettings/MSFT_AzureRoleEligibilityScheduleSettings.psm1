@@ -12,7 +12,7 @@ function Get-TargetResource
 
         [Parameter(Mandatory = $true)]
         [System.String]
-        $Scope,
+        $ScopeId,
 
         [Parameter()]
         [System.String]
@@ -219,7 +219,7 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Getting configuration of Azure Role Eligibility Schedule Settings for Role {$RoleDefinitionDisplayName} at Scope {$Scope}"
+    Write-Verbose -Message "Getting configuration of Azure Role Eligibility Schedule Settings for Role {$RoleDefinitionDisplayName} at Scope {$ScopeId}"
 
     if ($null -eq $Script:exportedInstance)
     {
@@ -243,14 +243,14 @@ function Get-TargetResource
 
         $nullReturn = $PSBoundParameters
 
-        $apiVersion = '2022-04-01'
-        $uri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$Scope/providers/Microsoft.Authorization/roleManagementPolicyAssignments?api-version=$apiVersion"
+        $apiVersion = '2020-10-01'
+        $uri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleManagementPolicyAssignments?api-version=$apiVersion"
         $response = Invoke-AzRest -Uri $uri -Method GET
         $assignments = (ConvertFrom-Json $response.Content).value
 
         if ($null -eq $assignments -or $assignments.Count -eq 0)
         {
-            Write-Verbose -Message "No role management policy assignments found at scope {$Scope}."
+            Write-Verbose -Message "No role management policy assignments found at scope {$ScopeId}."
             return $nullReturn
         }
 
@@ -261,7 +261,7 @@ function Get-TargetResource
 
         if ($null -eq $assignment)
         {
-            $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$Scope/providers/Microsoft.Authorization/roleDefinitions?api-version=2022-04-01&`$filter=roleName eq '$RoleDefinitionDisplayName'"
+            $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleDefinitions?api-version=2020-10-01&`$filter=roleName eq '$RoleDefinitionDisplayName'"
             $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
             $roleDefinitions = (ConvertFrom-Json $roleDefResponse.Content).value
 
@@ -276,19 +276,19 @@ function Get-TargetResource
 
         if ($null -eq $assignment)
         {
-            Write-Verbose -Message "Could not find role management policy assignment for role {$RoleDefinitionDisplayName} at scope {$Scope}."
+            Write-Verbose -Message "Could not find role management policy assignment for role {$RoleDefinitionDisplayName} at scope {$ScopeId}."
             return $nullReturn
         }
 
         $policyIdValue = $assignment.properties.policyId.Split('/')[-1]
 
-        $policyUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$Scope/providers/Microsoft.Authorization/roleManagementPolicies/$($policyIdValue)?api-version=$apiVersion"
+        $policyUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleManagementPolicies/$($policyIdValue)?api-version=$apiVersion"
         $policyResponse = Invoke-AzRest -Uri $policyUri -Method GET
         $policy = ConvertFrom-Json $policyResponse.Content
 
         if ($null -eq $policy -or $null -eq $policy.properties -or $null -eq $policy.properties.rules)
         {
-            Write-Verbose -Message "Could not retrieve role management policy {$policyIdValue} at scope {$Scope}."
+            Write-Verbose -Message "Could not retrieve role management policy {$policyIdValue} at scope {$ScopeId}."
             return $nullReturn
         }
 
@@ -394,10 +394,10 @@ function Get-TargetResource
         [string[]]$ActivationApproveNotificationAdditionalRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Approver_EndUser_Assignment' }).notificationRecipients
         $ActivationApproveNotificationOnlyCritical = (($rules | Where-Object { $_.id -eq 'Notification_Approver_EndUser_Assignment' }).notificationLevel) -eq 'Critical'
 
-        Write-Verbose -Message "Found configuration for Role {$RoleDefinitionDisplayName} at Scope {$Scope}"
+        Write-Verbose -Message "Found configuration for Role {$RoleDefinitionDisplayName} at Scope {$ScopeId}"
         $result = @{
             RoleDefinitionDisplayName                                 = $RoleDefinitionDisplayName
-            Scope                                                     = $Scope
+            ScopeId                                                   = $ScopeId
             PolicyId                                                  = $policyIdValue
             ActivationMaxDuration                                     = $ActivationMaxDuration
             ActivationReqJustification                                = $ActivationReqJustification
@@ -475,7 +475,7 @@ function Set-TargetResource
 
         [Parameter(Mandatory = $true)]
         [System.String]
-        $Scope,
+        $ScopeId,
 
         [Parameter()]
         [System.String]
@@ -682,7 +682,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Setting configuration of Azure Role Eligibility Schedule Settings for Role {$RoleDefinitionDisplayName} at Scope {$Scope}"
+    Write-Verbose -Message "Setting configuration of Azure Role Eligibility Schedule Settings for Role {$RoleDefinitionDisplayName} at Scope {$ScopeId}"
 
     try
     {
@@ -703,12 +703,12 @@ function Set-TargetResource
         $policyIdValue = $currentInstance.PolicyId
         if ([System.String]::IsNullOrEmpty($policyIdValue))
         {
-            throw "Could not find role management policy for role {$RoleDefinitionDisplayName} at scope {$Scope}"
+            throw "Could not find role management policy for role {$RoleDefinitionDisplayName} at scope {$ScopeId}"
         }
 
         # Get the full policy to retrieve all current rules
-        $apiVersion = '2022-04-01'
-        $policyUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$Scope/providers/Microsoft.Authorization/roleManagementPolicies/$($policyIdValue)?api-version=$apiVersion"
+        $apiVersion = '2020-10-01'
+        $policyUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleManagementPolicies/$($policyIdValue)?api-version=$apiVersion"
         $policyResponse = Invoke-AzRest -Uri $policyUri -Method GET
         $policy = ConvertFrom-Json $policyResponse.Content
         $rules = $policy.properties.rules
@@ -1189,7 +1189,7 @@ function Set-TargetResource
             }
 
             $payload = ConvertTo-Json $updateBody -Depth 20 -Compress
-            Write-Verbose -Message "Updating policy {$policyIdValue} at scope {$Scope}"
+            Write-Verbose -Message "Updating policy {$policyIdValue} at scope {$ScopeId}"
             $null = Invoke-AzRest -Uri $policyUri -Method PATCH -Payload $payload
         }
     }
@@ -1217,7 +1217,7 @@ function Test-TargetResource
 
         [Parameter(Mandatory = $true)]
         [System.String]
-        $Scope,
+        $ScopeId,
 
         [Parameter()]
         [System.String]
@@ -1498,7 +1498,7 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        $apiVersion = '2022-04-01'
+        $apiVersion = '2020-10-01'
 
         # Collect all scopes to enumerate
         $scopes = @()
@@ -1511,7 +1511,7 @@ function Export-TargetResource
         foreach ($sub in $subscriptions)
         {
             $scopes += @{
-                Scope       = "subscriptions/$($sub.subscriptionId)"
+                ScopeId     = "subscriptions/$($sub.subscriptionId)"
                 DisplayName = $sub.displayName
                 ScopeType   = 'Subscription'
             }
@@ -1524,7 +1524,7 @@ function Export-TargetResource
             foreach ($rg in $resourceGroups)
             {
                 $scopes += @{
-                    Scope       = "subscriptions/$($sub.subscriptionId)/resourceGroups/$($rg.name)"
+                    ScopeId     = "subscriptions/$($sub.subscriptionId)/resourceGroups/$($rg.name)"
                     DisplayName = $rg.name
                     ScopeType   = 'ResourceGroup'
                 }
@@ -1539,7 +1539,7 @@ function Export-TargetResource
         foreach ($mg in $managementGroups)
         {
             $scopes += @{
-                Scope       = "providers/Microsoft.Management/managementGroups/$($mg.name)"
+                ScopeId     = "providers/Microsoft.Management/managementGroups/$($mg.name)"
                 DisplayName = $mg.properties.displayName
                 ScopeType   = 'ManagementGroup'
             }
@@ -1551,7 +1551,7 @@ function Export-TargetResource
 
         foreach ($scopeInfo in $scopes)
         {
-            $currentScope = $scopeInfo.Scope
+            $currentScope = $scopeInfo.ScopeId
             Write-M365DSCHost -Message "    |---[$j/$($scopes.Count)] $($scopeInfo.ScopeType): $($scopeInfo.DisplayName)`r`n" -DeferWrite
 
             # Get role management policy assignments for this scope
@@ -1563,6 +1563,22 @@ function Export-TargetResource
             {
                 $j++
                 continue
+            }
+
+            # Bulk-fetch all role management policies for this scope in a single API call
+            $bulkPolicyUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$currentScope/providers/Microsoft.Authorization/roleManagementPolicies?api-version=$apiVersion"
+            $bulkPolicyResponse = Invoke-AzRest -Uri $bulkPolicyUri -Method GET
+            $allPolicies = (ConvertFrom-Json $bulkPolicyResponse.Content).value
+
+            # Build a lookup hashtable keyed by policy short id for fast matching
+            $policyLookup = @{}
+            if ($null -ne $allPolicies)
+            {
+                foreach ($pol in $allPolicies)
+                {
+                    $polShortId = $pol.name
+                    $policyLookup[$polShortId] = $pol
+                }
             }
 
             $i = 1
@@ -1580,7 +1596,7 @@ function Export-TargetResource
                     $roleDefId = $assignment.properties.roleDefinitionId
                     if (-not [System.String]::IsNullOrEmpty($roleDefId))
                     {
-                        $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$roleDefId`?api-version=2022-04-01"
+                        $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$roleDefId`?api-version=2020-10-01"
                         $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
                         $roleDef = ConvertFrom-Json $roleDefResponse.Content
                         $roleDisplayName = $roleDef.properties.roleName
@@ -1595,10 +1611,8 @@ function Export-TargetResource
 
                 $assignmentPolicyId = $assignment.properties.policyId.Split('/')[-1]
 
-                # Get the policy rules
-                $policyUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$currentScope/providers/Microsoft.Authorization/roleManagementPolicies/$($assignmentPolicyId)?api-version=$apiVersion"
-                $policyResponse = Invoke-AzRest -Uri $policyUri -Method GET
-                $policyContent = ConvertFrom-Json $policyResponse.Content
+                # Look up policy from bulk-fetched results instead of individual API call
+                $policyContent = $policyLookup[$assignmentPolicyId]
 
                 if ($null -eq $policyContent -or $null -eq $policyContent.properties -or $null -eq $policyContent.properties.rules)
                 {
@@ -1617,7 +1631,7 @@ function Export-TargetResource
 
                 $Params = @{
                     RoleDefinitionDisplayName = $roleDisplayName
-                    Scope                     = $currentScope
+                    ScopeId                   = $currentScope
                     ApplicationId             = $ApplicationId
                     TenantId                  = $TenantId
                     CertificateThumbprint     = $CertificateThumbprint

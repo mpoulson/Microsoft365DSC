@@ -236,7 +236,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     RoleDefinitionDisplayName = "Owner"
-                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ScopeId                   = "subscriptions/00000000-0000-0000-0000-000000000000"
                     ActivationMaxDuration     = "PT4H"
                     ActivationReqJustification = $true
                     ActivationReqTicket       = $true
@@ -256,7 +256,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     RoleDefinitionDisplayName = "Owner"
-                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ScopeId                   = "subscriptions/00000000-0000-0000-0000-000000000000"
                     ActivationMaxDuration     = "PT8H" # drift
                     ActivationReqJustification = $true
                     ActivationReqTicket       = $true
@@ -278,7 +278,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     RoleDefinitionDisplayName                    = "Owner"
-                    Scope                                        = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ScopeId                                      = "subscriptions/00000000-0000-0000-0000-000000000000"
                     EligibleAlertNotificationDefaultRecipient    = $true
                     EligibleAlertNotificationAdditionalRecipient = @("eligibility-admin@contoso.com")
                     EligibleAlertNotificationOnlyCritical        = $true
@@ -295,7 +295,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     RoleDefinitionDisplayName                    = "Owner"
-                    Scope                                        = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ScopeId                                      = "subscriptions/00000000-0000-0000-0000-000000000000"
                     EligibleAlertNotificationDefaultRecipient    = $false # drift
                     EligibleAlertNotificationAdditionalRecipient = @("eligibility-admin@contoso.com")
                     EligibleAlertNotificationOnlyCritical        = $true
@@ -316,7 +316,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     RoleDefinitionDisplayName                       = "Owner"
-                    Scope                                           = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ScopeId                                         = "subscriptions/00000000-0000-0000-0000-000000000000"
                     ActivationAlertNotificationDefaultRecipient     = $true
                     ActivationAlertNotificationAdditionalRecipient  = @("admin@contoso.com")
                     ActivationAlertNotificationOnlyCritical         = $false
@@ -333,7 +333,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     RoleDefinitionDisplayName                       = "Owner"
-                    Scope                                           = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ScopeId                                         = "subscriptions/00000000-0000-0000-0000-000000000000"
                     PermanentEligibleAssignmentisExpirationRequired = $true
                     ExpireEligibleAssignment                        = "P180D"
                     Credential                                      = $Credential;
@@ -349,7 +349,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     RoleDefinitionDisplayName                       = "Owner"
-                    Scope                                           = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ScopeId                                         = "subscriptions/00000000-0000-0000-0000-000000000000"
                     PermanentEligibleAssignmentisExpirationRequired = $false # drift
                     ExpireEligibleAssignment                        = "P180D"
                     Credential                                      = $Credential;
@@ -365,7 +365,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     RoleDefinitionDisplayName = "Owner"
-                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ScopeId                   = "subscriptions/00000000-0000-0000-0000-000000000000"
                     AssignmentReqMFA          = $false
                     AssignmentReqJustification = $true
                     Credential                = $Credential;
@@ -381,7 +381,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     RoleDefinitionDisplayName = "Owner"
-                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ScopeId                   = "subscriptions/00000000-0000-0000-0000-000000000000"
                     AssignmentReqMFA          = $true # drift
                     AssignmentReqJustification = $true
                     Credential                = $Credential;
@@ -479,7 +479,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 $testParams = @{
                     RoleDefinitionDisplayName = "Owner"
-                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ScopeId                   = "subscriptions/00000000-0000-0000-0000-000000000000"
                     ApprovaltoActivate        = $true
                     ActivateApprover          = @("approver@contoso.com")
                     Credential                = $Credential;
@@ -599,7 +599,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 $testParams = @{
                     RoleDefinitionDisplayName = "Owner"
-                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ScopeId                   = "subscriptions/00000000-0000-0000-0000-000000000000"
                     ApprovaltoActivate        = $true
                     ActivateApprover          = @("approver@contoso.com", "PIM Approvers")
                     Credential                = $Credential;
@@ -683,12 +683,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Invoke-AzRest -MockWith {
                     return @{
                         Content = ConvertTo-Json (@{
-                            properties = @{
-                                rules = $Script:mockRules
-                            }
+                            value = @(
+                                @{
+                                    name = "test_policy_id"
+                                    properties = @{
+                                        rules = $Script:mockRules
+                                    }
+                                }
+                            )
                         }) -Depth 20
                     }
-                } -ParameterFilter { $Uri -like "*roleManagementPolicies/*" }
+                } -ParameterFilter { $Uri -like "*roleManagementPolicies`?*" -and $Uri -notlike "*Assignments*" }
             }
 
             It 'Should Reverse Engineer resource from the Export method' {
