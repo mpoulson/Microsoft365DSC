@@ -1,0 +1,1559 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AzureRoleEligibilityScheduleSettings'
+
+function Get-TargetResource
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $RoleDefinitionDisplayName,
+
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $Scope,
+
+        [Parameter()]
+        [System.String]
+        $PolicyId,
+
+        [Parameter()]
+        [System.String]
+        $ActivationMaxDuration,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationReqJustification,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationReqTicket,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationReqMFA,
+
+        [Parameter()]
+        [System.Boolean]
+        $ApprovaltoActivate,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivateApprover,
+
+        [Parameter()]
+        [System.Boolean]
+        $PermanentEligibleAssignmentisExpirationRequired,
+
+        [Parameter()]
+        [System.String]
+        $ExpireEligibleAssignment,
+
+        [Parameter()]
+        [System.Boolean]
+        $PermanentActiveAssignmentisExpirationRequired,
+
+        [Parameter()]
+        [System.String]
+        $ExpireActiveAssignment,
+
+        [Parameter()]
+        [System.Boolean]
+        $AssignmentReqMFA,
+
+        [Parameter()]
+        [System.Boolean]
+        $AssignmentReqJustification,
+
+        [Parameter()]
+        [System.Boolean]
+        $ElegibilityAssignmentReqMFA,
+
+        [Parameter()]
+        [System.Boolean]
+        $ElegibilityAssignmentReqJustification,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAlertNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $EligibleAlertNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAlertNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAssigneeNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $EligibleAssigneeNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAssigneeNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleApproveNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $EligibleApproveNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleApproveNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAlertNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActiveAlertNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAlertNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAssigneeNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActiveAssigneeNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAssigneeNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveApproveNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActiveApproveNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveApproveNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAlertNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivationAlertNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAlertNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAssigneeNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivationAssigneeNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAssigneeNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationApproveNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivationApproveNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationApproveNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $Credential,
+
+        [Parameter()]
+        [System.String]
+        $ApplicationId,
+
+        [Parameter()]
+        [System.String]
+        $TenantId,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $ApplicationSecret,
+
+        [Parameter()]
+        [System.String]
+        $CertificateThumbprint,
+
+        [Parameter()]
+        [Switch]
+        $ManagedIdentity,
+
+        [Parameter()]
+        [System.String[]]
+        $AccessTokens
+    )
+
+    Write-Verbose -Message "Getting configuration of Azure Role Eligibility Schedule Settings for Role {$RoleDefinitionDisplayName} at Scope {$Scope}"
+
+    if ($null -eq $Script:exportedInstance)
+    {
+        $null = New-M365DSCConnection -Workload 'Azure' `
+            -InboundParameters $PSBoundParameters
+
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
+        $nullReturn = $PSBoundParameters
+
+        $apiVersion = '2020-10-01'
+        $uri = "https://management.azure.com/$Scope/providers/Microsoft.Authorization/roleManagementPolicyAssignments?api-version=$apiVersion"
+        $response = Invoke-AzRest -Uri $uri -Method GET
+        $assignments = (ConvertFrom-Json $response.Content).value
+
+        if ($null -eq $assignments -or $assignments.Count -eq 0)
+        {
+            Write-Verbose -Message "No role management policy assignments found at scope {$Scope}."
+            return $nullReturn
+        }
+
+        $assignment = $assignments | Where-Object {
+            $_.properties.roleDefinitionDisplayName -eq $RoleDefinitionDisplayName -or
+            $_.properties.policyAssignmentProperties.roleDefinition.displayName -eq $RoleDefinitionDisplayName
+        }
+
+        if ($null -eq $assignment)
+        {
+            $roleDefUri = "https://management.azure.com/$Scope/providers/Microsoft.Authorization/roleDefinitions?api-version=2022-04-01&`$filter=roleName eq '$RoleDefinitionDisplayName'"
+            $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
+            $roleDefinitions = (ConvertFrom-Json $roleDefResponse.Content).value
+
+            if ($null -ne $roleDefinitions -and $roleDefinitions.Count -gt 0)
+            {
+                $roleDefId = $roleDefinitions[0].id
+                $assignment = $assignments | Where-Object {
+                    $_.properties.roleDefinitionId -eq $roleDefId
+                }
+            }
+        }
+
+        if ($null -eq $assignment)
+        {
+            Write-Verbose -Message "Could not find role management policy assignment for role {$RoleDefinitionDisplayName} at scope {$Scope}."
+            return $nullReturn
+        }
+
+        $policyIdValue = $assignment.properties.policyId.Split('/')[-1]
+
+        $policyUri = "https://management.azure.com/$Scope/providers/Microsoft.Authorization/roleManagementPolicies/$($policyIdValue)?api-version=$apiVersion"
+        $policyResponse = Invoke-AzRest -Uri $policyUri -Method GET
+        $policy = ConvertFrom-Json $policyResponse.Content
+
+        if ($null -eq $policy -or $null -eq $policy.properties -or $null -eq $policy.properties.rules)
+        {
+            Write-Verbose -Message "Could not retrieve role management policy {$policyIdValue} at scope {$Scope}."
+            return $nullReturn
+        }
+
+        $rules = $policy.properties.rules
+    }
+    else
+    {
+        $rules = $Script:exportedInstance.rules
+        $policyIdValue = $Script:exportedInstance.policyId
+    }
+
+    $nullReturn = $PSBoundParameters
+
+    if ($null -eq $rules -or $rules.Count -eq 0)
+    {
+        Write-Verbose -Message 'No Policy Rules found, returning null'
+        return $nullReturn
+    }
+
+    try
+    {
+        # Extract activation settings
+        $ActivationMaxDuration = ($rules | Where-Object { $_.id -eq 'Expiration_EndUser_Assignment' }).maximumDuration
+        $ActivationReqJustification = (($rules | Where-Object { $_.id -eq 'Enablement_EndUser_Assignment' }).enabledRules) -contains 'Justification'
+        $ActivationReqTicket = (($rules | Where-Object { $_.id -eq 'Enablement_EndUser_Assignment' }).enabledRules) -contains 'Ticketing'
+        $ActivationReqMFA = (($rules | Where-Object { $_.id -eq 'Enablement_EndUser_Assignment' }).enabledRules) -contains 'MultiFactorAuthentication'
+        $ApprovaltoActivate = ($rules | Where-Object { $_.id -eq 'Approval_EndUser_Assignment' }).setting.isApprovalRequired
+        [string[]]$ActivateApprover = @()
+        $approverEntries = ($rules | Where-Object { $_.id -eq 'Approval_EndUser_Assignment' }).setting.approvalStages
+        if ($null -ne $approverEntries -and $approverEntries.Count -gt 0)
+        {
+            foreach ($approver in $approverEntries[0].primaryApprovers)
+            {
+                if (-not [System.String]::IsNullOrEmpty($approver.id))
+                {
+                    $ActivateApprover += $approver.id
+                }
+            }
+        }
+
+        # Extract eligible assignment settings
+        $PermanentEligibleAssignmentisExpirationRequired = ($rules | Where-Object { $_.id -eq 'Expiration_Admin_Eligibility' }).isExpirationRequired
+        $ExpireEligibleAssignment = ($rules | Where-Object { $_.id -eq 'Expiration_Admin_Eligibility' }).maximumDuration
+
+        # Extract active assignment settings
+        $PermanentActiveAssignmentisExpirationRequired = ($rules | Where-Object { $_.id -eq 'Expiration_Admin_Assignment' }).isExpirationRequired
+        $ExpireActiveAssignment = ($rules | Where-Object { $_.id -eq 'Expiration_Admin_Assignment' }).maximumDuration
+        $AssignmentReqMFA = (($rules | Where-Object { $_.id -eq 'Enablement_Admin_Assignment' }).enabledRules) -contains 'MultiFactorAuthentication'
+        $AssignmentReqJustification = (($rules | Where-Object { $_.id -eq 'Enablement_Admin_Assignment' }).enabledRules) -contains 'Justification'
+
+        # Extract eligible assignment enablement settings
+        $ElegibilityAssignmentReqMFA = (($rules | Where-Object { $_.id -eq 'Enablement_Admin_Eligibility' }).enabledRules) -contains 'MultiFactorAuthentication'
+        $ElegibilityAssignmentReqJustification = (($rules | Where-Object { $_.id -eq 'Enablement_Admin_Eligibility' }).enabledRules) -contains 'Justification'
+
+        # Extract notification settings for eligible assignments
+        $EligibleAlertNotificationDefaultRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Admin_Admin_Eligibility' }).isDefaultRecipientsEnabled
+        [string[]]$EligibleAlertNotificationAdditionalRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Admin_Admin_Eligibility' }).notificationRecipients
+        $EligibleAlertNotificationOnlyCritical = (($rules | Where-Object { $_.id -eq 'Notification_Admin_Admin_Eligibility' }).notificationLevel) -eq 'Critical'
+        $EligibleAssigneeNotificationDefaultRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Requestor_Admin_Eligibility' }).isDefaultRecipientsEnabled
+        [string[]]$EligibleAssigneeNotificationAdditionalRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Requestor_Admin_Eligibility' }).notificationRecipients
+        $EligibleAssigneeNotificationOnlyCritical = (($rules | Where-Object { $_.id -eq 'Notification_Requestor_Admin_Eligibility' }).notificationLevel) -eq 'Critical'
+        $EligibleApproveNotificationDefaultRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Approver_Admin_Eligibility' }).isDefaultRecipientsEnabled
+        [string[]]$EligibleApproveNotificationAdditionalRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Approver_Admin_Eligibility' }).notificationRecipients
+        $EligibleApproveNotificationOnlyCritical = (($rules | Where-Object { $_.id -eq 'Notification_Approver_Admin_Eligibility' }).notificationLevel) -eq 'Critical'
+
+        # Extract notification settings for active assignments
+        $ActiveAlertNotificationDefaultRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Admin_Admin_Assignment' }).isDefaultRecipientsEnabled
+        [string[]]$ActiveAlertNotificationAdditionalRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Admin_Admin_Assignment' }).notificationRecipients
+        $ActiveAlertNotificationOnlyCritical = (($rules | Where-Object { $_.id -eq 'Notification_Admin_Admin_Assignment' }).notificationLevel) -eq 'Critical'
+        $ActiveAssigneeNotificationDefaultRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Requestor_Admin_Assignment' }).isDefaultRecipientsEnabled
+        [string[]]$ActiveAssigneeNotificationAdditionalRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Requestor_Admin_Assignment' }).notificationRecipients
+        $ActiveAssigneeNotificationOnlyCritical = (($rules | Where-Object { $_.id -eq 'Notification_Requestor_Admin_Assignment' }).notificationLevel) -eq 'Critical'
+        $ActiveApproveNotificationDefaultRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Approver_Admin_Assignment' }).isDefaultRecipientsEnabled
+        [string[]]$ActiveApproveNotificationAdditionalRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Approver_Admin_Assignment' }).notificationRecipients
+        $ActiveApproveNotificationOnlyCritical = (($rules | Where-Object { $_.id -eq 'Notification_Approver_Admin_Assignment' }).notificationLevel) -eq 'Critical'
+
+        # Extract notification settings for activation
+        $ActivationAlertNotificationDefaultRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Admin_EndUser_Assignment' }).isDefaultRecipientsEnabled
+        [string[]]$ActivationAlertNotificationAdditionalRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Admin_EndUser_Assignment' }).notificationRecipients
+        $ActivationAlertNotificationOnlyCritical = (($rules | Where-Object { $_.id -eq 'Notification_Admin_EndUser_Assignment' }).notificationLevel) -eq 'Critical'
+        $ActivationAssigneeNotificationDefaultRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Requestor_EndUser_Assignment' }).isDefaultRecipientsEnabled
+        [string[]]$ActivationAssigneeNotificationAdditionalRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Requestor_EndUser_Assignment' }).notificationRecipients
+        $ActivationAssigneeNotificationOnlyCritical = (($rules | Where-Object { $_.id -eq 'Notification_Requestor_EndUser_Assignment' }).notificationLevel) -eq 'Critical'
+        $ActivationApproveNotificationDefaultRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Approver_EndUser_Assignment' }).isDefaultRecipientsEnabled
+        [string[]]$ActivationApproveNotificationAdditionalRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Approver_EndUser_Assignment' }).notificationRecipients
+        $ActivationApproveNotificationOnlyCritical = (($rules | Where-Object { $_.id -eq 'Notification_Approver_EndUser_Assignment' }).notificationLevel) -eq 'Critical'
+
+        Write-Verbose -Message "Found configuration for Role {$RoleDefinitionDisplayName} at Scope {$Scope}"
+        $result = @{
+            RoleDefinitionDisplayName                                 = $RoleDefinitionDisplayName
+            Scope                                                     = $Scope
+            PolicyId                                                  = $policyIdValue
+            ActivationMaxDuration                                     = $ActivationMaxDuration
+            ActivationReqJustification                                = $ActivationReqJustification
+            ActivationReqTicket                                       = $ActivationReqTicket
+            ActivationReqMFA                                          = $ActivationReqMFA
+            ApprovaltoActivate                                        = $ApprovaltoActivate
+            ActivateApprover                                          = [System.String[]]$ActivateApprover
+            PermanentEligibleAssignmentisExpirationRequired           = $PermanentEligibleAssignmentisExpirationRequired
+            ExpireEligibleAssignment                                  = $ExpireEligibleAssignment
+            PermanentActiveAssignmentisExpirationRequired             = $PermanentActiveAssignmentisExpirationRequired
+            ExpireActiveAssignment                                    = $ExpireActiveAssignment
+            AssignmentReqMFA                                          = $AssignmentReqMFA
+            AssignmentReqJustification                                = $AssignmentReqJustification
+            ElegibilityAssignmentReqMFA                               = $ElegibilityAssignmentReqMFA
+            ElegibilityAssignmentReqJustification                     = $ElegibilityAssignmentReqJustification
+            EligibleAlertNotificationDefaultRecipient                 = $EligibleAlertNotificationDefaultRecipient
+            EligibleAlertNotificationAdditionalRecipient              = [System.String[]]$EligibleAlertNotificationAdditionalRecipient
+            EligibleAlertNotificationOnlyCritical                     = $EligibleAlertNotificationOnlyCritical
+            EligibleAssigneeNotificationDefaultRecipient              = $EligibleAssigneeNotificationDefaultRecipient
+            EligibleAssigneeNotificationAdditionalRecipient           = [System.String[]]$EligibleAssigneeNotificationAdditionalRecipient
+            EligibleAssigneeNotificationOnlyCritical                  = $EligibleAssigneeNotificationOnlyCritical
+            EligibleApproveNotificationDefaultRecipient               = $EligibleApproveNotificationDefaultRecipient
+            EligibleApproveNotificationAdditionalRecipient            = [System.String[]]$EligibleApproveNotificationAdditionalRecipient
+            EligibleApproveNotificationOnlyCritical                   = $EligibleApproveNotificationOnlyCritical
+            ActiveAlertNotificationDefaultRecipient                   = $ActiveAlertNotificationDefaultRecipient
+            ActiveAlertNotificationAdditionalRecipient                = [System.String[]]$ActiveAlertNotificationAdditionalRecipient
+            ActiveAlertNotificationOnlyCritical                       = $ActiveAlertNotificationOnlyCritical
+            ActiveAssigneeNotificationDefaultRecipient                = $ActiveAssigneeNotificationDefaultRecipient
+            ActiveAssigneeNotificationAdditionalRecipient             = [System.String[]]$ActiveAssigneeNotificationAdditionalRecipient
+            ActiveAssigneeNotificationOnlyCritical                    = $ActiveAssigneeNotificationOnlyCritical
+            ActiveApproveNotificationDefaultRecipient                 = $ActiveApproveNotificationDefaultRecipient
+            ActiveApproveNotificationAdditionalRecipient              = [System.String[]]$ActiveApproveNotificationAdditionalRecipient
+            ActiveApproveNotificationOnlyCritical                     = $ActiveApproveNotificationOnlyCritical
+            ActivationAlertNotificationDefaultRecipient               = $ActivationAlertNotificationDefaultRecipient
+            ActivationAlertNotificationAdditionalRecipient            = [System.String[]]$ActivationAlertNotificationAdditionalRecipient
+            ActivationAlertNotificationOnlyCritical                   = $ActivationAlertNotificationOnlyCritical
+            ActivationAssigneeNotificationDefaultRecipient            = $ActivationAssigneeNotificationDefaultRecipient
+            ActivationAssigneeNotificationAdditionalRecipient         = [System.String[]]$ActivationAssigneeNotificationAdditionalRecipient
+            ActivationAssigneeNotificationOnlyCritical                = $ActivationAssigneeNotificationOnlyCritical
+            ActivationApproveNotificationDefaultRecipient             = $ActivationApproveNotificationDefaultRecipient
+            ActivationApproveNotificationAdditionalRecipient          = [System.String[]]$ActivationApproveNotificationAdditionalRecipient
+            ActivationApproveNotificationOnlyCritical                 = $ActivationApproveNotificationOnlyCritical
+            ApplicationId                                             = $ApplicationId
+            TenantId                                                  = $TenantId
+            CertificateThumbprint                                     = $CertificateThumbprint
+            ApplicationSecret                                         = $ApplicationSecret
+            Credential                                                = $Credential
+            ManagedIdentity                                           = $ManagedIdentity.IsPresent
+            AccessTokens                                              = $AccessTokens
+        }
+        return $result
+    }
+    catch
+    {
+        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw
+    }
+}
+
+function Set-TargetResource
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $RoleDefinitionDisplayName,
+
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $Scope,
+
+        [Parameter()]
+        [System.String]
+        $PolicyId,
+
+        [Parameter()]
+        [System.String]
+        $ActivationMaxDuration,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationReqJustification,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationReqTicket,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationReqMFA,
+
+        [Parameter()]
+        [System.Boolean]
+        $ApprovaltoActivate,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivateApprover,
+
+        [Parameter()]
+        [System.Boolean]
+        $PermanentEligibleAssignmentisExpirationRequired,
+
+        [Parameter()]
+        [System.String]
+        $ExpireEligibleAssignment,
+
+        [Parameter()]
+        [System.Boolean]
+        $PermanentActiveAssignmentisExpirationRequired,
+
+        [Parameter()]
+        [System.String]
+        $ExpireActiveAssignment,
+
+        [Parameter()]
+        [System.Boolean]
+        $AssignmentReqMFA,
+
+        [Parameter()]
+        [System.Boolean]
+        $AssignmentReqJustification,
+
+        [Parameter()]
+        [System.Boolean]
+        $ElegibilityAssignmentReqMFA,
+
+        [Parameter()]
+        [System.Boolean]
+        $ElegibilityAssignmentReqJustification,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAlertNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $EligibleAlertNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAlertNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAssigneeNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $EligibleAssigneeNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAssigneeNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleApproveNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $EligibleApproveNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleApproveNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAlertNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActiveAlertNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAlertNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAssigneeNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActiveAssigneeNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAssigneeNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveApproveNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActiveApproveNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveApproveNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAlertNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivationAlertNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAlertNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAssigneeNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivationAssigneeNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAssigneeNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationApproveNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivationApproveNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationApproveNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $Credential,
+
+        [Parameter()]
+        [System.String]
+        $ApplicationId,
+
+        [Parameter()]
+        [System.String]
+        $TenantId,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $ApplicationSecret,
+
+        [Parameter()]
+        [System.String]
+        $CertificateThumbprint,
+
+        [Parameter()]
+        [Switch]
+        $ManagedIdentity,
+
+        [Parameter()]
+        [System.String[]]
+        $AccessTokens
+    )
+
+    Write-Verbose -Message "Setting configuration of Azure Role Eligibility Schedule Settings for Role {$RoleDefinitionDisplayName} at Scope {$Scope}"
+
+    #Ensure the proper dependencies are installed in the current environment.
+    Confirm-M365DSCDependencies
+
+    #region Telemetry
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+    $CommandName = $MyInvocation.MyCommand
+    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+        -CommandName $CommandName `
+        -Parameters $PSBoundParameters
+    Add-M365DSCTelemetryEvent -Data $data
+    #endregion
+
+    $currentInstance = Get-TargetResource @PSBoundParameters
+
+    $policyIdValue = $currentInstance.PolicyId
+    if ([System.String]::IsNullOrEmpty($policyIdValue))
+    {
+        throw "Could not find role management policy for role {$RoleDefinitionDisplayName} at scope {$Scope}"
+    }
+
+    # Get the full policy to retrieve all current rules
+    $apiVersion = '2020-10-01'
+    $policyUri = "https://management.azure.com/$Scope/providers/Microsoft.Authorization/roleManagementPolicies/$($policyIdValue)?api-version=$apiVersion"
+    $policyResponse = Invoke-AzRest -Uri $policyUri -Method GET
+    $policy = ConvertFrom-Json $policyResponse.Content
+    $rules = $policy.properties.rules
+    $ruleModified = $false
+
+    foreach ($currentRule in $rules)
+    {
+        $params = @{}
+
+        if ($currentRule.id -eq 'Notification_Admin_Admin_Eligibility')
+        {
+            if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationOnlyCritical') `
+                    -and $PSBoundParameters.ContainsKey('EligibleAlertNotificationDefaultRecipient') `
+                    -and $PSBoundParameters.ContainsKey('EligibleAlertNotificationAdditionalRecipient'))
+            {
+                Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Role assignment alert'
+                $notificationLevel = if ($EligibleAlertNotificationOnlyCritical)
+                {
+                    'Critical'
+                }
+                else
+                {
+                    'All'
+                }
+                $params = @{
+                    ruleType                 = $currentRule.ruleType
+                    id                       = $currentRule.id
+                    notificationType         = 'Email'
+                    recipientType            = 'Admin'
+                    notificationLevel        = $notificationLevel
+                    isDefaultRecipientsEnabled = $EligibleAlertNotificationDefaultRecipient
+                    notificationRecipients   = @($EligibleAlertNotificationAdditionalRecipient)
+                    target                   = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Notification_Requestor_Admin_Eligibility')
+        {
+            if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationOnlyCritical') `
+                    -and $PSBoundParameters.ContainsKey('EligibleAssigneeNotificationDefaultRecipient') `
+                    -and $PSBoundParameters.ContainsKey('EligibleAssigneeNotificationAdditionalRecipient'))
+            {
+                Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Notification to the assigned user (assignee)'
+                $notificationLevel = if ($EligibleAssigneeNotificationOnlyCritical)
+                {
+                    'Critical'
+                }
+                else
+                {
+                    'All'
+                }
+                $params = @{
+                    ruleType                 = $currentRule.ruleType
+                    id                       = $currentRule.id
+                    notificationType         = 'Email'
+                    recipientType            = 'Requestor'
+                    notificationLevel        = $notificationLevel
+                    isDefaultRecipientsEnabled = $EligibleAssigneeNotificationDefaultRecipient
+                    notificationRecipients   = @($EligibleAssigneeNotificationAdditionalRecipient)
+                    target                   = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Notification_Approver_Admin_Eligibility')
+        {
+            if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationOnlyCritical') `
+                    -and $PSBoundParameters.ContainsKey('EligibleApproveNotificationDefaultRecipient') `
+                    -and $PSBoundParameters.ContainsKey('EligibleApproveNotificationAdditionalRecipient'))
+            {
+                Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Request to approve a role assignment renewal/extension'
+                $notificationLevel = if ($EligibleApproveNotificationOnlyCritical)
+                {
+                    'Critical'
+                }
+                else
+                {
+                    'All'
+                }
+                $params = @{
+                    ruleType                 = $currentRule.ruleType
+                    id                       = $currentRule.id
+                    notificationType         = 'Email'
+                    recipientType            = 'Approver'
+                    notificationLevel        = $notificationLevel
+                    isDefaultRecipientsEnabled = $EligibleApproveNotificationDefaultRecipient
+                    notificationRecipients   = @($EligibleApproveNotificationAdditionalRecipient)
+                    target                   = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Notification_Admin_Admin_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationOnlyCritical') `
+                    -and $PSBoundParameters.ContainsKey('ActiveAlertNotificationDefaultRecipient') `
+                    -and $PSBoundParameters.ContainsKey('ActiveAlertNotificationAdditionalRecipient'))
+            {
+                Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Role assignment alert'
+                $notificationLevel = if ($ActiveAlertNotificationOnlyCritical)
+                {
+                    'Critical'
+                }
+                else
+                {
+                    'All'
+                }
+                $params = @{
+                    ruleType                 = $currentRule.ruleType
+                    id                       = $currentRule.id
+                    notificationType         = 'Email'
+                    recipientType            = 'Admin'
+                    notificationLevel        = $notificationLevel
+                    isDefaultRecipientsEnabled = $ActiveAlertNotificationDefaultRecipient
+                    notificationRecipients   = @($ActiveAlertNotificationAdditionalRecipient)
+                    target                   = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Notification_Requestor_Admin_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationOnlyCritical') `
+                    -and $PSBoundParameters.ContainsKey('ActiveAssigneeNotificationDefaultRecipient') `
+                    -and $PSBoundParameters.ContainsKey('ActiveAssigneeNotificationAdditionalRecipient'))
+            {
+                Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Notification to the assigned user (assignee)'
+                $notificationLevel = if ($ActiveAssigneeNotificationOnlyCritical)
+                {
+                    'Critical'
+                }
+                else
+                {
+                    'All'
+                }
+                $params = @{
+                    ruleType                 = $currentRule.ruleType
+                    id                       = $currentRule.id
+                    notificationType         = 'Email'
+                    recipientType            = 'Requestor'
+                    notificationLevel        = $notificationLevel
+                    isDefaultRecipientsEnabled = $ActiveAssigneeNotificationDefaultRecipient
+                    notificationRecipients   = @($ActiveAssigneeNotificationAdditionalRecipient)
+                    target                   = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Notification_Approver_Admin_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationOnlyCritical') `
+                    -and $PSBoundParameters.ContainsKey('ActiveApproveNotificationDefaultRecipient') `
+                    -and $PSBoundParameters.ContainsKey('ActiveApproveNotificationAdditionalRecipient'))
+            {
+                Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Request to approve a role assignment renewal/extension'
+                $notificationLevel = if ($ActiveApproveNotificationOnlyCritical)
+                {
+                    'Critical'
+                }
+                else
+                {
+                    'All'
+                }
+                $params = @{
+                    ruleType                 = $currentRule.ruleType
+                    id                       = $currentRule.id
+                    notificationType         = 'Email'
+                    recipientType            = 'Approver'
+                    notificationLevel        = $notificationLevel
+                    isDefaultRecipientsEnabled = $ActiveApproveNotificationDefaultRecipient
+                    notificationRecipients   = @($ActiveApproveNotificationAdditionalRecipient)
+                    target                   = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Notification_Admin_EndUser_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationOnlyCritical') `
+                    -and $PSBoundParameters.ContainsKey('ActivationAlertNotificationDefaultRecipient') `
+                    -and $PSBoundParameters.ContainsKey('ActivationAlertNotificationAdditionalRecipient'))
+            {
+                Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Role activation alert'
+                $notificationLevel = if ($ActivationAlertNotificationOnlyCritical)
+                {
+                    'Critical'
+                }
+                else
+                {
+                    'All'
+                }
+                $params = @{
+                    ruleType                 = $currentRule.ruleType
+                    id                       = $currentRule.id
+                    notificationType         = 'Email'
+                    recipientType            = 'Admin'
+                    notificationLevel        = $notificationLevel
+                    isDefaultRecipientsEnabled = $ActivationAlertNotificationDefaultRecipient
+                    notificationRecipients   = @($ActivationAlertNotificationAdditionalRecipient)
+                    target                   = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Notification_Requestor_EndUser_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationOnlyCritical') `
+                    -and $PSBoundParameters.ContainsKey('ActivationAssigneeNotificationDefaultRecipient') `
+                    -and $PSBoundParameters.ContainsKey('ActivationAssigneeNotificationAdditionalRecipient'))
+            {
+                Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Notification to activated user (requestor)'
+                $notificationLevel = if ($ActivationAssigneeNotificationOnlyCritical)
+                {
+                    'Critical'
+                }
+                else
+                {
+                    'All'
+                }
+                $params = @{
+                    ruleType                 = $currentRule.ruleType
+                    id                       = $currentRule.id
+                    notificationType         = 'Email'
+                    recipientType            = 'Requestor'
+                    notificationLevel        = $notificationLevel
+                    isDefaultRecipientsEnabled = $ActivationAssigneeNotificationDefaultRecipient
+                    notificationRecipients   = @($ActivationAssigneeNotificationAdditionalRecipient)
+                    target                   = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Notification_Approver_EndUser_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationOnlyCritical') `
+                    -and $PSBoundParameters.ContainsKey('ActivationApproveNotificationDefaultRecipient') `
+                    -and $PSBoundParameters.ContainsKey('ActivationApproveNotificationAdditionalRecipient'))
+            {
+                Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Notification to approvers'
+                $notificationLevel = if ($ActivationApproveNotificationOnlyCritical)
+                {
+                    'Critical'
+                }
+                else
+                {
+                    'All'
+                }
+                $params = @{
+                    ruleType                 = $currentRule.ruleType
+                    id                       = $currentRule.id
+                    notificationType         = 'Email'
+                    recipientType            = 'Approver'
+                    notificationLevel        = $notificationLevel
+                    isDefaultRecipientsEnabled = $ActivationApproveNotificationDefaultRecipient
+                    notificationRecipients   = @($ActivationApproveNotificationAdditionalRecipient)
+                    target                   = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Expiration_EndUser_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('ActivationMaxDuration'))
+            {
+                Write-Verbose -Message 'Handle Activation: Activation maximum duration (hours)'
+                $params = @{
+                    ruleType        = $currentRule.ruleType
+                    id              = $currentRule.id
+                    maximumDuration = $ActivationMaxDuration
+                    target          = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Enablement_EndUser_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('ActivationReqJustification') `
+                    -and $PSBoundParameters.ContainsKey('ActivationReqTicket') `
+                    -and $PSBoundParameters.ContainsKey('ActivationReqMFA'))
+            {
+                Write-Verbose -Message 'Handle Activation: Require justification / ticket / MFA on activation'
+                [String[]]$enabledrules = @()
+                if ($ActivationReqJustification)
+                {
+                    $enabledrules += 'Justification'
+                }
+                if ($ActivationReqTicket)
+                {
+                    $enabledrules += 'Ticketing'
+                }
+                if ($ActivationReqMFA)
+                {
+                    $enabledrules += 'MultiFactorAuthentication'
+                }
+                $params = @{
+                    ruleType     = $currentRule.ruleType
+                    id           = $currentRule.id
+                    enabledRules = $enabledrules
+                    target       = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Approval_EndUser_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('ApprovaltoActivate') `
+                    -and $PSBoundParameters.ContainsKey('ActivateApprover'))
+            {
+                Write-Verbose -Message 'Handle Activation: Require approval to activate / Approvers'
+                $primaryApprovers = @()
+                if ($ActivateApprover.Count -gt 0)
+                {
+                    foreach ($item in $ActivateApprover)
+                    {
+                        $primaryApprovers += @{
+                            id       = $item
+                            userType = 'User'
+                            isBackup = $false
+                        }
+                    }
+                }
+
+                $approvalStages = @{
+                    approvalStageTimeOutInDays     = 1
+                    isApproverJustificationRequired = $true
+                    escalationTimeInMinutes        = 0
+                    isEscalationEnabled            = $false
+                    primaryApprovers               = @($primaryApprovers)
+                    escalationApprovers            = @()
+                }
+
+                $setting = @{
+                    isApprovalRequired              = $ApprovaltoActivate
+                    isApprovalRequiredForExtension  = $false
+                    isRequestorJustificationRequired = $true
+                    approvalMode                    = 'SingleStage'
+                    approvalStages                  = @($approvalStages)
+                }
+
+                $params = @{
+                    ruleType = $currentRule.ruleType
+                    id       = $currentRule.id
+                    setting  = $setting
+                    target   = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Expiration_Admin_Eligibility')
+        {
+            if ($PSBoundParameters.ContainsKey('PermanentEligibleAssignmentisExpirationRequired') `
+                    -and $PSBoundParameters.ContainsKey('ExpireEligibleAssignment'))
+            {
+                Write-Verbose -Message 'Handle Assignment: Allow permanent eligible assignment / Expire eligible assignments after'
+                $params = @{
+                    ruleType             = $currentRule.ruleType
+                    id                   = $currentRule.id
+                    isExpirationRequired = $PermanentEligibleAssignmentisExpirationRequired
+                    maximumDuration      = $ExpireEligibleAssignment
+                    target               = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Expiration_Admin_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('PermanentActiveAssignmentisExpirationRequired') `
+                    -and $PSBoundParameters.ContainsKey('ExpireActiveAssignment'))
+            {
+                Write-Verbose -Message 'Handle Assignment: Allow permanent active assignment / Expire active assignments after'
+                $params = @{
+                    ruleType             = $currentRule.ruleType
+                    id                   = $currentRule.id
+                    isExpirationRequired = $PermanentActiveAssignmentisExpirationRequired
+                    maximumDuration      = $ExpireActiveAssignment
+                    target               = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Enablement_Admin_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('AssignmentReqJustification') `
+                    -and $PSBoundParameters.ContainsKey('AssignmentReqMFA'))
+            {
+                Write-Verbose -Message 'Handle Assignment: Require MFA / justification on active assignment'
+                [String[]]$enabledrules = @()
+                if ($AssignmentReqJustification)
+                {
+                    $enabledrules += 'Justification'
+                }
+                if ($AssignmentReqMFA)
+                {
+                    $enabledrules += 'MultiFactorAuthentication'
+                }
+                $params = @{
+                    ruleType     = $currentRule.ruleType
+                    id           = $currentRule.id
+                    enabledRules = $enabledrules
+                    target       = $currentRule.target
+                }
+            }
+        }
+        elseif ($currentRule.id -eq 'Enablement_Admin_Eligibility')
+        {
+            if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqJustification') `
+                    -and $PSBoundParameters.ContainsKey('ElegibilityAssignmentReqMFA'))
+            {
+                Write-Verbose -Message 'Handle Assignment: Require MFA / justification on eligible assignment'
+                [String[]]$enabledrules = @()
+                if ($ElegibilityAssignmentReqJustification)
+                {
+                    $enabledrules += 'Justification'
+                }
+                if ($ElegibilityAssignmentReqMFA)
+                {
+                    $enabledrules += 'MultiFactorAuthentication'
+                }
+                $params = @{
+                    ruleType     = $currentRule.ruleType
+                    id           = $currentRule.id
+                    enabledRules = $enabledrules
+                    target       = $currentRule.target
+                }
+            }
+        }
+
+        if ($params.Count -gt 0)
+        {
+            # Replace the rule in the array with the updated version
+            for ($i = 0; $i -lt $policy.properties.rules.Count; $i++)
+            {
+                if ($policy.properties.rules[$i].id -eq $currentRule.id)
+                {
+                    $policy.properties.rules[$i] = $params
+                    $ruleModified = $true
+                    break
+                }
+            }
+        }
+    }
+
+    if ($ruleModified)
+    {
+        $updateBody = @{
+            properties = @{
+                rules = @($policy.properties.rules)
+            }
+        }
+
+        $payload = ConvertTo-Json $updateBody -Depth 20 -Compress
+        Write-Verbose -Message "Updating policy {$policyIdValue} at scope {$Scope}"
+        $null = Invoke-AzRest -Uri $policyUri -Method PATCH -Payload $payload
+    }
+}
+
+function Test-TargetResource
+{
+    [CmdletBinding()]
+    [OutputType([System.Boolean])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $RoleDefinitionDisplayName,
+
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $Scope,
+
+        [Parameter()]
+        [System.String]
+        $PolicyId,
+
+        [Parameter()]
+        [System.String]
+        $ActivationMaxDuration,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationReqJustification,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationReqTicket,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationReqMFA,
+
+        [Parameter()]
+        [System.Boolean]
+        $ApprovaltoActivate,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivateApprover,
+
+        [Parameter()]
+        [System.Boolean]
+        $PermanentEligibleAssignmentisExpirationRequired,
+
+        [Parameter()]
+        [System.String]
+        $ExpireEligibleAssignment,
+
+        [Parameter()]
+        [System.Boolean]
+        $PermanentActiveAssignmentisExpirationRequired,
+
+        [Parameter()]
+        [System.String]
+        $ExpireActiveAssignment,
+
+        [Parameter()]
+        [System.Boolean]
+        $AssignmentReqMFA,
+
+        [Parameter()]
+        [System.Boolean]
+        $AssignmentReqJustification,
+
+        [Parameter()]
+        [System.Boolean]
+        $ElegibilityAssignmentReqMFA,
+
+        [Parameter()]
+        [System.Boolean]
+        $ElegibilityAssignmentReqJustification,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAlertNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $EligibleAlertNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAlertNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAssigneeNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $EligibleAssigneeNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleAssigneeNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleApproveNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $EligibleApproveNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $EligibleApproveNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAlertNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActiveAlertNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAlertNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAssigneeNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActiveAssigneeNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveAssigneeNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveApproveNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActiveApproveNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActiveApproveNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAlertNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivationAlertNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAlertNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAssigneeNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivationAssigneeNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationAssigneeNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationApproveNotificationDefaultRecipient,
+
+        [Parameter()]
+        [System.String[]]
+        $ActivationApproveNotificationAdditionalRecipient,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationApproveNotificationOnlyCritical,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $Credential,
+
+        [Parameter()]
+        [System.String]
+        $ApplicationId,
+
+        [Parameter()]
+        [System.String]
+        $TenantId,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $ApplicationSecret,
+
+        [Parameter()]
+        [System.String]
+        $CertificateThumbprint,
+
+        [Parameter()]
+        [Switch]
+        $ManagedIdentity,
+
+        [Parameter()]
+        [System.String[]]
+        $AccessTokens
+    )
+
+    #region Telemetry
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+    $CommandName = $MyInvocation.MyCommand
+    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+        -CommandName $CommandName `
+        -Parameters $PSBoundParameters
+    Add-M365DSCTelemetryEvent -Data $data
+    #endregion
+
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
+}
+
+function Export-TargetResource
+{
+    [CmdletBinding()]
+    [OutputType([System.String])]
+    param
+    (
+        [Parameter()]
+        [System.String]
+        $Filter,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $Credential,
+
+        [Parameter()]
+        [System.String]
+        $ApplicationId,
+
+        [Parameter()]
+        [System.String]
+        $TenantId,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $ApplicationSecret,
+
+        [Parameter()]
+        [System.String]
+        $CertificateThumbprint,
+
+        [Parameter()]
+        [Switch]
+        $ManagedIdentity,
+
+        [Parameter()]
+        [System.String[]]
+        $AccessTokens
+    )
+
+    $ConnectionMode = New-M365DSCConnection -Workload 'Azure' `
+        -InboundParameters $PSBoundParameters
+
+    #Ensure the proper dependencies are installed in the current environment.
+    Confirm-M365DSCDependencies
+
+    #region Telemetry
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+    $CommandName = $MyInvocation.MyCommand
+    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+        -CommandName $CommandName `
+        -Parameters $PSBoundParameters
+    Add-M365DSCTelemetryEvent -Data $data
+    #endregion
+
+    try
+    {
+        $Script:ExportMode = $true
+        $apiVersion = '2020-10-01'
+
+        # Collect all scopes to enumerate
+        $scopes = @()
+
+        # Add subscriptions
+        $subUri = 'https://management.azure.com/subscriptions?api-version=2022-12-01'
+        $subResponse = Invoke-AzRest -Uri $subUri -Method GET
+        $subscriptions = (ConvertFrom-Json $subResponse.Content).value
+
+        foreach ($sub in $subscriptions)
+        {
+            $scopes += @{
+                Scope       = "subscriptions/$($sub.subscriptionId)"
+                DisplayName = $sub.displayName
+                ScopeType   = 'Subscription'
+            }
+
+            # Add resource groups under each subscription
+            $rgUri = "https://management.azure.com/subscriptions/$($sub.subscriptionId)/resourcegroups?api-version=2021-04-01"
+            $rgResponse = Invoke-AzRest -Uri $rgUri -Method GET
+            $resourceGroups = (ConvertFrom-Json $rgResponse.Content).value
+
+            foreach ($rg in $resourceGroups)
+            {
+                $scopes += @{
+                    Scope       = "subscriptions/$($sub.subscriptionId)/resourceGroups/$($rg.name)"
+                    DisplayName = $rg.name
+                    ScopeType   = 'ResourceGroup'
+                }
+            }
+        }
+
+        # Add management groups
+        $mgUri = 'https://management.azure.com/providers/Microsoft.Management/managementGroups?api-version=2021-04-01'
+        $mgResponse = Invoke-AzRest -Uri $mgUri -Method GET
+        $managementGroups = (ConvertFrom-Json $mgResponse.Content).value
+
+        foreach ($mg in $managementGroups)
+        {
+            $scopes += @{
+                Scope       = "providers/Microsoft.Management/managementGroups/$($mg.name)"
+                DisplayName = $mg.properties.displayName
+                ScopeType   = 'ManagementGroup'
+            }
+        }
+
+        $dscContent = [System.Text.StringBuilder]::new()
+        Write-M365DSCHost -Message "`r`n" -DeferWrite
+        $j = 1
+
+        foreach ($scopeInfo in $scopes)
+        {
+            $currentScope = $scopeInfo.Scope
+            Write-M365DSCHost -Message "    |---[$j/$($scopes.Count)] $($scopeInfo.ScopeType): $($scopeInfo.DisplayName)`r`n" -DeferWrite
+
+            # Get role management policy assignments for this scope
+            $assignUri = "https://management.azure.com/$currentScope/providers/Microsoft.Authorization/roleManagementPolicyAssignments?api-version=$apiVersion"
+            $assignResponse = Invoke-AzRest -Uri $assignUri -Method GET
+            $assignments = (ConvertFrom-Json $assignResponse.Content).value
+
+            if ($null -eq $assignments -or $assignments.Count -eq 0)
+            {
+                $j++
+                continue
+            }
+
+            $i = 1
+            foreach ($assignment in $assignments)
+            {
+                $roleDisplayName = $null
+                if ($null -ne $assignment.properties.policyAssignmentProperties -and
+                    $null -ne $assignment.properties.policyAssignmentProperties.roleDefinition)
+                {
+                    $roleDisplayName = $assignment.properties.policyAssignmentProperties.roleDefinition.displayName
+                }
+
+                if ([System.String]::IsNullOrEmpty($roleDisplayName))
+                {
+                    $roleDefId = $assignment.properties.roleDefinitionId
+                    if (-not [System.String]::IsNullOrEmpty($roleDefId))
+                    {
+                        $roleDefUri = "https://management.azure.com/$roleDefId`?api-version=2022-04-01"
+                        $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
+                        $roleDef = ConvertFrom-Json $roleDefResponse.Content
+                        $roleDisplayName = $roleDef.properties.roleName
+                    }
+                }
+
+                if ([System.String]::IsNullOrEmpty($roleDisplayName))
+                {
+                    $i++
+                    continue
+                }
+
+                $assignmentPolicyId = $assignment.properties.policyId.Split('/')[-1]
+
+                # Get the policy rules
+                $policyUri = "https://management.azure.com/$currentScope/providers/Microsoft.Authorization/roleManagementPolicies/$($assignmentPolicyId)?api-version=$apiVersion"
+                $policyResponse = Invoke-AzRest -Uri $policyUri -Method GET
+                $policyContent = ConvertFrom-Json $policyResponse.Content
+
+                if ($null -eq $policyContent -or $null -eq $policyContent.properties -or $null -eq $policyContent.properties.rules)
+                {
+                    $i++
+                    continue
+                }
+
+                $rules = $policyContent.properties.rules
+
+                if ($null -ne $Global:M365DSCExportResourceInstancesCount)
+                {
+                    $Global:M365DSCExportResourceInstancesCount++
+                }
+
+                Write-M365DSCHost -Message "        |---[$i/$($assignments.Count)] $roleDisplayName" -DeferWrite
+
+                $Params = @{
+                    RoleDefinitionDisplayName = $roleDisplayName
+                    Scope                     = $currentScope
+                    ApplicationId             = $ApplicationId
+                    TenantId                  = $TenantId
+                    CertificateThumbprint     = $CertificateThumbprint
+                    ApplicationSecret         = $ApplicationSecret
+                    Credential                = $Credential
+                    ManagedIdentity           = $ManagedIdentity.IsPresent
+                    AccessTokens              = $AccessTokens
+                }
+
+                $Script:exportedInstance = @{
+                    rules    = $rules
+                    policyId = $assignmentPolicyId
+                }
+                $Results = Get-TargetResource @Params
+
+                $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
+                    -ConnectionMode $ConnectionMode `
+                    -ModulePath $PSScriptRoot `
+                    -Results $Results `
+                    -Credential $Credential
+
+                $dscContent.Append($currentDSCBlock) | Out-Null
+                Save-M365DSCPartialExport -Content $currentDSCBlock `
+                    -FileName $Global:PartialExportFileName
+                Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+                $i++
+            }
+            $j++
+        }
+        return $dscContent.ToString()
+    }
+    catch
+    {
+        New-M365DSCLogEntry -Message 'Error during Export:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw
+    }
+}
+
+Export-ModuleMember -Function *-TargetResource
