@@ -25,7 +25,7 @@ Configuration Example
         AzureRoleEligibilityScheduleSettings "Owner-SubscriptionSettings"
         {
             RoleDefinitionDisplayName                       = "Owner"
-            Scope                                           = "subscriptions/00000000-0000-0000-0000-000000000000"
+            ScopeId                                         = "subscriptions/00000000-0000-0000-0000-000000000000"
             ActivationMaxDuration                           = "PT4H"
             ActivationReqJustification                      = $True
             ActivationReqTicket                             = $True
