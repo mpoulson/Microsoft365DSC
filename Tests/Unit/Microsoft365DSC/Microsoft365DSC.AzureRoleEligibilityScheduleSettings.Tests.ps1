@@ -389,6 +389,189 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name "The approval settings with ServicePrincipal approver are in the desired state" -Fixture {
+            BeforeAll {
+                $Script:mockRulesWithSPApprover = $Script:mockRules | ForEach-Object {
+                    if ($_.id -eq 'Approval_EndUser_Assignment')
+                    {
+                        @{
+                            id = $_.id
+                            ruleType = $_.ruleType
+                            setting = @{
+                                isApprovalRequired = $true
+                                isApprovalRequiredForExtension = $false
+                                isRequestorJustificationRequired = $true
+                                approvalMode = "SingleStage"
+                                approvalStages = @(
+                                    @{
+                                        approvalStageTimeOutInDays = 1
+                                        isApproverJustificationRequired = $true
+                                        escalationTimeInMinutes = 0
+                                        isEscalationEnabled = $false
+                                        primaryApprovers = @(
+                                            @{
+                                                id = "11111111-1111-1111-1111-111111111111"
+                                                userType = "ServicePrincipal"
+                                                isBackup = $false
+                                            }
+                                        )
+                                        escalationApprovers = @()
+                                    }
+                                )
+                            }
+                            target = $_.target
+                        }
+                    }
+                    else
+                    {
+                        $_
+                    }
+                }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
+                                    properties = @{
+                                        roleDefinitionId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
+                                        policyId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
+                                        roleDefinitionDisplayName = "Owner"
+                                        policyAssignmentProperties = @{
+                                            roleDefinition = @{
+                                                displayName = "Owner"
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                            properties = @{
+                                rules = $Script:mockRulesWithSPApprover
+                            }
+                        }) -Depth 20
+                    }
+                }
+
+                $testParams = @{
+                    RoleDefinitionDisplayName = "Owner"
+                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ApprovaltoActivate        = $true
+                    ActivateApprover          = @("ServicePrincipal:11111111-1111-1111-1111-111111111111")
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should return true from the Test method' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+
+            It 'Should return the ServicePrincipal approver with type prefix from the Get method' {
+                $result = Get-TargetResource @testParams
+                $result.ActivateApprover | Should -Contain "ServicePrincipal:11111111-1111-1111-1111-111111111111"
+            }
+        }
+
+        Context -Name "The approval settings with mixed approver types should call Set without error" -Fixture {
+            BeforeAll {
+                $Script:mockRulesWithMixedApprovers = $Script:mockRules | ForEach-Object {
+                    if ($_.id -eq 'Approval_EndUser_Assignment')
+                    {
+                        @{
+                            id = $_.id
+                            ruleType = $_.ruleType
+                            setting = @{
+                                isApprovalRequired = $true
+                                isApprovalRequiredForExtension = $false
+                                isRequestorJustificationRequired = $true
+                                approvalMode = "SingleStage"
+                                approvalStages = @(
+                                    @{
+                                        approvalStageTimeOutInDays = 1
+                                        isApproverJustificationRequired = $true
+                                        escalationTimeInMinutes = 0
+                                        isEscalationEnabled = $false
+                                        primaryApprovers = @(
+                                            @{
+                                                id = "22222222-2222-2222-2222-222222222222"
+                                                userType = "User"
+                                                isBackup = $false
+                                            },
+                                            @{
+                                                id = "33333333-3333-3333-3333-333333333333"
+                                                userType = "Group"
+                                                isBackup = $false
+                                            },
+                                            @{
+                                                id = "44444444-4444-4444-4444-444444444444"
+                                                userType = "ServicePrincipal"
+                                                isBackup = $false
+                                            }
+                                        )
+                                        escalationApprovers = @()
+                                    }
+                                )
+                            }
+                            target = $_.target
+                        }
+                    }
+                    else
+                    {
+                        $_
+                    }
+                }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
+                                    properties = @{
+                                        roleDefinitionId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
+                                        policyId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
+                                        roleDefinitionDisplayName = "Owner"
+                                        policyAssignmentProperties = @{
+                                            roleDefinition = @{
+                                                displayName = "Owner"
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                            properties = @{
+                                rules = $Script:mockRulesWithMixedApprovers
+                            }
+                        }) -Depth 20
+                    }
+                }
+
+                $testParams = @{
+                    RoleDefinitionDisplayName = "Owner"
+                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ApprovaltoActivate        = $true
+                    ActivateApprover          = @("User:22222222-2222-2222-2222-222222222222", "Group:33333333-3333-3333-3333-333333333333", "ServicePrincipal:44444444-4444-4444-4444-444444444444")
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should return true from the Test method' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+
+            It 'Should call the Set method without error' {
+                { Set-TargetResource @testParams } | Should -Not -Throw
+            }
+
+            It 'Should return all approvers with correct type prefixes from the Get method' {
+                $result = Get-TargetResource @testParams
+                $result.ActivateApprover | Should -HaveCount 3
+                $result.ActivateApprover | Should -Contain "User:22222222-2222-2222-2222-222222222222"
+                $result.ActivateApprover | Should -Contain "Group:33333333-3333-3333-3333-333333333333"
+                $result.ActivateApprover | Should -Contain "ServicePrincipal:44444444-4444-4444-4444-444444444444"
+            }
+        }
+
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true

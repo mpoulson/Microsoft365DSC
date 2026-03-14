@@ -323,7 +323,8 @@ function Get-TargetResource
             {
                 if (-not [System.String]::IsNullOrEmpty($approver.id))
                 {
-                    $ActivateApprover += $approver.id
+                    $approverUserType = if (-not [System.String]::IsNullOrEmpty($approver.userType)) { $approver.userType } else { 'User' }
+                    $ActivateApprover += "$($approverUserType):$($approver.id)"
                 }
             }
         }
@@ -994,9 +995,20 @@ function Set-TargetResource
                 {
                     foreach ($item in $ActivateApprover)
                     {
+                        if ($item -match '^(User|Group|ServicePrincipal):(.+)$')
+                        {
+                            $approverUserType = $Matches[1]
+                            $approverId = $Matches[2]
+                        }
+                        else
+                        {
+                            # Backward compatibility: plain IDs default to User type
+                            $approverUserType = 'User'
+                            $approverId = $item
+                        }
                         $primaryApprovers += @{
-                            id       = $item
-                            userType = 'User'
+                            id       = $approverId
+                            userType = $approverUserType
                             isBackup = $false
                         }
                     }
