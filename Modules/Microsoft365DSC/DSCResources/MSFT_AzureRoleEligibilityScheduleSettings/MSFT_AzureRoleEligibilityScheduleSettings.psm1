@@ -226,6 +226,9 @@ function Get-TargetResource
         $null = New-M365DSCConnection -Workload 'Azure' `
             -InboundParameters $PSBoundParameters
 
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            -InboundParameters $PSBoundParameters
+
         #Ensure the proper dependencies are installed in the current environment.
         Confirm-M365DSCDependencies
 
@@ -323,7 +326,23 @@ function Get-TargetResource
             {
                 if (-not [System.String]::IsNullOrEmpty($approver.id))
                 {
-                    $ActivateApprover += $approver.id
+                    try
+                    {
+                        $user = Get-MgUser -UserId $approver.id -ErrorAction Stop
+                        $ActivateApprover += $user.UserPrincipalName
+                    }
+                    catch
+                    {
+                        try
+                        {
+                            $group = Get-MgGroup -GroupId $approver.id -ErrorAction Stop
+                            $ActivateApprover += $group.DisplayName
+                        }
+                        catch
+                        {
+                            Write-Verbose -Message "Could not resolve approver with Id {$($approver.id)}: $($_.Exception.Message)"
+                        }
+                    }
                 }
             }
         }
@@ -994,10 +1013,33 @@ function Set-TargetResource
                 {
                     foreach ($item in $ActivateApprover)
                     {
-                        $primaryApprovers += @{
-                            id       = $item
-                            userType = 'User'
-                            isBackup = $false
+                        $Filter = "UserPrincipalName eq '$($item -replace "'", "''")'"
+                        $user = Get-MgUser -Filter $Filter -ErrorAction SilentlyContinue
+                        if ($null -ne $user)
+                        {
+                            $primaryApprovers += @{
+                                id       = $user.Id
+                                userType = 'User'
+                                isBackup = $false
+                            }
+                        }
+                        else
+                        {
+                            Write-Verbose -Message "User '$item' not found, trying with group"
+                            $Filter = "displayName eq '$($item -replace "'", "''")'"
+                            $group = Get-MgGroup -Filter $Filter -ErrorAction SilentlyContinue
+                            if ($null -ne $group)
+                            {
+                                $primaryApprovers += @{
+                                    id       = $group.Id
+                                    userType = 'Group'
+                                    isBackup = $false
+                                }
+                            }
+                            else
+                            {
+                                throw "Approver '$item' not found as user or group. Cannot add as approver."
+                            }
                         }
                     }
                 }
@@ -1436,6 +1478,9 @@ function Export-TargetResource
     )
 
     $ConnectionMode = New-M365DSCConnection -Workload 'Azure' `
+        -InboundParameters $PSBoundParameters
+
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.

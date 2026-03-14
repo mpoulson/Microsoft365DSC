@@ -23,10 +23,37 @@
         "read": [],
         "update": []
       }
+    },
+    "graph": {
+      "delegated": {
+        "read": [
+          {
+            "name": "User.Read.All"
+          },
+          {
+            "name": "Group.Read.All"
+          }
+        ],
+        "update": []
+      },
+      "application": {
+        "read": [
+          {
+            "name": "User.Read.All"
+          },
+          {
+            "name": "Group.Read.All"
+          }
+        ],
+        "update": []
+      }
     }
   },
   "requiredModules": [
-    "Az.Accounts"
+    "Az.Accounts",
+    "Microsoft.Graph.Authentication",
+    "Microsoft.Graph.Groups",
+    "Microsoft.Graph.Users"
   ],
   "mode": "Configuration"
 }

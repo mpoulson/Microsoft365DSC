@@ -41,6 +41,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Get-MgUser -MockWith {
+                return $null
+            }
+
+            Mock -CommandName Get-MgGroup -MockWith {
+                return $null
+            }
+
             $Script:mockRules = @(
                 @{
                     id = "Expiration_EndUser_Assignment"
@@ -386,6 +394,231 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 { Set-TargetResource @testParams } | Should -Not -Throw
+            }
+        }
+
+        Context -Name "The approval settings with user approver are in the desired state" -Fixture {
+            BeforeAll {
+                $Script:mockRulesWithUserApprover = $Script:mockRules | ForEach-Object {
+                    if ($_.id -eq 'Approval_EndUser_Assignment')
+                    {
+                        @{
+                            id = $_.id
+                            ruleType = $_.ruleType
+                            setting = @{
+                                isApprovalRequired = $true
+                                isApprovalRequiredForExtension = $false
+                                isRequestorJustificationRequired = $true
+                                approvalMode = "SingleStage"
+                                approvalStages = @(
+                                    @{
+                                        approvalStageTimeOutInDays = 1
+                                        isApproverJustificationRequired = $true
+                                        escalationTimeInMinutes = 0
+                                        isEscalationEnabled = $false
+                                        primaryApprovers = @(
+                                            @{
+                                                id = "11111111-1111-1111-1111-111111111111"
+                                                userType = "User"
+                                                isBackup = $false
+                                            }
+                                        )
+                                        escalationApprovers = @()
+                                    }
+                                )
+                            }
+                            target = $_.target
+                        }
+                    }
+                    else
+                    {
+                        $_
+                    }
+                }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
+                                    properties = @{
+                                        roleDefinitionId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
+                                        policyId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
+                                        roleDefinitionDisplayName = "Owner"
+                                        policyAssignmentProperties = @{
+                                            roleDefinition = @{
+                                                displayName = "Owner"
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                            properties = @{
+                                rules = $Script:mockRulesWithUserApprover
+                            }
+                        }) -Depth 20
+                    }
+                }
+
+                Mock -CommandName Get-MgUser -MockWith {
+                    if ($UserId -eq '11111111-1111-1111-1111-111111111111')
+                    {
+                        return @{ Id = '11111111-1111-1111-1111-111111111111'; UserPrincipalName = 'approver@contoso.com' }
+                    }
+                    return $null
+                } -ParameterFilter { $UserId }
+
+                Mock -CommandName Get-MgUser -MockWith {
+                    if ($Filter -like "*approver@contoso.com*")
+                    {
+                        return @{ Id = '11111111-1111-1111-1111-111111111111'; UserPrincipalName = 'approver@contoso.com' }
+                    }
+                    return $null
+                } -ParameterFilter { $Filter }
+
+                $testParams = @{
+                    RoleDefinitionDisplayName = "Owner"
+                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ApprovaltoActivate        = $true
+                    ActivateApprover          = @("approver@contoso.com")
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should return true from the Test method' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+
+            It 'Should return the user approver UPN from the Get method' {
+                $result = Get-TargetResource @testParams
+                $result.ActivateApprover | Should -Contain "approver@contoso.com"
+            }
+        }
+
+        Context -Name "The approval settings with user and group approvers should call Set without error" -Fixture {
+            BeforeAll {
+                $Script:mockRulesWithMixedApprovers = $Script:mockRules | ForEach-Object {
+                    if ($_.id -eq 'Approval_EndUser_Assignment')
+                    {
+                        @{
+                            id = $_.id
+                            ruleType = $_.ruleType
+                            setting = @{
+                                isApprovalRequired = $true
+                                isApprovalRequiredForExtension = $false
+                                isRequestorJustificationRequired = $true
+                                approvalMode = "SingleStage"
+                                approvalStages = @(
+                                    @{
+                                        approvalStageTimeOutInDays = 1
+                                        isApproverJustificationRequired = $true
+                                        escalationTimeInMinutes = 0
+                                        isEscalationEnabled = $false
+                                        primaryApprovers = @(
+                                            @{
+                                                id = "22222222-2222-2222-2222-222222222222"
+                                                userType = "User"
+                                                isBackup = $false
+                                            },
+                                            @{
+                                                id = "33333333-3333-3333-3333-333333333333"
+                                                userType = "Group"
+                                                isBackup = $false
+                                            }
+                                        )
+                                        escalationApprovers = @()
+                                    }
+                                )
+                            }
+                            target = $_.target
+                        }
+                    }
+                    else
+                    {
+                        $_
+                    }
+                }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
+                                    properties = @{
+                                        roleDefinitionId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
+                                        policyId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
+                                        roleDefinitionDisplayName = "Owner"
+                                        policyAssignmentProperties = @{
+                                            roleDefinition = @{
+                                                displayName = "Owner"
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                            properties = @{
+                                rules = $Script:mockRulesWithMixedApprovers
+                            }
+                        }) -Depth 20
+                    }
+                }
+
+                Mock -CommandName Get-MgUser -MockWith {
+                    if ($UserId -eq '22222222-2222-2222-2222-222222222222')
+                    {
+                        return @{ Id = '22222222-2222-2222-2222-222222222222'; UserPrincipalName = 'approver@contoso.com' }
+                    }
+                    throw "User not found"
+                } -ParameterFilter { $UserId }
+
+                Mock -CommandName Get-MgUser -MockWith {
+                    if ($Filter -like "*approver@contoso.com*")
+                    {
+                        return @{ Id = '22222222-2222-2222-2222-222222222222'; UserPrincipalName = 'approver@contoso.com' }
+                    }
+                    return $null
+                } -ParameterFilter { $Filter }
+
+                Mock -CommandName Get-MgGroup -MockWith {
+                    if ($GroupId -eq '33333333-3333-3333-3333-333333333333')
+                    {
+                        return @{ Id = '33333333-3333-3333-3333-333333333333'; DisplayName = 'PIM Approvers' }
+                    }
+                    return $null
+                } -ParameterFilter { $GroupId }
+
+                Mock -CommandName Get-MgGroup -MockWith {
+                    if ($Filter -like "*PIM Approvers*")
+                    {
+                        return @{ Id = '33333333-3333-3333-3333-333333333333'; DisplayName = 'PIM Approvers' }
+                    }
+                    return $null
+                } -ParameterFilter { $Filter }
+
+                $testParams = @{
+                    RoleDefinitionDisplayName = "Owner"
+                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ApprovaltoActivate        = $true
+                    ActivateApprover          = @("approver@contoso.com", "PIM Approvers")
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should return true from the Test method' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+
+            It 'Should call the Set method without error' {
+                { Set-TargetResource @testParams } | Should -Not -Throw
+            }
+
+            It 'Should return all approvers with correct names from the Get method' {
+                $result = Get-TargetResource @testParams
+                $result.ActivateApprover | Should -HaveCount 2
+                $result.ActivateApprover | Should -Contain "approver@contoso.com"
+                $result.ActivateApprover | Should -Contain "PIM Approvers"
             }
         }
 
