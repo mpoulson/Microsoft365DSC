@@ -183,6 +183,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     notificationRecipients = @()
                     target = @{ caller = "EndUser"; operations = @("All"); level = "Assignment" }
                 }
+                @{
+                    id = "AuthenticationContext_EndUser_Assignment"
+                    ruleType = "RoleManagementPolicyAuthenticationContextRule"
+                    isEnabled = $false
+                    claimValue = ""
+                    target = @{ caller = "EndUser"; operations = @("All"); level = "Assignment" }
+                }
             )
 
             Mock -CommandName Invoke-AzRest -MockWith {
