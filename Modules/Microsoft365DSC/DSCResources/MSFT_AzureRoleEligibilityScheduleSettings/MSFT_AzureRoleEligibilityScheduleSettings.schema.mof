@@ -61,8 +61,8 @@ class MSFT_AADRoleManagementPolicyAuthenticationContextRule
     [Write, Description("Claim value associated with the rule.")] String claimValue;
 };
 
-[ClassVersion("1.0.0.0"), FriendlyName("AzureRoleManagementPolicyRule")]
-class MSFT_AzureRoleManagementPolicyRule : OMI_BaseResource
+[ClassVersion("1.0.0.0"), FriendlyName("AzureRoleEligibilityScheduleSettings")]
+class MSFT_AzureRoleEligibilityScheduleSettings : OMI_BaseResource
 {
     [Key, Description("The unique identifier for a policy rule. Read-only.")] String Id;
     [Key, Description("Role display name.")] String RoleDefinitionDisplayName;

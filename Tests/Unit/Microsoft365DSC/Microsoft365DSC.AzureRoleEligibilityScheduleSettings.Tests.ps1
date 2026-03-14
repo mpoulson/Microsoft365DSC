@@ -167,7 +167,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $Script:ExportMode = $false
         }
 
-        Context -Name "The AzureRoleManagementPolicyRule Exists and Values are already in the desired state" -Fixture {
+        Context -Name "The expiration rule exists and values are already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
                     Id                        = "Expiration_EndUser_Assignment"
@@ -187,7 +187,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-        Context -Name "The AzureRoleManagementPolicyRule exists and values are NOT in the desired state" -Fixture {
+        Context -Name "The expiration rule exists and values are NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
                     Id                        = "Expiration_EndUser_Assignment"
@@ -443,6 +443,40 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                         ruleType = "RoleManagementPolicyExpirationRule"
                                         isExpirationRequired = $true
                                         maximumDuration = "PT4H"
+                                    }
+                                    @{
+                                        id = "Enablement_EndUser_Assignment"
+                                        ruleType = "RoleManagementPolicyEnablementRule"
+                                        enabledRules = @("Justification", "Ticketing")
+                                    }
+                                    @{
+                                        id = "Notification_Admin_EndUser_Assignment"
+                                        ruleType = "RoleManagementPolicyNotificationRule"
+                                        notificationType = "Email"
+                                        recipientType = "Admin"
+                                        notificationLevel = "All"
+                                        isDefaultRecipientsEnabled = $true
+                                        notificationRecipients = @("admin@contoso.com")
+                                    }
+                                    @{
+                                        id = "Approval_EndUser_Assignment"
+                                        ruleType = "RoleManagementPolicyApprovalRule"
+                                        setting = @{
+                                            isApprovalRequired = $true
+                                            isApprovalRequiredForExtension = $false
+                                            isRequestorJustificationRequired = $true
+                                            approvalMode = "SingleStage"
+                                            approvalStages = @(
+                                                @{
+                                                    approvalStageTimeOutInDays = 1
+                                                    isApproverJustificationRequired = $true
+                                                    escalationTimeInMinutes = 0
+                                                    isEscalationEnabled = $false
+                                                    primaryApprovers = @()
+                                                    escalationApprovers = @()
+                                                }
+                                            )
+                                        }
                                     }
                                 )
                             }

@@ -1,6 +1,6 @@
 {
-  "resourceName": "AzureRoleManagementPolicyRule",
-  "description": "Configures Azure PIM (Privileged Identity Management) role management policy rules for Management Groups, Subscriptions, and Resource Groups.",
+  "resourceName": "AzureRoleEligibilityScheduleSettings",
+  "description": "Configures Azure PIM (Privileged Identity Management) role eligibility schedule settings for Management Groups, Subscriptions, and Resource Groups.",
   "roles": {
     "read": [],
     "update": []

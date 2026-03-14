@@ -1,4 +1,4 @@
-Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AzureRoleManagementPolicyRule'
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AzureRoleEligibilityScheduleSettings'
 
 function Get-TargetResource
 {
@@ -75,7 +75,7 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Getting configuration of Azure Role Management Policy Rule with Id {$Id} for Role {$RoleDefinitionDisplayName} at Scope {$Scope}"
+    Write-Verbose -Message "Getting configuration of Azure Role Eligibility Schedule Settings with Id {$Id} for Role {$RoleDefinitionDisplayName} at Scope {$Scope}"
 
     try
     {
@@ -166,8 +166,8 @@ function Get-TargetResource
             $policyIdValue = $Script:exportedInstance.policyId
         }
 
-        Write-Verbose -Message "An Azure Role Management Policy Rule with Id {$($getValue.id)} was found"
-        $rule = Get-AzureRoleManagementPolicyRuleObject -Rule $getValue
+        Write-Verbose -Message "An Azure Role Eligibility Schedule Setting with Id {$($getValue.id)} was found"
+        $rule = Get-AzureRoleEligibilityScheduleSettingsRuleObject -Rule $getValue
 
         $results = @{
             Id                        = $getValue.id
@@ -276,7 +276,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Setting configuration of Azure Role Management Policy Rule with Id {$Id} for Role {$RoleDefinitionDisplayName} at Scope {$Scope}"
+    Write-Verbose -Message "Setting configuration of Azure Role Eligibility Schedule Settings with Id {$Id} for Role {$RoleDefinitionDisplayName} at Scope {$Scope}"
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -883,7 +883,7 @@ function Export-TargetResource
     }
 }
 
-function Get-AzureRoleManagementPolicyRuleObject
+function Get-AzureRoleEligibilityScheduleSettingsRuleObject
 {
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
