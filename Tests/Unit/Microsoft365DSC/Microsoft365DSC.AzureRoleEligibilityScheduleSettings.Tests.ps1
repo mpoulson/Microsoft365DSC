@@ -312,6 +312,51 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name "Partial notification: only AdditionalRecipient specified for active assignee notification" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    RoleDefinitionDisplayName                        = "Owner"
+                    ScopeId                                          = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ActiveAssigneeNotificationAdditionalRecipient    = @("newrecipient@contoso.com")
+                    Credential                                       = $Credential;
+                }
+            }
+
+            It 'Should call the Set method without error when only AdditionalRecipient is specified' {
+                { Set-TargetResource @testParams } | Should -Not -Throw
+            }
+        }
+
+        Context -Name "Partial notification: only DefaultRecipient specified for eligible alert notification" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    RoleDefinitionDisplayName                    = "Owner"
+                    ScopeId                                      = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    EligibleAlertNotificationDefaultRecipient    = $false
+                    Credential                                   = $Credential;
+                }
+            }
+
+            It 'Should call the Set method without error when only DefaultRecipient is specified' {
+                { Set-TargetResource @testParams } | Should -Not -Throw
+            }
+        }
+
+        Context -Name "Partial notification: only OnlyCritical specified for activation alert notification" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    RoleDefinitionDisplayName                       = "Owner"
+                    ScopeId                                         = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ActivationAlertNotificationOnlyCritical         = $true
+                    Credential                                      = $Credential;
+                }
+            }
+
+            It 'Should call the Set method without error when only OnlyCritical is specified' {
+                { Set-TargetResource @testParams } | Should -Not -Throw
+            }
+        }
+
         Context -Name "The activation alert notification is already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{

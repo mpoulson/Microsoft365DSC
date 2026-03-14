@@ -721,11 +721,14 @@ function Set-TargetResource
         if ($currentRule.id -eq 'Notification_Admin_Admin_Eligibility')
         {
             if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationOnlyCritical') `
-                    -and $PSBoundParameters.ContainsKey('EligibleAlertNotificationDefaultRecipient') `
-                    -and $PSBoundParameters.ContainsKey('EligibleAlertNotificationAdditionalRecipient'))
+                    -or $PSBoundParameters.ContainsKey('EligibleAlertNotificationDefaultRecipient') `
+                    -or $PSBoundParameters.ContainsKey('EligibleAlertNotificationAdditionalRecipient'))
             {
                 Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Role assignment alert'
-                $notificationLevel = if ($EligibleAlertNotificationOnlyCritical)
+                $onlyCritical = if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationOnlyCritical')) { $EligibleAlertNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                $defaultRecipient = if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationDefaultRecipient')) { $EligibleAlertNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                $additionalRecipient = if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationAdditionalRecipient')) { @($EligibleAlertNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                $notificationLevel = if ($onlyCritical)
                 {
                     'Critical'
                 }
@@ -739,8 +742,8 @@ function Set-TargetResource
                     notificationType         = 'Email'
                     recipientType            = 'Admin'
                     notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $EligibleAlertNotificationDefaultRecipient
-                    notificationRecipients   = @($EligibleAlertNotificationAdditionalRecipient)
+                    isDefaultRecipientsEnabled = $defaultRecipient
+                    notificationRecipients   = $additionalRecipient
                     target                   = $currentRule.target
                 }
             }
@@ -748,11 +751,14 @@ function Set-TargetResource
         elseif ($currentRule.id -eq 'Notification_Requestor_Admin_Eligibility')
         {
             if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationOnlyCritical') `
-                    -and $PSBoundParameters.ContainsKey('EligibleAssigneeNotificationDefaultRecipient') `
-                    -and $PSBoundParameters.ContainsKey('EligibleAssigneeNotificationAdditionalRecipient'))
+                    -or $PSBoundParameters.ContainsKey('EligibleAssigneeNotificationDefaultRecipient') `
+                    -or $PSBoundParameters.ContainsKey('EligibleAssigneeNotificationAdditionalRecipient'))
             {
                 Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Notification to the assigned user (assignee)'
-                $notificationLevel = if ($EligibleAssigneeNotificationOnlyCritical)
+                $onlyCritical = if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationOnlyCritical')) { $EligibleAssigneeNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                $defaultRecipient = if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationDefaultRecipient')) { $EligibleAssigneeNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                $additionalRecipient = if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationAdditionalRecipient')) { @($EligibleAssigneeNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                $notificationLevel = if ($onlyCritical)
                 {
                     'Critical'
                 }
@@ -766,8 +772,8 @@ function Set-TargetResource
                     notificationType         = 'Email'
                     recipientType            = 'Requestor'
                     notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $EligibleAssigneeNotificationDefaultRecipient
-                    notificationRecipients   = @($EligibleAssigneeNotificationAdditionalRecipient)
+                    isDefaultRecipientsEnabled = $defaultRecipient
+                    notificationRecipients   = $additionalRecipient
                     target                   = $currentRule.target
                 }
             }
@@ -775,11 +781,14 @@ function Set-TargetResource
         elseif ($currentRule.id -eq 'Notification_Approver_Admin_Eligibility')
         {
             if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationOnlyCritical') `
-                    -and $PSBoundParameters.ContainsKey('EligibleApproveNotificationDefaultRecipient') `
-                    -and $PSBoundParameters.ContainsKey('EligibleApproveNotificationAdditionalRecipient'))
+                    -or $PSBoundParameters.ContainsKey('EligibleApproveNotificationDefaultRecipient') `
+                    -or $PSBoundParameters.ContainsKey('EligibleApproveNotificationAdditionalRecipient'))
             {
                 Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Request to approve a role assignment renewal/extension'
-                $notificationLevel = if ($EligibleApproveNotificationOnlyCritical)
+                $onlyCritical = if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationOnlyCritical')) { $EligibleApproveNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                $defaultRecipient = if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationDefaultRecipient')) { $EligibleApproveNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                $additionalRecipient = if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationAdditionalRecipient')) { @($EligibleApproveNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                $notificationLevel = if ($onlyCritical)
                 {
                     'Critical'
                 }
@@ -793,8 +802,8 @@ function Set-TargetResource
                     notificationType         = 'Email'
                     recipientType            = 'Approver'
                     notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $EligibleApproveNotificationDefaultRecipient
-                    notificationRecipients   = @($EligibleApproveNotificationAdditionalRecipient)
+                    isDefaultRecipientsEnabled = $defaultRecipient
+                    notificationRecipients   = $additionalRecipient
                     target                   = $currentRule.target
                 }
             }
@@ -802,11 +811,14 @@ function Set-TargetResource
         elseif ($currentRule.id -eq 'Notification_Admin_Admin_Assignment')
         {
             if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationOnlyCritical') `
-                    -and $PSBoundParameters.ContainsKey('ActiveAlertNotificationDefaultRecipient') `
-                    -and $PSBoundParameters.ContainsKey('ActiveAlertNotificationAdditionalRecipient'))
+                    -or $PSBoundParameters.ContainsKey('ActiveAlertNotificationDefaultRecipient') `
+                    -or $PSBoundParameters.ContainsKey('ActiveAlertNotificationAdditionalRecipient'))
             {
                 Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Role assignment alert'
-                $notificationLevel = if ($ActiveAlertNotificationOnlyCritical)
+                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationOnlyCritical')) { $ActiveAlertNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationDefaultRecipient')) { $ActiveAlertNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationAdditionalRecipient')) { @($ActiveAlertNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                $notificationLevel = if ($onlyCritical)
                 {
                     'Critical'
                 }
@@ -820,8 +832,8 @@ function Set-TargetResource
                     notificationType         = 'Email'
                     recipientType            = 'Admin'
                     notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $ActiveAlertNotificationDefaultRecipient
-                    notificationRecipients   = @($ActiveAlertNotificationAdditionalRecipient)
+                    isDefaultRecipientsEnabled = $defaultRecipient
+                    notificationRecipients   = $additionalRecipient
                     target                   = $currentRule.target
                 }
             }
@@ -829,11 +841,14 @@ function Set-TargetResource
         elseif ($currentRule.id -eq 'Notification_Requestor_Admin_Assignment')
         {
             if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationOnlyCritical') `
-                    -and $PSBoundParameters.ContainsKey('ActiveAssigneeNotificationDefaultRecipient') `
-                    -and $PSBoundParameters.ContainsKey('ActiveAssigneeNotificationAdditionalRecipient'))
+                    -or $PSBoundParameters.ContainsKey('ActiveAssigneeNotificationDefaultRecipient') `
+                    -or $PSBoundParameters.ContainsKey('ActiveAssigneeNotificationAdditionalRecipient'))
             {
                 Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Notification to the assigned user (assignee)'
-                $notificationLevel = if ($ActiveAssigneeNotificationOnlyCritical)
+                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationOnlyCritical')) { $ActiveAssigneeNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationDefaultRecipient')) { $ActiveAssigneeNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationAdditionalRecipient')) { @($ActiveAssigneeNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                $notificationLevel = if ($onlyCritical)
                 {
                     'Critical'
                 }
@@ -847,8 +862,8 @@ function Set-TargetResource
                     notificationType         = 'Email'
                     recipientType            = 'Requestor'
                     notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $ActiveAssigneeNotificationDefaultRecipient
-                    notificationRecipients   = @($ActiveAssigneeNotificationAdditionalRecipient)
+                    isDefaultRecipientsEnabled = $defaultRecipient
+                    notificationRecipients   = $additionalRecipient
                     target                   = $currentRule.target
                 }
             }
@@ -856,11 +871,14 @@ function Set-TargetResource
         elseif ($currentRule.id -eq 'Notification_Approver_Admin_Assignment')
         {
             if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationOnlyCritical') `
-                    -and $PSBoundParameters.ContainsKey('ActiveApproveNotificationDefaultRecipient') `
-                    -and $PSBoundParameters.ContainsKey('ActiveApproveNotificationAdditionalRecipient'))
+                    -or $PSBoundParameters.ContainsKey('ActiveApproveNotificationDefaultRecipient') `
+                    -or $PSBoundParameters.ContainsKey('ActiveApproveNotificationAdditionalRecipient'))
             {
                 Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Request to approve a role assignment renewal/extension'
-                $notificationLevel = if ($ActiveApproveNotificationOnlyCritical)
+                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationOnlyCritical')) { $ActiveApproveNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationDefaultRecipient')) { $ActiveApproveNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationAdditionalRecipient')) { @($ActiveApproveNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                $notificationLevel = if ($onlyCritical)
                 {
                     'Critical'
                 }
@@ -874,8 +892,8 @@ function Set-TargetResource
                     notificationType         = 'Email'
                     recipientType            = 'Approver'
                     notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $ActiveApproveNotificationDefaultRecipient
-                    notificationRecipients   = @($ActiveApproveNotificationAdditionalRecipient)
+                    isDefaultRecipientsEnabled = $defaultRecipient
+                    notificationRecipients   = $additionalRecipient
                     target                   = $currentRule.target
                 }
             }
@@ -883,11 +901,14 @@ function Set-TargetResource
         elseif ($currentRule.id -eq 'Notification_Admin_EndUser_Assignment')
         {
             if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationOnlyCritical') `
-                    -and $PSBoundParameters.ContainsKey('ActivationAlertNotificationDefaultRecipient') `
-                    -and $PSBoundParameters.ContainsKey('ActivationAlertNotificationAdditionalRecipient'))
+                    -or $PSBoundParameters.ContainsKey('ActivationAlertNotificationDefaultRecipient') `
+                    -or $PSBoundParameters.ContainsKey('ActivationAlertNotificationAdditionalRecipient'))
             {
                 Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Role activation alert'
-                $notificationLevel = if ($ActivationAlertNotificationOnlyCritical)
+                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationOnlyCritical')) { $ActivationAlertNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationDefaultRecipient')) { $ActivationAlertNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationAdditionalRecipient')) { @($ActivationAlertNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                $notificationLevel = if ($onlyCritical)
                 {
                     'Critical'
                 }
@@ -901,8 +922,8 @@ function Set-TargetResource
                     notificationType         = 'Email'
                     recipientType            = 'Admin'
                     notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $ActivationAlertNotificationDefaultRecipient
-                    notificationRecipients   = @($ActivationAlertNotificationAdditionalRecipient)
+                    isDefaultRecipientsEnabled = $defaultRecipient
+                    notificationRecipients   = $additionalRecipient
                     target                   = $currentRule.target
                 }
             }
@@ -910,11 +931,14 @@ function Set-TargetResource
         elseif ($currentRule.id -eq 'Notification_Requestor_EndUser_Assignment')
         {
             if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationOnlyCritical') `
-                    -and $PSBoundParameters.ContainsKey('ActivationAssigneeNotificationDefaultRecipient') `
-                    -and $PSBoundParameters.ContainsKey('ActivationAssigneeNotificationAdditionalRecipient'))
+                    -or $PSBoundParameters.ContainsKey('ActivationAssigneeNotificationDefaultRecipient') `
+                    -or $PSBoundParameters.ContainsKey('ActivationAssigneeNotificationAdditionalRecipient'))
             {
                 Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Notification to activated user (requestor)'
-                $notificationLevel = if ($ActivationAssigneeNotificationOnlyCritical)
+                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationOnlyCritical')) { $ActivationAssigneeNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationDefaultRecipient')) { $ActivationAssigneeNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationAdditionalRecipient')) { @($ActivationAssigneeNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                $notificationLevel = if ($onlyCritical)
                 {
                     'Critical'
                 }
@@ -928,8 +952,8 @@ function Set-TargetResource
                     notificationType         = 'Email'
                     recipientType            = 'Requestor'
                     notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $ActivationAssigneeNotificationDefaultRecipient
-                    notificationRecipients   = @($ActivationAssigneeNotificationAdditionalRecipient)
+                    isDefaultRecipientsEnabled = $defaultRecipient
+                    notificationRecipients   = $additionalRecipient
                     target                   = $currentRule.target
                 }
             }
@@ -937,11 +961,14 @@ function Set-TargetResource
         elseif ($currentRule.id -eq 'Notification_Approver_EndUser_Assignment')
         {
             if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationOnlyCritical') `
-                    -and $PSBoundParameters.ContainsKey('ActivationApproveNotificationDefaultRecipient') `
-                    -and $PSBoundParameters.ContainsKey('ActivationApproveNotificationAdditionalRecipient'))
+                    -or $PSBoundParameters.ContainsKey('ActivationApproveNotificationDefaultRecipient') `
+                    -or $PSBoundParameters.ContainsKey('ActivationApproveNotificationAdditionalRecipient'))
             {
                 Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Notification to approvers'
-                $notificationLevel = if ($ActivationApproveNotificationOnlyCritical)
+                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationOnlyCritical')) { $ActivationApproveNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationDefaultRecipient')) { $ActivationApproveNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationAdditionalRecipient')) { @($ActivationApproveNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                $notificationLevel = if ($onlyCritical)
                 {
                     'Critical'
                 }
@@ -955,8 +982,8 @@ function Set-TargetResource
                     notificationType         = 'Email'
                     recipientType            = 'Approver'
                     notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $ActivationApproveNotificationDefaultRecipient
-                    notificationRecipients   = @($ActivationApproveNotificationAdditionalRecipient)
+                    isDefaultRecipientsEnabled = $defaultRecipient
+                    notificationRecipients   = $additionalRecipient
                     target                   = $currentRule.target
                 }
             }
