@@ -22,114 +22,54 @@ Configuration Example
 
     node localhost
     {
-        AzureRoleEligibilityScheduleSettings "Owner-Expiration_EndUser_Assignment"
+        AzureRoleEligibilityScheduleSettings "Owner-SubscriptionSettings"
         {
-            ExpirationRule            = MSFT_AADRoleManagementPolicyExpirationRule{
-                isExpirationRequired = $True
-                maximumDuration = 'PT4H'
-            };
-            Id                        = "Expiration_EndUser_Assignment";
-            RoleDefinitionDisplayName = "Owner";
-            Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000";
-            RuleType                  = "RoleManagementPolicyExpirationRule";
-            ApplicationId             = $ApplicationId
-            TenantId                  = $TenantId
-            CertificateThumbprint     = $CertificateThumbprint
-        }
-
-        AzureRoleEligibilityScheduleSettings "Owner-Enablement_EndUser_Assignment"
-        {
-            EnablementRule            = MSFT_AADRoleManagementPolicyEnablementRule{
-                enabledRules = @("Justification", "Ticketing")
-            };
-            Id                        = "Enablement_EndUser_Assignment";
-            RoleDefinitionDisplayName = "Owner";
-            Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000";
-            RuleType                  = "RoleManagementPolicyEnablementRule";
-            ApplicationId             = $ApplicationId
-            TenantId                  = $TenantId
-            CertificateThumbprint     = $CertificateThumbprint
-        }
-
-        AzureRoleEligibilityScheduleSettings "Owner-Approval_EndUser_Assignment"
-        {
-            ApprovalRule              = MSFT_AADRoleManagementPolicyApprovalRule{
-                setting = MSFT_AADRoleManagementPolicyApprovalSettings{
-                    isApprovalRequired = $True
-                    isApprovalRequiredForExtension = $False
-                    isRequestorJustificationRequired = $True
-                    approvalMode = "SingleStage"
-                    approvalStages = @(
-                        MSFT_AADRoleManagementPolicyApprovalStage{
-                            approvalStageTimeOutInDays = 1
-                            isApproverJustificationRequired = $True
-                            escalationTimeInMinutes = 0
-                            isEscalationEnabled = $False
-                        }
-                    )
-                }
-            };
-            Id                        = "Approval_EndUser_Assignment";
-            RoleDefinitionDisplayName = "Owner";
-            Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000";
-            RuleType                  = "RoleManagementPolicyApprovalRule";
-            ApplicationId             = $ApplicationId
-            TenantId                  = $TenantId
-            CertificateThumbprint     = $CertificateThumbprint
-        }
-
-        AzureRoleEligibilityScheduleSettings "Owner-Notification_Admin_EndUser_Assignment"
-        {
-            NotificationRule          = MSFT_AADRoleManagementPolicyNotificationRule{
-                notificationType = "Email"
-                recipientType = "Admin"
-                notificationLevel = "All"
-                isDefaultRecipientsEnabled = $True
-                notificationRecipients = @("admin@contoso.com")
-            };
-            Id                        = "Notification_Admin_EndUser_Assignment";
-            RoleDefinitionDisplayName = "Owner";
-            Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000";
-            RuleType                  = "RoleManagementPolicyNotificationRule";
-            ApplicationId             = $ApplicationId
-            TenantId                  = $TenantId
-            CertificateThumbprint     = $CertificateThumbprint
-        }
-
-        AzureRoleEligibilityScheduleSettings "Owner-Notification_Admin_Admin_Eligibility"
-        {
-            NotificationRule          = MSFT_AADRoleManagementPolicyNotificationRule{
-                notificationType = "Email"
-                recipientType = "Admin"
-                notificationLevel = "Critical"
-                isDefaultRecipientsEnabled = $True
-                notificationRecipients = @("eligibility-admin@contoso.com")
-            };
-            Id                        = "Notification_Admin_Admin_Eligibility";
-            RoleDefinitionDisplayName = "Owner";
-            Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000";
-            RuleType                  = "RoleManagementPolicyNotificationRule";
-            ApplicationId             = $ApplicationId
-            TenantId                  = $TenantId
-            CertificateThumbprint     = $CertificateThumbprint
-        }
-
-        AzureRoleEligibilityScheduleSettings "Owner-Notification_Admin_Admin_Assignment"
-        {
-            NotificationRule          = MSFT_AADRoleManagementPolicyNotificationRule{
-                notificationType = "Email"
-                recipientType = "Admin"
-                notificationLevel = "All"
-                isDefaultRecipientsEnabled = $True
-                notificationRecipients = @("assignment-admin@contoso.com")
-            };
-            Id                        = "Notification_Admin_Admin_Assignment";
-            RoleDefinitionDisplayName = "Owner";
-            Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000";
-            RuleType                  = "RoleManagementPolicyNotificationRule";
-            ApplicationId             = $ApplicationId
-            TenantId                  = $TenantId
-            CertificateThumbprint     = $CertificateThumbprint
+            RoleDefinitionDisplayName                       = "Owner"
+            Scope                                           = "subscriptions/00000000-0000-0000-0000-000000000000"
+            ActivationMaxDuration                           = "PT4H"
+            ActivationReqJustification                      = $True
+            ActivationReqTicket                             = $True
+            ActivationReqMFA                                = $False
+            ApprovaltoActivate                              = $True
+            ActivateApprover                                = @()
+            PermanentEligibleAssignmentisExpirationRequired = $True
+            ExpireEligibleAssignment                        = "P180D"
+            PermanentActiveAssignmentisExpirationRequired   = $True
+            ExpireActiveAssignment                          = "P90D"
+            AssignmentReqMFA                                = $False
+            AssignmentReqJustification                      = $True
+            ElegibilityAssignmentReqMFA                     = $False
+            ElegibilityAssignmentReqJustification           = $False
+            EligibleAlertNotificationDefaultRecipient       = $True
+            EligibleAlertNotificationAdditionalRecipient    = @("eligibility-admin@contoso.com")
+            EligibleAlertNotificationOnlyCritical           = $True
+            EligibleAssigneeNotificationDefaultRecipient    = $True
+            EligibleAssigneeNotificationAdditionalRecipient = @()
+            EligibleAssigneeNotificationOnlyCritical        = $False
+            EligibleApproveNotificationDefaultRecipient     = $True
+            EligibleApproveNotificationAdditionalRecipient  = @()
+            EligibleApproveNotificationOnlyCritical         = $False
+            ActiveAlertNotificationDefaultRecipient         = $True
+            ActiveAlertNotificationAdditionalRecipient      = @("assignment-admin@contoso.com")
+            ActiveAlertNotificationOnlyCritical             = $False
+            ActiveAssigneeNotificationDefaultRecipient      = $True
+            ActiveAssigneeNotificationAdditionalRecipient   = @()
+            ActiveAssigneeNotificationOnlyCritical          = $False
+            ActiveApproveNotificationDefaultRecipient       = $True
+            ActiveApproveNotificationAdditionalRecipient    = @()
+            ActiveApproveNotificationOnlyCritical           = $False
+            ActivationAlertNotificationDefaultRecipient     = $True
+            ActivationAlertNotificationAdditionalRecipient  = @("admin@contoso.com")
+            ActivationAlertNotificationOnlyCritical         = $False
+            ActivationAssigneeNotificationDefaultRecipient  = $True
+            ActivationAssigneeNotificationAdditionalRecipient = @()
+            ActivationAssigneeNotificationOnlyCritical      = $False
+            ActivationApproveNotificationDefaultRecipient   = $True
+            ActivationApproveNotificationAdditionalRecipient = @()
+            ActivationApproveNotificationOnlyCritical       = $False
+            ApplicationId                                   = $ApplicationId
+            TenantId                                        = $TenantId
+            CertificateThumbprint                           = $CertificateThumbprint
         }
     }
 }
