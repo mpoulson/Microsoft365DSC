@@ -326,52 +326,22 @@ function Get-TargetResource
             {
                 if (-not [System.String]::IsNullOrEmpty($approver.id))
                 {
-                    $approverUserType = if (-not [System.String]::IsNullOrEmpty($approver.userType)) { $approver.userType } else { 'User' }
-                    $approverName = $null
-                    if ($approverUserType -eq 'User')
+                    try
+                    {
+                        $user = Get-MgUser -UserId $approver.id -ErrorAction Stop
+                        $ActivateApprover += $user.UserPrincipalName
+                    }
+                    catch
                     {
                         try
                         {
-                            $userObj = Get-MgUser -UserId $approver.id -ErrorAction Stop
-                            $approverName = $userObj.UserPrincipalName
+                            $group = Get-MgGroup -GroupId $approver.id -ErrorAction Stop
+                            $ActivateApprover += $group.DisplayName
                         }
                         catch
                         {
-                            Write-Verbose -Message "Could not resolve User with Id {$($approver.id)}: $($_.Exception.Message)"
+                            Write-Verbose -Message "Could not resolve approver with Id {$($approver.id)}: $($_.Exception.Message)"
                         }
-                    }
-                    elseif ($approverUserType -eq 'Group')
-                    {
-                        try
-                        {
-                            $groupObj = Get-MgGroup -GroupId $approver.id -ErrorAction Stop
-                            $approverName = $groupObj.DisplayName
-                        }
-                        catch
-                        {
-                            Write-Verbose -Message "Could not resolve Group with Id {$($approver.id)}: $($_.Exception.Message)"
-                        }
-                    }
-                    elseif ($approverUserType -eq 'ServicePrincipal')
-                    {
-                        try
-                        {
-                            $spObj = Get-MgServicePrincipal -ServicePrincipalId $approver.id -ErrorAction Stop
-                            $approverName = $spObj.DisplayName
-                        }
-                        catch
-                        {
-                            Write-Verbose -Message "Could not resolve ServicePrincipal with Id {$($approver.id)}: $($_.Exception.Message)"
-                        }
-                    }
-
-                    if (-not [System.String]::IsNullOrEmpty($approverName))
-                    {
-                        $ActivateApprover += "$($approverUserType):$($approverName)"
-                    }
-                    else
-                    {
-                        Write-Verbose -Message "Could not resolve approver with Id {$($approver.id)} and type {$approverUserType}, skipping."
                     }
                 }
             }
@@ -1043,65 +1013,33 @@ function Set-TargetResource
                 {
                     foreach ($item in $ActivateApprover)
                     {
-                        if ($item -match '^(User|Group|ServicePrincipal):(.+)$')
+                        $Filter = "UserPrincipalName eq '$($item -replace "'", "''")'"
+                        $user = Get-MgUser -Filter $Filter -ErrorAction SilentlyContinue
+                        if ($null -ne $user)
                         {
-                            $approverUserType = $Matches[1]
-                            $approverName = $Matches[2]
-
-                            if ([System.String]::IsNullOrWhiteSpace($approverName))
-                            {
-                                throw "Invalid ActivateApprover format '$item'. The name portion cannot be empty."
+                            $primaryApprovers += @{
+                                id       = $user.Id
+                                userType = 'User'
+                                isBackup = $false
                             }
                         }
                         else
                         {
-                            throw "Invalid ActivateApprover format '$item'. Expected format 'Type:Name' (e.g., 'User:john@contoso.com', 'Group:MyGroup', 'ServicePrincipal:MyApp')."
-                        }
-
-                        $approverId = $null
-                        if ($approverUserType -eq 'User')
-                        {
-                            Write-Verbose -Message "Resolving User approver by UserPrincipalName {$approverName}"
-                            [Array]$userResults = Get-MgUser -Filter "UserPrincipalName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
-                            if ($null -eq $userResults -or $userResults.Count -eq 0)
+                            Write-Verbose -Message "User '$item' not found, trying with group"
+                            $Filter = "displayName eq '$($item -replace "'", "''")'"
+                            $group = Get-MgGroup -Filter $Filter -ErrorAction SilentlyContinue
+                            if ($null -ne $group)
                             {
-                                throw "User '$approverName' not found. Cannot add as approver."
+                                $primaryApprovers += @{
+                                    id       = $group.Id
+                                    userType = 'Group'
+                                    isBackup = $false
+                                }
                             }
-                            $approverId = $userResults[0].Id
-                        }
-                        elseif ($approverUserType -eq 'Group')
-                        {
-                            Write-Verbose -Message "Resolving Group approver by DisplayName {$approverName}"
-                            [Array]$groupResults = Get-MgGroup -Filter "displayName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
-                            if ($null -eq $groupResults -or $groupResults.Count -eq 0)
+                            else
                             {
-                                throw "Group '$approverName' not found. Cannot add as approver."
+                                throw "Approver '$item' not found as user or group. Cannot add as approver."
                             }
-                            elseif ($groupResults.Count -gt 1)
-                            {
-                                throw "Multiple groups with DisplayName '$approverName' were found. Cannot resolve approver."
-                            }
-                            $approverId = $groupResults[0].Id
-                        }
-                        elseif ($approverUserType -eq 'ServicePrincipal')
-                        {
-                            Write-Verbose -Message "Resolving ServicePrincipal approver by DisplayName {$approverName}"
-                            [Array]$spResults = Get-MgServicePrincipal -Filter "displayName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
-                            if ($null -eq $spResults -or $spResults.Count -eq 0)
-                            {
-                                throw "ServicePrincipal '$approverName' not found. Cannot add as approver."
-                            }
-                            elseif ($spResults.Count -gt 1)
-                            {
-                                throw "Multiple service principals with DisplayName '$approverName' were found. Cannot resolve approver."
-                            }
-                            $approverId = $spResults[0].Id
-                        }
-
-                        $primaryApprovers += @{
-                            id       = $approverId
-                            userType = $approverUserType
-                            isBackup = $false
                         }
                     }
                 }

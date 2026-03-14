@@ -32,9 +32,6 @@
           },
           {
             "name": "Group.Read.All"
-          },
-          {
-            "name": "Application.Read.All"
           }
         ],
         "update": []
@@ -46,9 +43,6 @@
           },
           {
             "name": "Group.Read.All"
-          },
-          {
-            "name": "Application.Read.All"
           }
         ],
         "update": []
@@ -57,7 +51,6 @@
   },
   "requiredModules": [
     "Az.Accounts",
-    "Microsoft.Graph.Applications",
     "Microsoft.Graph.Authentication",
     "Microsoft.Graph.Groups",
     "Microsoft.Graph.Users"
