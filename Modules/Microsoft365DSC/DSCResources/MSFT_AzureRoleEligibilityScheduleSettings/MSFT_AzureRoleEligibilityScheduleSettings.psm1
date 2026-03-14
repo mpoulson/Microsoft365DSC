@@ -1097,6 +1097,7 @@ function Set-TargetResource
                 }
             }
         }
+        }
 
         if ($ruleModified)
         {
