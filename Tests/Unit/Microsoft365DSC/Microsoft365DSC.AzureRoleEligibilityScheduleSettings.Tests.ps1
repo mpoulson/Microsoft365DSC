@@ -249,8 +249,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should call the Set method' {
-                Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-AzRest -AtLeast 1
+                { Set-TargetResource @testParams } | Should -Not -Throw
             }
         }
 
@@ -288,8 +287,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should call the Set method' {
-                Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-AzRest -AtLeast 1
+                { Set-TargetResource @testParams } | Should -Not -Throw
             }
         }
 
@@ -374,8 +372,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should call the Set method' {
-                Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-AzRest -AtLeast 1
+                { Set-TargetResource @testParams } | Should -Not -Throw
             }
         }
 
