@@ -1633,7 +1633,7 @@ function Export-TargetResource
                 # When lastModifiedBy and lastModifiedDateTime are both null, the policy is unchanged.
                 $lastModifiedBy = $policyContent.properties.lastModifiedBy
                 $lastModifiedDateTime = $policyContent.properties.lastModifiedDateTime
-                if ($null -eq $lastModifiedBy -and $null -eq $lastModifiedDateTime)
+                if ($null -eq $lastModifiedDateTime)
                 {
                     Write-Verbose -Message "Policy {$assignmentPolicyId} has not been modified from Azure defaults. Skipping."
                     $i++
