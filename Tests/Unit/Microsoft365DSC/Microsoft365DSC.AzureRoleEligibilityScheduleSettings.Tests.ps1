@@ -41,6 +41,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Get-MgUser -MockWith {
+                return $null
+            }
+
+            Mock -CommandName Get-MgGroup -MockWith {
+                return $null
+            }
+
+            Mock -CommandName Get-MgServicePrincipal -MockWith {
+                return $null
+            }
+
             $Script:mockRules = @(
                 @{
                     id = "Expiration_EndUser_Assignment"
@@ -453,11 +465,27 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
 
+                Mock -CommandName Get-MgServicePrincipal -MockWith {
+                    if ($ServicePrincipalId -eq '11111111-1111-1111-1111-111111111111')
+                    {
+                        return @{ Id = '11111111-1111-1111-1111-111111111111'; DisplayName = 'MyTestApp' }
+                    }
+                    return $null
+                } -ParameterFilter { $ServicePrincipalId }
+
+                Mock -CommandName Get-MgServicePrincipal -MockWith {
+                    if ($Filter -like "*MyTestApp*")
+                    {
+                        return @{ Id = '11111111-1111-1111-1111-111111111111'; DisplayName = 'MyTestApp' }
+                    }
+                    return $null
+                } -ParameterFilter { $Filter }
+
                 $testParams = @{
                     RoleDefinitionDisplayName = "Owner"
                     Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
                     ApprovaltoActivate        = $true
-                    ActivateApprover          = @("ServicePrincipal:11111111-1111-1111-1111-111111111111")
+                    ActivateApprover          = @("ServicePrincipal:MyTestApp")
                     Credential                = $Credential;
                 }
             }
@@ -466,9 +494,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Test-TargetResource @testParams | Should -Be $true
             }
 
-            It 'Should return the ServicePrincipal approver with type prefix from the Get method' {
+            It 'Should return the ServicePrincipal approver with name from the Get method' {
                 $result = Get-TargetResource @testParams
-                $result.ActivateApprover | Should -Contain "ServicePrincipal:11111111-1111-1111-1111-111111111111"
+                $result.ActivateApprover | Should -Contain "ServicePrincipal:MyTestApp"
             }
         }
 
@@ -546,11 +574,59 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
 
+                Mock -CommandName Get-MgUser -MockWith {
+                    if ($UserId -eq '22222222-2222-2222-2222-222222222222')
+                    {
+                        return @{ Id = '22222222-2222-2222-2222-222222222222'; UserPrincipalName = 'approver@contoso.com' }
+                    }
+                    return $null
+                } -ParameterFilter { $UserId }
+
+                Mock -CommandName Get-MgUser -MockWith {
+                    if ($Filter -like "*approver@contoso.com*")
+                    {
+                        return @{ Id = '22222222-2222-2222-2222-222222222222'; UserPrincipalName = 'approver@contoso.com' }
+                    }
+                    return $null
+                } -ParameterFilter { $Filter }
+
+                Mock -CommandName Get-MgGroup -MockWith {
+                    if ($GroupId -eq '33333333-3333-3333-3333-333333333333')
+                    {
+                        return @{ Id = '33333333-3333-3333-3333-333333333333'; DisplayName = 'PIM Approvers' }
+                    }
+                    return $null
+                } -ParameterFilter { $GroupId }
+
+                Mock -CommandName Get-MgGroup -MockWith {
+                    if ($Filter -like "*PIM Approvers*")
+                    {
+                        return @{ Id = '33333333-3333-3333-3333-333333333333'; DisplayName = 'PIM Approvers' }
+                    }
+                    return $null
+                } -ParameterFilter { $Filter }
+
+                Mock -CommandName Get-MgServicePrincipal -MockWith {
+                    if ($ServicePrincipalId -eq '44444444-4444-4444-4444-444444444444')
+                    {
+                        return @{ Id = '44444444-4444-4444-4444-444444444444'; DisplayName = 'MyAutomation' }
+                    }
+                    return $null
+                } -ParameterFilter { $ServicePrincipalId }
+
+                Mock -CommandName Get-MgServicePrincipal -MockWith {
+                    if ($Filter -like "*MyAutomation*")
+                    {
+                        return @{ Id = '44444444-4444-4444-4444-444444444444'; DisplayName = 'MyAutomation' }
+                    }
+                    return $null
+                } -ParameterFilter { $Filter }
+
                 $testParams = @{
                     RoleDefinitionDisplayName = "Owner"
                     Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
                     ApprovaltoActivate        = $true
-                    ActivateApprover          = @("User:22222222-2222-2222-2222-222222222222", "Group:33333333-3333-3333-3333-333333333333", "ServicePrincipal:44444444-4444-4444-4444-444444444444")
+                    ActivateApprover          = @("User:approver@contoso.com", "Group:PIM Approvers", "ServicePrincipal:MyAutomation")
                     Credential                = $Credential;
                 }
             }
@@ -563,12 +639,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 { Set-TargetResource @testParams } | Should -Not -Throw
             }
 
-            It 'Should return all approvers with correct type prefixes from the Get method' {
+            It 'Should return all approvers with correct type and name from the Get method' {
                 $result = Get-TargetResource @testParams
                 $result.ActivateApprover | Should -HaveCount 3
-                $result.ActivateApprover | Should -Contain "User:22222222-2222-2222-2222-222222222222"
-                $result.ActivateApprover | Should -Contain "Group:33333333-3333-3333-3333-333333333333"
-                $result.ActivateApprover | Should -Contain "ServicePrincipal:44444444-4444-4444-4444-444444444444"
+                $result.ActivateApprover | Should -Contain "User:approver@contoso.com"
+                $result.ActivateApprover | Should -Contain "Group:PIM Approvers"
+                $result.ActivateApprover | Should -Contain "ServicePrincipal:MyAutomation"
             }
         }
 

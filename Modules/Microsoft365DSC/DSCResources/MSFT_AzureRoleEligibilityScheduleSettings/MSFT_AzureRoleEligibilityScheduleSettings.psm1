@@ -226,6 +226,9 @@ function Get-TargetResource
         $null = New-M365DSCConnection -Workload 'Azure' `
             -InboundParameters $PSBoundParameters
 
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            -InboundParameters $PSBoundParameters
+
         #Ensure the proper dependencies are installed in the current environment.
         Confirm-M365DSCDependencies
 
@@ -324,7 +327,52 @@ function Get-TargetResource
                 if (-not [System.String]::IsNullOrEmpty($approver.id))
                 {
                     $approverUserType = if (-not [System.String]::IsNullOrEmpty($approver.userType)) { $approver.userType } else { 'User' }
-                    $ActivateApprover += "$($approverUserType):$($approver.id)"
+                    $approverName = $null
+                    if ($approverUserType -eq 'User')
+                    {
+                        try
+                        {
+                            $userObj = Get-MgUser -UserId $approver.id -ErrorAction Stop
+                            $approverName = $userObj.UserPrincipalName
+                        }
+                        catch
+                        {
+                            Write-Verbose -Message "Could not resolve User with Id {$($approver.id)}: $($_.Exception.Message)"
+                        }
+                    }
+                    elseif ($approverUserType -eq 'Group')
+                    {
+                        try
+                        {
+                            $groupObj = Get-MgGroup -GroupId $approver.id -ErrorAction Stop
+                            $approverName = $groupObj.DisplayName
+                        }
+                        catch
+                        {
+                            Write-Verbose -Message "Could not resolve Group with Id {$($approver.id)}: $($_.Exception.Message)"
+                        }
+                    }
+                    elseif ($approverUserType -eq 'ServicePrincipal')
+                    {
+                        try
+                        {
+                            $spObj = Get-MgServicePrincipal -ServicePrincipalId $approver.id -ErrorAction Stop
+                            $approverName = $spObj.DisplayName
+                        }
+                        catch
+                        {
+                            Write-Verbose -Message "Could not resolve ServicePrincipal with Id {$($approver.id)}: $($_.Exception.Message)"
+                        }
+                    }
+
+                    if (-not [System.String]::IsNullOrEmpty($approverName))
+                    {
+                        $ActivateApprover += "$($approverUserType):$($approverName)"
+                    }
+                    else
+                    {
+                        Write-Verbose -Message "Could not resolve approver with Id {$($approver.id)} and type {$approverUserType}, skipping."
+                    }
                 }
             }
         }
@@ -998,14 +1046,54 @@ function Set-TargetResource
                         if ($item -match '^(User|Group|ServicePrincipal):(.+)$')
                         {
                             $approverUserType = $Matches[1]
-                            $approverId = $Matches[2]
+                            $approverName = $Matches[2]
                         }
                         else
                         {
-                            # Backward compatibility: plain IDs default to User type
-                            $approverUserType = 'User'
-                            $approverId = $item
+                            throw "Invalid ActivateApprover format '$item'. Expected format 'Type:Name' (e.g., 'User:john@contoso.com', 'Group:MyGroup', 'ServicePrincipal:MyApp')."
                         }
+
+                        $approverId = $null
+                        if ($approverUserType -eq 'User')
+                        {
+                            Write-Verbose -Message "Resolving User approver by UserPrincipalName {$approverName}"
+                            $userObj = Get-MgUser -Filter "UserPrincipalName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
+                            if ($null -ne $userObj)
+                            {
+                                $approverId = $userObj.Id
+                            }
+                            else
+                            {
+                                throw "User '$approverName' not found. Cannot add as approver."
+                            }
+                        }
+                        elseif ($approverUserType -eq 'Group')
+                        {
+                            Write-Verbose -Message "Resolving Group approver by DisplayName {$approverName}"
+                            $groupObj = Get-MgGroup -Filter "displayName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
+                            if ($null -ne $groupObj)
+                            {
+                                $approverId = $groupObj.Id
+                            }
+                            else
+                            {
+                                throw "Group '$approverName' not found. Cannot add as approver."
+                            }
+                        }
+                        elseif ($approverUserType -eq 'ServicePrincipal')
+                        {
+                            Write-Verbose -Message "Resolving ServicePrincipal approver by DisplayName {$approverName}"
+                            $spObj = Get-MgServicePrincipal -Filter "displayName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
+                            if ($null -ne $spObj)
+                            {
+                                $approverId = $spObj.Id
+                            }
+                            else
+                            {
+                                throw "ServicePrincipal '$approverName' not found. Cannot add as approver."
+                            }
+                        }
+
                         $primaryApprovers += @{
                             id       = $approverId
                             userType = $approverUserType
@@ -1448,6 +1536,9 @@ function Export-TargetResource
     )
 
     $ConnectionMode = New-M365DSCConnection -Workload 'Azure' `
+        -InboundParameters $PSBoundParameters
+
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.

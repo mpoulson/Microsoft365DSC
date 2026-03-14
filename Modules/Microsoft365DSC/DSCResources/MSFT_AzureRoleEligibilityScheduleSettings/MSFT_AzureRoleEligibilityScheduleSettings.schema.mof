@@ -9,7 +9,7 @@ class MSFT_AzureRoleEligibilityScheduleSettings : OMI_BaseResource
     [Write, Description("Require ticket information on activation (True/False).")] Boolean ActivationReqTicket;
     [Write, Description("Require MFA on activation (True/False).")] Boolean ActivationReqMFA;
     [Write, Description("Require approval to activate (True/False).")] Boolean ApprovaltoActivate;
-    [Write, Description("Approver Id in format 'UserType:Id' (e.g. 'User:guid', 'Group:guid', 'ServicePrincipal:guid'). Plain Id values without a prefix default to User type for backward compatibility.")] String ActivateApprover[];
+    [Write, Description("Approver in format 'Type:Name' where Type is User, Group, or ServicePrincipal, and Name is the UserPrincipalName (for User) or DisplayName (for Group/ServicePrincipal). Example: 'User:john@contoso.com', 'Group:PIM Approvers', 'ServicePrincipal:MyApp'.")] String ActivateApprover[];
     [Write, Description("Require authentication context on activation (True/False).")] Boolean ActivationReqAuthContext;
     [Write, Description("Authentication context claim value (Conditional Access policy id) for activation.")] String ActivationAuthContextId;
     [Write, Description("Allow permanent eligible assignment (True/False).")] Boolean PermanentEligibleAssignmentisExpirationRequired;
