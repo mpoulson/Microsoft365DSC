@@ -1545,6 +1545,7 @@ function Export-TargetResource
             }
         }
 
+        [System.Collections.Generic.List[hashtable]] $Script:exportedInstances = [System.Collections.Generic.List[hashtable]]::new()
         $dscContent = [System.Text.StringBuilder]::new()
         Write-M365DSCHost -Message "`r`n" -DeferWrite
         $j = 1
@@ -1589,7 +1590,8 @@ function Export-TargetResource
                 $policyLookup[$policyName] = $pol
             }
 
-            $i = 1
+            # Phase 1: Collect valid (filtered) instances for this scope
+            $scopeInstances = [System.Collections.Generic.List[hashtable]]::new()
             foreach ($assignment in $assignments)
             {
                 $roleDisplayName = $null
@@ -1613,7 +1615,6 @@ function Export-TargetResource
 
                 if ([System.String]::IsNullOrEmpty($roleDisplayName))
                 {
-                    $i++
                     continue
                 }
 
@@ -1625,32 +1626,44 @@ function Export-TargetResource
                 if ($null -eq $policyContent -or $null -eq $policyContent.properties -or $null -eq $policyContent.properties.rules)
                 {
                     Write-Verbose -Message "Policy {$assignmentPolicyId} not found in bulk response for scope {$currentScope}. Skipping."
-                    $i++
                     continue
                 }
 
                 # Skip policies that have not been modified from Azure defaults.
                 # When lastModifiedBy and lastModifiedDateTime are both null, the policy is unchanged.
-                $lastModifiedBy = $policyContent.properties.lastModifiedBy
                 $lastModifiedDateTime = $policyContent.properties.lastModifiedDateTime
                 if ($null -eq $lastModifiedDateTime)
                 {
                     Write-Verbose -Message "Policy {$assignmentPolicyId} has not been modified from Azure defaults. Skipping."
-                    $i++
                     continue
                 }
 
-                $rules = $policyContent.properties.rules
+                $scopeInstances.Add(@{
+                    RoleDisplayName = $roleDisplayName
+                    PolicyId        = $assignmentPolicyId
+                    Rules           = $policyContent.properties.rules
+                })
+            }
 
+            # Add scope instances to the global exported instances collection
+            foreach ($inst in $scopeInstances)
+            {
+                $Script:exportedInstances.Add($inst)
+            }
+
+            # Phase 2: Export collected instances
+            $i = 1
+            foreach ($instance in $scopeInstances)
+            {
                 if ($null -ne $Global:M365DSCExportResourceInstancesCount)
                 {
                     $Global:M365DSCExportResourceInstancesCount++
                 }
 
-                Write-M365DSCHost -Message "        |---[$i/$($assignments.Count)] $roleDisplayName" -DeferWrite
+                Write-M365DSCHost -Message "        |---[$i/$($scopeInstances.Count)] $($instance.RoleDisplayName)" -DeferWrite
 
                 $Params = @{
-                    RoleDefinitionDisplayName = $roleDisplayName
+                    RoleDefinitionDisplayName = $instance.RoleDisplayName
                     ScopeId                   = $currentScope
                     ApplicationId             = $ApplicationId
                     TenantId                  = $TenantId
@@ -1662,8 +1675,8 @@ function Export-TargetResource
                 }
 
                 $Script:exportedInstance = @{
-                    rules    = $rules
-                    policyId = $assignmentPolicyId
+                    rules    = $instance.Rules
+                    policyId = $instance.PolicyId
                 }
                 $Results = Get-TargetResource @Params
 
