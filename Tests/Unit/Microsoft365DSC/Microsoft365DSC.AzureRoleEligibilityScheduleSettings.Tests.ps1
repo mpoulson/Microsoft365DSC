@@ -35,6 +35,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
 
+            Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
+                return @{
+                    ManagementUrl = 'https://management.azure.com/'
+                }
+            }
+
             $Script:mockRules = @(
                 @{
                     id = "Expiration_EndUser_Assignment"
@@ -175,6 +181,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     notificationLevel = "All"
                     isDefaultRecipientsEnabled = $true
                     notificationRecipients = @()
+                    target = @{ caller = "EndUser"; operations = @("All"); level = "Assignment" }
+                }
+                @{
+                    id = "AuthenticationContext_EndUser_Assignment"
+                    ruleType = "RoleManagementPolicyAuthenticationContextRule"
+                    isEnabled = $false
+                    claimValue = ""
                     target = @{ caller = "EndUser"; operations = @("All"); level = "Assignment" }
                 }
             )
