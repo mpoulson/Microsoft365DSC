@@ -1630,12 +1630,12 @@ function Export-TargetResource
                 }
 
                 # To filter out policies that have not been modified from Azure defaults,
-                # enable the block below. When lastModifiedBy and lastModifiedDateTime are
-                # both null, the policy is unchanged. Other DSC resources support a $Filter
-                # parameter (e.g., OData filters passed to Graph API calls). For this resource,
-                # the Azure REST API does not support server-side filtering by lastModifiedDateTime,
-                # so filtering must be done client-side. Uncomment the following block to skip
-                # unmodified policies:
+                # uncomment the block below. When lastModifiedBy and lastModifiedDateTime
+                # are both null, the policy is unchanged from Azure defaults. Note that this
+                # resource accepts a $Filter parameter for consistency with other DSC
+                # resources, but the Azure REST API for roleManagementPolicies does not
+                # support server-side filtering by lastModifiedDateTime, so filtering must
+                # be done client-side as shown here:
                 #
                 # $lastModifiedBy = $policyContent.properties.lastModifiedBy
                 # $lastModifiedDateTime = $policyContent.properties.lastModifiedDateTime
