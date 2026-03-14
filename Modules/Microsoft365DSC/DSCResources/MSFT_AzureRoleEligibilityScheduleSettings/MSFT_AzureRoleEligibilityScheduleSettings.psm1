@@ -1047,6 +1047,11 @@ function Set-TargetResource
                         {
                             $approverUserType = $Matches[1]
                             $approverName = $Matches[2]
+
+                            if ([System.String]::IsNullOrWhiteSpace($approverName))
+                            {
+                                throw "Invalid ActivateApprover format '$item'. The name portion cannot be empty."
+                            }
                         }
                         else
                         {
@@ -1057,41 +1062,40 @@ function Set-TargetResource
                         if ($approverUserType -eq 'User')
                         {
                             Write-Verbose -Message "Resolving User approver by UserPrincipalName {$approverName}"
-                            $userObj = Get-MgUser -Filter "UserPrincipalName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
-                            if ($null -ne $userObj)
-                            {
-                                $approverId = $userObj.Id
-                            }
-                            else
+                            [Array]$userResults = Get-MgUser -Filter "UserPrincipalName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
+                            if ($null -eq $userResults -or $userResults.Count -eq 0)
                             {
                                 throw "User '$approverName' not found. Cannot add as approver."
                             }
+                            $approverId = $userResults[0].Id
                         }
                         elseif ($approverUserType -eq 'Group')
                         {
                             Write-Verbose -Message "Resolving Group approver by DisplayName {$approverName}"
-                            $groupObj = Get-MgGroup -Filter "displayName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
-                            if ($null -ne $groupObj)
-                            {
-                                $approverId = $groupObj.Id
-                            }
-                            else
+                            [Array]$groupResults = Get-MgGroup -Filter "displayName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
+                            if ($null -eq $groupResults -or $groupResults.Count -eq 0)
                             {
                                 throw "Group '$approverName' not found. Cannot add as approver."
                             }
+                            elseif ($groupResults.Count -gt 1)
+                            {
+                                throw "Multiple groups with DisplayName '$approverName' were found. Cannot resolve approver."
+                            }
+                            $approverId = $groupResults[0].Id
                         }
                         elseif ($approverUserType -eq 'ServicePrincipal')
                         {
                             Write-Verbose -Message "Resolving ServicePrincipal approver by DisplayName {$approverName}"
-                            $spObj = Get-MgServicePrincipal -Filter "displayName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
-                            if ($null -ne $spObj)
-                            {
-                                $approverId = $spObj.Id
-                            }
-                            else
+                            [Array]$spResults = Get-MgServicePrincipal -Filter "displayName eq '$($approverName -replace "'", "''")'" -ErrorAction SilentlyContinue
+                            if ($null -eq $spResults -or $spResults.Count -eq 0)
                             {
                                 throw "ServicePrincipal '$approverName' not found. Cannot add as approver."
                             }
+                            elseif ($spResults.Count -gt 1)
+                            {
+                                throw "Multiple service principals with DisplayName '$approverName' were found. Cannot resolve approver."
+                            }
+                            $approverId = $spResults[0].Id
                         }
 
                         $primaryApprovers += @{
