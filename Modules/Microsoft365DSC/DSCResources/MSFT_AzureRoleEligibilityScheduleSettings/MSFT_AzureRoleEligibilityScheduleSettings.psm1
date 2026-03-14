@@ -44,6 +44,14 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $ActivationReqAuthContext,
+
+        [Parameter()]
+        [System.String]
+        $ActivationAuthContextId,
+
+        [Parameter()]
+        [System.Boolean]
         $PermanentEligibleAssignmentisExpirationRequired,
 
         [Parameter()]
@@ -305,6 +313,8 @@ function Get-TargetResource
         $ActivationReqTicket = (($rules | Where-Object { $_.id -eq 'Enablement_EndUser_Assignment' }).enabledRules) -contains 'Ticketing'
         $ActivationReqMFA = (($rules | Where-Object { $_.id -eq 'Enablement_EndUser_Assignment' }).enabledRules) -contains 'MultiFactorAuthentication'
         $ApprovaltoActivate = ($rules | Where-Object { $_.id -eq 'Approval_EndUser_Assignment' }).setting.isApprovalRequired
+        $ActivationReqAuthContext = ($rules | Where-Object { $_.id -eq 'AuthenticationContext_EndUser_Assignment' }).isEnabled
+        $ActivationAuthContextId = ($rules | Where-Object { $_.id -eq 'AuthenticationContext_EndUser_Assignment' }).claimValue
         [string[]]$ActivateApprover = @()
         $approverEntries = ($rules | Where-Object { $_.id -eq 'Approval_EndUser_Assignment' }).setting.approvalStages
         if ($null -ne $approverEntries -and $approverEntries.Count -gt 0)
@@ -376,6 +386,8 @@ function Get-TargetResource
             ActivationReqMFA                                          = $ActivationReqMFA
             ApprovaltoActivate                                        = $ApprovaltoActivate
             ActivateApprover                                          = [System.String[]]$ActivateApprover
+            ActivationReqAuthContext                                  = $ActivationReqAuthContext
+            ActivationAuthContextId                                   = $ActivationAuthContextId
             PermanentEligibleAssignmentisExpirationRequired           = $PermanentEligibleAssignmentisExpirationRequired
             ExpireEligibleAssignment                                  = $ExpireEligibleAssignment
             PermanentActiveAssignmentisExpirationRequired             = $PermanentActiveAssignmentisExpirationRequired
@@ -473,6 +485,14 @@ function Set-TargetResource
         [Parameter()]
         [System.String[]]
         $ActivateApprover,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationReqAuthContext,
+
+        [Parameter()]
+        [System.String]
+        $ActivationAuthContextId,
 
         [Parameter()]
         [System.Boolean]
@@ -1083,6 +1103,20 @@ function Set-TargetResource
                 }
             }
         }
+        elseif ($currentRule.id -eq 'AuthenticationContext_EndUser_Assignment')
+        {
+            if ($PSBoundParameters.ContainsKey('ActivationReqAuthContext'))
+            {
+                Write-Verbose -Message 'Handle Activation: Require authentication context'
+                $params = @{
+                    ruleType   = $currentRule.ruleType
+                    id         = $currentRule.id
+                    isEnabled  = $ActivationReqAuthContext
+                    claimValue = if ($PSBoundParameters.ContainsKey('ActivationAuthContextId')) { $ActivationAuthContextId } else { $currentRule.claimValue }
+                    target     = $currentRule.target
+                }
+            }
+        }
 
         if ($params.Count -gt 0)
         {
@@ -1165,6 +1199,14 @@ function Test-TargetResource
         [Parameter()]
         [System.String[]]
         $ActivateApprover,
+
+        [Parameter()]
+        [System.Boolean]
+        $ActivationReqAuthContext,
+
+        [Parameter()]
+        [System.String]
+        $ActivationAuthContextId,
 
         [Parameter()]
         [System.Boolean]

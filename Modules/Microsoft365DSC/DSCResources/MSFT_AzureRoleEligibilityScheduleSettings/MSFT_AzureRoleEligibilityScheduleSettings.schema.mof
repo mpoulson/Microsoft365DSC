@@ -10,6 +10,8 @@ class MSFT_AzureRoleEligibilityScheduleSettings : OMI_BaseResource
     [Write, Description("Require MFA on activation (True/False).")] Boolean ActivationReqMFA;
     [Write, Description("Require approval to activate (True/False).")] Boolean ApprovaltoActivate;
     [Write, Description("Approver User UPN and/or Group DisplayName.")] String ActivateApprover[];
+    [Write, Description("Require authentication context on activation (True/False).")] Boolean ActivationReqAuthContext;
+    [Write, Description("Authentication context claim value (Conditional Access policy id) for activation.")] String ActivationAuthContextId;
     [Write, Description("Allow permanent eligible assignment (True/False).")] Boolean PermanentEligibleAssignmentisExpirationRequired;
     [Write, Description("Expire eligible assignments after (Days).")] String ExpireEligibleAssignment;
     [Write, Description("Allow permanent active assignment (True/False).")] Boolean PermanentActiveAssignmentisExpirationRequired;
