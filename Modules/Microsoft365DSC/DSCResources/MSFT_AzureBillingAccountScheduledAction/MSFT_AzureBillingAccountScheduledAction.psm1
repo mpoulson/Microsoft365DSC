@@ -86,7 +86,7 @@ function Get-TargetResource
         $nullResult = $PSBoundParameters
         $nullResult.Ensure = 'Absent'
 
-        $uri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/providers/Microsoft.CostManagement/scheduledActions?api-version=2023-11-01"
+        $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/providers/Microsoft.CostManagement/scheduledActions?api-version=2023-11-01"
         $response = Invoke-AzRest -Uri $uri -Method GET
         $actions = (ConvertFrom-Json ($response.Content)).value
 
@@ -216,81 +216,68 @@ function Set-TargetResource
 
     Write-Verbose -Message "Setting configuration of Azure Billing Account Scheduled Action for Billing Account $BillingAccount with Display Name $DisplayName"
 
-    try
-    {
-        #Ensure the proper dependencies are installed in the current environment.
-        Confirm-M365DSCDependencies
+    #Ensure the proper dependencies are installed in the current environment.
+    Confirm-M365DSCDependencies
 
-        #region Telemetry
-        $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-        $CommandName = $MyInvocation.MyCommand
-        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-            -CommandName $CommandName `
-            -Parameters $PSBoundParameters
-        Add-M365DSCTelemetryEvent -Data $data
-        #endregion
+    #region Telemetry
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+    $CommandName = $MyInvocation.MyCommand
+    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+        -CommandName $CommandName `
+        -Parameters $PSBoundParameters
+    Add-M365DSCTelemetryEvent -Data $data
+    #endregion
 
-        $currentInstance = Get-TargetResource @PSBoundParameters
+    $currentInstance = Get-TargetResource @PSBoundParameters
 
-        $instanceParams = @{
-            kind       = 'Email'
-            properties = @{
-                displayName       = $DisplayName
-                notificationEmail = $NotificationEmail
-                notification      = @{
-                    to      = $Notification.to
-                    subject = $Notification.subject
-                    message = $Notification.message
-                }
-                schedule          = @{
-                    frequency    = $Schedule.frequency
-                    weeksOfMonth = $Schedule.weeksOfMonth
-                    daysOfWeek   = $Schedule.daysOfWeek
-                    startDate    = $Schedule.startDate
-                    endDate      = $Schedule.endDate
-                    dayOfMonth   = $Schedule.dayOfMonth
-                }
-                viewId            = $View
-                status            = $Status
+    $instanceParams = @{
+        kind       = 'Email'
+        properties = @{
+            displayName       = $DisplayName
+            notificationEmail = $NotificationEmail
+            notification      = @{
+                to      = $Notification.to
+                subject = $Notification.subject
+                message = $Notification.message
             }
-        }
-        $payload = ConvertTo-Json $instanceParams -Depth 10 -Compress
-
-        # CREATE
-        if ($Ensure -eq 'Present')
-        {
-            $uri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/providers/Microsoft.CostManagement/scheduledActions/$($DisplayName)?api-version=2023-11-01"
-            Write-Verbose -Message "Making PUT call to {$uri}"
-
-            if ($currentInstance.Ensure -eq 'Absent')
-            {
-                Write-Verbose -Message "Creating new scheduled action {$DisplayName} with payload:`r`n$($payload)"
+            schedule          = @{
+                frequency    = $Schedule.frequency
+                weeksOfMonth = $Schedule.weeksOfMonth
+                daysOfWeek   = $Schedule.daysOfWeek
+                startDate    = $Schedule.startDate
+                endDate      = $Schedule.endDate
+                dayOfMonth   = $Schedule.dayOfMonth
             }
-            else
-            {
-                Write-Verbose -Message "Updating scheduled action {$DisplayName} with payload:`r`n$($payload)"
-            }
-
-            $response = Invoke-AzRest -Uri $uri -Method PUT -Payload $payload
-            Write-Verbose -Message "Response:`r`n$($response.Content)"
-        }
-        # REMOVE
-        elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
-        {
-            Write-Verbose -Message "Removing scheduled action {$DisplayName} with payload:`r`n$($payload)"
-            $uri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/providers/Microsoft.CostManagement/scheduledActions/$($DisplayName)?api-version=2023-11-01"
-            $response = Invoke-AzRest -Uri $uri -Method DELETE
+            viewId            = $View
+            status            = $Status
         }
     }
-    catch
-    {
-        New-M365DSCLogEntry -Message 'Error updating data:' `
-            -Exception $_ `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -TenantId $TenantId `
-            -Credential $Credential
+    $payload = ConvertTo-Json $instanceParams -Depth 10 -Compress
 
-        throw
+    # CREATE
+    if ($Ensure -eq 'Present')
+    {
+        $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/providers/Microsoft.CostManagement/scheduledActions/$($DisplayName)?api-version=2023-11-01"
+        Write-Verbose -Message "Making PUT call to {$uri}"
+
+        if ($currentInstance.Ensure -eq 'Absent')
+        {
+            Write-Verbose -Message "Creating new scheduled action {$DisplayName} with payload:`r`n$($payload)"
+        }
+        else
+        {
+            Write-Verbose -Message "Updating scheduled action {$DisplayName} with payload:`r`n$($payload)"
+        }
+
+        $response = Invoke-AzRest -Uri $uri -Method PUT -Payload $payload
+        Write-Verbose -Message "Response:`r`n$($response.Content)"
+    }
+    # REMOVE
+    elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
+    {
+        Write-Verbose -Message "Removing scheduled action {$DisplayName} with payload:`r`n$($payload)"
+        $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/providers/Microsoft.CostManagement/scheduledActions/$($DisplayName)?api-version=2023-11-01"
+        $response = Invoke-AzRest -Uri $uri -Method DELETE
     }
 }
 
@@ -444,7 +431,7 @@ function Export-TargetResource
             $displayedKey = $account.properties.displayName
             Write-M365DSCHost -Message "    |---[$i/$($accounts.value.Length)] $displayedKey" -DeferWrite
 
-            $uri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)providers/Microsoft.Billing/billingAccounts/$($account.name)/providers/Microsoft.CostManagement/scheduledActions?api-version=2023-11-01"
+            $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($account.name)/providers/Microsoft.CostManagement/scheduledActions?api-version=2023-11-01"
             $response = Invoke-AzRest -Uri $uri -Method GET
             $actions = (ConvertFrom-Json ($response.Content)).value
             $j = 1

@@ -232,8 +232,8 @@ function Get-TargetResource
 
         $nullReturn = $PSBoundParameters
 
-        $apiVersion = '2020-10-01'
-        $uri = "https://management.azure.com/$Scope/providers/Microsoft.Authorization/roleManagementPolicyAssignments?api-version=$apiVersion"
+        $apiVersion = '2022-04-01'
+        $uri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$Scope/providers/Microsoft.Authorization/roleManagementPolicyAssignments?api-version=$apiVersion"
         $response = Invoke-AzRest -Uri $uri -Method GET
         $assignments = (ConvertFrom-Json $response.Content).value
 
@@ -250,7 +250,7 @@ function Get-TargetResource
 
         if ($null -eq $assignment)
         {
-            $roleDefUri = "https://management.azure.com/$Scope/providers/Microsoft.Authorization/roleDefinitions?api-version=2022-04-01&`$filter=roleName eq '$RoleDefinitionDisplayName'"
+            $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$Scope/providers/Microsoft.Authorization/roleDefinitions?api-version=2022-04-01&`$filter=roleName eq '$RoleDefinitionDisplayName'"
             $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
             $roleDefinitions = (ConvertFrom-Json $roleDefResponse.Content).value
 
@@ -271,7 +271,7 @@ function Get-TargetResource
 
         $policyIdValue = $assignment.properties.policyId.Split('/')[-1]
 
-        $policyUri = "https://management.azure.com/$Scope/providers/Microsoft.Authorization/roleManagementPolicies/$($policyIdValue)?api-version=$apiVersion"
+        $policyUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$Scope/providers/Microsoft.Authorization/roleManagementPolicies/$($policyIdValue)?api-version=$apiVersion"
         $policyResponse = Invoke-AzRest -Uri $policyUri -Method GET
         $policy = ConvertFrom-Json $policyResponse.Content
 
@@ -645,37 +645,39 @@ function Set-TargetResource
 
     Write-Verbose -Message "Setting configuration of Azure Role Eligibility Schedule Settings for Role {$RoleDefinitionDisplayName} at Scope {$Scope}"
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $currentInstance = Get-TargetResource @PSBoundParameters
-
-    $policyIdValue = $currentInstance.PolicyId
-    if ([System.String]::IsNullOrEmpty($policyIdValue))
+    try
     {
-        throw "Could not find role management policy for role {$RoleDefinitionDisplayName} at scope {$Scope}"
-    }
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
 
-    # Get the full policy to retrieve all current rules
-    $apiVersion = '2020-10-01'
-    $policyUri = "https://management.azure.com/$Scope/providers/Microsoft.Authorization/roleManagementPolicies/$($policyIdValue)?api-version=$apiVersion"
-    $policyResponse = Invoke-AzRest -Uri $policyUri -Method GET
-    $policy = ConvertFrom-Json $policyResponse.Content
-    $rules = $policy.properties.rules
-    $ruleModified = $false
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
 
-    foreach ($currentRule in $rules)
-    {
-        $params = @{}
+        $currentInstance = Get-TargetResource @PSBoundParameters
+
+        $policyIdValue = $currentInstance.PolicyId
+        if ([System.String]::IsNullOrEmpty($policyIdValue))
+        {
+            throw "Could not find role management policy for role {$RoleDefinitionDisplayName} at scope {$Scope}"
+        }
+
+        # Get the full policy to retrieve all current rules
+        $apiVersion = '2022-04-01'
+        $policyUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$Scope/providers/Microsoft.Authorization/roleManagementPolicies/$($policyIdValue)?api-version=$apiVersion"
+        $policyResponse = Invoke-AzRest -Uri $policyUri -Method GET
+        $policy = ConvertFrom-Json $policyResponse.Content
+        $rules = $policy.properties.rules
+        $ruleModified = $false
+
+        foreach ($currentRule in $rules)
+        {
+            $params = @{}
 
         if ($currentRule.id -eq 'Notification_Admin_Admin_Eligibility')
         {
@@ -1095,19 +1097,29 @@ function Set-TargetResource
                 }
             }
         }
-    }
 
-    if ($ruleModified)
-    {
-        $updateBody = @{
-            properties = @{
-                rules = @($policy.properties.rules)
+        if ($ruleModified)
+        {
+            $updateBody = @{
+                properties = @{
+                    rules = @($policy.properties.rules)
+                }
             }
-        }
 
-        $payload = ConvertTo-Json $updateBody -Depth 20 -Compress
-        Write-Verbose -Message "Updating policy {$policyIdValue} at scope {$Scope}"
-        $null = Invoke-AzRest -Uri $policyUri -Method PATCH -Payload $payload
+            $payload = ConvertTo-Json $updateBody -Depth 20 -Compress
+            Write-Verbose -Message "Updating policy {$policyIdValue} at scope {$Scope}"
+            $null = Invoke-AzRest -Uri $policyUri -Method PATCH -Payload $payload
+        }
+    }
+    catch
+    {
+        New-M365DSCLogEntry -Message 'Error updating data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw
     }
 }
 
@@ -1393,13 +1405,13 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        $apiVersion = '2020-10-01'
+        $apiVersion = '2022-04-01'
 
         # Collect all scopes to enumerate
         $scopes = @()
 
         # Add subscriptions
-        $subUri = 'https://management.azure.com/subscriptions?api-version=2022-12-01'
+        $subUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)subscriptions?api-version=2022-12-01"
         $subResponse = Invoke-AzRest -Uri $subUri -Method GET
         $subscriptions = (ConvertFrom-Json $subResponse.Content).value
 
@@ -1412,7 +1424,7 @@ function Export-TargetResource
             }
 
             # Add resource groups under each subscription
-            $rgUri = "https://management.azure.com/subscriptions/$($sub.subscriptionId)/resourcegroups?api-version=2021-04-01"
+            $rgUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)subscriptions/$($sub.subscriptionId)/resourcegroups?api-version=2021-04-01"
             $rgResponse = Invoke-AzRest -Uri $rgUri -Method GET
             $resourceGroups = (ConvertFrom-Json $rgResponse.Content).value
 
@@ -1427,7 +1439,7 @@ function Export-TargetResource
         }
 
         # Add management groups
-        $mgUri = 'https://management.azure.com/providers/Microsoft.Management/managementGroups?api-version=2021-04-01'
+        $mgUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)providers/Microsoft.Management/managementGroups?api-version=2021-04-01"
         $mgResponse = Invoke-AzRest -Uri $mgUri -Method GET
         $managementGroups = (ConvertFrom-Json $mgResponse.Content).value
 
@@ -1450,7 +1462,7 @@ function Export-TargetResource
             Write-M365DSCHost -Message "    |---[$j/$($scopes.Count)] $($scopeInfo.ScopeType): $($scopeInfo.DisplayName)`r`n" -DeferWrite
 
             # Get role management policy assignments for this scope
-            $assignUri = "https://management.azure.com/$currentScope/providers/Microsoft.Authorization/roleManagementPolicyAssignments?api-version=$apiVersion"
+            $assignUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$currentScope/providers/Microsoft.Authorization/roleManagementPolicyAssignments?api-version=$apiVersion"
             $assignResponse = Invoke-AzRest -Uri $assignUri -Method GET
             $assignments = (ConvertFrom-Json $assignResponse.Content).value
 
@@ -1475,7 +1487,7 @@ function Export-TargetResource
                     $roleDefId = $assignment.properties.roleDefinitionId
                     if (-not [System.String]::IsNullOrEmpty($roleDefId))
                     {
-                        $roleDefUri = "https://management.azure.com/$roleDefId`?api-version=2022-04-01"
+                        $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$roleDefId`?api-version=2022-04-01"
                         $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
                         $roleDef = ConvertFrom-Json $roleDefResponse.Content
                         $roleDisplayName = $roleDef.properties.roleName
@@ -1491,7 +1503,7 @@ function Export-TargetResource
                 $assignmentPolicyId = $assignment.properties.policyId.Split('/')[-1]
 
                 # Get the policy rules
-                $policyUri = "https://management.azure.com/$currentScope/providers/Microsoft.Authorization/roleManagementPolicies/$($assignmentPolicyId)?api-version=$apiVersion"
+                $policyUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$currentScope/providers/Microsoft.Authorization/roleManagementPolicies/$($assignmentPolicyId)?api-version=$apiVersion"
                 $policyResponse = Invoke-AzRest -Uri $policyUri -Method GET
                 $policyContent = ConvertFrom-Json $policyResponse.Content
 

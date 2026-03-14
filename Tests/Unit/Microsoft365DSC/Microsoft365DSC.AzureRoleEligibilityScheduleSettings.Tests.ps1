@@ -35,6 +35,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
 
+            Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
+                return @{
+                    ManagementUrl = 'https://management.azure.com/'
+                }
+            }
+
             $Script:mockRules = @(
                 @{
                     id = "Expiration_EndUser_Assignment"
