@@ -101,6 +101,59 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                         level = "Assignment"
                                     }
                                 }
+                                @{
+                                    id = "Notification_Admin_EndUser_Assignment"
+                                    ruleType = "RoleManagementPolicyNotificationRule"
+                                    notificationType = "Email"
+                                    recipientType = "Admin"
+                                    notificationLevel = "All"
+                                    isDefaultRecipientsEnabled = $true
+                                    notificationRecipients = @("admin@contoso.com")
+                                    target = @{
+                                        caller = "EndUser"
+                                        operations = @("All")
+                                        level = "Assignment"
+                                    }
+                                }
+                                @{
+                                    id = "Notification_Admin_Admin_Eligibility"
+                                    ruleType = "RoleManagementPolicyNotificationRule"
+                                    notificationType = "Email"
+                                    recipientType = "Admin"
+                                    notificationLevel = "Critical"
+                                    isDefaultRecipientsEnabled = $true
+                                    notificationRecipients = @("eligibility-admin@contoso.com")
+                                    target = @{
+                                        caller = "Admin"
+                                        operations = @("All")
+                                        level = "Eligibility"
+                                    }
+                                }
+                                @{
+                                    id = "Notification_Admin_Admin_Assignment"
+                                    ruleType = "RoleManagementPolicyNotificationRule"
+                                    notificationType = "Email"
+                                    recipientType = "Admin"
+                                    notificationLevel = "All"
+                                    isDefaultRecipientsEnabled = $true
+                                    notificationRecipients = @("assignment-admin@contoso.com")
+                                    target = @{
+                                        caller = "Admin"
+                                        operations = @("All")
+                                        level = "Assignment"
+                                    }
+                                }
+                                @{
+                                    id = "AuthenticationContext_EndUser_Assignment"
+                                    ruleType = "RoleManagementPolicyAuthenticationContextRule"
+                                    isEnabled = $false
+                                    claimValue = ""
+                                    target = @{
+                                        caller = "EndUser"
+                                        operations = @("All")
+                                        level = "Assignment"
+                                    }
+                                }
                             )
                         }
                     }) -Depth 20
@@ -144,6 +197,169 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ExpirationRule            = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyExpirationRule -Property @{
                         isExpirationRequired = $true
                         maximumDuration      = "PT8H" # drift
+                    } -ClientOnly)
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                Test-TargetResource @testParams | Should -Be $false
+            }
+
+            It 'Should call the Set method' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName Invoke-AzRest -Exactly 3
+            }
+        }
+
+        Context -Name "The notification rule exists and values are already in the desired state" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Id                        = "Notification_Admin_EndUser_Assignment"
+                    RoleDefinitionDisplayName = "Owner"
+                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    RuleType                  = "RoleManagementPolicyNotificationRule"
+                    NotificationRule          = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyNotificationRule -Property @{
+                        notificationType           = "Email"
+                        recipientType              = "Admin"
+                        notificationLevel          = "All"
+                        isDefaultRecipientsEnabled = $true
+                        notificationRecipients     = [String[]]@("admin@contoso.com")
+                    } -ClientOnly)
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should return true from the Test method' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+        }
+
+        Context -Name "The notification rule exists and values are NOT in the desired state" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Id                        = "Notification_Admin_EndUser_Assignment"
+                    RoleDefinitionDisplayName = "Owner"
+                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    RuleType                  = "RoleManagementPolicyNotificationRule"
+                    NotificationRule          = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyNotificationRule -Property @{
+                        notificationType           = "Email"
+                        recipientType              = "Admin"
+                        notificationLevel          = "Critical" # drift
+                        isDefaultRecipientsEnabled = $true
+                        notificationRecipients     = [String[]]@("admin@contoso.com")
+                    } -ClientOnly)
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                Test-TargetResource @testParams | Should -Be $false
+            }
+
+            It 'Should call the Set method' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName Invoke-AzRest -Exactly 3
+            }
+        }
+
+        Context -Name "The enablement rule for justification and ticketing is in the desired state" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Id                        = "Enablement_EndUser_Assignment"
+                    RoleDefinitionDisplayName = "Owner"
+                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    RuleType                  = "RoleManagementPolicyEnablementRule"
+                    EnablementRule            = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyEnablementRule -Property @{
+                        enabledRules = [String[]]@("Justification", "Ticketing")
+                    } -ClientOnly)
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should return true from the Test method' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+        }
+
+        Context -Name "The enablement rule for justification and ticketing is NOT in the desired state" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Id                        = "Enablement_EndUser_Assignment"
+                    RoleDefinitionDisplayName = "Owner"
+                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    RuleType                  = "RoleManagementPolicyEnablementRule"
+                    EnablementRule            = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyEnablementRule -Property @{
+                        enabledRules = [String[]]@("Justification", "Ticketing", "MultiFactorAuthentication") # drift
+                    } -ClientOnly)
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                Test-TargetResource @testParams | Should -Be $false
+            }
+
+            It 'Should call the Set method' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName Invoke-AzRest -Exactly 3
+            }
+        }
+
+        Context -Name "The approval rule exists and values are already in the desired state" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Id                        = "Approval_EndUser_Assignment"
+                    RoleDefinitionDisplayName = "Owner"
+                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    RuleType                  = "RoleManagementPolicyApprovalRule"
+                    ApprovalRule              = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalRule -Property @{
+                        setting = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalSettings -Property @{
+                            approvalMode = "SingleStage"
+                            isApprovalRequired = $true
+                            isApprovalRequiredForExtension = $false
+                            isRequestorJustificationRequired = $true
+                            approvalStages = [CimInstance[]]@(
+                                (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalStage -Property @{
+                                    approvalStageTimeOutInDays = 1
+                                    escalationTimeInMinutes = 0
+                                    isApproverJustificationRequired = $true
+                                    isEscalationEnabled = $false
+                                } -ClientOnly)
+                            )
+                        } -ClientOnly)
+                    } -ClientOnly)
+                    Credential                = $Credential;
+                }
+            }
+
+            It 'Should return true from the Test method' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+        }
+
+        Context -Name "The approval rule exists and values are NOT in the desired state" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Id                        = "Approval_EndUser_Assignment"
+                    RoleDefinitionDisplayName = "Owner"
+                    Scope                     = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    RuleType                  = "RoleManagementPolicyApprovalRule"
+                    ApprovalRule              = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalRule -Property @{
+                        setting = (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalSettings -Property @{
+                            approvalMode = "SingleStage"
+                            isApprovalRequired = $false # drift
+                            isApprovalRequiredForExtension = $false
+                            isRequestorJustificationRequired = $true
+                            approvalStages = [CimInstance[]]@(
+                                (New-CimInstance -ClassName MSFT_AADRoleManagementPolicyApprovalStage -Property @{
+                                    approvalStageTimeOutInDays = 1
+                                    escalationTimeInMinutes = 0
+                                    isApproverJustificationRequired = $true
+                                    isEscalationEnabled = $false
+                                } -ClientOnly)
+                            )
+                        } -ClientOnly)
                     } -ClientOnly)
                     Credential                = $Credential;
                 }
