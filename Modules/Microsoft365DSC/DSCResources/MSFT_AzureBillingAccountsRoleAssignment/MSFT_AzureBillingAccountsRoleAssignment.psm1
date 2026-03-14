@@ -189,55 +189,68 @@ function Set-TargetResource
 
     Write-Verbose -Message "Setting configuration of Azure Billing Accounts Role Assignment for Billing Account {$BillingAccount} and Principal Name {$PrincipalName}"
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $currentInstance = Get-TargetResource @PSBoundParameters
-
-    $billingAccounts = Get-M365DSCAzureBillingAccount
-    $account = $billingAccounts.value | Where-Object -FilterScript { $_.properties.displayName -eq $BillingAccount }
-    $PrincipalIdValue = Get-M365DSCPrincipalIdFromName -PrincipalName $PrincipalName `
-        -PrincipalType $PrincipalType
-    $RoleDefinitionValues = Get-M365DSCAzureBillingAccountsRoleDefinition -BillingAccountId $account.Name
-    $roleDefinitionInstance = $RoleDefinitionValues.value | Where-Object -FilterScript { $_.properties.roleName -eq $currentInstance.RoleDefinition }
-    $instanceParams = @{
-        principalId       = $PrincipalIdValue
-        principalTenantId = $currentInstance.PrincipalTenantId
-        roleDefinitionId  = $roleDefinitionInstance.id
-    }
-    # CREATE
-    if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
+    try
     {
-        Write-Verbose -Message "Adding new role assignment for user {$PrincipalName} for role {$RoleDefinition}"
-        New-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name `
-            -Body $instanceParams
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
+        $currentInstance = Get-TargetResource @PSBoundParameters
+
+        $billingAccounts = Get-M365DSCAzureBillingAccount
+        $account = $billingAccounts.value | Where-Object -FilterScript { $_.properties.displayName -eq $BillingAccount }
+        $PrincipalIdValue = Get-M365DSCPrincipalIdFromName -PrincipalName $PrincipalName `
+            -PrincipalType $PrincipalType
+        $RoleDefinitionValues = Get-M365DSCAzureBillingAccountsRoleDefinition -BillingAccountId $account.Name
+        $roleDefinitionInstance = $RoleDefinitionValues.value | Where-Object -FilterScript { $_.properties.roleName -eq $currentInstance.RoleDefinition }
+        $instanceParams = @{
+            principalId       = $PrincipalIdValue
+            principalTenantId = $currentInstance.PrincipalTenantId
+            roleDefinitionId  = $roleDefinitionInstance.id
+        }
+        # CREATE
+        if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
+        {
+            Write-Verbose -Message "Adding new role assignment for user {$PrincipalName} for role {$RoleDefinition}"
+            New-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name `
+                -Body $instanceParams
+        }
+        # UPDATE
+        elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
+        {
+            Write-Verbose -Message "Updating role assignment for user {$PrincipalName} for role {$RoleDefinition}"
+            New-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name `
+                -Body $instanceParams
+        }
+        # REMOVE
+        elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
+        {
+            $instances = Get-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name -ErrorAction Stop
+            $instance = $instances.value | Where-Object -FilterScript { $_.properties.principalId -eq $PrincipalIdValue }
+            $AssignmentId = $instance.Id.Split('/')
+            $AssignmentId = $AssignmentId[$roleDefinitionId.Length - 1]
+            Write-Verbose -Message "Removing role assignment for user {$PrincipalName} for role {$RoleDefinition}"
+            Remove-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name `
+                -AssignmentId $AssignmentId
+        }
     }
-    # UPDATE
-    elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
+    catch
     {
-        Write-Verbose -Message "Updating role assignment for user {$PrincipalName} for role {$RoleDefinition}"
-        New-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name `
-            -Body $instanceParams
-    }
-    # REMOVE
-    elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
-    {
-        $instances = Get-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name -ErrorAction Stop
-        $instance = $instances.value | Where-Object -FilterScript { $_.properties.principalId -eq $PrincipalIdValue }
-        $AssignmentId = $instance.Id.Split('/')
-        $AssignmentId = $AssignmentId[$roleDefinitionId.Length - 1]
-        Write-Verbose -Message "Removing role assignment for user {$PrincipalName} for role {$RoleDefinition}"
-        Remove-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name `
-            -AssignmentId $AssignmentId
+        New-M365DSCLogEntry -Message 'Error updating data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw
     }
 }
 

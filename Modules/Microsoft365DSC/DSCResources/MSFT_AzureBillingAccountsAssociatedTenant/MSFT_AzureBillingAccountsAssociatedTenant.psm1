@@ -176,52 +176,65 @@ function Set-TargetResource
 
     Write-Verbose -Message "Setting configuration for Azure Billing Accounts Associated Tenant for Billing Account {$BillingAccount} and Display Name {$DisplayName}"
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
+    try
+    {
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
 
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
 
-    $currentInstance = Get-TargetResource @PSBoundParameters
-    $billingAccounts = Get-M365DSCAzureBillingAccount
-    $account = $billingAccounts.value | Where-Object -FilterScript { $_.properties.displayName -eq $BillingAccount }
+        $currentInstance = Get-TargetResource @PSBoundParameters
+        $billingAccounts = Get-M365DSCAzureBillingAccount
+        $account = $billingAccounts.value | Where-Object -FilterScript { $_.properties.displayName -eq $BillingAccount }
 
-    $instanceParams = @{
-        properties = @{
-            displayName                 = $DisplayName
-            tenantId                    = $AssociatedTenantId
-            billingManagementState      = $BillingManagementState
-            provisioningManagementState = $ProvisioningManagementState
+        $instanceParams = @{
+            properties = @{
+                displayName                 = $DisplayName
+                tenantId                    = $AssociatedTenantId
+                billingManagementState      = $BillingManagementState
+                provisioningManagementState = $ProvisioningManagementState
+            }
+        }
+        # CREATE
+        if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
+        {
+            Write-Verbose -Message "Adding associated tenant {$AssociatedTenantId}"
+            New-M365DSCAzureBillingAccountsAssociatedTenant -BillingAccountId $account.Name `
+                -AssociatedTenantId $AssociatedTenantId `
+                -Body $instanceParams
+        }
+        # UPDATE
+        elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
+        {
+            Write-Verbose -Message "Updating associated tenant {$AssociatedTenantId}"
+            New-M365DSCAzureBillingAccountsAssociatedTenant -BillingAccountId $account.Name `
+                -AssociatedTenantId $AssociatedTenantId `
+                -Body $instanceParams
+        }
+        # REMOVE
+        elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
+        {
+            Write-Verbose -Message "Removing associated tenant {$AssociatedTenantId}"
+            Remove-M365DSCAzureBillingAccountsAssociatedTenant -BillingAccountId $account.Name `
+                -AssociatedTenantId $AssociatedTenantId
         }
     }
-    # CREATE
-    if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
+    catch
     {
-        Write-Verbose -Message "Adding associated tenant {$AssociatedTenantId}"
-        New-M365DSCAzureBillingAccountsAssociatedTenant -BillingAccountId $account.Name `
-            -AssociatedTenantId $AssociatedTenantId `
-            -Body $instanceParams
-    }
-    # UPDATE
-    elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
-    {
-        Write-Verbose -Message "Updating associated tenant {$AssociatedTenantId}"
-        New-M365DSCAzureBillingAccountsAssociatedTenant -BillingAccountId $account.Name `
-            -AssociatedTenantId $AssociatedTenantId `
-            -Body $instanceParams
-    }
-    # REMOVE
-    elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
-    {
-        Write-Verbose -Message "Removing associated tenant {$AssociatedTenantId}"
-        Remove-M365DSCAzureBillingAccountsAssociatedTenant -BillingAccountId $account.Name `
-            -AssociatedTenantId $AssociatedTenantId
+        New-M365DSCLogEntry -Message 'Error updating data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw
     }
 }
 

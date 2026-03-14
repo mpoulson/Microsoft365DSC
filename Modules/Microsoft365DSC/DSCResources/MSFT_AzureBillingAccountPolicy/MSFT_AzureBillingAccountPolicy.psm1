@@ -82,7 +82,7 @@ function Get-TargetResource
         $nullResult = $PSBoundParameters
         $nullResult.Ensure = 'Absent'
 
-        $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/policies/default?api-version=2024-04-01"
+        $uri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/policies/default?api-version=2024-04-01"
         $response = Invoke-AzRest -Uri $uri -Method GET
         $instance = (ConvertFrom-Json ($response.Content)).value
 
@@ -191,42 +191,55 @@ function Set-TargetResource
 
     Write-Verbose -Message "Setting configuration of Azure Billing Account Policy for Billing Account $BillingAccount"
 
-    $null = New-M365DSCConnection -Workload 'Azure' `
-        -InboundParameters $PSBoundParameters
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $instanceParams = @{
-        properties = @{
-            enterpriseAgreementPolicies = @{
-                accountOwnerViewCharges    = $EnterpriseAgreementPolicies.accountOwnerViewCharges
-                authenticationType         = $EnterpriseAgreementPolicies.authenticationType
-                departmentAdminViewCharges = $EnterpriseAgreementPolicies.departmentAdminViewCharges
-            }
-            marketplacePurchases        = $MarketplacePurchases
-            reservationPurchases        = $ReservationPurchases
-            savingsPlanPurchases        = $SavingsPlanPurchases
-        }
-    }
-    $payload = ConvertTo-Json $instanceParams -Depth 5 -Compress
-    Write-Verbose -Message "Updating billing account policy for {$BillingAccount} with payload:`r`n$($payload)"
-    $uri = "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/policies/default?api-version=2024-04-01"
-    $response = Invoke-AzRest -Uri $uri -Method 'PUT' -Payload $payload
-    if (-not [System.String]::IsNullOrEmpty($response.Error))
+    try
     {
-        throw "Error: $($response.Error)"
+        $null = New-M365DSCConnection -Workload 'Azure' `
+            -InboundParameters $PSBoundParameters
+
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
+        $instanceParams = @{
+            properties = @{
+                enterpriseAgreementPolicies = @{
+                    accountOwnerViewCharges    = $EnterpriseAgreementPolicies.accountOwnerViewCharges
+                    authenticationType         = $EnterpriseAgreementPolicies.authenticationType
+                    departmentAdminViewCharges = $EnterpriseAgreementPolicies.departmentAdminViewCharges
+                }
+                marketplacePurchases        = $MarketplacePurchases
+                reservationPurchases        = $ReservationPurchases
+                savingsPlanPurchases        = $SavingsPlanPurchases
+            }
+        }
+        $payload = ConvertTo-Json $instanceParams -Depth 5 -Compress
+        Write-Verbose -Message "Updating billing account policy for {$BillingAccount} with payload:`r`n$($payload)"
+        $uri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)providers/Microsoft.Billing/billingAccounts/$($BillingAccount)/policies/default?api-version=2024-04-01"
+        $response = Invoke-AzRest -Uri $uri -Method 'PUT' -Payload $payload
+        if (-not [System.String]::IsNullOrEmpty($response.Error))
+        {
+            throw "Error: $($response.Error)"
+        }
+        Write-Verbose -Message "Response:`r`n$($response.Content)"
     }
-    Write-Verbose -Message "Response:`r`n$($response.Content)"
+    catch
+    {
+        New-M365DSCLogEntry -Message 'Error updating data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw
+    }
 }
 
 function Test-TargetResource
