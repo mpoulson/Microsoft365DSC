@@ -1493,6 +1493,10 @@ function Export-TargetResource
         $Filter,
 
         [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $ModifiedOnly,
+
+        [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
 
@@ -1544,6 +1548,12 @@ function Export-TargetResource
         $Script:ExportMode = $true
         $apiVersion = '2020-10-01'
 
+        # Honour the -Filter string value of 'ModifiedOnly' as an alias for -ModifiedOnly switch
+        if (-not $ModifiedOnly.IsPresent -and $Filter -eq 'ModifiedOnly')
+        {
+            $ModifiedOnly = [System.Management.Automation.SwitchParameter]$true
+        }
+
         # Collect all scopes to enumerate
         $scopes = @()
 
@@ -1593,6 +1603,15 @@ function Export-TargetResource
         $dscContent = [System.Text.StringBuilder]::new()
         Write-M365DSCHost -Message "`r`n" -DeferWrite
         $j = 1
+
+        if ($ModifiedOnly.IsPresent)
+        {
+            Write-Verbose -Message 'AzureRoleEligibilityScheduleSettings: ModifiedOnly filter is active. Only policies with lastModifiedDateTime set will be exported.'
+        }
+        else
+        {
+            Write-Verbose -Message 'AzureRoleEligibilityScheduleSettings: Exporting all policies including Azure defaults (no ModifiedOnly filter).'
+        }
 
         foreach ($scopeInfo in $scopes)
         {
@@ -1670,6 +1689,16 @@ function Export-TargetResource
                 if ($null -eq $policyContent -or $null -eq $policyContent.properties -or $null -eq $policyContent.properties.rules)
                 {
                     Write-Verbose -Message "Policy {$assignmentPolicyId} not found in bulk response for scope {$currentScope}. Skipping."
+                    continue
+                }
+
+                # When the 'ModifiedOnly' sentinel filter is specified, skip policies that have
+                # not been customised from Azure defaults (lastModifiedDateTime is null).
+                # Without this filter, all policies (including default/unchanged) are exported.
+                $lastModifiedDateTime = $policyContent.properties.lastModifiedDateTime
+                if ($ModifiedOnly.IsPresent -and $null -eq $lastModifiedDateTime)
+                {
+                    Write-Verbose -Message "Policy {$assignmentPolicyId} has not been modified from Azure defaults. Skipping (ModifiedOnly filter active)."
                     continue
                 }
 
