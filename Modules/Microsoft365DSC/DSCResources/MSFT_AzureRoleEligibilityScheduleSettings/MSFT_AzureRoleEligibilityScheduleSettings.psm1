@@ -1027,7 +1027,7 @@ function Set-TargetResource
                 $params = @{
                     ruleType     = $currentRule.ruleType
                     id           = $currentRule.id
-                    enabledRules = $enabledrules
+                    enabledRules = [System.Collections.ArrayList]@($enabledrules)
                     target       = $currentRule.target
                 }
             }
@@ -1079,8 +1079,8 @@ function Set-TargetResource
                     isApproverJustificationRequired = $true
                     escalationTimeInMinutes        = 0
                     isEscalationEnabled            = $false
-                    primaryApprovers               = @($primaryApprovers)
-                    escalationApprovers            = @()
+                    primaryApprovers               = [System.Collections.ArrayList]@($primaryApprovers)
+                    escalationApprovers            = [System.Collections.ArrayList]@()
                 }
 
                 $setting = @{
@@ -1088,7 +1088,7 @@ function Set-TargetResource
                     isApprovalRequiredForExtension  = $false
                     isRequestorJustificationRequired = $true
                     approvalMode                    = 'SingleStage'
-                    approvalStages                  = @($approvalStages)
+                    approvalStages                  = [System.Collections.ArrayList]@($approvalStages)
                 }
 
                 $params = @{
@@ -1149,7 +1149,7 @@ function Set-TargetResource
                 $params = @{
                     ruleType     = $currentRule.ruleType
                     id           = $currentRule.id
-                    enabledRules = $enabledrules
+                    enabledRules = [System.Collections.ArrayList]@($enabledrules)
                     target       = $currentRule.target
                 }
             }
@@ -1174,7 +1174,7 @@ function Set-TargetResource
                 $params = @{
                     ruleType     = $currentRule.ruleType
                     id           = $currentRule.id
-                    enabledRules = $enabledrules
+                    enabledRules = [System.Collections.ArrayList]@($enabledrules)
                     target       = $currentRule.target
                 }
             }
@@ -1218,7 +1218,7 @@ function Set-TargetResource
         {
             $updateBody = @{
                 properties = @{
-                    rules = @($policy.properties.rules)
+                    rules = [System.Collections.ArrayList]@($policy.properties.rules)
                 }
             }
 
