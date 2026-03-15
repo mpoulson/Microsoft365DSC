@@ -1534,6 +1534,15 @@ function Export-TargetResource
         $Script:ExportMode = $true
         $apiVersion = '2020-10-01'
 
+        if ($Filter -eq 'ModifiedOnly')
+        {
+            Write-Verbose -Message 'ModifiedOnly filter specified: only policies with lastModifiedDateTime set (customised from defaults) will be exported.'
+        }
+        else
+        {
+            Write-Verbose -Message 'No ModifiedOnly filter: all policies including unchanged defaults will be exported.'
+        }
+
         # Collect all scopes to enumerate
         $scopes = @()
 
@@ -1663,12 +1672,13 @@ function Export-TargetResource
                     continue
                 }
 
-                # Skip policies that have not been modified from Azure defaults.
-                # When lastModifiedBy and lastModifiedDateTime are both null, the policy is unchanged.
+                # When the 'ModifiedOnly' sentinel filter is specified, skip policies that have
+                # not been customised from Azure defaults (lastModifiedDateTime is null).
+                # Without this filter, all policies (including default/unchanged) are exported.
                 $lastModifiedDateTime = $policyContent.properties.lastModifiedDateTime
-                if ($null -eq $lastModifiedDateTime)
+                if ($Filter -eq 'ModifiedOnly' -and $null -eq $lastModifiedDateTime)
                 {
-                    Write-Verbose -Message "Policy {$assignmentPolicyId} has not been modified from Azure defaults. Skipping."
+                    Write-Verbose -Message "ModifiedOnly filter active: Policy {$assignmentPolicyId} has not been modified from Azure defaults. Skipping."
                     continue
                 }
 

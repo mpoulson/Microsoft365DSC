@@ -839,6 +839,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         }) -Depth 20
                     }
                 } -ParameterFilter { $Uri -like "*roleManagementPolicies`?*" -and $Uri -notlike "*Assignments*" }
+
+                Mock -CommandName Update-M365DSCExportAuthenticationResults -MockWith {
+                    return @{}
+                }
+
+                Mock -CommandName Get-M365DSCExportContentForResource -MockWith {
+                    return "AzureRoleEligibilityScheduleSettings 'Owner' {}`r`n"
+                }
+
+                Mock -CommandName Save-M365DSCPartialExport -MockWith {
+                }
             }
 
             It 'Should Reverse Engineer resource from the Export method' {
@@ -847,12 +858,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
-        Context -Name 'ReverseDSC Tests - Skip unmodified policies' -Fixture {
+        Context -Name 'ReverseDSC Tests - ModifiedOnly filter skips unmodified policies' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential = $Credential
+                    Filter     = 'ModifiedOnly'
                 }
 
                 Mock -CommandName Invoke-AzRest -MockWith {
@@ -922,9 +934,101 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 } -ParameterFilter { $Uri -like "*roleManagementPolicies`?*" -and $Uri -notlike "*Assignments*" }
             }
 
-            It 'Should return empty string when all policies are unmodified Azure defaults' {
+            It 'Should return empty string when ModifiedOnly filter is set and all policies are unmodified Azure defaults' {
                 $result = Export-TargetResource @testParams
                 $result | Should -BeNullOrEmpty
+            }
+        }
+
+        Context -Name 'ReverseDSC Tests - No filter exports unmodified policies' -Fixture {
+            BeforeAll {
+                $Global:CurrentModeIsExport = $true
+                $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
+                $testParams = @{
+                    Credential = $Credential
+                }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    subscriptionId = "00000000-0000-0000-0000-000000000000"
+                                    displayName = "TestSubscription"
+                                }
+                            )
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*subscriptions?*" }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @()
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*resourcegroups*" }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @()
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*managementGroups*" }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
+                                    properties = @{
+                                        roleDefinitionId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
+                                        policyId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
+                                        policyAssignmentProperties = @{
+                                            roleDefinition = @{
+                                                displayName = "Owner"
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*roleManagementPolicyAssignments*" }
+
+                # Return policy with null lastModifiedDateTime (Azure defaults) - should still be exported when no filter
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    name = "test_policy_id"
+                                    properties = @{
+                                        rules = $Script:mockRules
+                                    }
+                                }
+                            )
+                        }) -Depth 20
+                    }
+                } -ParameterFilter { $Uri -like "*roleManagementPolicies`?*" -and $Uri -notlike "*Assignments*" }
+
+                Mock -CommandName Update-M365DSCExportAuthenticationResults -MockWith {
+                    return @{}
+                }
+
+                Mock -CommandName Get-M365DSCExportContentForResource -MockWith {
+                    return "AzureRoleEligibilityScheduleSettings 'Owner' {}`r`n"
+                }
+
+                Mock -CommandName Save-M365DSCPartialExport -MockWith {
+                }
+            }
+
+            It 'Should export unmodified policies when no filter is specified' {
+                $result = Export-TargetResource @testParams
+                $result | Should -Not -BeNullOrEmpty
             }
         }
     }
