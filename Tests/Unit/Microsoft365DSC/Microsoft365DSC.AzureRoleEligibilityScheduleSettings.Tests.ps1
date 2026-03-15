@@ -317,7 +317,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     RoleDefinitionDisplayName                        = "Owner"
                     ScopeId                                          = "subscriptions/00000000-0000-0000-0000-000000000000"
-                    ActiveAssigneeNotificationAdditionalRecipient    = @("newrecipient@contoso.com")
+                    ActiveAssigneeNotificationAdditionalRecipient    = @("foo@test.com")
                     Credential                                       = $Credential;
                 }
             }
@@ -372,10 +372,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should serialize a single notificationRecipients email as a JSON array in the PATCH payload' {
                 Set-TargetResource @testParams
                 $Script:capturedPayload | Should -Not -BeNullOrEmpty
-                # Verify the email is serialized as a JSON array ["foo@test.com"]
-                # not as a plain string "foo@test.com"
-                $Script:capturedPayload | Should -Match '"notificationRecipients":\s*\['
-                $Script:capturedPayload | Should -Not -Match '"notificationRecipients":\s*"[^[]'
+                # Verify the email is serialized as a JSON array ["foo@test.com"], not a plain string
                 $Script:capturedPayload | Should -Match '"notificationRecipients":\s*\[\s*"foo@test\.com"\s*\]'
             }
         }
