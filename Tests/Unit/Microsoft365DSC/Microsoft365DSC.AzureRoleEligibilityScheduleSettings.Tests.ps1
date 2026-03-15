@@ -200,30 +200,47 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             )
 
+            # Mock for resolving role definition ID via server-side filter
             Mock -CommandName Invoke-AzRest -MockWith {
                 return @{
                     Content = ConvertTo-Json (@{
                         value = @(
                             @{
-                                id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
+                                id         = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
+                                properties = @{ roleName = "Owner" }
+                            }
+                        )
+                    }) -Depth 5
+                }
+            } -ParameterFilter { $Uri -like "*roleDefinitions*" }
+
+            # Mock for retrieving the single scoped assignment via server-side $filter on roleDefinitionId
+            Mock -CommandName Invoke-AzRest -MockWith {
+                return @{
+                    Content = ConvertTo-Json (@{
+                        value = @(
+                            @{
+                                id         = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
                                 properties = @{
                                     roleDefinitionId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
-                                    policyId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
-                                    roleDefinitionDisplayName = "Owner"
-                                    policyAssignmentProperties = @{
-                                        roleDefinition = @{
-                                            displayName = "Owner"
-                                        }
-                                    }
+                                    policyId         = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
                                 }
                             }
                         )
+                    }) -Depth 10
+                }
+            } -ParameterFilter { $Uri -like "*roleManagementPolicyAssignments*" }
+
+            # Mock for retrieving the role management policy rules
+            Mock -CommandName Invoke-AzRest -MockWith {
+                return @{
+                    Content = ConvertTo-Json (@{
                         properties = @{
                             rules = $Script:mockRules
                         }
                     }) -Depth 20
                 }
-            }
+            } -ParameterFilter { $Uri -like "*roleManagementPolicies*" -and $Uri -notlike "*Assignments*" }
 
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
@@ -331,35 +348,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $Script:capturedPayload = $null
 
+                # Capture the PATCH payload; GET calls fall through to the outer-scope ParameterFilter mocks
                 Mock -CommandName Invoke-AzRest -MockWith {
-                    if ($Method -eq 'PATCH')
-                    {
-                        $Script:capturedPayload = $Payload
-                        return @{ Content = ConvertTo-Json @{} -Depth 5 }
-                    }
-                    return @{
-                        Content = ConvertTo-Json (@{
-                            value = @(
-                                @{
-                                    id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
-                                    properties = @{
-                                        roleDefinitionId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
-                                        policyId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
-                                        roleDefinitionDisplayName = "Owner"
-                                        policyAssignmentProperties = @{
-                                            roleDefinition = @{
-                                                displayName = "Owner"
-                                            }
-                                        }
-                                    }
-                                }
-                            )
-                            properties = @{
-                                rules = $Script:mockRules
-                            }
-                        }) -Depth 20
-                    }
-                }
+                    $Script:capturedPayload = $Payload
+                    return @{ Content = ConvertTo-Json @{} -Depth 5 }
+                } -ParameterFilter { $Method -eq 'PATCH' }
 
                 $testParams = @{
                     RoleDefinitionDisplayName                        = "Owner"
@@ -577,30 +570,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
 
+                # Override the policy GET only - roleDefinitions and assignment mocks inherit from outer scope
                 Mock -CommandName Invoke-AzRest -MockWith {
                     return @{
                         Content = ConvertTo-Json (@{
-                            value = @(
-                                @{
-                                    id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
-                                    properties = @{
-                                        roleDefinitionId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
-                                        policyId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
-                                        roleDefinitionDisplayName = "Owner"
-                                        policyAssignmentProperties = @{
-                                            roleDefinition = @{
-                                                displayName = "Owner"
-                                            }
-                                        }
-                                    }
-                                }
-                            )
                             properties = @{
                                 rules = $Script:mockRulesWithUserApprover
                             }
                         }) -Depth 20
                     }
-                }
+                } -ParameterFilter { $Uri -like "*roleManagementPolicies*" -and $Uri -notlike "*Assignments*" }
 
                 Mock -CommandName Get-MgUser -MockWith {
                     if ($UserId -eq '11111111-1111-1111-1111-111111111111')
@@ -681,30 +660,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
 
+                # Override the policy GET only - roleDefinitions and assignment mocks inherit from outer scope
                 Mock -CommandName Invoke-AzRest -MockWith {
                     return @{
                         Content = ConvertTo-Json (@{
-                            value = @(
-                                @{
-                                    id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
-                                    properties = @{
-                                        roleDefinitionId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
-                                        policyId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
-                                        roleDefinitionDisplayName = "Owner"
-                                        policyAssignmentProperties = @{
-                                            roleDefinition = @{
-                                                displayName = "Owner"
-                                            }
-                                        }
-                                    }
-                                }
-                            )
                             properties = @{
                                 rules = $Script:mockRulesWithMixedApprovers
                             }
                         }) -Depth 20
                     }
-                }
+                } -ParameterFilter { $Uri -like "*roleManagementPolicies*" -and $Uri -notlike "*Assignments*" }
 
                 Mock -CommandName Get-MgUser -MockWith {
                     if ($UserId -eq '22222222-2222-2222-2222-222222222222')
@@ -760,6 +725,37 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $result.ActivateApprover | Should -HaveCount 2
                 $result.ActivateApprover | Should -Contain "approver@contoso.com"
                 $result.ActivateApprover | Should -Contain "PIM Approvers"
+            }
+        }
+
+        Context -Name 'Get-TargetResource uses server-side $filter on roleDefinitionId for roleManagementPolicyAssignments' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    RoleDefinitionDisplayName = "Owner"
+                    ScopeId                   = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    Credential                = $Credential
+                }
+            }
+
+            It 'Should call roleDefinitions with server-side filter to resolve the role definition ID' {
+                $null = Get-TargetResource @testParams
+                Should -Invoke Invoke-AzRest -Exactly 1 -ParameterFilter {
+                    $Uri -like "*roleDefinitions*" -and $Uri -like "*roleName eq*Owner*"
+                }
+            }
+
+            It 'Should call roleManagementPolicyAssignments with a server-side roleDefinitionId filter' {
+                $null = Get-TargetResource @testParams
+                Should -Invoke Invoke-AzRest -Exactly 1 -ParameterFilter {
+                    $Uri -like "*roleManagementPolicyAssignments*" -and $Uri -like "*roleDefinitionId eq*"
+                }
+            }
+
+            It 'Should NOT call roleManagementPolicyAssignments without a $filter parameter' {
+                $null = Get-TargetResource @testParams
+                Should -Not -Invoke Invoke-AzRest -ParameterFilter {
+                    $Uri -like "*roleManagementPolicyAssignments*" -and $Uri -notlike "*roleDefinitionId*"
+                }
             }
         }
 

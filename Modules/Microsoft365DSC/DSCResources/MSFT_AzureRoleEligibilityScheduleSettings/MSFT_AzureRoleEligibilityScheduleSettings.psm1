@@ -244,41 +244,35 @@ function Get-TargetResource
         $nullReturn = $PSBoundParameters
 
         $apiVersion = '2020-10-01'
-        $uri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleManagementPolicyAssignments?api-version=$apiVersion"
-        $response = Invoke-AzRest -Uri $uri -Method GET
-        $assignments = (ConvertFrom-Json $response.Content).value
+
+        # Resolve the role definition ID via a server-side filtered call.
+        # This avoids fetching all role definitions for the scope and doing client-side matching.
+        $encodedRoleName = [System.Uri]::EscapeDataString($RoleDefinitionDisplayName)
+        $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleDefinitions?api-version=$apiVersion&`$filter=roleName eq '$encodedRoleName'"
+        $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
+        $roleDefinitions = (ConvertFrom-Json $roleDefResponse.Content).value
+
+        if ($null -eq $roleDefinitions -or $roleDefinitions.Count -eq 0)
+        {
+            Write-Verbose -Message "Could not find role definition for role {$RoleDefinitionDisplayName} at scope {$ScopeId}."
+            return $nullReturn
+        }
+
+        $roleDefId = $roleDefinitions[0].id
+
+        # Use server-side $filter on roleDefinitionId to retrieve only the matching assignment.
+        # This avoids fetching all policy assignments for the scope and doing client-side filtering.
+        $assignUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleManagementPolicyAssignments?api-version=$apiVersion&`$filter=roleDefinitionId eq '$roleDefId'"
+        $assignResponse = Invoke-AzRest -Uri $assignUri -Method GET
+        $assignments = (ConvertFrom-Json $assignResponse.Content).value
 
         if ($null -eq $assignments -or $assignments.Count -eq 0)
         {
-            Write-Verbose -Message "No role management policy assignments found at scope {$ScopeId}."
+            Write-Verbose -Message "No role management policy assignment found for role {$RoleDefinitionDisplayName} at scope {$ScopeId}."
             return $nullReturn
         }
 
-        $assignment = $assignments | Where-Object {
-            $_.properties.roleDefinitionDisplayName -eq $RoleDefinitionDisplayName -or
-            $_.properties.policyAssignmentProperties.roleDefinition.displayName -eq $RoleDefinitionDisplayName
-        }
-
-        if ($null -eq $assignment)
-        {
-            $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleDefinitions?api-version=2020-10-01&`$filter=roleName eq '$RoleDefinitionDisplayName'"
-            $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
-            $roleDefinitions = (ConvertFrom-Json $roleDefResponse.Content).value
-
-            if ($null -ne $roleDefinitions -and $roleDefinitions.Count -gt 0)
-            {
-                $roleDefId = $roleDefinitions[0].id
-                $assignment = $assignments | Where-Object {
-                    $_.properties.roleDefinitionId -eq $roleDefId
-                }
-            }
-        }
-
-        if ($null -eq $assignment)
-        {
-            Write-Verbose -Message "Could not find role management policy assignment for role {$RoleDefinitionDisplayName} at scope {$ScopeId}."
-            return $nullReturn
-        }
+        $assignment = $assignments[0]
 
         $policyIdValue = $assignment.properties.policyId.Split('/')[-1]
 
