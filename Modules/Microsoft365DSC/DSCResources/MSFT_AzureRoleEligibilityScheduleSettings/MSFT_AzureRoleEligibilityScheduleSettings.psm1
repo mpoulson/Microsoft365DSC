@@ -743,7 +743,7 @@ function Set-TargetResource
                     recipientType            = 'Admin'
                     notificationLevel        = $notificationLevel
                     isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = $additionalRecipient
+                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
                     target                   = $currentRule.target
                 }
             }
@@ -773,7 +773,7 @@ function Set-TargetResource
                     recipientType            = 'Requestor'
                     notificationLevel        = $notificationLevel
                     isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = $additionalRecipient
+                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
                     target                   = $currentRule.target
                 }
             }
@@ -803,7 +803,7 @@ function Set-TargetResource
                     recipientType            = 'Approver'
                     notificationLevel        = $notificationLevel
                     isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = $additionalRecipient
+                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
                     target                   = $currentRule.target
                 }
             }
@@ -833,7 +833,7 @@ function Set-TargetResource
                     recipientType            = 'Admin'
                     notificationLevel        = $notificationLevel
                     isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = $additionalRecipient
+                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
                     target                   = $currentRule.target
                 }
             }
@@ -863,7 +863,7 @@ function Set-TargetResource
                     recipientType            = 'Requestor'
                     notificationLevel        = $notificationLevel
                     isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = $additionalRecipient
+                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
                     target                   = $currentRule.target
                 }
             }
@@ -893,7 +893,7 @@ function Set-TargetResource
                     recipientType            = 'Approver'
                     notificationLevel        = $notificationLevel
                     isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = $additionalRecipient
+                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
                     target                   = $currentRule.target
                 }
             }
@@ -923,7 +923,7 @@ function Set-TargetResource
                     recipientType            = 'Admin'
                     notificationLevel        = $notificationLevel
                     isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = $additionalRecipient
+                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
                     target                   = $currentRule.target
                 }
             }
@@ -953,7 +953,7 @@ function Set-TargetResource
                     recipientType            = 'Requestor'
                     notificationLevel        = $notificationLevel
                     isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = $additionalRecipient
+                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
                     target                   = $currentRule.target
                 }
             }
@@ -983,7 +983,7 @@ function Set-TargetResource
                     recipientType            = 'Approver'
                     notificationLevel        = $notificationLevel
                     isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = $additionalRecipient
+                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
                     target                   = $currentRule.target
                 }
             }

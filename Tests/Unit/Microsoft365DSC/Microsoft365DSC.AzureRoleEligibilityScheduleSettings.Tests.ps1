@@ -327,6 +327,59 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name "Single notificationRecipients is serialized as JSON array (not scalar) in PATCH payload" -Fixture {
+            BeforeAll {
+                $Script:capturedPayload = $null
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    if ($Method -eq 'PATCH')
+                    {
+                        $Script:capturedPayload = $Payload
+                        return @{ Content = ConvertTo-Json @{} -Depth 5 }
+                    }
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    id = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
+                                    properties = @{
+                                        roleDefinitionId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
+                                        policyId = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
+                                        roleDefinitionDisplayName = "Owner"
+                                        policyAssignmentProperties = @{
+                                            roleDefinition = @{
+                                                displayName = "Owner"
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                            properties = @{
+                                rules = $Script:mockRules
+                            }
+                        }) -Depth 20
+                    }
+                }
+
+                $testParams = @{
+                    RoleDefinitionDisplayName                        = "Owner"
+                    ScopeId                                          = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    ActiveAssigneeNotificationAdditionalRecipient    = @("foo@test.com")
+                    Credential                                       = $Credential;
+                }
+            }
+
+            It 'Should serialize a single notificationRecipients email as a JSON array in the PATCH payload' {
+                Set-TargetResource @testParams
+                $Script:capturedPayload | Should -Not -BeNullOrEmpty
+                # Verify the email is serialized as a JSON array ["foo@test.com"]
+                # not as a plain string "foo@test.com"
+                $Script:capturedPayload | Should -Match '"notificationRecipients":\s*\['
+                $Script:capturedPayload | Should -Not -Match '"notificationRecipients":\s*"[^[]'
+                $Script:capturedPayload | Should -Match '"notificationRecipients":\s*\[\s*"foo@test\.com"\s*\]'
+            }
+        }
+
         Context -Name "Partial notification: only DefaultRecipient specified for eligible alert notification" -Fixture {
             BeforeAll {
                 $testParams = @{
