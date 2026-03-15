@@ -940,6 +940,88 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name 'ReverseDSC Tests - ModifiedOnly switch skips unmodified policies' -Fixture {
+            BeforeAll {
+                $Global:CurrentModeIsExport = $true
+                $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
+                $testParams = @{
+                    Credential   = $Credential
+                    ModifiedOnly = $true
+                }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    subscriptionId = "00000000-0000-0000-0000-000000000000"
+                                    displayName    = "TestSubscription"
+                                }
+                            )
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*subscriptions?*" }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @()
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*resourcegroups*" }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @()
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*managementGroups*" }
+
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    id         = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicyAssignments/test_assignment"
+                                    properties = @{
+                                        roleDefinitionId       = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000001"
+                                        policyId               = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleManagementPolicies/test_policy_id"
+                                        policyAssignmentProperties = @{
+                                            roleDefinition = @{
+                                                displayName = "Owner"
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                        }) -Depth 10
+                    }
+                } -ParameterFilter { $Uri -like "*roleManagementPolicyAssignments*" }
+
+                # Return policy with null lastModifiedDateTime (Azure defaults)
+                Mock -CommandName Invoke-AzRest -MockWith {
+                    return @{
+                        Content = ConvertTo-Json (@{
+                            value = @(
+                                @{
+                                    name       = "test_policy_id"
+                                    properties = @{
+                                        rules = $Script:mockRules
+                                    }
+                                }
+                            )
+                        }) -Depth 20
+                    }
+                } -ParameterFilter { $Uri -like "*roleManagementPolicies`?*" -and $Uri -notlike "*Assignments*" }
+            }
+
+            It 'Should return empty string when ModifiedOnly switch is set and all policies are unmodified Azure defaults' {
+                $result = Export-TargetResource @testParams
+                $result | Should -BeNullOrEmpty
+            }
+        }
+
         Context -Name 'ReverseDSC Tests - No filter exports unmodified policies' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
