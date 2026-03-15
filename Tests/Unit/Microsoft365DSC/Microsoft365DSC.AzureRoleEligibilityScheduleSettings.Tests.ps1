@@ -737,6 +737,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            BeforeEach {
+                # Clear the roleDefinitionId cache so each test exercises the full API call path
+                $Script:roleDefinitionIdCache = $null
+            }
+
             It 'Should call roleDefinitions with server-side filter to resolve the role definition ID' {
                 $null = Get-TargetResource @testParams
                 Should -Invoke Invoke-AzRest -Exactly 1 -ParameterFilter {
@@ -755,6 +760,45 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $null = Get-TargetResource @testParams
                 Should -Not -Invoke Invoke-AzRest -ParameterFilter {
                     $Uri -like "*roleManagementPolicyAssignments*" -and $Uri -notlike "*roleDefinitionId*"
+                }
+            }
+        }
+
+        Context -Name 'Get-TargetResource caches roleDefinitionId and skips redundant roleDefinitions API calls' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    RoleDefinitionDisplayName = "Owner"
+                    ScopeId                   = "subscriptions/00000000-0000-0000-0000-000000000000"
+                    Credential                = $Credential
+                }
+            }
+
+            BeforeEach {
+                # Ensure a clean cache before each test so each It exercises a known starting state
+                $Script:roleDefinitionIdCache = $null
+            }
+
+            It 'Should call the roleDefinitions API only once for two consecutive calls with the same role/scope' {
+                $null = Get-TargetResource @testParams
+                $null = Get-TargetResource @testParams
+                Should -Invoke Invoke-AzRest -Exactly 1 -ParameterFilter {
+                    $Uri -like "*roleDefinitions*" -and $Uri -like "*roleName eq*Owner*"
+                }
+            }
+
+            It 'Should call the roleDefinitions API once per distinct role name' {
+                $null = Get-TargetResource @testParams
+
+                # Second call with same scope but different role name should also call roleDefinitions once (2 total)
+                $testParams2 = @{
+                    RoleDefinitionDisplayName = "Contributor"
+                    ScopeId                   = $testParams.ScopeId
+                    Credential                = $testParams.Credential
+                }
+                $null = Get-TargetResource @testParams2
+
+                Should -Invoke Invoke-AzRest -Exactly 2 -ParameterFilter {
+                    $Uri -like "*roleDefinitions*" -and $Uri -like "*roleName eq*"
                 }
             }
         }

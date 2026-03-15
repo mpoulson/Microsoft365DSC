@@ -245,20 +245,36 @@ function Get-TargetResource
 
         $apiVersion = '2020-10-01'
 
-        # Resolve the role definition ID via a server-side filtered call.
-        # This avoids fetching all role definitions for the scope and doing client-side matching.
-        $encodedRoleName = [System.Uri]::EscapeDataString($RoleDefinitionDisplayName)
-        $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleDefinitions?api-version=$apiVersion&`$filter=roleName eq '$encodedRoleName'"
-        $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
-        $roleDefinitions = (ConvertFrom-Json $roleDefResponse.Content).value
-
-        if ($null -eq $roleDefinitions -or $roleDefinitions.Count -eq 0)
+        # Lazy-initialize the script-scoped roleDefinitionId cache.
+        if ($null -eq $Script:roleDefinitionIdCache)
         {
-            Write-Verbose -Message "Could not find role definition for role {$RoleDefinitionDisplayName} at scope {$ScopeId}."
-            return $nullReturn
+            $Script:roleDefinitionIdCache = @{}
         }
 
-        $roleDefId = $roleDefinitions[0].id
+        # Resolve the role definition ID, using the cache to avoid redundant API calls.
+        # Cache key combines ScopeId and role name so the same role at different scopes resolves independently.
+        $cacheKey = "${ScopeId}:${RoleDefinitionDisplayName}"
+        if ($Script:roleDefinitionIdCache.ContainsKey($cacheKey))
+        {
+            Write-Verbose -Message "Using cached roleDefinitionId for role {$RoleDefinitionDisplayName} at scope {$ScopeId}."
+            $roleDefId = $Script:roleDefinitionIdCache[$cacheKey]
+        }
+        else
+        {
+            $encodedRoleName = [System.Uri]::EscapeDataString($RoleDefinitionDisplayName)
+            $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleDefinitions?api-version=$apiVersion&`$filter=roleName eq '$encodedRoleName'"
+            $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
+            $roleDefinitions = (ConvertFrom-Json $roleDefResponse.Content).value
+
+            if ($null -eq $roleDefinitions -or $roleDefinitions.Count -eq 0)
+            {
+                Write-Verbose -Message "Could not find role definition for role {$RoleDefinitionDisplayName} at scope {$ScopeId}."
+                return $nullReturn
+            }
+
+            $roleDefId = $roleDefinitions[0].id
+            $Script:roleDefinitionIdCache[$cacheKey] = $roleDefId
+        }
 
         # Use server-side $filter on roleDefinitionId to retrieve only the matching assignment.
         # This avoids fetching all policy assignments for the scope and doing client-side filtering.
