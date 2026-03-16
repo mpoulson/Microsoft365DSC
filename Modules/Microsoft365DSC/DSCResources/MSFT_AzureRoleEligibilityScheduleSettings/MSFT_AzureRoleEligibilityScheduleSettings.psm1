@@ -326,22 +326,22 @@ function Get-TargetResource
             {
                 if (-not [System.String]::IsNullOrEmpty($approver.id))
                 {
-                    try
+                    $directoryObject = Get-MgBetaDirectoryObjectById -Ids $approver.id -ErrorAction SilentlyContinue
+                    if ($null -ne $directoryObject)
                     {
-                        $user = Get-MgUser -UserId $approver.id -ErrorAction Stop
-                        $ActivateApprover += $user.UserPrincipalName
+                        $objectType = $directoryObject.AdditionalProperties['@odata.type'].Split('.')[2]
+                        if ($objectType -eq 'user')
+                        {
+                            $ActivateApprover += $directoryObject.AdditionalProperties['userPrincipalName']
+                        }
+                        else
+                        {
+                            $ActivateApprover += $directoryObject.AdditionalProperties['displayName']
+                        }
                     }
-                    catch
+                    else
                     {
-                        try
-                        {
-                            $group = Get-MgGroup -GroupId $approver.id -ErrorAction Stop
-                            $ActivateApprover += $group.DisplayName
-                        }
-                        catch
-                        {
-                            Write-Verbose -Message "Could not resolve approver with Id {$($approver.id)}: $($_.Exception.Message)"
-                        }
+                        Write-Verbose -Message "Could not resolve approver with Id {$($approver.id)}"
                     }
                 }
             }

@@ -41,6 +41,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Get-MgBetaDirectoryObjectById -MockWith {
+                return $null
+            }
+
             Mock -CommandName Get-MgUser -MockWith {
                 return $null
             }
@@ -602,13 +606,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
 
-                Mock -CommandName Get-MgUser -MockWith {
-                    if ($UserId -eq '11111111-1111-1111-1111-111111111111')
+                Mock -CommandName Get-MgBetaDirectoryObjectById -MockWith {
+                    if ($Ids -contains '11111111-1111-1111-1111-111111111111')
                     {
-                        return @{ Id = '11111111-1111-1111-1111-111111111111'; UserPrincipalName = 'approver@contoso.com' }
+                        return @{
+                            Id                   = '11111111-1111-1111-1111-111111111111'
+                            AdditionalProperties = @{
+                                '@odata.type'     = '#microsoft.graph.user'
+                                userPrincipalName = 'approver@contoso.com'
+                            }
+                        }
                     }
                     return $null
-                } -ParameterFilter { $UserId }
+                }
 
                 Mock -CommandName Get-MgUser -MockWith {
                     if ($Filter -like "*approver@contoso.com*")
@@ -706,13 +716,29 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
 
-                Mock -CommandName Get-MgUser -MockWith {
-                    if ($UserId -eq '22222222-2222-2222-2222-222222222222')
+                Mock -CommandName Get-MgBetaDirectoryObjectById -MockWith {
+                    if ($Ids -contains '22222222-2222-2222-2222-222222222222')
                     {
-                        return @{ Id = '22222222-2222-2222-2222-222222222222'; UserPrincipalName = 'approver@contoso.com' }
+                        return @{
+                            Id                   = '22222222-2222-2222-2222-222222222222'
+                            AdditionalProperties = @{
+                                '@odata.type'     = '#microsoft.graph.user'
+                                userPrincipalName = 'approver@contoso.com'
+                            }
+                        }
                     }
-                    throw "User not found"
-                } -ParameterFilter { $UserId }
+                    elseif ($Ids -contains '33333333-3333-3333-3333-333333333333')
+                    {
+                        return @{
+                            Id                   = '33333333-3333-3333-3333-333333333333'
+                            AdditionalProperties = @{
+                                '@odata.type'  = '#microsoft.graph.group'
+                                displayName    = 'PIM Approvers'
+                            }
+                        }
+                    }
+                    return $null
+                }
 
                 Mock -CommandName Get-MgUser -MockWith {
                     if ($Filter -like "*approver@contoso.com*")
@@ -721,14 +747,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                     return $null
                 } -ParameterFilter { $Filter }
-
-                Mock -CommandName Get-MgGroup -MockWith {
-                    if ($GroupId -eq '33333333-3333-3333-3333-333333333333')
-                    {
-                        return @{ Id = '33333333-3333-3333-3333-333333333333'; DisplayName = 'PIM Approvers' }
-                    }
-                    return $null
-                } -ParameterFilter { $GroupId }
 
                 Mock -CommandName Get-MgGroup -MockWith {
                     if ($Filter -like "*PIM Approvers*")
