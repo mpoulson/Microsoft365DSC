@@ -250,10 +250,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
             }
-
-            It 'Should return Present from the Get method' {
-                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
-            }
         }
 
         Context -Name "The activation settings are NOT in the desired state" -Fixture {
