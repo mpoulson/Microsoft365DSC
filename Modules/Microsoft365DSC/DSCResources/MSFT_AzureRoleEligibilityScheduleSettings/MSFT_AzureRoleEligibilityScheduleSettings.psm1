@@ -329,14 +329,22 @@ function Get-TargetResource
                     $directoryObject = Get-MgBetaDirectoryObjectById -Ids $approver.id -ErrorAction SilentlyContinue
                     if ($null -ne $directoryObject)
                     {
-                        $objectType = $directoryObject.AdditionalProperties['@odata.type'].Split('.')[2]
-                        if ($objectType -eq 'user')
+                        $odataType = $directoryObject.AdditionalProperties['@odata.type']
+                        if (-not [System.String]::IsNullOrEmpty($odataType) -and $odataType.Split('.').Count -ge 3)
                         {
-                            $ActivateApprover += $directoryObject.AdditionalProperties['userPrincipalName']
+                            $objectType = $odataType.Split('.')[2]
+                            if ($objectType -eq 'user')
+                            {
+                                $ActivateApprover += $directoryObject.AdditionalProperties['userPrincipalName']
+                            }
+                            else
+                            {
+                                $ActivateApprover += $directoryObject.AdditionalProperties['displayName']
+                            }
                         }
                         else
                         {
-                            $ActivateApprover += $directoryObject.AdditionalProperties['displayName']
+                            Write-Verbose -Message "Could not determine type for approver with Id {$($approver.id)}"
                         }
                     }
                     else
