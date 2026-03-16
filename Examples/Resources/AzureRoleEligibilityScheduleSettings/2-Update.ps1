@@ -67,6 +67,7 @@ Configuration Example
             ActivationApproveNotificationDefaultRecipient   = $True
             ActivationApproveNotificationAdditionalRecipient = @()
             ActivationApproveNotificationOnlyCritical       = $False
+            Ensure                                          = "Present"
             ApplicationId                                   = $ApplicationId
             TenantId                                        = $TenantId
             CertificateThumbprint                           = $CertificateThumbprint

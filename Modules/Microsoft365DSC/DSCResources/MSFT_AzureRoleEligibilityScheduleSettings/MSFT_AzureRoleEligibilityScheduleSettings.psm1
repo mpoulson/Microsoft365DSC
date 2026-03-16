@@ -191,6 +191,11 @@ function Get-TargetResource
         $ActivationApproveNotificationOnlyCritical,
 
         [Parameter()]
+        [ValidateSet('Present')]
+        [System.String]
+        $Ensure = 'Present',
+
+        [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
 
@@ -442,6 +447,7 @@ function Get-TargetResource
             ActivationApproveNotificationDefaultRecipient             = $ActivationApproveNotificationDefaultRecipient
             ActivationApproveNotificationAdditionalRecipient          = [System.String[]]$ActivationApproveNotificationAdditionalRecipient
             ActivationApproveNotificationOnlyCritical                 = $ActivationApproveNotificationOnlyCritical
+            Ensure                                                    = 'Present'
             ApplicationId                                             = $ApplicationId
             TenantId                                                  = $TenantId
             CertificateThumbprint                                     = $CertificateThumbprint
@@ -652,6 +658,11 @@ function Set-TargetResource
         [Parameter()]
         [System.Boolean]
         $ActivationApproveNotificationOnlyCritical,
+
+        [Parameter()]
+        [ValidateSet('Present')]
+        [System.String]
+        $Ensure = 'Present',
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -1430,6 +1441,11 @@ function Test-TargetResource
         $ActivationApproveNotificationOnlyCritical,
 
         [Parameter()]
+        [ValidateSet('Present')]
+        [System.String]
+        $Ensure = 'Present',
+
+        [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
 
@@ -1724,16 +1740,19 @@ function Export-TargetResource
                 }
                 $Results = Get-TargetResource @Params
 
-                $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
-                    -ConnectionMode $ConnectionMode `
-                    -ModulePath $PSScriptRoot `
-                    -Results $Results `
-                    -Credential $Credential
+                if ($Results.Ensure -eq 'Present')
+                {
+                    $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
+                        -ConnectionMode $ConnectionMode `
+                        -ModulePath $PSScriptRoot `
+                        -Results $Results `
+                        -Credential $Credential
 
-                $dscContent.Append($currentDSCBlock) | Out-Null
-                Save-M365DSCPartialExport -Content $currentDSCBlock `
-                    -FileName $Global:PartialExportFileName
-                Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+                    $dscContent.Append($currentDSCBlock) | Out-Null
+                    Save-M365DSCPartialExport -Content $currentDSCBlock `
+                        -FileName $Global:PartialExportFileName
+                    Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+                }
                 $i++
             }
             $j++
