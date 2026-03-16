@@ -7,6 +7,8 @@
     and `TenantRestrictions`.
 * AADCrossTenantAccessPolicyConfigurationPartner
   * Added support for `IdentitySynchronization`.
+* AzureRoleEligibilityScheduleSettings
+  * Initial Release [#6974](https://github.com/microsoft/Microsoft365DSC/issues/6974)
 * IntuneDeviceConfigurationHealthMonitoringConfigurationPolicyWindows10
   * Fixed an issue with value handling when creating or updating policies.
     FIXES [#6955](https://github.com/microsoft/Microsoft365DSC/issues/6955)
