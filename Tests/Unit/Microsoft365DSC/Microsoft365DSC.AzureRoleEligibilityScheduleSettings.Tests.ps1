@@ -283,7 +283,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The eligible assignment notification is already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance          = "Yes"
+                    IsSingleInstance                             = "Yes"
                     RoleDefinitionDisplayName                    = "Owner"
                     ScopeId                                      = "subscriptions/00000000-0000-0000-0000-000000000000"
                     EligibleAlertNotificationDefaultRecipient    = $true
@@ -301,7 +301,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The eligible assignment notification is NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance          = "Yes"
+                    IsSingleInstance                             = "Yes"
                     RoleDefinitionDisplayName                    = "Owner"
                     ScopeId                                      = "subscriptions/00000000-0000-0000-0000-000000000000"
                     EligibleAlertNotificationDefaultRecipient    = $false # drift
@@ -323,7 +323,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "Partial notification: only AdditionalRecipient specified for active assignee notification" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance          = "Yes"
+                    IsSingleInstance                                 = "Yes"
                     RoleDefinitionDisplayName                        = "Owner"
                     ScopeId                                          = "subscriptions/00000000-0000-0000-0000-000000000000"
                     ActiveAssigneeNotificationAdditionalRecipient    = @("foo@test.com")
@@ -371,7 +371,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 $testParams = @{
-                    IsSingleInstance          = "Yes"
+                    IsSingleInstance                                 = "Yes"
                     RoleDefinitionDisplayName                        = "Owner"
                     ScopeId                                          = "subscriptions/00000000-0000-0000-0000-000000000000"
                     ActiveAssigneeNotificationAdditionalRecipient    = @("foo@test.com")
@@ -390,7 +390,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "Partial notification: only DefaultRecipient specified for eligible alert notification" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance          = "Yes"
+                    IsSingleInstance                             = "Yes"
                     RoleDefinitionDisplayName                    = "Owner"
                     ScopeId                                      = "subscriptions/00000000-0000-0000-0000-000000000000"
                     EligibleAlertNotificationDefaultRecipient    = $false
@@ -406,7 +406,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "Partial notification: only OnlyCritical specified for activation alert notification" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance          = "Yes"
+                    IsSingleInstance                                = "Yes"
                     RoleDefinitionDisplayName                       = "Owner"
                     ScopeId                                         = "subscriptions/00000000-0000-0000-0000-000000000000"
                     ActivationAlertNotificationOnlyCritical         = $true
@@ -422,7 +422,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The activation alert notification is already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance          = "Yes"
+                    IsSingleInstance                                = "Yes"
                     RoleDefinitionDisplayName                       = "Owner"
                     ScopeId                                         = "subscriptions/00000000-0000-0000-0000-000000000000"
                     ActivationAlertNotificationDefaultRecipient     = $true
@@ -440,7 +440,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The expiration settings for eligible assignments are in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance          = "Yes"
+                    IsSingleInstance                                = "Yes"
                     RoleDefinitionDisplayName                       = "Owner"
                     ScopeId                                         = "subscriptions/00000000-0000-0000-0000-000000000000"
                     PermanentEligibleAssignmentisExpirationRequired = $true
@@ -457,7 +457,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The expiration settings for eligible assignments are NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    IsSingleInstance          = "Yes"
+                    IsSingleInstance                                = "Yes"
                     RoleDefinitionDisplayName                       = "Owner"
                     ScopeId                                         = "subscriptions/00000000-0000-0000-0000-000000000000"
                     PermanentEligibleAssignmentisExpirationRequired = $false # drift

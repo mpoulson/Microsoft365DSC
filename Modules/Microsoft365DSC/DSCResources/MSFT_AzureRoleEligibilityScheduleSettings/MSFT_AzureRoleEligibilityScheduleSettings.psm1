@@ -266,7 +266,7 @@ function Get-TargetResource
 
         if ($null -eq $assignment)
         {
-            $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleDefinitions?api-version=2020-10-01&`$filter=roleName eq '$RoleDefinitionDisplayName'"
+            $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$ScopeId/providers/Microsoft.Authorization/roleDefinitions?api-version=$apiVersion&`$filter=roleName eq '$RoleDefinitionDisplayName'"
             $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
             $roleDefinitions = (ConvertFrom-Json $roleDefResponse.Content).value
 
@@ -737,500 +737,500 @@ function Set-TargetResource
         {
             $params = @{}
 
-        if ($currentRule.id -eq 'Notification_Admin_Admin_Eligibility')
-        {
-            if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationOnlyCritical') `
-                    -or $PSBoundParameters.ContainsKey('EligibleAlertNotificationDefaultRecipient') `
-                    -or $PSBoundParameters.ContainsKey('EligibleAlertNotificationAdditionalRecipient'))
+            if ($currentRule.id -eq 'Notification_Admin_Admin_Eligibility')
             {
-                Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Role assignment alert'
-                $onlyCritical = if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationOnlyCritical')) { $EligibleAlertNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
-                $defaultRecipient = if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationDefaultRecipient')) { $EligibleAlertNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
-                $additionalRecipient = if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationAdditionalRecipient')) { @($EligibleAlertNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
-                $notificationLevel = if ($onlyCritical)
+                if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationOnlyCritical') `
+                        -or $PSBoundParameters.ContainsKey('EligibleAlertNotificationDefaultRecipient') `
+                        -or $PSBoundParameters.ContainsKey('EligibleAlertNotificationAdditionalRecipient'))
                 {
-                    'Critical'
-                }
-                else
-                {
-                    'All'
-                }
-                $params = @{
-                    ruleType                 = $currentRule.ruleType
-                    id                       = $currentRule.id
-                    notificationType         = 'Email'
-                    recipientType            = 'Admin'
-                    notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
-                    target                   = $currentRule.target
-                }
-            }
-        }
-        elseif ($currentRule.id -eq 'Notification_Requestor_Admin_Eligibility')
-        {
-            if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationOnlyCritical') `
-                    -or $PSBoundParameters.ContainsKey('EligibleAssigneeNotificationDefaultRecipient') `
-                    -or $PSBoundParameters.ContainsKey('EligibleAssigneeNotificationAdditionalRecipient'))
-            {
-                Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Notification to the assigned user (assignee)'
-                $onlyCritical = if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationOnlyCritical')) { $EligibleAssigneeNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
-                $defaultRecipient = if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationDefaultRecipient')) { $EligibleAssigneeNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
-                $additionalRecipient = if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationAdditionalRecipient')) { @($EligibleAssigneeNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
-                $notificationLevel = if ($onlyCritical)
-                {
-                    'Critical'
-                }
-                else
-                {
-                    'All'
-                }
-                $params = @{
-                    ruleType                 = $currentRule.ruleType
-                    id                       = $currentRule.id
-                    notificationType         = 'Email'
-                    recipientType            = 'Requestor'
-                    notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
-                    target                   = $currentRule.target
-                }
-            }
-        }
-        elseif ($currentRule.id -eq 'Notification_Approver_Admin_Eligibility')
-        {
-            if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationOnlyCritical') `
-                    -or $PSBoundParameters.ContainsKey('EligibleApproveNotificationDefaultRecipient') `
-                    -or $PSBoundParameters.ContainsKey('EligibleApproveNotificationAdditionalRecipient'))
-            {
-                Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Request to approve a role assignment renewal/extension'
-                $onlyCritical = if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationOnlyCritical')) { $EligibleApproveNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
-                $defaultRecipient = if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationDefaultRecipient')) { $EligibleApproveNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
-                $additionalRecipient = if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationAdditionalRecipient')) { @($EligibleApproveNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
-                $notificationLevel = if ($onlyCritical)
-                {
-                    'Critical'
-                }
-                else
-                {
-                    'All'
-                }
-                $params = @{
-                    ruleType                 = $currentRule.ruleType
-                    id                       = $currentRule.id
-                    notificationType         = 'Email'
-                    recipientType            = 'Approver'
-                    notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
-                    target                   = $currentRule.target
-                }
-            }
-        }
-        elseif ($currentRule.id -eq 'Notification_Admin_Admin_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationOnlyCritical') `
-                    -or $PSBoundParameters.ContainsKey('ActiveAlertNotificationDefaultRecipient') `
-                    -or $PSBoundParameters.ContainsKey('ActiveAlertNotificationAdditionalRecipient'))
-            {
-                Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Role assignment alert'
-                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationOnlyCritical')) { $ActiveAlertNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
-                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationDefaultRecipient')) { $ActiveAlertNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
-                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationAdditionalRecipient')) { @($ActiveAlertNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
-                $notificationLevel = if ($onlyCritical)
-                {
-                    'Critical'
-                }
-                else
-                {
-                    'All'
-                }
-                $params = @{
-                    ruleType                 = $currentRule.ruleType
-                    id                       = $currentRule.id
-                    notificationType         = 'Email'
-                    recipientType            = 'Admin'
-                    notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
-                    target                   = $currentRule.target
-                }
-            }
-        }
-        elseif ($currentRule.id -eq 'Notification_Requestor_Admin_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationOnlyCritical') `
-                    -or $PSBoundParameters.ContainsKey('ActiveAssigneeNotificationDefaultRecipient') `
-                    -or $PSBoundParameters.ContainsKey('ActiveAssigneeNotificationAdditionalRecipient'))
-            {
-                Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Notification to the assigned user (assignee)'
-                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationOnlyCritical')) { $ActiveAssigneeNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
-                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationDefaultRecipient')) { $ActiveAssigneeNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
-                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationAdditionalRecipient')) { @($ActiveAssigneeNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
-                $notificationLevel = if ($onlyCritical)
-                {
-                    'Critical'
-                }
-                else
-                {
-                    'All'
-                }
-                $params = @{
-                    ruleType                 = $currentRule.ruleType
-                    id                       = $currentRule.id
-                    notificationType         = 'Email'
-                    recipientType            = 'Requestor'
-                    notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
-                    target                   = $currentRule.target
-                }
-            }
-        }
-        elseif ($currentRule.id -eq 'Notification_Approver_Admin_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationOnlyCritical') `
-                    -or $PSBoundParameters.ContainsKey('ActiveApproveNotificationDefaultRecipient') `
-                    -or $PSBoundParameters.ContainsKey('ActiveApproveNotificationAdditionalRecipient'))
-            {
-                Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Request to approve a role assignment renewal/extension'
-                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationOnlyCritical')) { $ActiveApproveNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
-                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationDefaultRecipient')) { $ActiveApproveNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
-                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationAdditionalRecipient')) { @($ActiveApproveNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
-                $notificationLevel = if ($onlyCritical)
-                {
-                    'Critical'
-                }
-                else
-                {
-                    'All'
-                }
-                $params = @{
-                    ruleType                 = $currentRule.ruleType
-                    id                       = $currentRule.id
-                    notificationType         = 'Email'
-                    recipientType            = 'Approver'
-                    notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
-                    target                   = $currentRule.target
-                }
-            }
-        }
-        elseif ($currentRule.id -eq 'Notification_Admin_EndUser_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationOnlyCritical') `
-                    -or $PSBoundParameters.ContainsKey('ActivationAlertNotificationDefaultRecipient') `
-                    -or $PSBoundParameters.ContainsKey('ActivationAlertNotificationAdditionalRecipient'))
-            {
-                Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Role activation alert'
-                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationOnlyCritical')) { $ActivationAlertNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
-                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationDefaultRecipient')) { $ActivationAlertNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
-                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationAdditionalRecipient')) { @($ActivationAlertNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
-                $notificationLevel = if ($onlyCritical)
-                {
-                    'Critical'
-                }
-                else
-                {
-                    'All'
-                }
-                $params = @{
-                    ruleType                 = $currentRule.ruleType
-                    id                       = $currentRule.id
-                    notificationType         = 'Email'
-                    recipientType            = 'Admin'
-                    notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
-                    target                   = $currentRule.target
-                }
-            }
-        }
-        elseif ($currentRule.id -eq 'Notification_Requestor_EndUser_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationOnlyCritical') `
-                    -or $PSBoundParameters.ContainsKey('ActivationAssigneeNotificationDefaultRecipient') `
-                    -or $PSBoundParameters.ContainsKey('ActivationAssigneeNotificationAdditionalRecipient'))
-            {
-                Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Notification to activated user (requestor)'
-                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationOnlyCritical')) { $ActivationAssigneeNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
-                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationDefaultRecipient')) { $ActivationAssigneeNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
-                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationAdditionalRecipient')) { @($ActivationAssigneeNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
-                $notificationLevel = if ($onlyCritical)
-                {
-                    'Critical'
-                }
-                else
-                {
-                    'All'
-                }
-                $params = @{
-                    ruleType                 = $currentRule.ruleType
-                    id                       = $currentRule.id
-                    notificationType         = 'Email'
-                    recipientType            = 'Requestor'
-                    notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
-                    target                   = $currentRule.target
-                }
-            }
-        }
-        elseif ($currentRule.id -eq 'Notification_Approver_EndUser_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationOnlyCritical') `
-                    -or $PSBoundParameters.ContainsKey('ActivationApproveNotificationDefaultRecipient') `
-                    -or $PSBoundParameters.ContainsKey('ActivationApproveNotificationAdditionalRecipient'))
-            {
-                Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Notification to approvers'
-                $onlyCritical = if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationOnlyCritical')) { $ActivationApproveNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
-                $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationDefaultRecipient')) { $ActivationApproveNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
-                $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationAdditionalRecipient')) { @($ActivationApproveNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
-                $notificationLevel = if ($onlyCritical)
-                {
-                    'Critical'
-                }
-                else
-                {
-                    'All'
-                }
-                $params = @{
-                    ruleType                 = $currentRule.ruleType
-                    id                       = $currentRule.id
-                    notificationType         = 'Email'
-                    recipientType            = 'Approver'
-                    notificationLevel        = $notificationLevel
-                    isDefaultRecipientsEnabled = $defaultRecipient
-                    notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
-                    target                   = $currentRule.target
-                }
-            }
-        }
-        elseif ($currentRule.id -eq 'Expiration_EndUser_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('ActivationMaxDuration'))
-            {
-                Write-Verbose -Message 'Handle Activation: Activation maximum duration (hours)'
-                $params = @{
-                    ruleType        = $currentRule.ruleType
-                    id              = $currentRule.id
-                    maximumDuration = $ActivationMaxDuration
-                    target          = $currentRule.target
-                }
-            }
-        }
-        elseif ($currentRule.id -eq 'Enablement_EndUser_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('ActivationReqJustification') `
-                    -or $PSBoundParameters.ContainsKey('ActivationReqTicket') `
-                    -or $PSBoundParameters.ContainsKey('ActivationReqMFA'))
-            {
-                Write-Verbose -Message 'Handle Activation: Require justification / ticket / MFA on activation'
-                $reqJustification = if ($PSBoundParameters.ContainsKey('ActivationReqJustification')) { $ActivationReqJustification } else { ($currentRule.enabledRules) -contains 'Justification' }
-                $reqTicket = if ($PSBoundParameters.ContainsKey('ActivationReqTicket')) { $ActivationReqTicket } else { ($currentRule.enabledRules) -contains 'Ticketing' }
-                $reqMFA = if ($PSBoundParameters.ContainsKey('ActivationReqMFA')) { $ActivationReqMFA } else { ($currentRule.enabledRules) -contains 'MultiFactorAuthentication' }
-                [String[]]$enabledrules = @()
-                if ($reqJustification)
-                {
-                    $enabledrules += 'Justification'
-                }
-                if ($reqTicket)
-                {
-                    $enabledrules += 'Ticketing'
-                }
-                if ($reqMFA)
-                {
-                    $enabledrules += 'MultiFactorAuthentication'
-                }
-                $params = @{
-                    ruleType     = $currentRule.ruleType
-                    id           = $currentRule.id
-                    enabledRules = [System.Collections.ArrayList]@($enabledrules)
-                    target       = $currentRule.target
-                }
-            }
-        }
-        elseif ($currentRule.id -eq 'Approval_EndUser_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('ApprovaltoActivate') `
-                    -and $PSBoundParameters.ContainsKey('ActivateApprover'))
-            {
-                Write-Verbose -Message 'Handle Activation: Require approval to activate / Approvers'
-                $primaryApprovers = @()
-                if ($ActivateApprover.Count -gt 0)
-                {
-                    foreach ($item in $ActivateApprover)
+                    Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Role assignment alert'
+                    $onlyCritical = if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationOnlyCritical')) { $EligibleAlertNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                    $defaultRecipient = if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationDefaultRecipient')) { $EligibleAlertNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                    $additionalRecipient = if ($PSBoundParameters.ContainsKey('EligibleAlertNotificationAdditionalRecipient')) { @($EligibleAlertNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                    $notificationLevel = if ($onlyCritical)
                     {
-                        $Filter = "UserPrincipalName eq '$($item -replace "'", "''")'"
-                        $user = Get-MgUser -Filter $Filter -ErrorAction SilentlyContinue
-                        if ($null -ne $user)
+                        'Critical'
+                    }
+                    else
+                    {
+                        'All'
+                    }
+                    $params = @{
+                        ruleType                 = $currentRule.ruleType
+                        id                       = $currentRule.id
+                        notificationType         = 'Email'
+                        recipientType            = 'Admin'
+                        notificationLevel        = $notificationLevel
+                        isDefaultRecipientsEnabled = $defaultRecipient
+                        notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
+                        target                   = $currentRule.target
+                    }
+                }
+            }
+            elseif ($currentRule.id -eq 'Notification_Requestor_Admin_Eligibility')
+            {
+                if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationOnlyCritical') `
+                        -or $PSBoundParameters.ContainsKey('EligibleAssigneeNotificationDefaultRecipient') `
+                        -or $PSBoundParameters.ContainsKey('EligibleAssigneeNotificationAdditionalRecipient'))
+                {
+                    Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Notification to the assigned user (assignee)'
+                    $onlyCritical = if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationOnlyCritical')) { $EligibleAssigneeNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                    $defaultRecipient = if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationDefaultRecipient')) { $EligibleAssigneeNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                    $additionalRecipient = if ($PSBoundParameters.ContainsKey('EligibleAssigneeNotificationAdditionalRecipient')) { @($EligibleAssigneeNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                    $notificationLevel = if ($onlyCritical)
+                    {
+                        'Critical'
+                    }
+                    else
+                    {
+                        'All'
+                    }
+                    $params = @{
+                        ruleType                 = $currentRule.ruleType
+                        id                       = $currentRule.id
+                        notificationType         = 'Email'
+                        recipientType            = 'Requestor'
+                        notificationLevel        = $notificationLevel
+                        isDefaultRecipientsEnabled = $defaultRecipient
+                        notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
+                        target                   = $currentRule.target
+                    }
+                }
+            }
+            elseif ($currentRule.id -eq 'Notification_Approver_Admin_Eligibility')
+            {
+                if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationOnlyCritical') `
+                        -or $PSBoundParameters.ContainsKey('EligibleApproveNotificationDefaultRecipient') `
+                        -or $PSBoundParameters.ContainsKey('EligibleApproveNotificationAdditionalRecipient'))
+                {
+                    Write-Verbose -Message 'Handle Send notifications when members are assigned as eligible to this role: Request to approve a role assignment renewal/extension'
+                    $onlyCritical = if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationOnlyCritical')) { $EligibleApproveNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                    $defaultRecipient = if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationDefaultRecipient')) { $EligibleApproveNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                    $additionalRecipient = if ($PSBoundParameters.ContainsKey('EligibleApproveNotificationAdditionalRecipient')) { @($EligibleApproveNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                    $notificationLevel = if ($onlyCritical)
+                    {
+                        'Critical'
+                    }
+                    else
+                    {
+                        'All'
+                    }
+                    $params = @{
+                        ruleType                 = $currentRule.ruleType
+                        id                       = $currentRule.id
+                        notificationType         = 'Email'
+                        recipientType            = 'Approver'
+                        notificationLevel        = $notificationLevel
+                        isDefaultRecipientsEnabled = $defaultRecipient
+                        notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
+                        target                   = $currentRule.target
+                    }
+                }
+            }
+            elseif ($currentRule.id -eq 'Notification_Admin_Admin_Assignment')
+            {
+                if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationOnlyCritical') `
+                        -or $PSBoundParameters.ContainsKey('ActiveAlertNotificationDefaultRecipient') `
+                        -or $PSBoundParameters.ContainsKey('ActiveAlertNotificationAdditionalRecipient'))
+                {
+                    Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Role assignment alert'
+                    $onlyCritical = if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationOnlyCritical')) { $ActiveAlertNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                    $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationDefaultRecipient')) { $ActiveAlertNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                    $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActiveAlertNotificationAdditionalRecipient')) { @($ActiveAlertNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                    $notificationLevel = if ($onlyCritical)
+                    {
+                        'Critical'
+                    }
+                    else
+                    {
+                        'All'
+                    }
+                    $params = @{
+                        ruleType                 = $currentRule.ruleType
+                        id                       = $currentRule.id
+                        notificationType         = 'Email'
+                        recipientType            = 'Admin'
+                        notificationLevel        = $notificationLevel
+                        isDefaultRecipientsEnabled = $defaultRecipient
+                        notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
+                        target                   = $currentRule.target
+                    }
+                }
+            }
+            elseif ($currentRule.id -eq 'Notification_Requestor_Admin_Assignment')
+            {
+                if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationOnlyCritical') `
+                        -or $PSBoundParameters.ContainsKey('ActiveAssigneeNotificationDefaultRecipient') `
+                        -or $PSBoundParameters.ContainsKey('ActiveAssigneeNotificationAdditionalRecipient'))
+                {
+                    Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Notification to the assigned user (assignee)'
+                    $onlyCritical = if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationOnlyCritical')) { $ActiveAssigneeNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                    $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationDefaultRecipient')) { $ActiveAssigneeNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                    $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActiveAssigneeNotificationAdditionalRecipient')) { @($ActiveAssigneeNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                    $notificationLevel = if ($onlyCritical)
+                    {
+                        'Critical'
+                    }
+                    else
+                    {
+                        'All'
+                    }
+                    $params = @{
+                        ruleType                 = $currentRule.ruleType
+                        id                       = $currentRule.id
+                        notificationType         = 'Email'
+                        recipientType            = 'Requestor'
+                        notificationLevel        = $notificationLevel
+                        isDefaultRecipientsEnabled = $defaultRecipient
+                        notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
+                        target                   = $currentRule.target
+                    }
+                }
+            }
+            elseif ($currentRule.id -eq 'Notification_Approver_Admin_Assignment')
+            {
+                if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationOnlyCritical') `
+                        -or $PSBoundParameters.ContainsKey('ActiveApproveNotificationDefaultRecipient') `
+                        -or $PSBoundParameters.ContainsKey('ActiveApproveNotificationAdditionalRecipient'))
+                {
+                    Write-Verbose -Message 'Handle Send notifications when members are assigned as active to this role: Request to approve a role assignment renewal/extension'
+                    $onlyCritical = if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationOnlyCritical')) { $ActiveApproveNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                    $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationDefaultRecipient')) { $ActiveApproveNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                    $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActiveApproveNotificationAdditionalRecipient')) { @($ActiveApproveNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                    $notificationLevel = if ($onlyCritical)
+                    {
+                        'Critical'
+                    }
+                    else
+                    {
+                        'All'
+                    }
+                    $params = @{
+                        ruleType                 = $currentRule.ruleType
+                        id                       = $currentRule.id
+                        notificationType         = 'Email'
+                        recipientType            = 'Approver'
+                        notificationLevel        = $notificationLevel
+                        isDefaultRecipientsEnabled = $defaultRecipient
+                        notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
+                        target                   = $currentRule.target
+                    }
+                }
+            }
+            elseif ($currentRule.id -eq 'Notification_Admin_EndUser_Assignment')
+            {
+                if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationOnlyCritical') `
+                        -or $PSBoundParameters.ContainsKey('ActivationAlertNotificationDefaultRecipient') `
+                        -or $PSBoundParameters.ContainsKey('ActivationAlertNotificationAdditionalRecipient'))
+                {
+                    Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Role activation alert'
+                    $onlyCritical = if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationOnlyCritical')) { $ActivationAlertNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                    $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationDefaultRecipient')) { $ActivationAlertNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                    $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActivationAlertNotificationAdditionalRecipient')) { @($ActivationAlertNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                    $notificationLevel = if ($onlyCritical)
+                    {
+                        'Critical'
+                    }
+                    else
+                    {
+                        'All'
+                    }
+                    $params = @{
+                        ruleType                 = $currentRule.ruleType
+                        id                       = $currentRule.id
+                        notificationType         = 'Email'
+                        recipientType            = 'Admin'
+                        notificationLevel        = $notificationLevel
+                        isDefaultRecipientsEnabled = $defaultRecipient
+                        notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
+                        target                   = $currentRule.target
+                    }
+                }
+            }
+            elseif ($currentRule.id -eq 'Notification_Requestor_EndUser_Assignment')
+            {
+                if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationOnlyCritical') `
+                        -or $PSBoundParameters.ContainsKey('ActivationAssigneeNotificationDefaultRecipient') `
+                        -or $PSBoundParameters.ContainsKey('ActivationAssigneeNotificationAdditionalRecipient'))
+                {
+                    Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Notification to activated user (requestor)'
+                    $onlyCritical = if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationOnlyCritical')) { $ActivationAssigneeNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                    $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationDefaultRecipient')) { $ActivationAssigneeNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                    $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActivationAssigneeNotificationAdditionalRecipient')) { @($ActivationAssigneeNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                    $notificationLevel = if ($onlyCritical)
+                    {
+                        'Critical'
+                    }
+                    else
+                    {
+                        'All'
+                    }
+                    $params = @{
+                        ruleType                 = $currentRule.ruleType
+                        id                       = $currentRule.id
+                        notificationType         = 'Email'
+                        recipientType            = 'Requestor'
+                        notificationLevel        = $notificationLevel
+                        isDefaultRecipientsEnabled = $defaultRecipient
+                        notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
+                        target                   = $currentRule.target
+                    }
+                }
+            }
+            elseif ($currentRule.id -eq 'Notification_Approver_EndUser_Assignment')
+            {
+                if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationOnlyCritical') `
+                        -or $PSBoundParameters.ContainsKey('ActivationApproveNotificationDefaultRecipient') `
+                        -or $PSBoundParameters.ContainsKey('ActivationApproveNotificationAdditionalRecipient'))
+                {
+                    Write-Verbose -Message 'Handle Send notifications when eligible members activate this role: Notification to approvers'
+                    $onlyCritical = if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationOnlyCritical')) { $ActivationApproveNotificationOnlyCritical } else { $currentRule.notificationLevel -eq 'Critical' }
+                    $defaultRecipient = if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationDefaultRecipient')) { $ActivationApproveNotificationDefaultRecipient } else { $currentRule.isDefaultRecipientsEnabled }
+                    $additionalRecipient = if ($PSBoundParameters.ContainsKey('ActivationApproveNotificationAdditionalRecipient')) { @($ActivationApproveNotificationAdditionalRecipient) } else { @($currentRule.notificationRecipients) }
+                    $notificationLevel = if ($onlyCritical)
+                    {
+                        'Critical'
+                    }
+                    else
+                    {
+                        'All'
+                    }
+                    $params = @{
+                        ruleType                 = $currentRule.ruleType
+                        id                       = $currentRule.id
+                        notificationType         = 'Email'
+                        recipientType            = 'Approver'
+                        notificationLevel        = $notificationLevel
+                        isDefaultRecipientsEnabled = $defaultRecipient
+                        notificationRecipients   = [System.Collections.ArrayList]@($additionalRecipient)
+                        target                   = $currentRule.target
+                    }
+                }
+            }
+            elseif ($currentRule.id -eq 'Expiration_EndUser_Assignment')
+            {
+                if ($PSBoundParameters.ContainsKey('ActivationMaxDuration'))
+                {
+                    Write-Verbose -Message 'Handle Activation: Activation maximum duration (hours)'
+                    $params = @{
+                        ruleType        = $currentRule.ruleType
+                        id              = $currentRule.id
+                        maximumDuration = $ActivationMaxDuration
+                        target          = $currentRule.target
+                    }
+                }
+            }
+            elseif ($currentRule.id -eq 'Enablement_EndUser_Assignment')
+            {
+                if ($PSBoundParameters.ContainsKey('ActivationReqJustification') `
+                        -or $PSBoundParameters.ContainsKey('ActivationReqTicket') `
+                        -or $PSBoundParameters.ContainsKey('ActivationReqMFA'))
+                {
+                    Write-Verbose -Message 'Handle Activation: Require justification / ticket / MFA on activation'
+                    $reqJustification = if ($PSBoundParameters.ContainsKey('ActivationReqJustification')) { $ActivationReqJustification } else { ($currentRule.enabledRules) -contains 'Justification' }
+                    $reqTicket = if ($PSBoundParameters.ContainsKey('ActivationReqTicket')) { $ActivationReqTicket } else { ($currentRule.enabledRules) -contains 'Ticketing' }
+                    $reqMFA = if ($PSBoundParameters.ContainsKey('ActivationReqMFA')) { $ActivationReqMFA } else { ($currentRule.enabledRules) -contains 'MultiFactorAuthentication' }
+                    [String[]]$enabledrules = @()
+                    if ($reqJustification)
+                    {
+                        $enabledrules += 'Justification'
+                    }
+                    if ($reqTicket)
+                    {
+                        $enabledrules += 'Ticketing'
+                    }
+                    if ($reqMFA)
+                    {
+                        $enabledrules += 'MultiFactorAuthentication'
+                    }
+                    $params = @{
+                        ruleType     = $currentRule.ruleType
+                        id           = $currentRule.id
+                        enabledRules = [System.Collections.ArrayList]@($enabledrules)
+                        target       = $currentRule.target
+                    }
+                }
+            }
+            elseif ($currentRule.id -eq 'Approval_EndUser_Assignment')
+            {
+                if ($PSBoundParameters.ContainsKey('ApprovaltoActivate') `
+                        -and $PSBoundParameters.ContainsKey('ActivateApprover'))
+                {
+                    Write-Verbose -Message 'Handle Activation: Require approval to activate / Approvers'
+                    $primaryApprovers = @()
+                    if ($ActivateApprover.Count -gt 0)
+                    {
+                        foreach ($item in $ActivateApprover)
                         {
-                            $primaryApprovers += @{
-                                id       = $user.Id
-                                userType = 'User'
-                                isBackup = $false
-                            }
-                        }
-                        else
-                        {
-                            Write-Verbose -Message "User '$item' not found, trying with group"
-                            $Filter = "displayName eq '$($item -replace "'", "''")'"
-                            $group = Get-MgGroup -Filter $Filter -ErrorAction SilentlyContinue
-                            if ($null -ne $group)
+                            $Filter = "UserPrincipalName eq '$($item -replace "'", "''")'"
+                            $user = Get-MgUser -Filter $Filter -ErrorAction SilentlyContinue
+                            if ($null -ne $user)
                             {
                                 $primaryApprovers += @{
-                                    id       = $group.Id
-                                    userType = 'Group'
+                                    id       = $user.Id
+                                    userType = 'User'
                                     isBackup = $false
                                 }
                             }
                             else
                             {
-                                throw "Approver '$item' not found as user or group. Cannot add as approver."
+                                Write-Verbose -Message "User '$item' not found, trying with group"
+                                $Filter = "displayName eq '$($item -replace "'", "''")'"
+                                $group = Get-MgGroup -Filter $Filter -ErrorAction SilentlyContinue
+                                if ($null -ne $group)
+                                {
+                                    $primaryApprovers += @{
+                                        id       = $group.Id
+                                        userType = 'Group'
+                                        isBackup = $false
+                                    }
+                                }
+                                else
+                                {
+                                    throw "Approver '$item' not found as user or group. Cannot add as approver."
+                                }
                             }
                         }
                     }
-                }
 
-                $approvalStages = @{
-                    approvalStageTimeOutInDays     = 1
-                    isApproverJustificationRequired = $true
-                    escalationTimeInMinutes        = 0
-                    isEscalationEnabled            = $false
-                    primaryApprovers               = [System.Collections.ArrayList]@($primaryApprovers)
-                    escalationApprovers            = [System.Collections.ArrayList]@()
-                }
+                    $approvalStages = @{
+                        approvalStageTimeOutInDays     = 1
+                        isApproverJustificationRequired = $true
+                        escalationTimeInMinutes        = 0
+                        isEscalationEnabled            = $false
+                        primaryApprovers               = [System.Collections.ArrayList]@($primaryApprovers)
+                        escalationApprovers            = [System.Collections.ArrayList]@()
+                    }
 
-                $setting = @{
-                    isApprovalRequired              = $ApprovaltoActivate
-                    isApprovalRequiredForExtension  = $false
-                    isRequestorJustificationRequired = $true
-                    approvalMode                    = 'SingleStage'
-                    approvalStages                  = [System.Collections.ArrayList]@($approvalStages)
-                }
+                    $setting = @{
+                        isApprovalRequired              = $ApprovaltoActivate
+                        isApprovalRequiredForExtension  = $false
+                        isRequestorJustificationRequired = $true
+                        approvalMode                    = 'SingleStage'
+                        approvalStages                  = [System.Collections.ArrayList]@($approvalStages)
+                    }
 
-                $params = @{
-                    ruleType = $currentRule.ruleType
-                    id       = $currentRule.id
-                    setting  = $setting
-                    target   = $currentRule.target
+                    $params = @{
+                        ruleType = $currentRule.ruleType
+                        id       = $currentRule.id
+                        setting  = $setting
+                        target   = $currentRule.target
+                    }
                 }
             }
-        }
-        elseif ($currentRule.id -eq 'Expiration_Admin_Eligibility')
-        {
-            if ($PSBoundParameters.ContainsKey('PermanentEligibleAssignmentisExpirationRequired') `
-                    -and $PSBoundParameters.ContainsKey('ExpireEligibleAssignment'))
+            elseif ($currentRule.id -eq 'Expiration_Admin_Eligibility')
             {
-                Write-Verbose -Message 'Handle Assignment: Allow permanent eligible assignment / Expire eligible assignments after'
-                $params = @{
-                    ruleType             = $currentRule.ruleType
-                    id                   = $currentRule.id
-                    isExpirationRequired = $PermanentEligibleAssignmentisExpirationRequired
-                    maximumDuration      = $ExpireEligibleAssignment
-                    target               = $currentRule.target
+                if ($PSBoundParameters.ContainsKey('PermanentEligibleAssignmentisExpirationRequired') `
+                        -and $PSBoundParameters.ContainsKey('ExpireEligibleAssignment'))
+                {
+                    Write-Verbose -Message 'Handle Assignment: Allow permanent eligible assignment / Expire eligible assignments after'
+                    $params = @{
+                        ruleType             = $currentRule.ruleType
+                        id                   = $currentRule.id
+                        isExpirationRequired = $PermanentEligibleAssignmentisExpirationRequired
+                        maximumDuration      = $ExpireEligibleAssignment
+                        target               = $currentRule.target
+                    }
                 }
             }
-        }
-        elseif ($currentRule.id -eq 'Expiration_Admin_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('PermanentActiveAssignmentisExpirationRequired') `
-                    -and $PSBoundParameters.ContainsKey('ExpireActiveAssignment'))
+            elseif ($currentRule.id -eq 'Expiration_Admin_Assignment')
             {
-                Write-Verbose -Message 'Handle Assignment: Allow permanent active assignment / Expire active assignments after'
-                $params = @{
-                    ruleType             = $currentRule.ruleType
-                    id                   = $currentRule.id
-                    isExpirationRequired = $PermanentActiveAssignmentisExpirationRequired
-                    maximumDuration      = $ExpireActiveAssignment
-                    target               = $currentRule.target
+                if ($PSBoundParameters.ContainsKey('PermanentActiveAssignmentisExpirationRequired') `
+                        -and $PSBoundParameters.ContainsKey('ExpireActiveAssignment'))
+                {
+                    Write-Verbose -Message 'Handle Assignment: Allow permanent active assignment / Expire active assignments after'
+                    $params = @{
+                        ruleType             = $currentRule.ruleType
+                        id                   = $currentRule.id
+                        isExpirationRequired = $PermanentActiveAssignmentisExpirationRequired
+                        maximumDuration      = $ExpireActiveAssignment
+                        target               = $currentRule.target
+                    }
                 }
             }
-        }
-        elseif ($currentRule.id -eq 'Enablement_Admin_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('AssignmentReqJustification') `
-                    -or $PSBoundParameters.ContainsKey('AssignmentReqMFA'))
+            elseif ($currentRule.id -eq 'Enablement_Admin_Assignment')
             {
-                Write-Verbose -Message 'Handle Assignment: Require MFA / justification on active assignment'
-                $reqJustification = if ($PSBoundParameters.ContainsKey('AssignmentReqJustification')) { $AssignmentReqJustification } else { ($currentRule.enabledRules) -contains 'Justification' }
-                $reqMFA = if ($PSBoundParameters.ContainsKey('AssignmentReqMFA')) { $AssignmentReqMFA } else { ($currentRule.enabledRules) -contains 'MultiFactorAuthentication' }
-                [String[]]$enabledrules = @()
-                if ($reqJustification)
+                if ($PSBoundParameters.ContainsKey('AssignmentReqJustification') `
+                        -or $PSBoundParameters.ContainsKey('AssignmentReqMFA'))
                 {
-                    $enabledrules += 'Justification'
-                }
-                if ($reqMFA)
-                {
-                    $enabledrules += 'MultiFactorAuthentication'
-                }
-                $params = @{
-                    ruleType     = $currentRule.ruleType
-                    id           = $currentRule.id
-                    enabledRules = [System.Collections.ArrayList]@($enabledrules)
-                    target       = $currentRule.target
+                    Write-Verbose -Message 'Handle Assignment: Require MFA / justification on active assignment'
+                    $reqJustification = if ($PSBoundParameters.ContainsKey('AssignmentReqJustification')) { $AssignmentReqJustification } else { ($currentRule.enabledRules) -contains 'Justification' }
+                    $reqMFA = if ($PSBoundParameters.ContainsKey('AssignmentReqMFA')) { $AssignmentReqMFA } else { ($currentRule.enabledRules) -contains 'MultiFactorAuthentication' }
+                    [String[]]$enabledrules = @()
+                    if ($reqJustification)
+                    {
+                        $enabledrules += 'Justification'
+                    }
+                    if ($reqMFA)
+                    {
+                        $enabledrules += 'MultiFactorAuthentication'
+                    }
+                    $params = @{
+                        ruleType     = $currentRule.ruleType
+                        id           = $currentRule.id
+                        enabledRules = [System.Collections.ArrayList]@($enabledrules)
+                        target       = $currentRule.target
+                    }
                 }
             }
-        }
-        elseif ($currentRule.id -eq 'Enablement_Admin_Eligibility')
-        {
-            if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqJustification') `
-                    -or $PSBoundParameters.ContainsKey('ElegibilityAssignmentReqMFA'))
+            elseif ($currentRule.id -eq 'Enablement_Admin_Eligibility')
             {
-                Write-Verbose -Message 'Handle Assignment: Require MFA / justification on eligible assignment'
-                $reqJustification = if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqJustification')) { $ElegibilityAssignmentReqJustification } else { ($currentRule.enabledRules) -contains 'Justification' }
-                $reqMFA = if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqMFA')) { $ElegibilityAssignmentReqMFA } else { ($currentRule.enabledRules) -contains 'MultiFactorAuthentication' }
-                [String[]]$enabledrules = @()
-                if ($reqJustification)
+                if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqJustification') `
+                        -or $PSBoundParameters.ContainsKey('ElegibilityAssignmentReqMFA'))
                 {
-                    $enabledrules += 'Justification'
-                }
-                if ($reqMFA)
-                {
-                    $enabledrules += 'MultiFactorAuthentication'
-                }
-                $params = @{
-                    ruleType     = $currentRule.ruleType
-                    id           = $currentRule.id
-                    enabledRules = [System.Collections.ArrayList]@($enabledrules)
-                    target       = $currentRule.target
+                    Write-Verbose -Message 'Handle Assignment: Require MFA / justification on eligible assignment'
+                    $reqJustification = if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqJustification')) { $ElegibilityAssignmentReqJustification } else { ($currentRule.enabledRules) -contains 'Justification' }
+                    $reqMFA = if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqMFA')) { $ElegibilityAssignmentReqMFA } else { ($currentRule.enabledRules) -contains 'MultiFactorAuthentication' }
+                    [String[]]$enabledrules = @()
+                    if ($reqJustification)
+                    {
+                        $enabledrules += 'Justification'
+                    }
+                    if ($reqMFA)
+                    {
+                        $enabledrules += 'MultiFactorAuthentication'
+                    }
+                    $params = @{
+                        ruleType     = $currentRule.ruleType
+                        id           = $currentRule.id
+                        enabledRules = [System.Collections.ArrayList]@($enabledrules)
+                        target       = $currentRule.target
+                    }
                 }
             }
-        }
-        elseif ($currentRule.id -eq 'AuthenticationContext_EndUser_Assignment')
-        {
-            if ($PSBoundParameters.ContainsKey('ActivationReqAuthContext'))
+            elseif ($currentRule.id -eq 'AuthenticationContext_EndUser_Assignment')
             {
-                Write-Verbose -Message 'Handle Activation: Require authentication context'
-                $claimValue = $currentRule.claimValue
-                if ($PSBoundParameters.ContainsKey('ActivationAuthContextId'))
+                if ($PSBoundParameters.ContainsKey('ActivationReqAuthContext'))
                 {
-                    $claimValue = $ActivationAuthContextId
-                }
-                $params = @{
-                    ruleType   = $currentRule.ruleType
-                    id         = $currentRule.id
-                    isEnabled  = $ActivationReqAuthContext
-                    claimValue = $claimValue
-                    target     = $currentRule.target
+                    Write-Verbose -Message 'Handle Activation: Require authentication context'
+                    $claimValue = $currentRule.claimValue
+                    if ($PSBoundParameters.ContainsKey('ActivationAuthContextId'))
+                    {
+                        $claimValue = $ActivationAuthContextId
+                    }
+                    $params = @{
+                        ruleType   = $currentRule.ruleType
+                        id         = $currentRule.id
+                        isEnabled  = $ActivationReqAuthContext
+                        claimValue = $claimValue
+                        target     = $currentRule.target
+                    }
                 }
             }
-        }
 
-        if ($params.Count -gt 0)
-        {
-            # Replace the rule in the array with the updated version
-            for ($i = 0; $i -lt $policy.properties.rules.Count; $i++)
+            if ($params.Count -gt 0)
             {
-                if ($policy.properties.rules[$i].id -eq $currentRule.id)
+                # Replace the rule in the array with the updated version
+                for ($i = 0; $i -lt $policy.properties.rules.Count; $i++)
                 {
-                    $policy.properties.rules[$i] = $params
-                    $ruleModified = $true
-                    break
+                    if ($policy.properties.rules[$i].id -eq $currentRule.id)
+                    {
+                        $policy.properties.rules[$i] = $params
+                        $ruleModified = $true
+                        break
+                    }
                 }
             }
-        }
         }
 
         if ($ruleModified)
@@ -1673,7 +1673,7 @@ function Export-TargetResource
                     $roleDefId = $assignment.properties.roleDefinitionId
                     if (-not [System.String]::IsNullOrEmpty($roleDefId))
                     {
-                        $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$roleDefId`?api-version=2020-10-01"
+                        $roleDefUri = "$((Get-MSCloudLoginConnectionProfile -Workload Azure).ManagementUrl)$roleDefId`?api-version=$apiVersion"
                         $roleDefResponse = Invoke-AzRest -Uri $roleDefUri -Method GET
                         $roleDef = ConvertFrom-Json $roleDefResponse.Content
                         $roleDisplayName = $roleDef.properties.roleName
