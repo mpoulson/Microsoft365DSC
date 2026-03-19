@@ -1,6 +1,7 @@
 [ClassVersion("1.0.0.0"), FriendlyName("AzureRoleEligibilityScheduleSettings")]
 class MSFT_AzureRoleEligibilityScheduleSettings : OMI_BaseResource
 {
+    [Key, Description("Only valid value is 'Yes'."), ValueMap{"Yes"}, Values{"Yes"}] String IsSingleInstance;
     [Key, Description("Display name of the role definition being governed by this policy.")] String RoleDefinitionDisplayName;
     [Key, Description("The scope of the role management policy. Supports subscriptions/{id}, subscriptions/{id}/resourceGroups/{name}, and providers/Microsoft.Management/managementGroups/{name} scopes.")] String ScopeId;
     [Write, Description("Specifies the internal Policy Id.")] String PolicyId;
