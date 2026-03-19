@@ -24,6 +24,7 @@ Configuration Example
     {
         AzureRoleEligibilityScheduleSettings "Owner-SubscriptionSettings"
         {
+            IsSingleInstance                                    = "Yes"
             RoleDefinitionDisplayName                       = "Owner"
             ScopeId                                         = "subscriptions/00000000-0000-0000-0000-000000000000"
             ActivationMaxDuration                           = "PT4H"

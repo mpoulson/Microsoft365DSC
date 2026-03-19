@@ -7,6 +7,11 @@ function Get-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
+
+        [Parameter(Mandatory = $true)]
         [System.String]
         $RoleDefinitionDisplayName,
 
@@ -404,6 +409,7 @@ function Get-TargetResource
 
         Write-Verbose -Message "Found configuration for Role {$RoleDefinitionDisplayName} at Scope {$ScopeId}"
         $result = @{
+            IsSingleInstance                                          = 'Yes'
             RoleDefinitionDisplayName                                 = $RoleDefinitionDisplayName
             ScopeId                                                   = $ScopeId
             PolicyId                                                  = $policyIdValue
@@ -477,6 +483,11 @@ function Set-TargetResource
     [CmdletBinding()]
     param
     (
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
+
         [Parameter(Mandatory = $true)]
         [System.String]
         $RoleDefinitionDisplayName,
@@ -1254,6 +1265,11 @@ function Test-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
+
+        [Parameter(Mandatory = $true)]
         [System.String]
         $RoleDefinitionDisplayName,
 
@@ -1715,6 +1731,7 @@ function Export-TargetResource
                 Write-M365DSCHost -Message "        |---[$i/$($scopeInstances.Count)] $($instance.RoleDisplayName)" -DeferWrite
 
                 $Params = @{
+                    IsSingleInstance          = 'Yes'
                     RoleDefinitionDisplayName = $instance.RoleDisplayName
                     ScopeId                   = $currentScope
                     ApplicationId             = $ApplicationId
