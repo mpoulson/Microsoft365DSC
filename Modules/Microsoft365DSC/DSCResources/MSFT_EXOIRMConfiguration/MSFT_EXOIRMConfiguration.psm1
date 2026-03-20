@@ -33,6 +33,10 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $EnablePortalTrackingLogs,
+
+        [Parameter()]
+        [System.Boolean]
         $InternalLicensingEnabled,
 
         [Parameter()]
@@ -159,6 +163,7 @@ function Get-TargetResource
             DecryptAttachmentForEncryptOnly            = $IRMConfiguration.DecryptAttachmentForEncryptOnly
             EDiscoverySuperUserEnabled                 = $IRMConfiguration.EDiscoverySuperUserEnabled
             EnablePdfEncryption                        = $IRMConfiguration.EnablePdfEncryption
+            EnablePortalTrackingLogs                   = $IRMConfiguration.EnablePortalTrackingLogs
             InternalLicensingEnabled                   = $IRMConfiguration.InternalLicensingEnabled
             JournalReportDecryptionEnabled             = $IRMConfiguration.JournalReportDecryptionEnabled
             LicensingLocation                          = $LicensingLocationValue
@@ -223,6 +228,10 @@ function Set-TargetResource
         [Parameter()]
         [System.Boolean]
         $EnablePdfEncryption,
+
+        [Parameter()]
+        [System.Boolean]
+        $EnablePortalTrackingLogs,
 
         [Parameter()]
         [System.Boolean]
@@ -361,6 +370,10 @@ function Test-TargetResource
         [Parameter()]
         [System.Boolean]
         $EnablePdfEncryption,
+
+        [Parameter()]
+        [System.Boolean]
+        $EnablePortalTrackingLogs,
 
         [Parameter()]
         [System.Boolean]
