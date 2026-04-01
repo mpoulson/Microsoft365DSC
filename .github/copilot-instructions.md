@@ -33,6 +33,7 @@ This guide enables AI coding agents to be productive in the Microsoft365DSC code
 ## Project-Specific Conventions
 
 - **Resource Naming:** DSC resources follow the pattern `<Workload><Resource>`, e.g., `EXOGroupSettings`. The schema file name has `.schema.mof` ending. Each file is prefixed with `MSFT_`.
+- **Generated Files:** `*.schema.mof` files are **auto-generated** by the `ResourceGenerator`. Do **not** edit them by hand — update the generator source or the `.psm1` implementation and regenerate instead.
 - **Testing:** Each resource has a corresponding test file in `Tests/Unit/Microsoft365DSC/`. Its name is `Microsoft365DSC.<ResourceName>.Tests.ps1`.
 - **Documentation:** Resource documentation is in `docs/` and `README.md`.
 - **External Dependencies:**
