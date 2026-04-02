@@ -24,7 +24,6 @@ Configuration Example
     {
         AzureRoleEligibilityScheduleSettings "Owner-SubscriptionSettings"
         {
-            IsSingleInstance                                = "Yes"
             RoleDefinitionDisplayName                       = "Owner"
             ScopeId                                         = "subscriptions/00000000-0000-0000-0000-000000000000"
             ActivationMaxDuration                           = "PT4H"
@@ -39,8 +38,8 @@ Configuration Example
             ExpireActiveAssignment                          = "P90D"
             AssignmentReqMFA                                = $False
             AssignmentReqJustification                      = $True
-            ElegibilityAssignmentReqMFA                     = $False
-            ElegibilityAssignmentReqJustification           = $False
+            EligibilityAssignmentReqMFA                     = $False
+            EligibilityAssignmentReqJustification           = $False
             EligibleAlertNotificationDefaultRecipient       = $True
             EligibleAlertNotificationAdditionalRecipient    = @("eligibility-admin@contoso.com")
             EligibleAlertNotificationOnlyCritical           = $True

@@ -7,11 +7,6 @@ function Get-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Yes')]
-        [System.String]
-        $IsSingleInstance,
-
-        [Parameter(Mandatory = $true)]
         [System.String]
         $RoleDefinitionDisplayName,
 
@@ -81,11 +76,11 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $ElegibilityAssignmentReqMFA,
+        $EligibilityAssignmentReqMFA,
 
         [Parameter()]
         [System.Boolean]
-        $ElegibilityAssignmentReqJustification,
+        $EligibilityAssignmentReqJustification,
 
         [Parameter()]
         [System.Boolean]
@@ -371,8 +366,8 @@ function Get-TargetResource
         $AssignmentReqJustification = (($rules | Where-Object { $_.id -eq 'Enablement_Admin_Assignment' }).enabledRules) -contains 'Justification'
 
         # Extract eligible assignment enablement settings
-        $ElegibilityAssignmentReqMFA = (($rules | Where-Object { $_.id -eq 'Enablement_Admin_Eligibility' }).enabledRules) -contains 'MultiFactorAuthentication'
-        $ElegibilityAssignmentReqJustification = (($rules | Where-Object { $_.id -eq 'Enablement_Admin_Eligibility' }).enabledRules) -contains 'Justification'
+        $EligibilityAssignmentReqMFA = (($rules | Where-Object { $_.id -eq 'Enablement_Admin_Eligibility' }).enabledRules) -contains 'MultiFactorAuthentication'
+        $EligibilityAssignmentReqJustification = (($rules | Where-Object { $_.id -eq 'Enablement_Admin_Eligibility' }).enabledRules) -contains 'Justification'
 
         # Extract notification settings for eligible assignments
         $EligibleAlertNotificationDefaultRecipient = ($rules | Where-Object { $_.id -eq 'Notification_Admin_Admin_Eligibility' }).isDefaultRecipientsEnabled
@@ -409,7 +404,6 @@ function Get-TargetResource
 
         Write-Verbose -Message "Found configuration for Role {$RoleDefinitionDisplayName} at Scope {$ScopeId}"
         $result = @{
-            IsSingleInstance                                          = 'Yes'
             RoleDefinitionDisplayName                                 = $RoleDefinitionDisplayName
             ScopeId                                                   = $ScopeId
             PolicyId                                                  = $policyIdValue
@@ -427,8 +421,8 @@ function Get-TargetResource
             ExpireActiveAssignment                                    = $ExpireActiveAssignment
             AssignmentReqMFA                                          = $AssignmentReqMFA
             AssignmentReqJustification                                = $AssignmentReqJustification
-            ElegibilityAssignmentReqMFA                               = $ElegibilityAssignmentReqMFA
-            ElegibilityAssignmentReqJustification                     = $ElegibilityAssignmentReqJustification
+            EligibilityAssignmentReqMFA                               = $EligibilityAssignmentReqMFA
+            EligibilityAssignmentReqJustification                     = $EligibilityAssignmentReqJustification
             EligibleAlertNotificationDefaultRecipient                 = $EligibleAlertNotificationDefaultRecipient
             EligibleAlertNotificationAdditionalRecipient              = [System.String[]]$EligibleAlertNotificationAdditionalRecipient
             EligibleAlertNotificationOnlyCritical                     = $EligibleAlertNotificationOnlyCritical
@@ -483,11 +477,6 @@ function Set-TargetResource
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('Yes')]
-        [System.String]
-        $IsSingleInstance,
-
         [Parameter(Mandatory = $true)]
         [System.String]
         $RoleDefinitionDisplayName,
@@ -558,11 +547,11 @@ function Set-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $ElegibilityAssignmentReqMFA,
+        $EligibilityAssignmentReqMFA,
 
         [Parameter()]
         [System.Boolean]
-        $ElegibilityAssignmentReqJustification,
+        $EligibilityAssignmentReqJustification,
 
         [Parameter()]
         [System.Boolean]
@@ -1175,12 +1164,12 @@ function Set-TargetResource
             }
             elseif ($currentRule.id -eq 'Enablement_Admin_Eligibility')
             {
-                if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqJustification') `
-                        -or $PSBoundParameters.ContainsKey('ElegibilityAssignmentReqMFA'))
+                if ($PSBoundParameters.ContainsKey('EligibilityAssignmentReqJustification') `
+                        -or $PSBoundParameters.ContainsKey('EligibilityAssignmentReqMFA'))
                 {
                     Write-Verbose -Message 'Handle Assignment: Require MFA / justification on eligible assignment'
-                    $reqJustification = if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqJustification')) { $ElegibilityAssignmentReqJustification } else { ($currentRule.enabledRules) -contains 'Justification' }
-                    $reqMFA = if ($PSBoundParameters.ContainsKey('ElegibilityAssignmentReqMFA')) { $ElegibilityAssignmentReqMFA } else { ($currentRule.enabledRules) -contains 'MultiFactorAuthentication' }
+                    $reqJustification = if ($PSBoundParameters.ContainsKey('EligibilityAssignmentReqJustification')) { $EligibilityAssignmentReqJustification } else { ($currentRule.enabledRules) -contains 'Justification' }
+                    $reqMFA = if ($PSBoundParameters.ContainsKey('EligibilityAssignmentReqMFA')) { $EligibilityAssignmentReqMFA } else { ($currentRule.enabledRules) -contains 'MultiFactorAuthentication' }
                     [String[]]$enabledrules = @()
                     if ($reqJustification)
                     {
@@ -1265,11 +1254,6 @@ function Test-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Yes')]
-        [System.String]
-        $IsSingleInstance,
-
-        [Parameter(Mandatory = $true)]
         [System.String]
         $RoleDefinitionDisplayName,
 
@@ -1339,11 +1323,11 @@ function Test-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $ElegibilityAssignmentReqMFA,
+        $EligibilityAssignmentReqMFA,
 
         [Parameter()]
         [System.Boolean]
-        $ElegibilityAssignmentReqJustification,
+        $EligibilityAssignmentReqJustification,
 
         [Parameter()]
         [System.Boolean]
@@ -1731,7 +1715,6 @@ function Export-TargetResource
                 Write-M365DSCHost -Message "        |---[$i/$($scopeInstances.Count)] $($instance.RoleDisplayName)" -DeferWrite
 
                 $Params = @{
-                    IsSingleInstance          = 'Yes'
                     RoleDefinitionDisplayName = $instance.RoleDisplayName
                     ScopeId                   = $currentScope
                     ApplicationId             = $ApplicationId
