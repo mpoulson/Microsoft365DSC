@@ -395,7 +395,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineWindows10 -Property @{
                         Pol_MSS_DisableIPSourceRoutingIPv6 = 1
                         DisableIPSourceRoutingIPv6 = 0
-                        HardenedUNCPaths_Pol_HardenedPaths = '1'
+                        HardenedUNCPaths_Pol_HardenedPaths = 1
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'block'
                         pol_hardenedpaths = [CimInstance[]]@(
                             (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogpol_hardenedpaths -Property @{
@@ -408,7 +408,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = "My Test"
                     RoleScopeTagIds = @("FakeStringValue")
                     userSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogUserSettings_IntuneSecurityBaselineWindows10 -Property @{
-                        AllowWindowsSpotlight = '1'
+                        AllowWindowsSpotlight = 1
                     } -ClientOnly)
                     Ensure = "Present"
                     Credential = $Credential;
@@ -444,7 +444,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineWindows10 -Property @{
                         Pol_MSS_DisableIPSourceRoutingIPv6 = 1
                         DisableIPSourceRoutingIPv6 = 0
-                        HardenedUNCPaths_Pol_HardenedPaths = '1'
+                        HardenedUNCPaths_Pol_HardenedPaths = 1
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'block'
                         pol_hardenedpaths = [CimInstance[]]@(
                             (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogpol_hardenedpaths -Property @{
@@ -457,7 +457,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = "My Test"
                     RoleScopeTagIds = @("FakeStringValue")
                     userSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogUserSettings_IntuneSecurityBaselineWindows10 -Property @{
-                        AllowWindowsSpotlight = '1'
+                        AllowWindowsSpotlight = 1
                     } -ClientOnly)
                     Ensure = "Absent"
                     Credential = $Credential;
@@ -492,7 +492,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineWindows10 -Property @{
                         Pol_MSS_DisableIPSourceRoutingIPv6 = 1
                         DisableIPSourceRoutingIPv6 = 0
-                        HardenedUNCPaths_Pol_HardenedPaths = '1'
+                        HardenedUNCPaths_Pol_HardenedPaths = 1
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'block'
                         pol_hardenedpaths = [CimInstance[]]@(
                             (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogpol_hardenedpaths -Property @{
@@ -505,7 +505,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = "My Test"
                     RoleScopeTagIds = @("FakeStringValue")
                     userSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogUserSettings_IntuneSecurityBaselineWindows10 -Property @{
-                        AllowWindowsSpotlight = '1'
+                        AllowWindowsSpotlight = 1
                     } -ClientOnly)
                     Ensure = "Present"
                     Credential = $Credential;
@@ -531,7 +531,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     deviceSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogDeviceSettings_IntuneSecurityBaselineWindows10 -Property @{
                         Pol_MSS_DisableIPSourceRoutingIPv6 = 1
                         DisableIPSourceRoutingIPv6 = 0
-                        HardenedUNCPaths_Pol_HardenedPaths = '1'
+                        HardenedUNCPaths_Pol_HardenedPaths = 1
                         BlockExecutionOfPotentiallyObfuscatedScripts = 'block'
                         pol_hardenedpaths = [CimInstance[]]@(
                             (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogpol_hardenedpaths -Property @{
@@ -544,7 +544,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = "My Test"
                     RoleScopeTagIds = @("FakeStringValue")
                     userSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphIntuneSettingsCatalogUserSettings_IntuneSecurityBaselineWindows10 -Property @{
-                        AllowWindowsSpotlight = '0' #drift
+                        AllowWindowsSpotlight = 0 #drift
                     } -ClientOnly)
                     Ensure = "Present"
                     Credential = $Credential;

@@ -152,7 +152,7 @@
       "HasCustomComparison": true,
       "Description": "Excludes properties: ProvisioningType, UserExperienceType"
     },
-    "IntuneDeviceConfigurationDefenderForEndpointOnboardingPolicyWindows10": {
+    "IntuneDeviceConfigurationDefenderOnboardingPolicyWindows10": {
       "HasCustomComparison": true,
       "Description": "Excludes properties: AdvancedThreatProtectionOnboardingBlob"
     },

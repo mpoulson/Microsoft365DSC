@@ -15,7 +15,7 @@ Configuration Example
     {
         TeamsMeetingConfiguration 'MeetingConfiguration'
         {
-            Identity                    = "Global"
+            IsSingleInstance            = 'Yes'
             ClientAppSharingPort        = 50040
             ClientAppSharingPortRange   = 20
             ClientAudioPort             = 50000

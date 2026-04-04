@@ -15,7 +15,7 @@ Configuration Example
     {
         TeamsGuestCallingConfiguration 'ConfigureGuestCalling'
         {
-            Identity            = "Global"
+            IsSingleInstance    = 'Yes';
             AllowPrivateCalling = $True
             Credential          = $Credscredential
         }

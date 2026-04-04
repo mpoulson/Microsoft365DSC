@@ -409,7 +409,6 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
@@ -493,14 +492,6 @@ function Set-TargetResource
         }
         $createParameters.Add('PrincipalId', $PrincipalId)
 
-        $keys = (([Hashtable]$createParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $createParameters.$key -and $createParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $createParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $createParameters.$key
-            }
-        }
         #region resource generator code
         Write-Verbose -Message "Creating the Azure AD Group Eligibility Schedule with parameters:`r`n$(ConvertTo-Json $createParameters -Depth 10)"
         New-MgBetaIdentityGovernancePrivilegedAccessGroupEligibilityScheduleRequest -BodyParameter $createParameters
@@ -603,22 +594,13 @@ function Set-TargetResource
 
         $updateParameters.Add('PrincipalId', $PrincipalId)
 
-        $keys = (([Hashtable]$updateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $updateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.PrivilegedAccessGroupEligibilityScheduleId
-            }
-        }
-
         #region resource generator code
         New-MgBetaIdentityGovernancePrivilegedAccessGroupEligibilityScheduleRequest -BodyParameter $UpdateParameters
         #endregion
     }
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
-        Write-Verbose -Message "Removiong the Azure AD Group Eligibility Schedule with Id {$($currentInstance.Id)}"
+        Write-Verbose -Message "Removing the Azure AD Group Eligibility Schedule with Id {$($currentInstance.Id)}"
 
         $updateParameters = ([Hashtable]$BoundParameters).Clone()
         $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $updateParameters
@@ -644,15 +626,6 @@ function Set-TargetResource
             }
         }
         $updateParameters.Add('PrincipalId', $PrincipalId)
-
-        $keys = (([Hashtable]$updateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $updateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.PrivilegedAccessGroupEligibilityScheduleId
-            }
-        }
 
         #region resource generator code
         New-MgBetaIdentityGovernancePrivilegedAccessGroupEligibilityScheduleRequest -BodyParameter $UpdateParameters
@@ -812,8 +785,7 @@ function Export-TargetResource
         {
             $Filter = "$Filter and"
         }
-        $Filter = "$Filter NOT(groupTypes/any(x:x eq 'DynamicMembership'))"
-        Write-Verbose "Setting Export fitler to $Filter"
+        $Filter = "$Filter NOT(groupTypes/any(x:x eq 'DynamicMembership')) and not(mailEnabled eq true and securityEnabled eq true)"
     }
 
     $ExportParameters = @{
@@ -832,8 +804,7 @@ function Export-TargetResource
         Write-Verbose "Got $($Script:exportedGroups.Length) total unfiltered groups"
         Write-Verbose 'Filtering all groups to PIM compatible'
         $Script:exportedGroups = $Script:exportedGroups | Where-Object -FilterScript {
-            -not ($_.MailEnabled -and ($null -eq $_.GroupTypes -or $_.GroupTypes.Length -eq 0)) -and `
-                -not ($_.MailEnabled -and $_.SecurityEnabled)
+            -not ($_.MailEnabled -and ($null -eq $_.GroupTypes -or $_.GroupTypes.Length -eq 0))
         }
         Write-Verbose "Got $($Script:exportedGroups.Length) PIM compatible groups"
 

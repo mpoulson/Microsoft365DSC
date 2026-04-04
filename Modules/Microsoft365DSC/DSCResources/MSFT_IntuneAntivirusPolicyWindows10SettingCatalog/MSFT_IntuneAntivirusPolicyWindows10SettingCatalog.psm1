@@ -1623,11 +1623,24 @@ function Export-TargetResource
     {
         $templateFamily = 'endpointSecurityAntivirus'
         $templateReferences = 'd948ff9b-99cb-4ee0-8012-1fbc09685377_1', 'e3f74c5a-a6de-411d-aef6-eb15628f3a0a_1', '45fea5e9-280d-4da1-9792-fb5736da0ca9_1', '804339ad-1553-4478-a742-138fb5807418_1'
-        [array]$policies = Get-MgBetaDeviceManagementConfigurationPolicy -Filter $Filter -All:$true `
-            -ErrorAction Stop | Where-Object -FilterScript {
-            $_.TemplateReference.TemplateFamily -eq $templateFamily -and
-            $_.TemplateReference.TemplateId -in $templateReferences
+        $baseFilter = foreach ($templateReference in $templateReferences)
+        {
+            "templateReference/templateId eq '$templateReference'"
         }
+        $baseFilter = $baseFilter -join ' or '
+        $baseFilter = "($baseFilter) and templateReference/templateFamily eq '$templateFamily'"
+        if (-not [System.String]::IsNullOrEmpty($Filter))
+        {
+            $Filter = "($Filter) and ($baseFilter)"
+        }
+        else
+        {
+            $Filter = $baseFilter
+        }
+        [array]$policies = Get-MgBetaDeviceManagementConfigurationPolicy `
+            -Filter $Filter `
+            -All `
+            -ErrorAction Stop
 
         if ($policies.Length -eq 0)
         {

@@ -15,7 +15,7 @@ Configuration Example
     {
         TeamsGuestMessagingConfiguration 'TeamsGuestMessagingConfig'
         {
-            Identity               = "Global"
+            IsSingleInstance       = 'Yes'
             AllowGiphy             = $True
             AllowImmersiveReader   = $False
             AllowMemes             = $True

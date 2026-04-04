@@ -558,7 +558,7 @@ function Export-TargetResource
 function Get-SCFilePlanPropertyObject
 {
     [CmdletBinding()]
-    [OutputType([PSCustomObject])]
+    [OutputType([System.Collections.Hashtable])]
     param
     (
         [Parameter()]
@@ -570,7 +570,7 @@ function Get-SCFilePlanPropertyObject
         return $null
     }
 
-    $result = [PSCustomObject]@{
+    $result = @{
         Settings = @(
             @{Key = 'FilePlanPropertyDepartment'; Value = $properties.FilePlanPropertyDepartment },
             @{Key = 'FilePlanPropertyCategory'; Value = $properties.FilePlanPropertyCategory },

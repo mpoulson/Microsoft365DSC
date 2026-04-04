@@ -16,7 +16,7 @@ Configuration Example
     {
         TeamsGuestMeetingConfiguration 'TeamsGuestMeetingConfiguration'
         {
-            Identity                = 'Global'
+            IsSingleInstance        = 'Yes'
             AllowIPVideo            = $true
             LiveCaptionsEnabledType = 'Disabled'
             ScreenSharingMode       = 'EntireScreen'

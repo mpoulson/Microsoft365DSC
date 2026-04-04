@@ -15,7 +15,7 @@ Configuration Example
     {
         TeamsFederationConfiguration 'FederationConfiguration'
         {
-            Identity                                    = "Global";
+            IsSingleInstance                            = 'Yes';
             AllowedDomains                              = @();
             BlockedDomains                              = @();
             AllowFederatedUsers                         = $True;

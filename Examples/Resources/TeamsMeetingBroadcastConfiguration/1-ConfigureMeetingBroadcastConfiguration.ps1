@@ -15,7 +15,7 @@ Configuration Example
     {
         TeamsMeetingBroadcastConfiguration 'MeetingBroadcastConfiguration'
         {
-            Identity                            = 'Global'
+            IsSingleInstance                    = 'Yes'
             AllowSdnProviderForBroadcastMeeting = $True
             SupportURL                          = "https://support.office.com/home/contact"
             SdnProviderName                     = "hive"

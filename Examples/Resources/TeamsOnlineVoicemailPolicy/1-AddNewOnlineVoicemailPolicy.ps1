@@ -22,7 +22,7 @@ Configuration Example
             EnableTranscriptionTranslation      = $True;
             Ensure                              = "Present";
             Identity                            = "MyPolicy";
-            MaximumRecordingLength              = "00:10:00";
+            MaximumRecordingLength              = 600;
             ShareData                           = "Defer";
         }
     }

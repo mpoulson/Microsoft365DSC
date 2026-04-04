@@ -33,6 +33,10 @@ jobs:
                   Write-Verbose -Message $_
               }
           }
+      - name: Build Dll Files
+        shell: pwsh
+        run: |
+          & ./Utilities/Build-DllFiles.ps1 -Configuration Release
       - name: Publish
         shell: powershell
         env:
