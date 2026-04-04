@@ -1,0 +1,54 @@
+{
+  "resourceName": "AADTenantGovernancePolicyTemplate",
+  "description": "This resource configures an Azure AD Tenant Governance Policy Template.",
+  "permissions": {
+    "graph": {
+      "delegated": {
+        "read": [
+          {
+            "name": "Policy.Read.All"
+          }
+        ],
+        "update": [
+          {
+            "name": "Policy.ReadWrite.TenantGovernance"
+          }
+        ]
+      },
+      "application": {
+        "read": [
+          {
+            "name": "Policy.Read.All"
+          }
+        ],
+        "update": [
+          {
+            "name": "Policy.ReadWrite.TenantGovernance"
+          }
+        ]
+      }
+    }
+  },
+  "requiredModules": [
+    "Microsoft.Graph.Authentication",
+    "Microsoft.Graph.Beta.Groups"
+  ],
+  "supportedEnvironments": [
+    "Global"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Authentication",
+      "cmdlets": [
+        "Invoke-MgGraphRequest"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Beta.Groups",
+      "cmdlets": [
+        "Get-MgBetaGroup"
+      ]
+    }
+  ]
+}
