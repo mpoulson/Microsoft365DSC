@@ -57,6 +57,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     SigningCertificateUpdateStatus          = $null
                     PromptLoginBehavior                     = $null
                     FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
+                    PasswordResetUri                        = "https://adfs.contoso.com/adfs/portal/updatepassword/"
                     IsSignedAuthenticationRequestRequired   = $true
                 }
             }
@@ -153,6 +154,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PreferredAuthenticationProtocol         = "wsFed"
                     SigningCertificate                      = "MIIDdzCCAl+gAwIBAgIQXWWjEQ=="
                     FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
+                    PasswordResetUri                        = "https://adfs.contoso.com/adfs/portal/updatepassword/"
                     IsSignedAuthenticationRequestRequired   = $true
                     Ensure                                  = "Present"
                     Credential                              = $Credential

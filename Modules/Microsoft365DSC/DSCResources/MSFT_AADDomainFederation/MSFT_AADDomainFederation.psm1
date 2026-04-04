@@ -63,6 +63,10 @@ function Get-TargetResource
         $FederatedIdpMfaBehavior,
 
         [Parameter()]
+        [System.String]
+        $PasswordResetUri,
+
+        [Parameter()]
         [System.Boolean]
         $IsSignedAuthenticationRequestRequired,
 
@@ -180,6 +184,7 @@ function Get-TargetResource
             SigningCertificateUpdateStatus          = $instance.SigningCertificateUpdateStatus
             PromptLoginBehavior                     = $instance.PromptLoginBehavior
             FederatedIdpMfaBehavior                 = $instance.FederatedIdpMfaBehavior
+            PasswordResetUri                        = $instance.PasswordResetUri
             IsSignedAuthenticationRequestRequired   = $instance.IsSignedAuthenticationRequestRequired
             Ensure                                  = 'Present'
             Credential                              = $Credential
@@ -269,6 +274,10 @@ function Set-TargetResource
         [Parameter()]
         [System.String]
         $FederatedIdpMfaBehavior,
+
+        [Parameter()]
+        [System.String]
+        $PasswordResetUri,
 
         [Parameter()]
         [System.Boolean]
@@ -496,6 +505,10 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $FederatedIdpMfaBehavior,
+
+        [Parameter()]
+        [System.String]
+        $PasswordResetUri,
 
         [Parameter()]
         [System.Boolean]
