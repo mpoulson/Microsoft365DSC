@@ -334,6 +334,51 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name "PasswordResetUri is set and drifts" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DomainId                                = "contoso.com"
+                    DisplayName                             = "Contoso Federation"
+                    IssuerUri                               = "http://contoso.com/adfs/services/trust"
+                    PassiveSignInUri                        = "https://adfs.contoso.com/adfs/ls/"
+                    PreferredAuthenticationProtocol         = "wsFed"
+                    SigningCertificate                      = "MIIDdzCCAl+gAwIBAgIQXWWjEQ=="
+                    FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
+                    PasswordResetUri                        = "https://adfs.contoso.com/adfs/portal/updatepassword/"
+                    IsSignedAuthenticationRequestRequired   = $true
+                    Ensure                                  = "Present"
+                    Credential                              = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaDomainFederationConfiguration -MockWith {
+                    return @{
+                        Id                                      = "12345678-1234-1234-1234-123456789012"
+                        DisplayName                             = "Contoso Federation"
+                        IssuerUri                               = "http://contoso.com/adfs/services/trust"
+                        PassiveSignInUri                        = "https://adfs.contoso.com/adfs/ls/"
+                        PreferredAuthenticationProtocol         = "wsFed"
+                        SigningCertificate                      = "MIIDdzCCAl+gAwIBAgIQXWWjEQ=="
+                        FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
+                        PasswordResetUri                        = $null
+                        IsSignedAuthenticationRequestRequired   = $true
+                    }
+                }
+            }
+
+            It 'Should return the PasswordResetUri from the Get method' {
+                (Get-TargetResource @testParams).PasswordResetUri | Should -BeNullOrEmpty
+            }
+
+            It 'Should return false from the Test method when PasswordResetUri drifts' {
+                Test-TargetResource @testParams | Should -Be $false
+            }
+
+            It 'Should call the Set method to update PasswordResetUri' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName Update-MgBetaDomainFederationConfiguration -Exactly 1
+            }
+        }
+
         Context -Name "Multiple federation configurations for same domain" -Fixture {
             BeforeAll {
                 $testParams = @{
