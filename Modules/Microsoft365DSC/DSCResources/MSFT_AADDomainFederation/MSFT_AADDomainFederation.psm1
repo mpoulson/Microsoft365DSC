@@ -402,21 +402,8 @@ function Set-TargetResource
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
-        # Check for actual drift before updating
-        $hasDrift = $false
-        foreach ($key in $setParameters.Keys)
-        {
-            $desiredValue = $setParameters[$key]
-            $currentValue = $currentInstance[$key]
-            if ($desiredValue -ne $currentValue)
-            {
-                $hasDrift = $true
-                Write-Verbose -Message "Drift detected in property '$key': Current='$currentValue', Desired='$desiredValue'"
-                break
-            }
-        }
-
-        if (-not $hasDrift)
+        $testResult = Test-TargetResource @PSBoundParameters
+        if ($testResult)
         {
             Write-Verbose -Message "No drift detected for domain {$DomainId}. Skipping update."
             return
@@ -663,48 +650,18 @@ function Export-TargetResource
                 $federationConfigs = Get-MgBetaDomainFederationConfiguration -DomainId $domain.Id -ErrorAction SilentlyContinue
                 if ($null -ne $federationConfigs)
                 {
-                    if ($federationConfigs -is [System.Array])
+                    foreach ($config in @($federationConfigs))
                     {
-                        foreach ($config in $federationConfigs)
+                        # Normalize hashtable to PSCustomObject for uniform property access
+                        if ($config -is [hashtable])
                         {
-                            # Create a new object with the DomainId property
-                            $configWithDomain = [PSCustomObject]@{
-                                DomainId = $domain.Id
-                            }
-                            # Copy all properties from the original config, handling both hashtable and PSObject/typed objects
-                            if ($config -is [hashtable])
-                            {
-                                foreach ($key in $config.Keys)
-                                {
-                                    $configWithDomain | Add-Member -MemberType NoteProperty -Name $key -Value $config[$key] -Force
-                                }
-                            }
-                            else
-                            {
-                                $config.PSObject.Properties | ForEach-Object {
-                                    $configWithDomain | Add-Member -MemberType NoteProperty -Name $_.Name -Value $_.Value -Force
-                                }
-                            }
-                            $Script:exportedInstances += $configWithDomain
+                            $config = [PSCustomObject]$config
                         }
-                    }
-                    else
-                    {
                         $configWithDomain = [PSCustomObject]@{
                             DomainId = $domain.Id
                         }
-                        if ($federationConfigs -is [hashtable])
-                        {
-                            foreach ($key in $federationConfigs.Keys)
-                            {
-                                $configWithDomain | Add-Member -MemberType NoteProperty -Name $key -Value $federationConfigs[$key] -Force
-                            }
-                        }
-                        else
-                        {
-                            $federationConfigs.PSObject.Properties | ForEach-Object {
-                                $configWithDomain | Add-Member -MemberType NoteProperty -Name $_.Name -Value $_.Value -Force
-                            }
+                        $config.PSObject.Properties | ForEach-Object {
+                            $configWithDomain | Add-Member -MemberType NoteProperty -Name $_.Name -Value $_.Value -Force
                         }
                         $Script:exportedInstances += $configWithDomain
                     }
