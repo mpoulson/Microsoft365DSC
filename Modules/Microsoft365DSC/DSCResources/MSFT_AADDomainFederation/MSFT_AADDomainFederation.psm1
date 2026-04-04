@@ -169,6 +169,20 @@ function Get-TargetResource
             $instance = $Script:exportedInstance
         }
 
+        # Handle SigningCertificateUpdateStatus which is a complex type from the API
+        $signingCertUpdateStatus = $null
+        if ($null -ne $instance.SigningCertificateUpdateStatus)
+        {
+            if ($instance.SigningCertificateUpdateStatus -is [System.String])
+            {
+                $signingCertUpdateStatus = $instance.SigningCertificateUpdateStatus
+            }
+            elseif ($null -ne $instance.SigningCertificateUpdateStatus.CertificateUpdateResult)
+            {
+                $signingCertUpdateStatus = $instance.SigningCertificateUpdateStatus.CertificateUpdateResult
+            }
+        }
+
         $results = @{
             DomainId                                = $DomainId
             Id                                      = $instance.Id
@@ -181,7 +195,7 @@ function Get-TargetResource
             ActiveSignInUri                         = $instance.ActiveSignInUri
             SignOutUri                              = $instance.SignOutUri
             PreferredAuthenticationProtocol         = $instance.PreferredAuthenticationProtocol
-            SigningCertificateUpdateStatus          = $instance.SigningCertificateUpdateStatus
+            SigningCertificateUpdateStatus          = $signingCertUpdateStatus
             PromptLoginBehavior                     = $instance.PromptLoginBehavior
             FederatedIdpMfaBehavior                 = $instance.FederatedIdpMfaBehavior
             PasswordResetUri                        = $instance.PasswordResetUri
@@ -338,6 +352,7 @@ function Set-TargetResource
     $setParameters.Remove('DomainId') | Out-Null
     $setParameters.Remove('Ensure') | Out-Null
     $setParameters.Remove('Id') | Out-Null
+    $setParameters.Remove('SigningCertificateUpdateStatus') | Out-Null
 
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
@@ -779,14 +794,14 @@ function Write-CertificateDebugInfo
 
         $verifyCert = [System.Security.Cryptography.X509Certificates.X509Certificate2][Convert]::FromBase64String($Certificate)
         
-        Write-M365DSCHost "====================="
-        Write-M365DSCHost "$CertificateName Information"
-        Write-M365DSCHost "====================="
-        Write-M365DSCHost "Thumbprint: $($verifyCert.Thumbprint)"
-        Write-M365DSCHost "Subject: $($verifyCert.Subject)"
-        Write-M365DSCHost "Issuer: $($verifyCert.Issuer)"
-        Write-M365DSCHost "Expires: $($verifyCert.NotAfter)"
-        Write-M365DSCHost "====================="
+        Write-M365DSCHost -Message "====================="
+        Write-M365DSCHost -Message "$CertificateName Information"
+        Write-M365DSCHost -Message "====================="
+        Write-M365DSCHost -Message "Thumbprint: $($verifyCert.Thumbprint)"
+        Write-M365DSCHost -Message "Subject: $($verifyCert.Subject)"
+        Write-M365DSCHost -Message "Issuer: $($verifyCert.Issuer)"
+        Write-M365DSCHost -Message "Expires: $($verifyCert.NotAfter)"
+        Write-M365DSCHost -Message "====================="
     }
     catch
     {
