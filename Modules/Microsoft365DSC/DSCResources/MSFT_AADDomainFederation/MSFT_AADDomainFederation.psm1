@@ -576,7 +576,6 @@ function Test-TargetResource
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
                                          -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
-    
     Write-Verbose -Message "Test-TargetResource returned $result"
     return $result
 }
@@ -692,7 +691,6 @@ function Export-TargetResource
 
             $displayedKey = "$($config.DomainId) - $($config.DisplayName)"
             Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
-            
             $params = @{
                 DomainId              = $config.DomainId
                 Id                    = $config.Id
@@ -754,7 +752,6 @@ function Export-TargetResource
 
 .EXAMPLE
     Write-CertificateDebugInfo -Certificate $SigningCertificate -CertificateName "SigningCertificate"
-    
     Displays information about the signing certificate including thumbprint, subject, issuer, and expiration.
 
 .NOTES
@@ -793,7 +790,6 @@ function Write-CertificateDebugInfo
         }
 
         $verifyCert = [System.Security.Cryptography.X509Certificates.X509Certificate2][Convert]::FromBase64String($Certificate)
-        
         Write-M365DSCHost -Message "====================="
         Write-M365DSCHost -Message "$CertificateName Information"
         Write-M365DSCHost -Message "====================="
