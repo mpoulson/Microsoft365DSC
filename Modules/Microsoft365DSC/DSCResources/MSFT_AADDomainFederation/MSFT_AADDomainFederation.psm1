@@ -402,6 +402,13 @@ function Set-TargetResource
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
+        $testResult = Test-TargetResource @PSBoundParameters
+        if ($testResult)
+        {
+            Write-Verbose -Message "No drift detected for domain {$DomainId}. Skipping update."
+            return
+        }
+
         Write-Verbose -Message "Updating federation configuration for domain {$DomainId}"
 
         try
@@ -643,25 +650,20 @@ function Export-TargetResource
                 $federationConfigs = Get-MgBetaDomainFederationConfiguration -DomainId $domain.Id -ErrorAction SilentlyContinue
                 if ($null -ne $federationConfigs)
                 {
-                    if ($federationConfigs -is [System.Array])
+                    foreach ($config in @($federationConfigs))
                     {
-                        foreach ($config in $federationConfigs)
+                        # Normalize hashtable to PSCustomObject for uniform property access
+                        if ($config -is [hashtable])
                         {
-                            # Create a new object with the DomainId property
-                            $configWithDomain = [PSCustomObject]@{
-                                DomainId = $domain.Id
-                            }
-                            # Copy all properties from the original config
-                            $config.PSObject.Properties | ForEach-Object {
-                                $configWithDomain | Add-Member -MemberType NoteProperty -Name $_.Name -Value $_.Value -Force
-                            }
-                            $Script:exportedInstances += $configWithDomain
+                            $config = [PSCustomObject]$config
                         }
-                    }
-                    else
-                    {
-                        $federationConfigs | Add-Member -MemberType NoteProperty -Name 'DomainId' -Value $domain.Id -Force
-                        $Script:exportedInstances += $federationConfigs
+                        $configWithDomain = [PSCustomObject]@{
+                            DomainId = $domain.Id
+                        }
+                        $config.PSObject.Properties | ForEach-Object {
+                            $configWithDomain | Add-Member -MemberType NoteProperty -Name $_.Name -Value $_.Value -Force
+                        }
+                        $Script:exportedInstances += $configWithDomain
                     }
                 }
             }
