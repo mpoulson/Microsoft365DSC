@@ -178,8 +178,8 @@ function Get-TargetResource
 
                 $delegatedAdminRoleAssignmentsValue += @{
                     GroupDisplayName = $groupDisplayName
-                    GroupId         = $groupId
-                    RoleTemplates   = $roleTemplatesValue
+                    GroupId          = $groupId
+                    RoleTemplates    = $roleTemplatesValue
                 }
             }
         }

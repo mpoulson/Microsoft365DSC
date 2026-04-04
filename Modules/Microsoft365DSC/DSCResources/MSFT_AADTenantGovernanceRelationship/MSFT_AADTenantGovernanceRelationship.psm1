@@ -167,8 +167,8 @@ function Get-TargetResource
 
                     $delegatedAssignmentsSnapshot += @{
                         GroupDisplayName = $assignment.groupDisplayName
-                        GroupId         = $assignment.groupId
-                        RoleTemplates   = $roleTemplatesValue
+                        GroupId          = $assignment.groupId
+                        RoleTemplates    = $roleTemplatesValue
                     }
                 }
             }
