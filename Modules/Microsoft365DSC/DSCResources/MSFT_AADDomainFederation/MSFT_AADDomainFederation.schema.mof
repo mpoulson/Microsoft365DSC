@@ -15,6 +15,7 @@ class MSFT_AADDomainFederation : OMI_BaseResource
     [Write, Description("Describes the status of the signing certificate update.")] String SigningCertificateUpdateStatus;
     [Write, Description("Prompt login behavior of the federated IdP.")] String PromptLoginBehavior;
     [Write, Description("Determines whether Microsoft Entra ID accepts the MFA performed by the federated IdP. Supported values are acceptIfMfaDoneByFederatedIdp, enforceMfaByFederatedIdp, rejectMfaByFederatedIdp.")] String FederatedIdpMfaBehavior;
+    [Write, Description("URI that clients are redirected to for resetting their password.")] String PasswordResetUri;
     [Write, Description("Specifies whether the federation requires signed authentication requests.")] Boolean IsSignedAuthenticationRequestRequired;
     [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Absent","Present"}, Values{"Absent","Present"}] string Ensure;
     [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
