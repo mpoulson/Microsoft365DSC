@@ -277,6 +277,61 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name "NextSigningCertificate already in desired state" -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    DomainId                                = "contoso.com"
+                    DisplayName                             = "Contoso Federation"
+                    IssuerUri                               = "http://contoso.com/adfs/services/trust"
+                    MetadataExchangeUri                     = "https://adfs.contoso.com/FederationMetadata/2007-06/FederationMetadata.xml"
+                    PassiveSignInUri                        = "https://adfs.contoso.com/adfs/ls/"
+                    PreferredAuthenticationProtocol         = "wsFed"
+                    SigningCertificate                      = "MIIDdzCCAl+gAwIBAgIQXWWjEQ=="
+                    NextSigningCertificate                  = "MIIDdzCCAl+gAwIBAgIQYZZkFR=="
+                    FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
+                    IsSignedAuthenticationRequestRequired   = $true
+                    Ensure                                  = "Present"
+                    Credential                              = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaDomainFederationConfiguration -MockWith {
+                    return @{
+                        Id                                      = "12345678-1234-1234-1234-123456789012"
+                        DisplayName                             = "Contoso Federation"
+                        IssuerUri                               = "http://contoso.com/adfs/services/trust"
+                        MetadataExchangeUri                     = "https://adfs.contoso.com/FederationMetadata/2007-06/FederationMetadata.xml"
+                        SigningCertificate                      = "MIIDdzCCAl+gAwIBAgIQXWWjEQ=="
+                        NextSigningCertificate                  = "MIIDdzCCAl+gAwIBAgIQYZZkFR=="
+                        PassiveSignInUri                        = "https://adfs.contoso.com/adfs/ls/"
+                        ActiveSignInUri                         = $null
+                        SignOutUri                              = $null
+                        PreferredAuthenticationProtocol         = "wsFed"
+                        SigningCertificateUpdateStatus          = $null
+                        PromptLoginBehavior                     = $null
+                        FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
+                        IsSignedAuthenticationRequestRequired   = $true
+                    }
+                }
+            }
+
+            It 'Should return Present from the Get method' {
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
+            }
+
+            It 'Should return the NextSigningCertificate from the Get method' {
+                (Get-TargetResource @testParams).NextSigningCertificate | Should -Be "MIIDdzCCAl+gAwIBAgIQYZZkFR=="
+            }
+
+            It 'Should return true from the Test method when NextSigningCertificate matches' {
+                Test-TargetResource @testParams | Should -Be $true
+            }
+
+            It 'Should not call Update when configuration is in desired state' {
+                Set-TargetResource @testParams
+                Should -Invoke -CommandName Update-MgBetaDomainFederationConfiguration -Exactly 0
+            }
+        }
+
         Context -Name "Multiple federation configurations for same domain" -Fixture {
             BeforeAll {
                 $testParams = @{
