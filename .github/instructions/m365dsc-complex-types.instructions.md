@@ -57,7 +57,7 @@ else
 ```
 
 **Rules:**
-- The cache check must compare against the schema `[Key]` property (e.g., `DisplayName`, `Id`, `Name`), **not** a `[Write]` property.
+- The cache check must compare against whichever property is marked as `[Key]` in the resource's `.schema.mof` file (e.g., `DisplayName` for AADAccessReviewDefinition, `Id` for AADPermissionGrantPolicy, `Name` for AADConnectorGroupApplicationProxy). Do **not** compare against a `[Write]` property.
 - In Export-TargetResource, set the cache before calling Get-TargetResource: `$Script:exportedInstance = $config`.
 - Some resources use `$Script:exportedInstances` (plural) to cache the full list for batch retrieval.
 
@@ -333,8 +333,8 @@ if ($null -ne $Results.ScopeValue)
 **Rules:**
 - The `$complexMapping` array must include an entry for each complex type in the hierarchy (parent and all nested types).
 - Each entry has three keys: `Name` (property name), `CimInstanceName` (DSC class name without `MSFT_` prefix), `IsRequired` (whether the property is mandatory).
+- The `-CIMInstanceName` parameter on `Get-M365DSCDRGComplexTypeToString` must match the exact casing used in the `.schema.mof` class name (e.g., `MicrosoftGraphaccessReviewScope` with lowercase 'a', matching the actual schema definition). Always verify against the schema file.
 - After conversion, check for empty/null results and remove the property from `$Results` if empty.
-- The `-CIMInstanceName` parameter on `Get-M365DSCDRGComplexTypeToString` should match the top-level complex type.
 
 ### The NoEscape Pattern
 
@@ -417,17 +417,19 @@ $mockScope = (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewScope -P
 } -ClientOnly)
 ```
 
+> **Note:** The `odataType` property uses camelCase (not PascalCase) because it maps to the `@odata.type` JSON property from the Graph API. This is a codebase-wide convention for OData type discriminators.
+
 **Nested complex types:**
 ```powershell
 $mockSettings = (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewScheduleSettings -Property @{
     AutoApplyDecisionsEnabled = $true
     Recurrence                = (New-CimInstance -ClassName MSFT_MicrosoftGraphPatternedRecurrence -Property @{
         Pattern = (New-CimInstance -ClassName MSFT_MicrosoftGraphRecurrencePattern -Property @{
-            Type     = 'weekly'
+            Type     = 'weekly'   # Must match ValidateSet values in the .schema.mof
             Interval = 1
         } -ClientOnly)
         Range   = (New-CimInstance -ClassName MSFT_MicrosoftGraphRecurrenceRange -Property @{
-            Type      = 'noEnd'
+            Type      = 'noEnd'   # Must match ValidateSet values in the .schema.mof
             StartDate = '2024-01-01T00:00:00Z'
         } -ClientOnly)
     } -ClientOnly)
