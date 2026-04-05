@@ -214,7 +214,6 @@ function Get-TargetResource
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message "Error retrieving data:" `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
@@ -376,7 +375,6 @@ function Set-TargetResource
         }
         catch
         {
-            Write-Verbose -Message $_
             New-M365DSCLogEntry -Message "Error creating federation configuration:" `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
@@ -388,13 +386,6 @@ function Set-TargetResource
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
-        $testResult = Test-TargetResource @PSBoundParameters
-        if ($testResult)
-        {
-            Write-Verbose -Message "No drift detected for domain {$DomainId}. Skipping update."
-            return
-        }
-
         Write-Verbose -Message "Updating federation configuration for domain {$DomainId}"
 
         try
@@ -407,7 +398,6 @@ function Set-TargetResource
         }
         catch
         {
-            Write-Verbose -Message $_
             New-M365DSCLogEntry -Message "Error updating federation configuration:" `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
@@ -430,7 +420,6 @@ function Set-TargetResource
         }
         catch
         {
-            Write-Verbose -Message $_
             New-M365DSCLogEntry -Message "Error removing federation configuration:" `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
@@ -567,6 +556,10 @@ function Export-TargetResource
     param
     (
         [Parameter()]
+        [System.String]
+        $Filter,
+
+        [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
 
@@ -625,18 +618,8 @@ function Export-TargetResource
                 {
                     foreach ($config in @($federationConfigs))
                     {
-                        # Normalize hashtable to PSCustomObject for uniform property access
-                        if ($config -is [hashtable])
-                        {
-                            $config = [PSCustomObject]$config
-                        }
-                        $configWithDomain = [PSCustomObject]@{
-                            DomainId = $domain.Id
-                        }
-                        $config.PSObject.Properties | ForEach-Object {
-                            $configWithDomain | Add-Member -MemberType NoteProperty -Name $_.Name -Value $_.Value -Force
-                        }
-                        $Script:exportedInstances += $configWithDomain
+                        $config | Add-Member -MemberType NoteProperty -Name 'DomainId' -Value $domain.Id -Force
+                        $Script:exportedInstances += $config
                     }
                 }
             }
@@ -696,7 +679,6 @@ function Export-TargetResource
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
