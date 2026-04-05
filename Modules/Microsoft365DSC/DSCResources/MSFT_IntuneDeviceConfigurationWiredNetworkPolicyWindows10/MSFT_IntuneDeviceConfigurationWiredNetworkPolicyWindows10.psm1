@@ -302,8 +302,8 @@ function Get-TargetResource
             RequireCryptographicBinding                                    = $getValue.AdditionalProperties.requireCryptographicBinding
             SecondaryAuthenticationMethod                                  = $enumSecondaryAuthenticationMethod
             TrustedServerCertificateNames                                  = $getValue.AdditionalProperties.trustedServerCertificateNames
-            RootCertificatesForServerValidationIds                         = @($rootCertificatesForServerValidation.Id)
-            RootCertificatesForServerValidationDisplayNames                = @($rootCertificatesForServerValidation.DisplayName)
+            RootCertificatesForServerValidationIds                         = Get-M365DSCArrayFromProperty -PropertyValue $rootCertificatesForServerValidation.Id -ElementType ([System.String])
+            RootCertificatesForServerValidationDisplayNames                = Get-M365DSCArrayFromProperty -PropertyValue $rootCertificatesForServerValidation.DisplayName -ElementType ([System.String])
             IdentityCertificateForClientAuthenticationId                   = $identityCertificateForClientAuthentication.Id
             IdentityCertificateForClientAuthenticationDisplayName          = $identityCertificateForClientAuthentication.DisplayName
             SecondaryIdentityCertificateForClientAuthenticationId          = $secondaryIdentityCertificateForClientAuthentication.Id

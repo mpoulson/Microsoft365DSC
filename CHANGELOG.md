@@ -167,8 +167,8 @@
   * Added `KeepExport` parameter to `Assert-M365DSCBlueprint` function.
 * DEPENDENCIES
   * Updated `DSCParser` to version 3.0.0.1.
-  * Updated `MSCloudLoginAssistant` to version 1.1.61.
-  * Updated `ReverseDSC` to version 2.0.0.32.
+  * Updated `MSCloudLoginAssistant` to version 1.1.62.
+  * Updated `ReverseDSC` to version 2.0.0.34.
 * MISC
   * Added CIM information about required properties to all resources where applicable.
   * Improved filtering for Intune configuration policies during Export.

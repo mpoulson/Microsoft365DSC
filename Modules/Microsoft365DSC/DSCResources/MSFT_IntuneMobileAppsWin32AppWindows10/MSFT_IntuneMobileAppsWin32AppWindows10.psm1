@@ -318,9 +318,15 @@ function Get-TargetResource
         }
         #endregion
 
+        [System.String[]]$allowedArchitecturesValue = @()
+        foreach ($arch in ($getValue.AdditionalProperties.allowedArchitectures -split ',' | Where-Object { -not [System.String]::IsNullOrEmpty($_) }))
+        {
+            $allowedArchitecturesValue += $arch
+        }
+
         $results = @{
             #region resource generator code
-            AllowedArchitectures           = $getValue.AdditionalProperties.allowedArchitectures -split ','
+            AllowedArchitectures           = $allowedArchitecturesValue
             Categories                     = $complexCategories
             Description                    = $getValue.Description
             Developer                      = $getValue.Developer
