@@ -210,9 +210,6 @@ function Get-TargetResource
             AccessTokens                            = $AccessTokens
         }
 
-        Write-Verbose -Message "Found federation configuration for domain {$DomainId}"
-        Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $results)"
-
         return $results
     }
     catch
@@ -373,17 +370,6 @@ function Set-TargetResource
                 throw $message
             }
 
-            # Display certificate debug info if signing certificate is provided
-            if (-not [System.String]::IsNullOrEmpty($SigningCertificate))
-            {
-                Write-CertificateDebugInfo -Certificate $SigningCertificate -CertificateName "SigningCertificate"
-            }
-
-            if (-not [System.String]::IsNullOrEmpty($NextSigningCertificate))
-            {
-                Write-CertificateDebugInfo -Certificate $NextSigningCertificate -CertificateName "NextSigningCertificate"
-            }
-
             Write-Verbose -Message "Creating federation configuration with parameters: $(Convert-M365DscHashtableToString -Hashtable $setParameters)"
             $null = New-MgBetaDomainFederationConfiguration -DomainId $DomainId -BodyParameter $setParameters
             Write-Verbose -Message "Successfully created federation configuration for domain {$DomainId}"
@@ -413,17 +399,6 @@ function Set-TargetResource
 
         try
         {
-            # Display certificate debug info if signing certificate is provided
-            if (-not [System.String]::IsNullOrEmpty($SigningCertificate))
-            {
-                Write-CertificateDebugInfo -Certificate $SigningCertificate -CertificateName "SigningCertificate"
-            }
-
-            if (-not [System.String]::IsNullOrEmpty($NextSigningCertificate))
-            {
-                Write-CertificateDebugInfo -Certificate $NextSigningCertificate -CertificateName "NextSigningCertificate"
-            }
-
             Write-Verbose -Message "Updating federation configuration with parameters: $(Convert-M365DscHashtableToString -Hashtable $setParameters)"
             Update-MgBetaDomainFederationConfiguration -DomainId $DomainId `
                 -InternalDomainFederationId $currentInstance.Id `
@@ -579,11 +554,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Azure AD Domain Federation for domain {$DomainId}"
-
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
                                          -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
-    Write-Verbose -Message "Test-TargetResource returned $result"
+
     return $result
 }
 
@@ -731,79 +704,6 @@ function Export-TargetResource
             -Credential $Credential
 
         throw
-    }
-}
-
-<#
-.SYNOPSIS
-    Displays certificate information for debugging purposes.
-
-.DESCRIPTION
-    This helper function parses a Base64-encoded X509 certificate string and displays
-    key certificate details including thumbprint, subject, issuer, and expiration date.
-    Used during Set-TargetResource operations to help administrators verify they are
-    using the correct certificates and monitor certificate expiration.
-
-.PARAMETER Certificate
-    The Base64-encoded certificate string (without headers/footers).
-    Must be a valid Base64 string representing an X509 certificate.
-
-.PARAMETER CertificateName
-    A descriptive name for the certificate (e.g., "SigningCertificate" or "NextSigningCertificate").
-    Used in the display output to identify which certificate is being shown.
-
-.EXAMPLE
-    Write-CertificateDebugInfo -Certificate $SigningCertificate -CertificateName "SigningCertificate"
-    Displays information about the signing certificate including thumbprint, subject, issuer, and expiration.
-
-.NOTES
-    - Validates certificate format before attempting to parse
-    - Silently handles invalid certificate formats by writing to verbose stream
-    - Does not throw exceptions to avoid disrupting Set operations
-#>
-function Write-CertificateDebugInfo
-{
-    [CmdletBinding()]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        $Certificate,
-
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        $CertificateName
-    )
-
-    try
-    {
-        # Validate certificate string is not empty and appears to be base64
-        if ([string]::IsNullOrWhiteSpace($Certificate))
-        {
-            Write-Verbose -Message "Certificate string is empty or null"
-            return
-        }
-
-        # Basic validation for base64 format (should only contain valid base64 characters)
-        if ($Certificate -notmatch '^[A-Za-z0-9+/]*={0,2}$')
-        {
-            Write-Verbose -Message "Certificate string does not appear to be valid base64 format"
-            return
-        }
-
-        $verifyCert = [System.Security.Cryptography.X509Certificates.X509Certificate2][Convert]::FromBase64String($Certificate)
-        Write-M365DSCHost -Message "====================="
-        Write-M365DSCHost -Message "$CertificateName Information"
-        Write-M365DSCHost -Message "====================="
-        Write-M365DSCHost -Message "Thumbprint: $($verifyCert.Thumbprint)"
-        Write-M365DSCHost -Message "Subject: $($verifyCert.Subject)"
-        Write-M365DSCHost -Message "Issuer: $($verifyCert.Issuer)"
-        Write-M365DSCHost -Message "Expires: $($verifyCert.NotAfter)"
-        Write-M365DSCHost -Message "====================="
-    }
-    catch
-    {
-        Write-Verbose -Message "Error parsing certificate: $_"
     }
 }
 
