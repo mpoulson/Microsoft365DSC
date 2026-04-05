@@ -54,7 +54,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ActiveSignInUri                         = "https://adfs.contoso.com/adfs/services/trust/2005/usernamemixed"
                     SignOutUri                              = "https://adfs.contoso.com/adfs/ls/?wa=wsignout1.0"
                     PreferredAuthenticationProtocol         = "wsFed"
-                    SigningCertificateUpdateStatus          = $null
                     PromptLoginBehavior                     = $null
                     FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
                     PasswordResetUri                        = "https://adfs.contoso.com/adfs/portal/updatepassword/"
@@ -253,7 +252,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         ActiveSignInUri                         = "https://adfs.contoso.com/adfs/services/trust/2005/usernamemixed"
                         SignOutUri                              = "https://adfs.contoso.com/adfs/ls/?wa=wsignout1.0"
                         PreferredAuthenticationProtocol         = "wsFed"
-                        SigningCertificateUpdateStatus          = $null
                         PromptLoginBehavior                     = $null
                         FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
                         IsSignedAuthenticationRequestRequired   = $true
@@ -300,7 +298,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         ActiveSignInUri                         = $null
                         SignOutUri                              = $null
                         PreferredAuthenticationProtocol         = "wsFed"
-                        SigningCertificateUpdateStatus          = $null
                         PromptLoginBehavior                     = $null
                         FederatedIdpMfaBehavior                 = "acceptIfMfaDoneByFederatedIdp"
                         IsSignedAuthenticationRequestRequired   = $true
