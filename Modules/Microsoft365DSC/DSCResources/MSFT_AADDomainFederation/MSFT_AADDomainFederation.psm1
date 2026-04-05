@@ -52,10 +52,6 @@ function Get-TargetResource
 
         [Parameter()]
         [System.String]
-        $SigningCertificateUpdateStatus,
-
-        [Parameter()]
-        [System.String]
         $PromptLoginBehavior,
 
         [Parameter()]
@@ -169,20 +165,6 @@ function Get-TargetResource
             $instance = $Script:exportedInstance
         }
 
-        # Handle SigningCertificateUpdateStatus which is a complex type from the API
-        $signingCertUpdateStatus = $null
-        if ($null -ne $instance.SigningCertificateUpdateStatus)
-        {
-            if ($instance.SigningCertificateUpdateStatus -is [System.String])
-            {
-                $signingCertUpdateStatus = $instance.SigningCertificateUpdateStatus
-            }
-            elseif ($null -ne $instance.SigningCertificateUpdateStatus.CertificateUpdateResult)
-            {
-                $signingCertUpdateStatus = $instance.SigningCertificateUpdateStatus.CertificateUpdateResult
-            }
-        }
-
         $results = @{
             DomainId                                = $DomainId
             Id                                      = $instance.Id
@@ -195,7 +177,6 @@ function Get-TargetResource
             ActiveSignInUri                         = $instance.ActiveSignInUri
             SignOutUri                              = $instance.SignOutUri
             PreferredAuthenticationProtocol         = $instance.PreferredAuthenticationProtocol
-            SigningCertificateUpdateStatus          = $signingCertUpdateStatus
             PromptLoginBehavior                     = $instance.PromptLoginBehavior
             FederatedIdpMfaBehavior                 = $instance.FederatedIdpMfaBehavior
             PasswordResetUri                        = $instance.PasswordResetUri
@@ -275,10 +256,6 @@ function Set-TargetResource
 
         [Parameter()]
         [System.String]
-        $SigningCertificateUpdateStatus,
-
-        [Parameter()]
-        [System.String]
         $PromptLoginBehavior,
 
         [Parameter()]
@@ -348,7 +325,6 @@ function Set-TargetResource
     $setParameters.Remove('DomainId') | Out-Null
     $setParameters.Remove('Ensure') | Out-Null
     $setParameters.Remove('Id') | Out-Null
-    $setParameters.Remove('SigningCertificateUpdateStatus') | Out-Null
 
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
@@ -386,24 +362,29 @@ function Set-TargetResource
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
-        Write-Verbose -Message "Updating federation configuration for domain {$DomainId}"
+        $testResult = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                                 -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        if (-not $testResult)
+        {
+            Write-Verbose -Message "Updating federation configuration for domain {$DomainId}"
 
-        try
-        {
-            Write-Verbose -Message "Updating federation configuration with parameters: $(Convert-M365DscHashtableToString -Hashtable $setParameters)"
-            Update-MgBetaDomainFederationConfiguration -DomainId $DomainId `
-                -InternalDomainFederationId $currentInstance.Id `
-                -BodyParameter $setParameters
-            Write-Verbose -Message "Successfully updated federation configuration for domain {$DomainId}"
-        }
-        catch
-        {
-            New-M365DSCLogEntry -Message "Error updating federation configuration:" `
-                -Exception $_ `
-                -Source $($MyInvocation.MyCommand.Source) `
-                -TenantId $TenantId `
-                -Credential $Credential
-            throw
+            try
+            {
+                Write-Verbose -Message "Updating federation configuration with parameters: $(Convert-M365DscHashtableToString -Hashtable $setParameters)"
+                Update-MgBetaDomainFederationConfiguration -DomainId $DomainId `
+                    -InternalDomainFederationId $currentInstance.Id `
+                    -BodyParameter $setParameters
+                Write-Verbose -Message "Successfully updated federation configuration for domain {$DomainId}"
+            }
+            catch
+            {
+                New-M365DSCLogEntry -Message "Error updating federation configuration:" `
+                    -Exception $_ `
+                    -Source $($MyInvocation.MyCommand.Source) `
+                    -TenantId $TenantId `
+                    -Credential $Credential
+                throw
+            }
         }
     }
     # REMOVE
@@ -479,10 +460,6 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $PreferredAuthenticationProtocol,
-
-        [Parameter()]
-        [System.String]
-        $SigningCertificateUpdateStatus,
 
         [Parameter()]
         [System.String]

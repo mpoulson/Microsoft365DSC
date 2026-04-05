@@ -1,4 +1,4 @@
-[ClassVersion("1.0.0.0"), FriendlyName("AADDomainFederation")]
+[ClassVersion("1.0.0.1"), FriendlyName("AADDomainFederation")]
 class MSFT_AADDomainFederation : OMI_BaseResource
 {
     [Key, Description("The domain ID for which the federation configuration is being managed.")] String DomainId;
@@ -12,7 +12,6 @@ class MSFT_AADDomainFederation : OMI_BaseResource
     [Write, Description("URI that active clients are directed to when signing in to Microsoft Entra services.")] String ActiveSignInUri;
     [Write, Description("URI to which clients are redirected when signing out of Microsoft Entra services.")] String SignOutUri;
     [Write, Description("Preferred authentication protocol. Supported values are wsFed and saml.")] String PreferredAuthenticationProtocol;
-    [Write, Description("Describes the status of the signing certificate update.")] String SigningCertificateUpdateStatus;
     [Write, Description("Prompt login behavior of the federated IdP.")] String PromptLoginBehavior;
     [Write, Description("Determines whether Microsoft Entra ID accepts the MFA performed by the federated IdP. Supported values are acceptIfMfaDoneByFederatedIdp, enforceMfaByFederatedIdp, rejectMfaByFederatedIdp.")] String FederatedIdpMfaBehavior;
     [Write, Description("URI that clients are redirected to for resetting their password.")] String PasswordResetUri;
