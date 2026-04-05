@@ -62,9 +62,11 @@ Dependency notes:
 
 - Document minimum required versions in each resource's module settings (`Modules/<ModuleName>/settings.json`) under `requiredModules`.
 - Prefer Microsoft Graph APIs when they cover the scenario; use workload-specific modules only when required functionality is not available in Graph.
+- **Prefer non-beta (GA) modules and REST endpoints.** Use GA PowerShell modules (e.g., `Microsoft.Graph.Users`) and GA REST endpoints (e.g., `/v1.0/`) whenever the required functionality is available. Only use beta modules (e.g., `Microsoft.Graph.Beta.Users`) or beta REST endpoints (e.g., `/beta/`) when the functionality is new, not yet released to GA, or only available in preview.
 
 When generating new code, the agent should:
 - Prefer Graph where available
+- Prefer GA (non-beta) modules and endpoints over beta
 - Use existing helper modules
 - Follow Microsoft365DSC logging and exception patterns
 

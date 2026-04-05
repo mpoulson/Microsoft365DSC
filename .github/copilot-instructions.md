@@ -54,6 +54,8 @@ These rules apply to all DSC resource implementations. Agents **must** follow th
 8. **Never hardcode endpoint URLs.** Use `Get-MSCloudLoginConnectionProfile` or equivalent helpers for cloud-agnostic URLs.
 9. **Increment build version on new schema.mof changes.** If updating a `.schema.mof` not yet in `dev` or `main`, increment its build version.
 10. **`Ensure` or `IsSingleInstance` required.** Singleton resources need `[Key] String IsSingleInstance` (`ValueMap{"Yes"}`). Multi-instance resources need `Ensure` (`ValueMap{"Present","Absent"}`). Rare exceptions must be justified.
+11. **Unit tests: mock all external functions and add stubs.** Mock all functions from other modules. Add mock stubs to `Tests/Unit/Stubs/` in the correct `#region` (alphabetical order). Create a new region if the module is not yet present.
+12. **Prefer non-beta modules and endpoints.** Use GA modules and REST endpoints. Only use beta when functionality is not yet available in GA.
 
 ## Integration Points
 

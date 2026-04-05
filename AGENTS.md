@@ -34,6 +34,8 @@ Generated files (do not edit):
 8. **Never hardcode Microsoft endpoint URLs.** Use `Get-MSCloudLoginConnectionProfile` or equivalent helpers to obtain base URLs at runtime, ensuring cloud-agnostic behaviour (GCC, GCC-High, DoD, China, etc.).
 9. **Increment build version when updating a schema.mof not yet in dev or main.** If you modify a `.schema.mof` file that has not been merged to `dev` or `main`, increment the build (patch) version in the schema.
 10. **`Ensure` or `IsSingleInstance` must be present.** Resources that manage singleton configurations must have `[Key] String IsSingleInstance` with `ValueMap{"Yes"}`. Resources that manage multiple instances must have an `Ensure` property (`ValueMap{"Present","Absent"}`). Rare exceptions exist (e.g. `AzureRoleEligibilityScheduleSettings`) but must be explicitly justified.
+11. **Unit tests: mock all external functions and add stubs.** When writing unit tests, mock all functions from other modules. Add mock stubs to the correct file under `Tests/Unit/Stubs/` (typically `Microsoft365.psm1`). Place each stub in the correct `#region` that matches the source module name. Regions must be in **alphabetical order**. If a region for the module does not yet exist, create one and insert it in alphabetical order. Stubs within each region should also be in alphabetical order.
+12. **Prefer non-beta modules and endpoints.** Use GA (non-beta) PowerShell modules and REST API endpoints whenever possible. Only use beta modules (e.g., `Microsoft.Graph.Beta.*`) or beta REST endpoints (e.g., `/beta/`) when the required functionality is new, not yet released to GA, or only available in preview.
 
 Quick checklist:
 
