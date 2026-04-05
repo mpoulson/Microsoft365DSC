@@ -75,9 +75,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
 
-            Mock -CommandName Write-CertificateDebugInfo -MockWith {
-            }
-
             $Script:exportedInstances = $null
             $Script:ExportMode = $false
         }
@@ -272,11 +269,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Set-TargetResource @testParams
                 Should -Invoke -CommandName Update-MgBetaDomainFederationConfiguration -Exactly 1
             }
-
-            It 'Should call Write-CertificateDebugInfo for both certificates' {
-                Set-TargetResource @testParams
-                Should -Invoke -CommandName Write-CertificateDebugInfo -Exactly 2
-            }
         }
 
         Context -Name "NextSigningCertificate already in desired state" -Fixture {
@@ -451,7 +443,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-MgBetaDomainFederationConfiguration -MockWith {
                     param($DomainId)
-                    
+
                     if ($DomainId -eq "contoso.com") {
                         return @(
                             @{
@@ -496,13 +488,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should export correct domain IDs and configuration details' {
                 $Script:exportedInstances = @()
                 $null = Export-TargetResource @testParams
-                
+
                 # Verify contoso.com has 2 configurations
                 $contosoConfigs = $Script:exportedInstances | Where-Object { $_.DomainId -eq 'contoso.com' }
                 $contosoConfigs.Count | Should -Be 2
                 $contosoConfigs[0].DisplayName | Should -Be 'Contoso Primary'
                 $contosoConfigs[1].DisplayName | Should -Be 'Contoso Secondary'
-                
+
                 # Verify fabrikam.com has 1 configuration
                 $fabrikamConfigs = $Script:exportedInstances | Where-Object { $_.DomainId -eq 'fabrikam.com' }
                 $fabrikamConfigs.Count | Should -Be 1
@@ -549,32 +541,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-MgBetaDomainFederationConfiguration -MockWith {
                     return $null
-                }
-
-                Mock -CommandName Write-CertificateDebugInfo -MockWith {
-                    # Simulate the validation logic
-                    param($Certificate, $CertificateName)
-                    
-                    if ([string]::IsNullOrWhiteSpace($Certificate)) {
-                        Write-Verbose -Message "Certificate string is empty or null"
-                        return
-                    }
-
-                    if ($Certificate -notmatch '^[A-Za-z0-9+/]*={0,2}$') {
-                        Write-Verbose -Message "Certificate string does not appear to be valid base64 format"
-                        return
-                    }
-                }
-            }
-
-            It 'Should handle invalid certificate format gracefully in Write-CertificateDebugInfo' {
-                { Set-TargetResource @testParams } | Should -Not -Throw
-            }
-
-            It 'Should call Write-CertificateDebugInfo when invalid certificate is provided' {
-                Set-TargetResource @testParams
-                Should -Invoke -CommandName Write-CertificateDebugInfo -Exactly 1 -ParameterFilter {
-                    $Certificate -eq "INVALID_BASE64_STRING!!!" -and $CertificateName -eq "SigningCertificate"
                 }
             }
         }
