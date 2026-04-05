@@ -108,7 +108,7 @@ function Get-TargetResource
 
     try
     {
-        if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.DomainId -ne $DomainId)
         {
             $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
