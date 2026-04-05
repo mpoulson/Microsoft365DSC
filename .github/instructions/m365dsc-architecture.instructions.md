@@ -31,13 +31,15 @@ Additional functions can be defined as needed.
 ### Rules:
 
 - **`*.schema.mof` files are auto-generated — never edit them directly.** If a schema change is needed, update the `ResourceGenerator` source or the `.psm1` implementation and regenerate the schema.
+- **Increment build version** when updating a `.schema.mof` that has not yet been merged to `dev` or `main`.
 - Parameter names **must match** the schema.mof exactly.
 - Validate schema consistency by ensuring `MSFT_<ResourceName>.psm1` parameter names match `MSFT_<ResourceName>.schema.mof`.
 - Agents should run a quick check script or validate manually when creating a resource to avoid schema mismatches.
-- `Get-TargetResource` returns a hashtable with all properties.
-- `Test-TargetResource` returns strictly `$true` or `$false`.
-- `Set-TargetResource` performs the actual configuration changes.
-- `Export-TargetResource` supports reverse-DSC generation.
+- `Get-TargetResource` returns a hashtable with all properties. **Do not** output the result to log or console.
+- `Test-TargetResource` returns strictly `$true` or `$false`. **Do not** output status messages for the result.
+- `Set-TargetResource` performs the actual configuration changes. **Never call `Test-TargetResource` inside `Set-TargetResource`** — the DSC engine handles the Test→Set flow automatically.
+- `Export-TargetResource` supports reverse-DSC generation. **Must always include `$Filter` parameter support.**
+- **`Ensure` or `IsSingleInstance` must be present.** Singleton resources must have `[Key] String IsSingleInstance` with `ValueMap{"Yes"}`. Multi-instance resources must have an `Ensure` property with `ValueMap{"Present","Absent"}`. Rare exceptions (e.g. `AzureRoleEligibilityScheduleSettings`) must be explicitly justified.
 
 ## Naming Conventions
 

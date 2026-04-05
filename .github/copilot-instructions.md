@@ -40,6 +40,21 @@ This guide enables AI coding agents to be productive in the Microsoft365DSC code
   - PowerShell modules (e.g., `Microsoft.Graph`, `Pester`).
   - TypeScript dependencies in `generator/package.json`.
 
+## DSC Resource Coding Rules
+
+These rules apply to all DSC resource implementations. Agents **must** follow them:
+
+1. **No helper/debug methods.** Do not add helper functions for debugging purposes. Use existing utilities only.
+2. **No status output from Test-TargetResource.** Do not log or display the result of `Test-TargetResource`. It must only return `$true` or `$false`.
+3. **No logging Get-TargetResource results.** Do not output `Get-TargetResource` results to log or console.
+4. **Export must include `$Filter` support.** Every `Export-TargetResource` must accept and honour a `$Filter` parameter.
+5. **Export: use `Add-Member` for DomainId.** Do not use hashtable normalization. Use `Add-Member -NotePropertyName 'DomainId'` instead.
+6. **Standard error handling only.** No extra `Write-Verbose` in catch blocks. Use only `New-M365DSCLogEntry` + `throw`.
+7. **No `Test-TargetResource` call in `Set-TargetResource`.** DSC handles Test→Set automatically.
+8. **Never hardcode endpoint URLs.** Use `Get-MSCloudLoginConnectionProfile` or equivalent helpers for cloud-agnostic URLs.
+9. **Increment build version on new schema.mof changes.** If updating a `.schema.mof` not yet in `dev` or `main`, increment its build version.
+10. **`Ensure` or `IsSingleInstance` required.** Singleton resources need `[Key] String IsSingleInstance` (`ValueMap{"Yes"}`). Multi-instance resources need `Ensure` (`ValueMap{"Present","Absent"}`). Rare exceptions must be justified.
+
 ## Integration Points
 
 - **Remote API Calls:** DSC resources interact with Microsoft 365 services via REST/Graph APIs.
