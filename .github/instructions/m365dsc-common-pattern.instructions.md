@@ -71,6 +71,10 @@ throw
 
 - **Never hardcode** URLs to Microsoft endpoints (e.g., `https://graph.microsoft.com`, `https://management.azure.com`). Use `Get-MSCloudLoginConnectionProfile` or equivalent helpers to obtain base URLs at runtime. This ensures cloud-agnostic behaviour for GCC, GCC-High, DoD, China, and other sovereign clouds.
 
+## Complex Type Handling
+
+For detailed patterns on working with complex types (CIM instances, embedded objects, nested arrays), including conversion helpers, deep comparison, export serialization, and unit testing, see `m365dsc-complex-types.instructions.md`.
+
 ## Drift Detection Patterns
 
 Test-TargetResource must always use the pre-defined comparison block:

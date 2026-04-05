@@ -75,4 +75,5 @@ When generating new code, the agent should:
 Templates and references:
 
 - See `ResourceGenerator/Templates/Module.Template.psm1` for implementation patterns of the functions.
+- See `m365dsc-complex-types.instructions.md` for patterns on complex types (CIM instances, embedded objects, nested arrays, export serialization, deep comparison helpers).
 - Use `ResourceGenerator` scripts to scaffold new resources.
