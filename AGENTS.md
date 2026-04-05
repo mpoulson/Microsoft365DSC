@@ -36,6 +36,18 @@ Generated files (do not edit):
 10. **`Ensure` or `IsSingleInstance` must be present.** Resources that manage singleton configurations must have `[Key] String IsSingleInstance` with `ValueMap{"Yes"}`. Resources that manage multiple instances must have an `Ensure` property (`ValueMap{"Present","Absent"}`). Rare exceptions exist (e.g. `AzureRoleEligibilityScheduleSettings`) but must be explicitly justified.
 11. **Unit tests: mock all external functions and add stubs.** When writing unit tests, mock all functions from other modules. Add mock stubs to the correct file under `Tests/Unit/Stubs/` (typically `Microsoft365.psm1`). Place each stub in the correct `#region` that matches the source module name. Regions must be in **alphabetical order**. If a region for the module does not yet exist, create one and insert it in alphabetical order. Stubs within each region should also be in alphabetical order.
 12. **Prefer non-beta modules and endpoints.** Use GA (non-beta) PowerShell modules and REST API endpoints whenever possible. Only use beta modules (e.g., `Microsoft.Graph.Beta.*`) or beta REST endpoints (e.g., `/beta/`) when the required functionality is new, not yet released to GA, or only available in preview.
+13. **`Get-TargetResource` must always return the key parameter(s) and `Ensure` in all code paths.** Even in the "not found" (null/Absent) return hashtable, the identity key (e.g., `Identity`, `GroupID`) must be included and `Ensure` must be set to `'Absent'`.
+14. **Check for `$null` explicitly before accessing properties.** Use `if ($null -ne $object)` rather than letting the `catch` block handle null references. Provide a graceful, descriptive error message.
+15. **Use `elseif` for mutually exclusive `Ensure` branches in `Set-TargetResource`.** Pattern: `if ($Ensure -eq 'Present' -and ...) { } elseif ($Ensure -eq 'Absent' -and ...) { }`. Only enter the `Absent` branch when the resource currently exists.
+16. **Never nest functions inside other functions.** Helper functions must be defined at module scope, not embedded inside `Get-`, `Set-`, or `Test-TargetResource`.
+17. **All helper functions must follow `Verb-Noun` naming.** Use approved PowerShell verbs (e.g., `Get-`, `Set-`, `Test-`, `Convert-`, `Compare-`). No PascalCase-only names.
+18. **Use `Write-Verbose -Message "..."` (named parameter).** Always pass the message with the `-Message` parameter, not positionally.
+19. **Error messages must be resource-specific.** Never copy-paste error messages from other resources. Each message must reference the current resource's context. When `Ensure = 'Absent'` is unsupported, throw: `"This resource cannot delete [Entity]. Please make sure you set its Ensure value to Present."`.
+20. **Every new DSC resource must add an export block to the central export function.** When adding a new resource, ensure `Export-M365DSCConfiguration` (or equivalent) in the core module includes a block for the new resource.
+21. **Do not wrap Boolean values in quotes.** Use `$true`/`$false`, never `'true'`/`'false'` or `"true"`/`"false"`, including in example files and test params.
+22. **Use `($null -ne $var)` style (null on the left) for all null comparisons.** This is the enforced PowerShell best practice in this codebase (e.g., `($null -ne $Role)` not `($Role -ne $null)`).
+23. **Do not remove `Verbose` from `$PSBoundParameters` explicitly.** `Verbose` is never part of `$PSBoundParameters`, so removing it is unnecessary noise.
+24. **When creating a new hashtable, create it fresh rather than clearing an existing one.** Do not reuse a hashtable by removing all items; just instantiate a new `@{}`.
 
 Quick checklist:
 

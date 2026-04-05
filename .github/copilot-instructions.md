@@ -86,7 +86,7 @@ These formatting rules are enforced during code review. Agents must apply them t
 1. **Key/Identity parameter must be first in `param()` blocks.** Global parameters like `GlobalAdminAccount` and `CentralAdminUrl` go at the bottom.
 2. **Only mandatory parameters in `Export-TargetResource` and `Test-TargetResource` signatures.** Non-mandatory params must not appear in these function signatures.
 3. **Every `.schema.mof` parameter must have a `Description` ending with a period `.`.** Descriptions drive auto-generated wiki documentation and must be present and properly punctuated for all parameters.
-4. **Resource names in `.schema.mof` must be singular.** e.g., `MSFT_EXOGroupSetting` not `MSFT_EXOGroupSettings`, unless the M365 API concept is inherently plural.
+4. **Resource names in `.schema.mof` must be singular.** e.g., `EXOGroupSetting` not `EXOGroupSettings`, unless the M365 API concept is inherently plural.
 5. **Do not use abbreviations in parameter descriptions.** Use full words: `"alternate"` not `"alt"`, correct product names like `"Giphy"` not `"Gilphy"`.
 6. **Use third-person phrasing in all descriptions.** Use `"their"` not `"your"` (e.g., `"Manages their SPO tenant settings."` not `"Manages your SPO tenant settings."`).
 7. **Descriptions must have a space between sentences.** When a description contains multiple sentences, separate them with a single space after the period.

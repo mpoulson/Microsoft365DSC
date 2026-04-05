@@ -73,5 +73,5 @@ When generating new code, the agent should:
 
 Templates and references:
 
-- See `ResourceGenerator/Module.Template.psm1` for implementation patterns of the functions.
+- See `ResourceGenerator/Templates/Module.Template.psm1` for implementation patterns of the functions.
 - Use `ResourceGenerator` scripts to scaffold new resources.
