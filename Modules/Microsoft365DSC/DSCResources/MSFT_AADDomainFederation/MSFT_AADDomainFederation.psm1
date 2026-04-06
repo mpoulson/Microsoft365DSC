@@ -593,7 +593,16 @@ function Export-TargetResource
                 $federationConfigs = Get-MgBetaDomainFederationConfiguration -DomainId $domain.Id -ErrorAction SilentlyContinue
                 if ($null -ne $federationConfigs)
                 {
-                    foreach ($config in @($federationConfigs))
+                    if ($federationConfigs -is [System.Collections.IDictionary])
+                    {
+                        $configsToExport = @([PSCustomObject]$federationConfigs)
+                    }
+                    else
+                    {
+                        $configsToExport = @($federationConfigs)
+                    }
+
+                    foreach ($config in $configsToExport)
                     {
                         $config | Add-Member -MemberType NoteProperty -Name 'DomainId' -Value $domain.Id -Force
                         $Script:exportedInstances += $config
