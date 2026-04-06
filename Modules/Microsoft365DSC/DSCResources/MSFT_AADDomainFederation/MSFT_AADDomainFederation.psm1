@@ -593,13 +593,13 @@ function Export-TargetResource
                 $federationConfigs = Get-MgBetaDomainFederationConfiguration -DomainId $domain.Id -ErrorAction SilentlyContinue
                 if ($null -ne $federationConfigs)
                 {
-                    if ($federationConfigs -is [System.Collections.IDictionary])
+                    if ($federationConfigs -is [System.Array])
                     {
-                        $configsToExport = @([PSCustomObject]$federationConfigs)
+                        $configsToExport = $federationConfigs
                     }
                     else
                     {
-                        $configsToExport = @($federationConfigs)
+                        $configsToExport = ,$federationConfigs
                     }
 
                     foreach ($config in $configsToExport)
