@@ -582,10 +582,11 @@ function Export-TargetResource
 
     try
     {
-        [array] $domains = Get-MgBetaDomain -ErrorAction Stop
+        [array] $domains = Get-MgBetaDomain -ErrorAction Stop |
+            Where-Object { $_.AuthenticationType -eq 'Federated' }
         [array] $Script:exportedInstances = @()
 
-        # Get federation configurations for all domains
+        # Get federation configurations for federated domains only
         foreach ($domain in $domains)
         {
             try
@@ -599,7 +600,7 @@ function Export-TargetResource
                     }
                     else
                     {
-                        $configsToExport = ,$federationConfigs
+                        $configsToExport = @([PSCustomObject]$federationConfigs)
                     }
 
                     foreach ($config in $configsToExport)
