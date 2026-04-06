@@ -319,7 +319,7 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-    $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters ([Hashtable]$PSBoundParameters).Clone()
 
     # Remove parameters that are not valid for the API calls
     $setParameters.Remove('DomainId') | Out-Null
