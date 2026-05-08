@@ -68,6 +68,7 @@ These rules apply to all DSC resource implementations. Agents **must** follow th
 22. **Use `($null -ne $var)` style (null on the left) for all null comparisons.** This is the enforced PowerShell best practice in this codebase (e.g., `($null -ne $Role)` not `($Role -ne $null)`).
 23. **Do not remove `Verbose` from `$PSBoundParameters` explicitly.** `Verbose` is never part of `$PSBoundParameters`, so removing it is unnecessary noise.
 24. **When creating a new hashtable, create it fresh rather than clearing an existing one.** Do not reuse a hashtable by removing all items; just instantiate a new `@{}`.
+25. **Use the `$Script:exportedInstance` caching pattern in every resource.** In `Export-TargetResource`, set `$Script:exportedInstance = $item` before each `Get-TargetResource` call. In `Get-TargetResource`, guard the live API fetch with `if (-not $Script:exportedInstance -or $Script:exportedInstance.<Key> -ne $KeyParam)` and assign `$item = $Script:exportedInstance` in the `else` branch. Never filter `$Script:exportedInstances` with `Where-Object` in the `else` branch. See the "Export caching pattern" section in `m365dsc-common-pattern.instructions.md` for the full template.
 
 ## Code Formatting & Style
 

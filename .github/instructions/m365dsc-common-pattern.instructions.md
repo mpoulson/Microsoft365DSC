@@ -117,6 +117,49 @@ When generating exported configuration:
 
 It is always the same set of steps. Refer to `ResourceGenerator/Templates/Module.Template.psm1` with the function `Export-TargetResource`.
 
+### Export caching pattern (`$Script:exportedInstance`)
+
+All resources must use the following two-part pattern so that `Get-TargetResource` avoids redundant API calls during an export run.
+
+**In `Export-TargetResource`:** retrieve all instances once into `$Script:exportedInstances`, then assign the current item to `$Script:exportedInstance` immediately before each `Get-TargetResource` call:
+
+```powershell
+$Script:ExportMode = $true
+[array] $Script:exportedInstances = Get-<ApiCommand> -ErrorAction Stop
+
+foreach ($item in $Script:exportedInstances)
+{
+    $Params = @{
+        <KeyParam> = $item.<KeyProperty>
+        # ... auth params ...
+    }
+    $Script:exportedInstance = $item
+    $Results = Get-TargetResource @Params
+    # ...
+}
+```
+
+**In `Get-TargetResource`:** check whether the pre-loaded instance matches the requested key. If it does, use it directly; otherwise fall through to a live API call:
+
+```powershell
+if (-not $Script:exportedInstance -or $Script:exportedInstance.<KeyProperty> -ne $KeyParam)
+{
+    # live API fetch — normal non-export or cache miss path
+    $item = Get-<ApiCommand> -<Filter> $KeyParam -ErrorAction SilentlyContinue
+    if ($null -eq $item)
+    {
+        return $nullReturn
+    }
+}
+else
+{
+    $item = $Script:exportedInstance
+}
+```
+
+- The `else` branch must contain **only** the single assignment `$item = $Script:exportedInstance`. Do not re-filter `$Script:exportedInstances` with `Where-Object` in this branch.
+- The key comparison in the condition must match the primary lookup key used by the resource (e.g., `Name`, `DisplayName`, `Identity`).
+
 ## Documentation Rules
 
 The documentation is built automatically inside of the pipeline and deployed to the website https://microsoft365dsc.com.
