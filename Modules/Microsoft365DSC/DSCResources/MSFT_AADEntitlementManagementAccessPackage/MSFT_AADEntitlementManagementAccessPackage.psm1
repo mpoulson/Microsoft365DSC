@@ -483,7 +483,7 @@ function Set-TargetResource
         #region basic information
         $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
-        if (-not [System.Guid]::TryParse($CreateParameters.CatalogId, [ref][System.Guid]::Empty))
+        if (-not [System.Guid]::TryParse($UpdateParameters.CatalogId, [ref][System.Guid]::Empty))
         {
             $catalogInstance = Get-MgBetaEntitlementManagementAccessPackageCatalog -Filter "DisplayName eq '$($UpdateParameters.CatalogId -replace "'", "''")'"
             if ($catalogInstance)

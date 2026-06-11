@@ -24,8 +24,8 @@ Configuration Example
     {
         AADEntitlementManagementAccessPackage 'myAccessPackage'
         {
-            DisplayName                     = 'Integration Package'
-            Ensure                          = 'Absent'
+            DisplayName           = 'Integration Package'
+            Ensure                = 'Absent'
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

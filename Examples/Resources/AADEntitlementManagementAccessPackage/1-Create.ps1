@@ -24,16 +24,15 @@ Configuration Example
     {
         AADEntitlementManagementAccessPackage 'myAccessPackage'
         {
-            AccessPackagesIncompatibleWith = @();
-            CatalogId                      = "General";
+            DisplayName           = "Integration Package"
+            Description           = "Integration Tests"
+            CatalogId             = "General"
+            IsHidden              = $False
+            IsRoleScopesVisible   = $True
+            Ensure                = "Present"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint
-            Description                    = "Integration Tests";
-            DisplayName                    = "Integration Package";
-            Ensure                         = "Present";
-            IsHidden                       = $False;
-            IsRoleScopesVisible            = $True;
         }
     }
 }

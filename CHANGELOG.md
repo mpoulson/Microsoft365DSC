@@ -6,6 +6,9 @@
   * Fixed validation of scoped role members' uniqueness
 * AADGroup
   * Various timing-related fixes for new group
+* AADEntitlementManagementAccessPackage
+  * Fixed an issue in Set-TargetResource where the catalog identifier check
+    referenced an undefined variable when updating an existing access package.
 * AADEntitlementManagementAccessPackageAssignmentPolicy
   * Fixed comparison in New-M365DSCDeltaReport
 * AADServicePrincipal
