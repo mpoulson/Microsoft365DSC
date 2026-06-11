@@ -6,6 +6,8 @@ Microsoft 365 is under constant development, which means that functionalities ar
 
 In the cases where a new resource is added, a resource gets a new optional parameter or a parameter that used to be mandatory becomes optional, existing configurations are not impacted. But when a resource or parameter is removed or an optional parameter becomes mandatory, existing configurations can stop functioning because they are using these removed components. That is what is called a "Breaking Change": A change that can break existing configurations and therefore impact the administration process of Microsoft 365.
 
+Changes to logging output are also considered breaking changes. Users and external tooling often depend on the location, name and format of the files Microsoft365DSC writes (for example exports, logs and error files). Renaming, moving or otherwise altering these logging output files or their paths can break automation, monitoring and downstream processing that relies on them. Therefore, any change to logging output files or paths must be treated as a breaking change and follow the release process described below.
+
 ## Release process
 
 Microsoft365DSC relies on multiple other modules for connecting to Microsoft 365, which all can release updates at any time. If a change in any of these modules is released which results in a breaking change in Microsoft365DSC, we will update the module to write a verbose message notifying the administrator that the component (resource, parameter, etc) has become deprecated, is no longer being used and will be removed in a future version. A warning event will also be added to the event logs, allowing users to monitor deprecated events.
