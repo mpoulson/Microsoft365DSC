@@ -19,11 +19,11 @@ class MSFT_TeamsClientConfiguration : OMI_BaseResource
     [Write, Description("Require a secondary form of authentication to access meeting content."), ValueMap{"NoAccess", "PartialAccess", "FullAccess"}, Values{"NoAccess", "PartialAccess", "FullAccess"}] string ResourceAccountContentAccess;
     [Write, Description("Senders domains can be further restricted to ensure that only allowed SMTP domains can send emails to the Teams channels. This is a comma-separated string of the domains you'd like to allow to send emails to Teams channels.")] string RestrictedSenderList[];
     [Write, Description("This setting controls whether users are redirected from teams.microsoft.com to the unified domain teams.cloud.microsoft. Possible values are: MicrosoftDefault, Microsoft will manage redirection behavior. If no explicit admin configuration is set, users may be redirected automatically. Disabled, Users will remain on teams.microsoft.com. Use this if your organization's apps are incompatible with the unified domain"), ValueMap{"MicrosoftDefault","Disabled"}, Values{"MicrosoftDefault","Disabled"}] String UseUnifiedDomain;
-    [Write, Description("Credentials of the Teams Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Credentials of the Teams Admin."), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
     [Write, Description("Name of the Azure Active Directory tenant used for authentication. Format contoso.onmicrosoft.com")] String TenantId;
     [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
-    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword"), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
+    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword."), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
     [Write, Description("Path to certificate used in service principal usually a PFX file.")] String CertificatePath;
     [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
     [Write, Description("Access token used for authentication.")] String AccessTokens[];

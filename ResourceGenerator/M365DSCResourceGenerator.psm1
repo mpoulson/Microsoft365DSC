@@ -1172,7 +1172,7 @@ class MSFT_DeviceManagementConfigurationPolicyAssignments
         $paramContent.AppendLine("        [Parameter()]") | Out-Null
         $paramContent.AppendLine("        [System.Management.Automation.PSCredential]") | Out-Null
         $paramContent.AppendLine("        `$Credential,`r`n") | Out-Null
-        $mofSchemaContent.AppendLine("    [Write, Description(`"Credentials of the workload's Admin`"), EmbeddedInstance(`"MSFT_Credential`")] string Credential;") | Out-Null
+        $mofSchemaContent.AppendLine("    [Write, Description(`"Credentials of the workload's Admin.`"), EmbeddedInstance(`"MSFT_Credential`")] string Credential;") | Out-Null
 
         if ($Workload -ne 'SecurityAndCompliance')
         {
@@ -1253,7 +1253,7 @@ class MSFT_DeviceManagementConfigurationPolicyAssignments
             $paramContent.AppendLine("        [Parameter()]") | Out-Null
             $paramContent.AppendLine("        [System.Management.Automation.PSCredential]") | Out-Null
             $paramContent.AppendLine("        `$CertificatePassword,`r`n") | Out-Null
-            $mofSchemaContent.AppendLine('    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword"), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;') | Out-Null
+            $mofSchemaContent.AppendLine('    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword."), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;') | Out-Null
 
             $spacingRequired = " "
             for ($i = 0; $i -lt ($longestParameterName - ("ManagedIdentity").Length); $i++)

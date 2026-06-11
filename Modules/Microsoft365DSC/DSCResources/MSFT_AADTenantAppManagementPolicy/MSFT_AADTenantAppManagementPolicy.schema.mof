@@ -23,11 +23,11 @@ class MSFT_AADTenantAppManagementPolicy : OMI_BaseResource
     [Write, Description("Denotes whether the policy is enabled.")] Boolean IsEnabled;
     [Write, Description("Restrictions that apply to an application  object."), EmbeddedInstance("MSFT_AADTenantAppManagementPolicyRestrictions")] string ApplicationRestrictions;
     [Write, Description("Restrictions that apply to a service principal  object."), EmbeddedInstance("MSFT_AADTenantAppManagementPolicyRestrictions")] string ServicePrincipalRestrictions;
-    [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Credentials of the workload's Admin."), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
     [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
     [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
-    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword"), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
+    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword."), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
     [Write, Description("Path to certificate used in service principal usually a PFX file.")] String CertificatePath;
     [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
     [Write, Description("Access token used for authentication.")] String AccessTokens[];

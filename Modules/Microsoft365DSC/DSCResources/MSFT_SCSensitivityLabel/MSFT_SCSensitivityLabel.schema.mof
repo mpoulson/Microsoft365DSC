@@ -95,11 +95,11 @@ class MSFT_SCSensitivityLabel : OMI_BaseResource
     [Write, Description("The SiteAndGroupProtectionPrivacy parameter specifies the privacy level for the label."), ValueMap{"Public","Private","Unspecified"}, Values{"Public","Private","Unspecified"}] String SiteAndGroupProtectionPrivacy;
     [Write, Description("The SiteAndGroupExternalSharingControlType parameter specifies the external user sharing setting for the label."), ValueMap{"ExternalUserAndGuestSharing","ExternalUserSharingOnly","ExistingExternalUserSharingOnly","Disabled"}, Values{"ExternalUserAndGuestSharing","ExternalUserSharingOnly","ExistingExternalUserSharingOnly","Disabled"}] String SiteAndGroupExternalSharingControlType;
     [Write, Description("The AutoLabelingSettings parameter specifies the conditions for label to be automatically applied to files and emails."), EmbeddedInstance("MSFT_SCSLAutoLabelingSettings")] String AutoLabelingSettings;
-    [Write, Description("Credentials of the Exchange Global Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Credentials of the Exchange Global Admin."), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
     [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
     [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
-    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword"), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
+    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword."), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
     [Write, Description("Path to certificate used in service principal usually a PFX file.")] String CertificatePath;
     [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
     [Write, Description("Access token used for authentication.")] String AccessTokens[];

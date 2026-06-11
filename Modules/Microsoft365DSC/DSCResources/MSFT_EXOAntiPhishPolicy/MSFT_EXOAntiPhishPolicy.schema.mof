@@ -38,11 +38,11 @@ class MSFT_EXOAntiPhishPolicy : OMI_BaseResource
     [Write, Description("The TargetedUserQuarantineTag specifies the quarantine policy that's used on messages that are quarantined by user impersonation protection.")] String TargetedUserQuarantineTag;
     [Write, Description("The DmarcQuarantineAction parameter specifies the action to take when a message fails DMARC checks and the sender's DMARC policy is p=quarantine"), ValueMap{"MoveToJmf","Quarantine"}, Values{"MoveToJmf","Quarantine"}] String DmarcQuarantineAction;
     [Write, Description("The DmarcRejectAction parameter specifies the action to take when a message fails DMARC checks and the sender's DMARC policy is p=reject."), ValueMap{"Quarantine","Reject"}, Values{"Quarantine","Reject"}] String DmarcRejectAction;
-    [Write, Description("Credentials of the Exchange Global Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Credentials of the Exchange Global Admin."), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
     [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
     [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
-    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword"), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
+    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword."), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
     [Write, Description("Path to certificate used in service principal usually a PFX file.")] String CertificatePath;
     [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
     [Write, Description("Access token used for authentication.")] String AccessTokens[];

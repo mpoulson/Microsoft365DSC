@@ -8,7 +8,7 @@ class MSFT_IntuneDeviceEnrollmentScopeConfigurationMam : OMI_BaseResource
     [Write, Description("Discovery URL of the mobility management application.")] String DiscoveryUrl;
     [Write, Description("Terms of Use URL of the mobility management application.")] String TermsOfUseUrl;
     [Write, Description("The group display names that are included if the scope is set to 'Selected'.")] String IncludedGroups[];
-    [Write, Description("Credentials of the Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Credentials of the Admin."), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
     [Write, Description("Access token used for authentication.")] String AccessTokens[];
 };

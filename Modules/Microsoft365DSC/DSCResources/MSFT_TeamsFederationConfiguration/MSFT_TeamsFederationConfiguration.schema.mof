@@ -14,11 +14,11 @@ class MSFT_TeamsFederationConfiguration : OMI_BaseResource
     [Write, Description("When set to True, messages sent from discovered partners are considered unverified. That means that those messages will be delivered only if they were sent from a person who is on the recipient's Contacts list.")] Boolean TreatDiscoveredPartnersAsUnverified;
     [Write, Description("When set to True, indicates that the users homed on Skype for Business Online use the same SIP domain as users homed on the on-premises version of Skype for Business Server.")] Boolean SharedSipAddressSpace;
     [Write, Description("When set to True, Teamsconsumer have access only to external user profiles")] Boolean RestrictTeamsConsumerToExternalUserProfiles;
-    [Write, Description("Credentials of the Teams Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Credentials of the Teams Admin."), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
     [Write, Description("Name of the Azure Active Directory tenant used for authentication. Format contoso.onmicrosoft.com")] String TenantId;
     [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
-    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword"), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
+    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword."), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
     [Write, Description("Path to certificate used in service principal usually a PFX file.")] String CertificatePath;
     [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
     [Write, Description("Access token used for authentication.")] String AccessTokens[];
