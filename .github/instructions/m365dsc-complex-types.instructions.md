@@ -213,19 +213,52 @@ function Get-CompareParameters
 }
 ```
 
-**Usage in Test-TargetResource:**
+**Usage in Test-TargetResource (splat the result so every key is forwarded):**
 ```powershell
 $compareParameters = Get-CompareParameters
 $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
     -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
-    -PostProcessing $compareParameters.PostProcessing
+    @compareParameters
 return $result
 ```
+
+Splatting `@compareParameters` forwards whatever keys the helper returns (`ExcludedProperties` and/or `PostProcessing`). The framework also calls `Get-CompareParameters` during drift reporting (via `Get-M365DSCResourceComparisonParameters`), so the same exclusions/normalizations are applied consistently in both Test and reports. Export the helper alongside the resource functions: `Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')`.
 
 **Rules:**
 - The callback must return a `[System.Tuple[Hashtable, Hashtable, Hashtable]]` of `($DesiredValues, $CurrentValues, $ValuesToCheck)`.
 - Use `Get-CompareParameters` as the helper name (following existing convention).
 - Common use cases: date normalization, removing read-only properties, adjusting array order.
+
+### ExcludedProperties (simpler than PostProcessing for dropping volatile properties)
+
+When the only customization needed is to **exclude** one or more properties from comparison (server-generated IDs, volatile timestamps, write-only secrets that the API never returns), prefer the declarative `ExcludedProperties` key over a `PostProcessing` callback. This is the most common comparison customization in the codebase (used by 50+ resources) and is honored by the framework comparer (`[Microsoft365DSC.Compare.SimpleObjectComparer]`).
+
+**Pattern (from IntuneDeviceManagementAndroidDeviceOwnerEnrollmentProfile):**
+```powershell
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return @{
+        ExcludedProperties = @('AccountId', 'TokenExpirationDateTime')
+    }
+}
+```
+
+**Rules:**
+- List exact property names (matching the schema) in the array. Both `ExcludedProperties` and `PostProcessing` may be returned together.
+- Typical exclusions: server-generated identifiers, volatile/expiring timestamps (e.g., token expiration), and secrets/keys the service never echoes back.
+
+### DateTime / Timestamp Handling
+
+Date and time values returned by Graph/SDK must be normalized to a stable string form so that `Get-TargetResource` output and drift comparison are deterministic.
+
+**Rules:**
+- **Format dates with the round-trip "o" specifier.** Cast the raw value and call `.ToString('o')`: use `[System.DateTime]` for plain dates and `[System.DateTimeOffset]` for offset-aware values (e.g., `([System.DateTimeOffset]$value.endDateTime).ToString('o')`). This ISO 8601 round-trip format is the established convention across the resources.
+- **Apply the same format on both sides.** When a resource has paired start/end (or create/expire) timestamps, format them identically so comparison does not flag spurious drift (e.g., aligning `Expiration.StartDateTime` and `Expiration.EndDateTime`).
+- **Exclude volatile, server-controlled timestamps from comparison** via `ExcludedProperties` (above) rather than letting them cause perpetual drift.
 
 ### Deep Comparison Helper for Complex Arrays
 
