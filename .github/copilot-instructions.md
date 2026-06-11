@@ -10,6 +10,7 @@ This guide enables AI coding agents to be productive in the Microsoft365DSC code
     - `Dependencies/`: Contains images for the README files, `Manifest.psd1` for the module dependencies and their versions, and other files.
     - `DSCResources/`: The directory containing all of the DSC resources.
     - `Modules`: The directory containing all of the shared core modules.
+    - `Modules/EncodingHelpers/M365DSCEmojis.psm1`: Central definitions of emoji/Unicode glyphs as `$Global:M365DSCEmoji*` variables (built via `[char]::ConvertFromUtf32`). Loaded as a nested module from `Microsoft365DSC.psd1`.
   - `Examples/Resources/`: The repository-root directory containing all of the DSC resource examples (one folder per resource).
   - `ResourceGenerator/`: Utilities for generating resource definitions.
   - `generator/`: TypeScript/Node.js code for resource generation and supporting scripts.
@@ -68,6 +69,10 @@ These rules apply to all DSC resource implementations. Agents **must** follow th
 22. **Use `($null -ne $var)` style (null on the left) for all null comparisons.** This is the enforced PowerShell best practice in this codebase (e.g., `($null -ne $Role)` not `($Role -ne $null)`).
 23. **Do not remove `Verbose` from `$PSBoundParameters` explicitly.** `Verbose` is never part of `$PSBoundParameters`, so removing it is unnecessary noise.
 24. **When creating a new hashtable, create it fresh rather than clearing an existing one.** Do not reuse a hashtable by removing all items; just instantiate a new `@{}`.
+25. **Reuse cached data; do not re-query the service.** Honour the `$Script:exportedInstance`/`$Script:exportedInstances` cache (comparing against the `[Key]` property) in `Get-TargetResource`, and follow the existing lazily-initialized, name-keyed script-scope cache pattern (e.g., `$Script:CompareParametersCache`, `$Script:AllM365DSCResources`) for expensive reusable lookups. See `m365dsc-common-pattern.instructions.md`.
+26. **Optimize string and collection building.** Use `[System.Text.StringBuilder]` for large output (telemetry/report/export) and avoid `+=` array/string concatenation inside per-instance hot loops. Use `Write-M365DSCHost -DeferWrite`/`-CommitWrite` to batch console output.
+27. **Never double-encode already-encoded values.** Only call `[System.Convert]::ToBase64String(...)` on raw `[System.Byte[]]`; values the SDK already returns as Base64 strings must be passed through directly (cf. FIXES #7193). Use `[System.Text.Encoding]::UTF8`/`[System.Convert]::FromBase64String` for conversions and write files with `-Encoding utf8`.
+28. **Never embed raw Unicode/emoji literals.** Reference the `$Global:M365DSCEmoji*` variables from `Modules/EncodingHelpers/M365DSCEmojis.psm1`; add new glyphs there via `[char]::ConvertFromUtf32(0x....)` in alphabetical order. Do not bypass the `Test-CodePage` UTF-8 warning.
 
 ## Code Formatting & Style
 

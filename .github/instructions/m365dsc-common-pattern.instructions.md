@@ -75,6 +75,28 @@ throw
 
 For detailed patterns on working with complex types (CIM instances, embedded objects, nested arrays), including conversion helpers, deep comparison, export serialization, and unit testing, see `m365dsc-complex-types.instructions.md`.
 
+## Data Caching & Performance Optimization
+
+Export and drift detection can call `Get-TargetResource` hundreds of times per tenant, so reuse data instead of re-querying the service. Follow the existing caching patterns rather than inventing new ones.
+
+- **Reuse the exported-instance cache.** During export, `Get-TargetResource` is invoked once per instance. Set `$Script:exportedInstance` (or `$Script:exportedInstances` for the full list) in `Export-TargetResource` and have `Get-TargetResource` check it before hitting the API. The cache check **must** compare against the `[Key]` property from the `.schema.mof`. See `m365dsc-complex-types.instructions.md` (section "Export Instance Caching") for the full pattern.
+- **Cache expensive, reusable lookups at script scope.** The codebase caches comparison metadata and resource reflection data in module-scoped dictionaries that are populated lazily and reused (e.g., `$Script:CompareParametersCache` and `$Script:AllM365DSCResources` in `M365DSCUtil.psm1`, `$Script:MandatoryParametersCache` in `M365DSCReport.psm1`). When adding a similar lookup, initialize the cache only when `$null`, key it by resource name, and return the cached value on subsequent calls. Use a case-insensitive comparer (e.g., `[System.StringComparer]::InvariantCultureIgnoreCase`) where names are matched.
+- **Build large strings with `[System.Text.StringBuilder]`.** When assembling sizeable output such as telemetry/report XML or exported configuration, use `StringBuilder` with `.Append(...) | Out-Null` rather than repeated `+=` string concatenation (see `New-M365DSCLogEntry` in `M365DSCUtil.psm1`). Avoid `$array += $item` inside hot loops that run per instance; prefer a typed list (e.g., `[System.Collections.Generic.List[Object]]`) when the collection can grow large.
+- **Batch and defer console output.** Use `Write-M365DSCHost` with `-DeferWrite` to buffer host messages and `-CommitWrite` to flush them, instead of many individual `Write-Host` calls during export.
+- **Honor the `$Filter` parameter.** Server-side `-Filter` queries (when the resource supports them) avoid exporting and discarding every instance. Always wire `$Filter` through `Export-TargetResource`.
+
+## Encoding & Decoding
+
+- **Do not double-encode values that are already encoded.** Many Graph SDK / REST properties (for example certificate blobs) are already returned as Base64 strings. Only call `[System.Convert]::ToBase64String(...)` on a raw `[System.Byte[]]`; never on a value that is already a Base64 `String`. This bug was fixed for `AADOrganizationCertificateBasedAuthConfiguration` (FIXES #7193) — assign the value through directly when the API already returns a string.
+- **Use the .NET primitives for conversion.** Convert text to/from Base64 with `[System.Text.Encoding]::UTF8.GetBytes(...)` + `[System.Convert]::ToBase64String(...)`, and decode with `[System.Convert]::FromBase64String(...)`. Do not hand-roll encoders.
+- **Write files as UTF-8.** When persisting exports, documentation, or generated content, use `-Encoding utf8` (the `SchemaDefinition.json` generation and export utilities all use UTF-8). Match the encoding already used by the surrounding code path.
+
+## Unicode Characters & Emojis
+
+- **Never embed raw Unicode / emoji literals in source files.** All emoji and symbol glyphs are defined centrally in `Modules/Microsoft365DSC/Modules/EncodingHelpers/M365DSCEmojis.psm1` using `[char]::ConvertFromUtf32(0x....)` and exposed as `$Global:M365DSCEmoji*` / `$Global:M365DSCMagnifyingGlass` variables (loaded as a nested module in `Microsoft365DSC.psd1`). Reference those globals (e.g., `$Global:M365DSCEmojiGreenCheckmark`, `$Global:M365DSCEmojiRedX`) instead of pasting the glyph. If a needed symbol is missing, add it to `M365DSCEmojis.psm1` via `ConvertFromUtf32` in alphabetical order rather than inlining a literal.
+- **Build any new code-point from its hex value** with `[char]::ConvertFromUtf32(0x....)`; this keeps source files ASCII-safe and avoids corruption from editors or non-UTF-8 sessions.
+- **UTF-8 session requirement.** Rendering these characters relies on a UTF-8 console code page (65001). `Test-CodePage` in `M365DSCUtil.psm1` warns when the session is not UTF-8 — do not work around it by stripping Unicode output.
+
 ## Drift Detection Patterns
 
 Test-TargetResource must always use the pre-defined comparison block:
