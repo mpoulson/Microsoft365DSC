@@ -3,7 +3,7 @@ class MSFT_MicrosoftGraphassignmentreviewsettings
 {
     [Write, Description("The default decision to apply if the request is not reviewed within the period specified in durationInDays."), ValueMap{"acceptAccessRecommendation","keepAccess","removeAccess","unknownFutureValue"}, Values{"acceptAccessRecommendation","keepAccess","removeAccess","unknownFutureValue"}] String AccessReviewTimeoutBehavior;
     [Write, Description("The number of days within which reviewers should provide input.")] UInt32 DurationInDays;
-    [Write, Description("Specifies whether to display recommendations to the reviewer. The default value is true")] Boolean IsAccessRecommendationEnabled;
+    [Write, Description("Specifies whether to display recommendations to the reviewer. The default value is true.")] Boolean IsAccessRecommendationEnabled;
     [Write, Description("Specifies whether the agentic experience is enabled for this policy.")] Boolean IsAgenticExperienceEnabled;
     [Write, Description("Specifies whether the reviewer must provide justification for the approval. The default value is true.")] Boolean IsApprovalJustificationRequired;
     [Write, Description("If true, access reviews are required for assignments from this policy.")] Boolean IsEnabled;
@@ -16,7 +16,7 @@ class MSFT_MicrosoftGraphassignmentreviewsettings
 [ClassVersion("1.0.0")]
 class MSFT_MicrosoftGraphuserset
 {
-    [Write, Description("The type of the resource"), ValueMap{"#microsoft.graph.singleUser","#microsoft.graph.groupMembers","#microsoft.graph.requestorManager","#microsoft.graph.internalSponsors","#microsoft.graph.externalSponsors","#microsoft.graph.connectedOrganizationMembers"}, Values{"#microsoft.graph.singleUser","#microsoft.graph.groupMembers","#microsoft.graph.requestorManager","#microsoft.graph.internalSponsors","#microsoft.graph.externalSponsors","#microsoft.graph.connectedOrganizationMembers"}] String odataType;
+    [Write, Description("The type of the resource."), ValueMap{"#microsoft.graph.singleUser","#microsoft.graph.groupMembers","#microsoft.graph.requestorManager","#microsoft.graph.internalSponsors","#microsoft.graph.externalSponsors","#microsoft.graph.connectedOrganizationMembers"}, Values{"#microsoft.graph.singleUser","#microsoft.graph.groupMembers","#microsoft.graph.requestorManager","#microsoft.graph.internalSponsors","#microsoft.graph.externalSponsors","#microsoft.graph.connectedOrganizationMembers"}] String odataType;
     [Write, Description("The id of the resource.")] String Id;
     [Write, Description("Indicates whether the resource is a backup fallback approver.")] Boolean IsBackup;
     [Write, Description("The hierarchical level of the manager with respect to the requestor. For example, the direct manager of a requestor would have a managerLevel of 1, while the manager of the requestor's manager would have a managerLevel of 2. Default value for managerLevel is 1. Possible values for this property range from 1 to 2.")] UInt32 ManagerLevel;
@@ -25,7 +25,7 @@ class MSFT_MicrosoftGraphuserset
 [ClassVersion("1.0.0")]
 class MSFT_MicrosoftGraphaccesspackagequestion
 {
-    [Write, Description("The type of the resource"), ValueMap{"#microsoft.graph.accessPackageMultipleChoiceQuestion","#microsoft.graph.accessPackageTextInputQuestion"}, Values{"#microsoft.graph.accessPackageMultipleChoiceQuestion","#microsoft.graph.accessPackageTextInputQuestion"}] String odataType;
+    [Write, Description("The type of the resource."), ValueMap{"#microsoft.graph.accessPackageMultipleChoiceQuestion","#microsoft.graph.accessPackageTextInputQuestion"}, Values{"#microsoft.graph.accessPackageMultipleChoiceQuestion","#microsoft.graph.accessPackageTextInputQuestion"}] String odataType;
     [Write, Description("ID of the question.")] String Id;
     [Write, Description("Specifies whether the requestor is allowed to edit answers to questions.")] Boolean IsAnswerEditable;
     [Write, Description("Whether the requestor is required to supply an answer or not.")] Boolean IsRequired;
@@ -106,7 +106,7 @@ class MSFT_AADEntitlementManagementAccessPackageAssignmentPolicy : OMI_BaseResou
     [Write, Description("Indicates whether a user can extend the access package assignment duration after approval.")] Boolean CanExtend;
     [Write, Description("The description of the policy.")] String Description;
     [Write, Description("The number of days in which assignments from this policy last until they are expired.")] UInt32 DurationInDays;
-    [Write, Description("The expiration date for assignments created in this policy. The Timestamp type represents date and time information using ISO 8601 format and is always in UTC time. For example, midnight UTC on Jan 1, 2014 is 2014-01-01T00:00:00Z")] String ExpirationDateTime;
+    [Write, Description("The expiration date for assignments created in this policy. The Timestamp type represents date and time information using ISO 8601 format and is always in UTC time. For example, midnight UTC on Jan 1, 2014 is 2014-01-01T00:00:00Z.")] String ExpirationDateTime;
     [Write, Description("Questions that are posed to the requestor."), EmbeddedInstance("MSFT_MicrosoftGraphaccesspackagequestion")] String Questions[];
     [Write, Description("Who must approve requests for access package in this policy."), EmbeddedInstance("MSFT_MicrosoftGraphapprovalsettings")] String RequestApprovalSettings;
     [Write, Description("Who can request this access package from this policy."), EmbeddedInstance("MSFT_MicrosoftGraphrequestorsettings")] String RequestorSettings;
