@@ -99,7 +99,7 @@ function Get-TargetResource
 
             if (-not [System.String]::IsNullOrEmpty($SubscriptionId))
             {
-                $null = Set-AzContext -SubscriptionId $SubscriptionId -ErrorAction Stop
+                $null = Set-AzContext -Subscription $SubscriptionId -ErrorAction Stop
                 Write-Verbose -Message "Set Az context to subscription $SubscriptionId"
             }
 
@@ -463,7 +463,9 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        [array] $Script:exportedInstances = @()
+        $AllRoleDefinitions = [System.Collections.Generic.List[System.Object]]::new()
+        $SeenRoleDefinitionIds = [System.Collections.Generic.HashSet[System.String]]::new()
+
         $Subscriptions = Get-AzSubscription -ErrorAction SilentlyContinue
         foreach ($Subscription in $Subscriptions)
         {
@@ -471,12 +473,14 @@ function Export-TargetResource
             $subscriptionRoles = Get-AzRoleDefinition -Custom -Scope "/subscriptions/$($Subscription.Id)" -ErrorAction SilentlyContinue
             foreach ($role in $subscriptionRoles)
             {
-                if (-not ($Script:exportedInstances | Where-Object { $_.Id -eq $role.Id }))
+                if ($SeenRoleDefinitionIds.Add($role.Id))
                 {
-                    [array] $Script:exportedInstances += $role
+                    $AllRoleDefinitions.Add($role)
                 }
             }
         }
+
+        [array] $Script:exportedInstances = $AllRoleDefinitions
 
         if ($Script:exportedInstances.Length -eq 0)
         {
