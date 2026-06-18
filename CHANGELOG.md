@@ -101,9 +101,15 @@
   * Fixed an issue where the `Certificate` property was incorrectly converted using `ToBase64String`
     when the Graph SDK already returns it as a Base64 string.
     FIXES [#7193](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7193)
+* AzureRoleAssignmentScheduleRequest
+  * Fixed an issue during export where requests with an unresolvable principal
+    could be exported using parameters from a previously processed instance.
 * AzureRoleDefinition
   * Initial Release
     FIXES [#7077](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7077)
+* AzureRoleEligibilityScheduleRequest
+  * Fixed an issue during export where requests with an unresolvable principal
+    could be exported using parameters from a previously processed instance.
 * EXOReportSubmissionPolicy
   * Removed export line for the configuration because it is single instance.
 * IntuneDeviceCompliancePolicyiOS

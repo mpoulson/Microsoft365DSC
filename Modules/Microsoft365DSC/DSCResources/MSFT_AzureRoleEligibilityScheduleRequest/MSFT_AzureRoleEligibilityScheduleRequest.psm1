@@ -824,33 +824,37 @@ function Export-TargetResource
                 $PrincipalValue = $principalInfo.DisplayName
             }
 
-            if ($null -ne $PrincipalValue)
+            if ($null -eq $PrincipalValue)
             {
-                $roleDefinitionGuid = $request.RoleDefinitionId.Split('/')[-1]
-                $roleDefinition = $Script:RoleDefinitions[$roleDefinitionGuid]
-                if ($null -eq $roleDefinition)
-                {
-                    $roleDefinition = Get-AzRoleDefinition -Id $roleDefinitionGuid `
-                        -ErrorAction SilentlyContinue
-                    $Script:RoleDefinitions.Add($roleDefinitionGuid, $roleDefinition)
-                }
-                $params = @{
-                    Id                    = $request.Name
-                    Principal             = $PrincipalValue
-                    PrincipalType         = $principalType
-                    DirectoryScopeId      = $request.Scope
-                    RoleDefinition        = $roleDefinition.Name
-                    Ensure                = 'Present'
-                    Credential            = $Credential
-                    ApplicationId         = $ApplicationId
-                    TenantId              = $TenantId
-                    ApplicationSecret     = $ApplicationSecret
-                    CertificateThumbprint = $CertificateThumbprint
-                    CertificatePath       = $CertificatePath
-                    CertificatePassword   = $CertificatePassword
-                    ManagedIdentity       = $ManagedIdentity.IsPresent
-                    AccessTokens          = $AccessTokens
-                }
+                Write-Verbose -Message "Could not resolve principal {$($request.PrincipalId)} for role eligibility schedule request {$($request.Name)}. Skipping."
+                $i++
+                continue
+            }
+
+            $roleDefinitionGuid = $request.RoleDefinitionId.Split('/')[-1]
+            $roleDefinition = $Script:RoleDefinitions[$roleDefinitionGuid]
+            if ($null -eq $roleDefinition)
+            {
+                $roleDefinition = Get-AzRoleDefinition -Id $roleDefinitionGuid `
+                    -ErrorAction SilentlyContinue
+                $Script:RoleDefinitions.Add($roleDefinitionGuid, $roleDefinition)
+            }
+            $params = @{
+                Id                    = $request.Name
+                Principal             = $PrincipalValue
+                PrincipalType         = $principalType
+                DirectoryScopeId      = $request.Scope
+                RoleDefinition        = $roleDefinition.Name
+                Ensure                = 'Present'
+                Credential            = $Credential
+                ApplicationId         = $ApplicationId
+                TenantId              = $TenantId
+                ApplicationSecret     = $ApplicationSecret
+                CertificateThumbprint = $CertificateThumbprint
+                CertificatePath       = $CertificatePath
+                CertificatePassword   = $CertificatePassword
+                ManagedIdentity       = $ManagedIdentity.IsPresent
+                AccessTokens          = $AccessTokens
             }
 
             $Script:exportedInstance = $request
