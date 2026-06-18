@@ -39,6 +39,10 @@ function Get-TargetResource
         $AssignableScopes,
 
         [Parameter()]
+        [System.String]
+        $SubscriptionId,
+
+        [Parameter()]
         [ValidateSet('Present', 'Absent')]
         [System.String]
         $Ensure = 'Present',
@@ -93,6 +97,12 @@ function Get-TargetResource
             Add-M365DSCTelemetryEvent -Data $data
             #endregion
 
+            if (-not [System.String]::IsNullOrEmpty($SubscriptionId))
+            {
+                $null = Set-AzContext -SubscriptionId $SubscriptionId -ErrorAction Stop
+                Write-Verbose -Message "Set Az context to subscription $SubscriptionId"
+            }
+
             $nullReturn = $PSBoundParameters
             $nullReturn.Ensure = 'Absent'
 
@@ -111,7 +121,14 @@ function Get-TargetResource
 
             if ($null -eq $AzureRoleDefinition)
             {
-                $AzureRoleDefinition = Get-AzRoleDefinition -Name $CustomRoleName -ErrorAction SilentlyContinue
+                if (-not [System.String]::IsNullOrEmpty($SubscriptionId))
+                {
+                    $AzureRoleDefinition = Get-AzRoleDefinition -Name $CustomRoleName -Scope "/subscriptions/$SubscriptionId" -ErrorAction SilentlyContinue
+                }
+                else
+                {
+                    $AzureRoleDefinition = Get-AzRoleDefinition -Name $CustomRoleName -ErrorAction SilentlyContinue
+                }
             }
 
             if ($null -eq $AzureRoleDefinition)
@@ -140,6 +157,7 @@ function Get-TargetResource
             NotDataActions        = [Array]$AzureRoleDefinition.NotDataActions
             AssignableScopes      = [Array]$AzureRoleDefinition.AssignableScopes
             IsCustom              = $AzureRoleDefinition.IsCustom
+            SubscriptionId        = $SubscriptionId
             Ensure                = 'Present'
             Credential            = $Credential
             ApplicationId         = $ApplicationId
@@ -199,6 +217,10 @@ function Set-TargetResource
         [Parameter()]
         [System.String[]]
         $AssignableScopes,
+
+        [Parameter()]
+        [System.String]
+        $SubscriptionId,
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
@@ -328,6 +350,10 @@ function Test-TargetResource
         $AssignableScopes,
 
         [Parameter()]
+        [System.String]
+        $SubscriptionId,
+
+        [Parameter()]
         [ValidateSet('Present', 'Absent')]
         [System.String]
         $Ensure = 'Present',
@@ -437,7 +463,20 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        [array] $Script:exportedInstances = Get-AzRoleDefinition -Custom -ErrorAction Stop
+        [array] $Script:exportedInstances = @()
+        $Subscriptions = Get-AzSubscription -ErrorAction SilentlyContinue
+        foreach ($Subscription in $Subscriptions)
+        {
+            $null = Set-AzContext -Subscription $Subscription.Id -ErrorAction SilentlyContinue
+            $subscriptionRoles = Get-AzRoleDefinition -Custom -Scope "/subscriptions/$($Subscription.Id)" -ErrorAction SilentlyContinue
+            foreach ($role in $subscriptionRoles)
+            {
+                if (-not ($Script:exportedInstances | Where-Object { $_.Id -eq $role.Id }))
+                {
+                    [array] $Script:exportedInstances += $role
+                }
+            }
+        }
 
         if ($Script:exportedInstances.Length -eq 0)
         {
@@ -455,9 +494,21 @@ function Export-TargetResource
             }
 
             Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $($role.Name)" -DeferWrite
+
+            $roleSubscriptionId = $null
+            foreach ($scope in $role.AssignableScopes)
+            {
+                if ($scope -match '^/subscriptions/([^/]+)$')
+                {
+                    $roleSubscriptionId = $Matches[1]
+                    break
+                }
+            }
+
             $Params = @{
                 CustomRoleName        = $role.Name
                 Id                    = $role.Id
+                SubscriptionId        = $roleSubscriptionId
                 Credential            = $Credential
                 ApplicationId         = $ApplicationId
                 TenantId              = $TenantId

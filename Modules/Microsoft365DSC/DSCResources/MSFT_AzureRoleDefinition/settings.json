@@ -46,7 +46,9 @@
       "module": "Az.Accounts",
       "cmdlets": [
         "Connect-AzAccount",
-        "Register-AzModule"
+        "Get-AzSubscription",
+        "Register-AzModule",
+        "Set-AzContext"
       ]
     },
     {

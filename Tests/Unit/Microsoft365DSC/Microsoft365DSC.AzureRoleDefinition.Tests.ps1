@@ -47,6 +47,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-AzRoleDefinition -MockWith {
             }
 
+            Mock -CommandName Set-AzContext -MockWith {
+            }
+
+            Mock -CommandName Get-AzSubscription -MockWith {
+                return @([PSCustomObject]@{ Id = '00000000-0000-0000-0000-000000000000'; Name = 'Test Subscription' })
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -64,6 +71,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DataActions           = @()
                     NotDataActions        = @()
                     AssignableScopes      = @("/subscriptions/00000000-0000-0000-0000-000000000000")
+                    SubscriptionId        = "00000000-0000-0000-0000-000000000000"
                     Ensure                = 'Present'
                     Credential            = $Credential
                     ApplicationId         = "00000000-0000-0000-0000-000000000010"
@@ -100,6 +108,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DataActions           = @()
                     NotDataActions        = @()
                     AssignableScopes      = @("/subscriptions/00000000-0000-0000-0000-000000000000")
+                    SubscriptionId        = "00000000-0000-0000-0000-000000000000"
                     Ensure                = 'Absent'
                     Credential            = $Credential
                     ApplicationId         = "00000000-0000-0000-0000-000000000010"
@@ -146,6 +155,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DataActions           = @()
                     NotDataActions        = @()
                     AssignableScopes      = @("/subscriptions/00000000-0000-0000-0000-000000000000")
+                    SubscriptionId        = "00000000-0000-0000-0000-000000000000"
                     Ensure                = 'Present'
                     Credential            = $Credential
                     ApplicationId         = "00000000-0000-0000-0000-000000000010"
@@ -183,6 +193,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DataActions           = @()
                     NotDataActions        = @()
                     AssignableScopes      = @("/subscriptions/00000000-0000-0000-0000-000000000000")
+                    SubscriptionId        = "00000000-0000-0000-0000-000000000000"
                     Ensure                = 'Present'
                     Credential            = $Credential
                     ApplicationId         = "00000000-0000-0000-0000-000000000010"
@@ -221,6 +232,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
+                }
+
+                Mock -CommandName Get-AzSubscription -MockWith {
+                    return @([PSCustomObject]@{ Id = '00000000-0000-0000-0000-000000000000'; Name = 'Test Subscription' })
                 }
 
                 Mock -CommandName Get-AzRoleDefinition -MockWith {

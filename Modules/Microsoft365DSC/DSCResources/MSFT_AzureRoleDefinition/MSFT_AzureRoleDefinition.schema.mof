@@ -1,4 +1,4 @@
-[ClassVersion("1.0.0.0"), FriendlyName("AzureRoleDefinition")]
+[ClassVersion("1.0.0.1"), FriendlyName("AzureRoleDefinition")]
 class MSFT_AzureRoleDefinition : OMI_BaseResource
 {
     [Key, Description("Specifies a display name for the custom role definition.")] String CustomRoleName;
@@ -9,6 +9,7 @@ class MSFT_AzureRoleDefinition : OMI_BaseResource
     [Write, Description("Specifies the permitted data plane actions for the role definition.")] String DataActions[];
     [Write, Description("Specifies the excluded data plane actions for the role definition.")] String NotDataActions[];
     [Write, Description("Specifies the assignable scopes for the role definition.")] String AssignableScopes[];
+    [Write, Description("Specifies the Azure subscription ID to scope role definition operations. Required for tenants with multiple subscriptions.")] String SubscriptionId;
     [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] String Ensure;
     [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
     [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
