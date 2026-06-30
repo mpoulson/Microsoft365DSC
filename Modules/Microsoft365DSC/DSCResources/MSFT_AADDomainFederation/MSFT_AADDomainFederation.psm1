@@ -67,6 +67,11 @@ function Get-TargetResource
         $IsSignedAuthenticationRequestRequired,
 
         [Parameter()]
+        [ValidateSet('Ios', 'Android', 'Macos')]
+        [System.String[]]
+        $SystemBrowserEnabledOn,
+
+        [Parameter()]
         [ValidateSet('Present', 'Absent')]
         [System.String]
         $Ensure = 'Present',
@@ -173,6 +178,26 @@ function Get-TargetResource
             $instance = $Script:exportedInstance
         }
 
+        $rawSystemBrowserEnabledOn = $null
+        if ($null -ne $instance.AdditionalProperties -and $instance.AdditionalProperties.ContainsKey('systemBrowserEnabledOn'))
+        {
+            $rawSystemBrowserEnabledOn = $instance.AdditionalProperties.systemBrowserEnabledOn
+        }
+        elseif ($null -ne $instance.PSObject.Properties['SystemBrowserEnabledOn'])
+        {
+            $rawSystemBrowserEnabledOn = $instance.SystemBrowserEnabledOn
+        }
+
+        $systemBrowserEnabledOnValue = $null
+        if (-not [System.String]::IsNullOrEmpty($rawSystemBrowserEnabledOn))
+        {
+            $systemBrowserEnabledOnValue = @(
+                $rawSystemBrowserEnabledOn -split ',' |
+                    ForEach-Object { $_.Trim() } |
+                    Where-Object { -not [System.String]::IsNullOrEmpty($_) }
+            )
+        }
+
         $results = @{
             DomainId                                = $DomainId
             Id                                      = $instance.Id
@@ -189,6 +214,7 @@ function Get-TargetResource
             FederatedIdpMfaBehavior                 = $instance.FederatedIdpMfaBehavior
             PasswordResetUri                        = $instance.PasswordResetUri
             IsSignedAuthenticationRequestRequired   = $instance.IsSignedAuthenticationRequestRequired
+            SystemBrowserEnabledOn                  = $systemBrowserEnabledOnValue
             Ensure                                  = 'Present'
             Credential                              = $Credential
             ApplicationId                           = $ApplicationId
@@ -281,6 +307,11 @@ function Set-TargetResource
         $IsSignedAuthenticationRequestRequired,
 
         [Parameter()]
+        [ValidateSet('Ios', 'Android', 'Macos')]
+        [System.String[]]
+        $SystemBrowserEnabledOn,
+
+        [Parameter()]
         [ValidateSet('Present', 'Absent')]
         [System.String]
         $Ensure = 'Present',
@@ -343,6 +374,18 @@ function Set-TargetResource
     $setParameters.Remove('DomainId') | Out-Null
     $setParameters.Remove('Ensure') | Out-Null
     $setParameters.Remove('Id') | Out-Null
+
+    if ($setParameters.ContainsKey('SystemBrowserEnabledOn'))
+    {
+        if ($null -eq $setParameters.SystemBrowserEnabledOn -or $setParameters.SystemBrowserEnabledOn.Count -eq 0)
+        {
+            $setParameters.SystemBrowserEnabledOn = ''
+        }
+        else
+        {
+            $setParameters.SystemBrowserEnabledOn = ($setParameters.SystemBrowserEnabledOn -join ', ')
+        }
+    }
 
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
@@ -494,6 +537,11 @@ function Test-TargetResource
         [Parameter()]
         [System.Boolean]
         $IsSignedAuthenticationRequestRequired,
+
+        [Parameter()]
+        [ValidateSet('Ios', 'Android', 'Macos')]
+        [System.String[]]
+        $SystemBrowserEnabledOn,
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
