@@ -1,0 +1,71 @@
+[ClassVersion("1.0.0")]
+class MSFT_AADTenantGovernanceRelationshipRoleTemplate
+{
+    [Write, Description("The template identifier of the Microsoft Entra role.")] String Id;
+    [Write, Description("The display name of the Microsoft Entra role.")] String Name;
+};
+
+[ClassVersion("1.0.0")]
+class MSFT_AADTenantGovernanceRelationshipResourcePermission
+{
+    [Write, Description("The unique identifier of the permission.")] String Id;
+    [Write, Description("The name of the permission.")] String Name;
+    [Write, Description("The type of permission."), ValueMap{"role","scope","unknownFutureValue"}, Values{"role","scope","unknownFutureValue"}] String Type;
+};
+
+[ClassVersion("1.0.0")]
+class MSFT_AADTenantGovernanceRelationshipRequiredResourceAccess
+{
+    [Write, Description("The application identifier of the resource that the application needs to access.")] String ResourceAppId;
+    [Write, Description("The permissions required by the application."), EmbeddedInstance("MSFT_AADTenantGovernanceRelationshipResourcePermission")] String Permissions[];
+};
+
+[ClassVersion("1.0.0")]
+class MSFT_AADTenantGovernanceRelationshipMultiTenantApplication
+{
+    [Write, Description("The application identifier of the multi-tenant application.")] String AppId;
+    [Write, Description("The object identifier of the service principal in the governing tenant.")] String ObjectId;
+    [Write, Description("The display name of the application.")] String DisplayName;
+    [Write, Description("The resource permissions required by the application."), EmbeddedInstance("MSFT_AADTenantGovernanceRelationshipRequiredResourceAccess")] String RequiredResourceAccesses[];
+};
+
+[ClassVersion("1.0.0")]
+class MSFT_AADTenantGovernanceRelationshipDelegatedAdminRoleAssignmentSnapshot
+{
+    [Write, Description("The display name of the security group.")] String GroupDisplayName;
+    [Write, Description("The object identifier of the security group.")] String GroupId;
+    [Write, Description("The role templates included in the assignment."), EmbeddedInstance("MSFT_AADTenantGovernanceRelationshipRoleTemplate")] String RoleTemplates[];
+};
+
+[ClassVersion("1.0.0")]
+class MSFT_AADTenantGovernanceRelationshipPolicySnapshot
+{
+    [Write, Description("The identifier of the source policy template.")] String PolicyId;
+    [Write, Description("Indicates whether the governed tenant can terminate the relationship.")] Boolean GovernedTenantCanTerminate;
+    [Write, Description("The delegated administration role assignments in the policy snapshot."), EmbeddedInstance("MSFT_AADTenantGovernanceRelationshipDelegatedAdminRoleAssignmentSnapshot")] String DelegatedAdministrationRoleAssignments[];
+    [Write, Description("The multi-tenant applications in the policy snapshot."), EmbeddedInstance("MSFT_AADTenantGovernanceRelationshipMultiTenantApplication")] String MultiTenantApplicationsToProvision[];
+};
+
+[ClassVersion("1.0.0.1"), FriendlyName("AADTenantGovernanceRelationship")]
+class MSFT_AADTenantGovernanceRelationship : OMI_BaseResource
+{
+    [Key, Description("The unique identifier of the governance relationship.")] String Id;
+    [Write, Description("The Microsoft Entra tenant identifier of the governed tenant.")] String GovernedTenantId;
+    [Write, Description("The display name of the governed tenant.")] String GovernedTenantName;
+    [Write, Description("The Microsoft Entra tenant identifier of the governing tenant.")] String GoverningTenantId;
+    [Write, Description("The display name of the governing tenant.")] String GoverningTenantName;
+    [Write, Description("The date and time when the relationship was created.")] String CreationDateTime;
+    [Write, Description("The current status of the governance relationship."), ValueMap{"active","terminated","terminationRequestedByGoverningTenant","unknownFutureValue"}, Values{"active","terminated","terminationRequestedByGoverningTenant","unknownFutureValue"}] String Status;
+    [Write, Description("The method used to create the relationship."), ValueMap{"approvedByAdmin","addOnTenant","unknownFutureValue"}, Values{"approvedByAdmin","addOnTenant","unknownFutureValue"}] String CreatedType;
+    [Write, Description("The governance policy snapshot applied to the relationship."), EmbeddedInstance("MSFT_AADTenantGovernanceRelationshipPolicySnapshot")] String PolicySnapshot;
+    [Write, Description("Present ensures the relationship exists, and absent checks that it does not exist. Relationships cannot be created or deleted directly."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] String Ensure;
+    [Write, Description("Credentials of the workload administrator."), EmbeddedInstance("MSFT_Credential")] String Credential;
+    [Write, Description("Identifier of the Microsoft Entra application used for authentication.")] String ApplicationId;
+    [Write, Description("Identifier of the Microsoft Entra tenant used for authentication.")] String TenantId;
+    [Write, Description("Secret of the Microsoft Entra application used for authentication."), EmbeddedInstance("MSFT_Credential")] String ApplicationSecret;
+    [Write, Description("Thumbprint of the Microsoft Entra application's authentication certificate.")] String CertificateThumbprint;
+    [Write, Description("Path to the Microsoft Entra application's authentication certificate.")] String CertificatePath;
+    [Write, Description("Password for the Microsoft Entra application's authentication certificate."), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
+    [Write, Description("Indicates whether managed identity authentication is used.")] Boolean ManagedIdentity;
+    [Write, Description("Access tokens used for authentication.")] String AccessTokens[];
+};

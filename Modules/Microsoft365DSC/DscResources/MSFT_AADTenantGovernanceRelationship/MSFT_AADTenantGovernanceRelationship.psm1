@@ -8,11 +8,11 @@ function Get-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [System.String]
-        $GovernedTenantId,
+        $Id,
 
         [Parameter()]
         [System.String]
-        $Id,
+        $GovernedTenantId,
 
         [Parameter()]
         [System.String]
@@ -25,6 +25,10 @@ function Get-TargetResource
         [Parameter()]
         [System.String]
         $GoverningTenantName,
+
+        [Parameter()]
+        [System.String]
+        $CreationDateTime,
 
         [Parameter()]
         [ValidateSet('active', 'terminated', 'terminationRequestedByGoverningTenant', 'unknownFutureValue')]
@@ -41,7 +45,7 @@ function Get-TargetResource
         $PolicySnapshot,
 
         [Parameter()]
-        [ValidateSet('Present')]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
         $Ensure = 'Present',
 
@@ -66,6 +70,14 @@ function Get-TargetResource
         $CertificateThumbprint,
 
         [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
+
+        [Parameter()]
         [Switch]
         $ManagedIdentity,
 
@@ -74,7 +86,7 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Getting configuration of the Azure AD Tenant Governance Relationship for governed tenant {$GovernedTenantId}"
+    Write-Verbose -Message "Getting the Microsoft Entra tenant governance relationship with identifier {$Id}."
 
     try
     {
@@ -95,41 +107,20 @@ function Get-TargetResource
             Add-M365DSCTelemetryEvent -Data $data
             #endregion
 
-            $nullResult = $PSBoundParameters
-            $nullResult.Ensure = 'Absent'
-
-            $graphBaseUri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl
-            $uri = "$graphBaseUri/beta/tenantGovernance/governanceRelationships"
-
-            $getValue = $null
-
-            if (-not [System.String]::IsNullOrEmpty($Id))
+            $connectionProfile = Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph
+            if ($null -eq $connectionProfile -or [System.String]::IsNullOrWhiteSpace($connectionProfile.ResourceUrl))
             {
-                try
-                {
-                    $getValue = Invoke-MgGraphRequest -Uri "$uri/$Id" -Method GET -ErrorAction SilentlyContinue
-                }
-                catch
-                {
-                    Write-Verbose -Message "Could not find an Azure AD Tenant Governance Relationship with Id {$Id}"
-                }
+                throw 'Could not determine the Microsoft Graph endpoint for AADTenantGovernanceRelationship.'
             }
 
-            if ($null -eq $getValue -and -not [System.String]::IsNullOrEmpty($GovernedTenantId))
-            {
-                $allRelationships = Invoke-MgGraphRequest -Uri "$uri" -Method GET -ErrorAction SilentlyContinue
-
-                if ($null -ne $allRelationships -and $null -ne $allRelationships.value)
-                {
-                    $getValue = $allRelationships.value | Where-Object -FilterScript { $_.governedTenantId -eq $GovernedTenantId }
-
-                    if ($null -ne $getValue -and @($getValue).Count -gt 1)
-                    {
-                        # Take the first active one if multiple exist
-                        $getValue = @($getValue | Where-Object -FilterScript { $_.status -eq 'active' })[0]
-                    }
-                }
-            }
+            $graphBaseUri = $connectionProfile.ResourceUrl.TrimEnd('/')
+            $encodedFilter = [System.Uri]::EscapeDataString("id eq '$Id'")
+            $uri = "$graphBaseUri/beta/directory/tenantGovernance/governanceRelationships?`$filter=$encodedFilter"
+            $response = Invoke-MgGraphRequest `
+                -Method GET `
+                -Uri $uri `
+                -ErrorAction Stop
+            $getValue = @($response.value)[0]
         }
         else
         {
@@ -138,54 +129,36 @@ function Get-TargetResource
 
         if ($null -eq $getValue)
         {
-            Write-Verbose -Message "Could not find an Azure AD Tenant Governance Relationship for governed tenant {$GovernedTenantId}."
-            return $nullResult
+            Write-Verbose -Message "Could not find a Microsoft Entra tenant governance relationship with identifier {$Id}."
+            return @{
+                Id                    = $Id
+                Ensure                = 'Absent'
+                Credential            = $Credential
+                ApplicationId         = $ApplicationId
+                TenantId              = $TenantId
+                ApplicationSecret     = $ApplicationSecret
+                CertificateThumbprint = $CertificateThumbprint
+                CertificatePath       = $CertificatePath
+                CertificatePassword   = $CertificatePassword
+                ManagedIdentity       = $ManagedIdentity.IsPresent
+                AccessTokens          = $AccessTokens
+            }
         }
-
-        $Id = $getValue.id
-        Write-Verbose -Message "An Azure AD Tenant Governance Relationship with Id {$Id} was found"
 
         $policySnapshotValue = $null
         if ($null -ne $getValue.policySnapshot)
         {
-            $delegatedAssignmentsSnapshot = @()
-            if ($null -ne $getValue.policySnapshot.delegatedAdministrationRoleAssignments)
-            {
-                foreach ($assignment in $getValue.policySnapshot.delegatedAdministrationRoleAssignments)
-                {
-                    $roleTemplatesValue = @()
-                    if ($null -ne $assignment.roleTemplates)
-                    {
-                        foreach ($role in $assignment.roleTemplates)
-                        {
-                            $roleTemplatesValue += @{
-                                Id   = $role.id
-                                Name = $role.name
-                            }
-                        }
-                    }
-
-                    $delegatedAssignmentsSnapshot += @{
-                        GroupDisplayName = $assignment.groupDisplayName
-                        GroupId         = $assignment.groupId
-                        RoleTemplates   = $roleTemplatesValue
-                    }
-                }
-            }
-
-            $policySnapshotValue = @{
-                PolicyId                               = $getValue.policySnapshot.policyId
-                GovernedTenantCanTerminate              = $getValue.policySnapshot.governedTenantCanTerminate
-                DelegatedAdministrationRoleAssignments  = $delegatedAssignmentsSnapshot
-            }
+            $policySnapshotValue = Get-M365DSCDRGComplexTypeToHashtable `
+                -ComplexObject $getValue.policySnapshot
         }
 
-        $results = @{
-            GovernedTenantId      = $getValue.governedTenantId
+        return @{
             Id                    = $getValue.id
+            GovernedTenantId      = $getValue.governedTenantId
             GovernedTenantName    = $getValue.governedTenantName
             GoverningTenantId     = $getValue.governingTenantId
             GoverningTenantName   = $getValue.governingTenantName
+            CreationDateTime      = $getValue.creationDateTime
             Status                = $getValue.status
             CreatedType           = $getValue.createdType
             PolicySnapshot        = $policySnapshotValue
@@ -195,15 +168,15 @@ function Get-TargetResource
             TenantId              = $TenantId
             ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
+            CertificatePath       = $CertificatePath
+            CertificatePassword   = $CertificatePassword
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
-
-        return $results
     }
     catch
     {
-        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+        New-M365DSCLogEntry -Message 'Error retrieving the Microsoft Entra tenant governance relationship:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
@@ -220,11 +193,11 @@ function Set-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [System.String]
-        $GovernedTenantId,
+        $Id,
 
         [Parameter()]
         [System.String]
-        $Id,
+        $GovernedTenantId,
 
         [Parameter()]
         [System.String]
@@ -237,6 +210,10 @@ function Set-TargetResource
         [Parameter()]
         [System.String]
         $GoverningTenantName,
+
+        [Parameter()]
+        [System.String]
+        $CreationDateTime,
 
         [Parameter()]
         [ValidateSet('active', 'terminated', 'terminationRequestedByGoverningTenant', 'unknownFutureValue')]
@@ -253,7 +230,7 @@ function Set-TargetResource
         $PolicySnapshot,
 
         [Parameter()]
-        [ValidateSet('Present')]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
         $Ensure = 'Present',
 
@@ -276,6 +253,14 @@ function Set-TargetResource
         [Parameter()]
         [System.String]
         $CertificateThumbprint,
+
+        [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
 
         [Parameter()]
         [Switch]
@@ -300,31 +285,40 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    $graphBaseUri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl
-    $uri = "$graphBaseUri/beta/tenantGovernance/governanceRelationships"
-
-    if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
+    if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
-        # Only update the status (e.g., to request termination)
-        if (-not [System.String]::IsNullOrEmpty($Status) -and $Status -ne $currentInstance.Status)
-        {
-            Write-Verbose -Message "Updating the Azure AD Tenant Governance Relationship with Id {$($currentInstance.Id)} - setting status to {$Status}"
-
-            $bodyParams = @{
-                status = $Status
-            }
-            $bodyJson = $bodyParams | ConvertTo-Json -Depth 10
-
-            Invoke-MgGraphRequest -Uri "$uri/$($currentInstance.Id)" -Method PATCH -Body $bodyJson
-        }
-        else
-        {
-            Write-Verbose -Message "Azure AD Tenant Governance Relationship with Id {$($currentInstance.Id)} is already in the desired state."
-        }
+        throw 'AADTenantGovernanceRelationship cannot create a tenant governance relationship. Establish the relationship by using a governance request.'
     }
-    elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
+    elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
-        Write-Verbose -Message "Azure AD Tenant Governance Relationships cannot be directly created. Use governance invitations to establish new relationships."
+        throw 'This resource cannot delete a tenant governance relationship. Please make sure you set its Ensure value to Present.'
+    }
+    elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present' -and
+        -not [System.String]::IsNullOrWhiteSpace($Status) -and $Status -ne $currentInstance.Status)
+    {
+        if ($Status -notin @('terminated', 'terminationRequestedByGoverningTenant'))
+        {
+            throw "AADTenantGovernanceRelationship cannot change the status to '$Status'. Only termination status changes are supported."
+        }
+
+        $connectionProfile = Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph
+        if ($null -eq $connectionProfile -or [System.String]::IsNullOrWhiteSpace($connectionProfile.ResourceUrl))
+        {
+            throw 'Could not determine the Microsoft Graph endpoint for AADTenantGovernanceRelationship.'
+        }
+
+        $graphBaseUri = $connectionProfile.ResourceUrl.TrimEnd('/')
+        $uri = "$graphBaseUri/beta/directory/tenantGovernance/governanceRelationships/$Id"
+        $body = @{
+            status = $Status
+        } | ConvertTo-Json
+
+        Write-Verbose -Message "Updating the Microsoft Entra tenant governance relationship with identifier {$Id}."
+        Invoke-MgGraphRequest `
+            -Method PATCH `
+            -Uri $uri `
+            -Body $body `
+            -ErrorAction Stop | Out-Null
     }
 }
 
@@ -336,11 +330,11 @@ function Test-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [System.String]
-        $GovernedTenantId,
+        $Id,
 
         [Parameter()]
         [System.String]
-        $Id,
+        $GovernedTenantId,
 
         [Parameter()]
         [System.String]
@@ -353,6 +347,10 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $GoverningTenantName,
+
+        [Parameter()]
+        [System.String]
+        $CreationDateTime,
 
         [Parameter()]
         [ValidateSet('active', 'terminated', 'terminationRequestedByGoverningTenant', 'unknownFutureValue')]
@@ -369,7 +367,7 @@ function Test-TargetResource
         $PolicySnapshot,
 
         [Parameter()]
-        [ValidateSet('Present')]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
         $Ensure = 'Present',
 
@@ -392,6 +390,14 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $CertificateThumbprint,
+
+        [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
 
         [Parameter()]
         [Switch]
@@ -447,6 +453,14 @@ function Export-TargetResource
         $CertificateThumbprint,
 
         [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
+
+        [Parameter()]
         [Switch]
         $ManagedIdentity,
 
@@ -472,15 +486,36 @@ function Export-TargetResource
 
     try
     {
-        $graphBaseUri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl
-        $uri = "$graphBaseUri/beta/tenantGovernance/governanceRelationships"
+        $connectionProfile = Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph
+        if ($null -eq $connectionProfile -or [System.String]::IsNullOrWhiteSpace($connectionProfile.ResourceUrl))
+        {
+            throw 'Could not determine the Microsoft Graph endpoint for AADTenantGovernanceRelationship.'
+        }
 
-        $response = Invoke-MgGraphRequest -Uri $uri -Method GET -ErrorAction Stop
+        $graphBaseUri = $connectionProfile.ResourceUrl.TrimEnd('/')
+        $uri = "$graphBaseUri/beta/directory/tenantGovernance/governanceRelationships"
+        if (-not [System.String]::IsNullOrWhiteSpace($Filter))
+        {
+            $encodedFilter = [System.Uri]::EscapeDataString($Filter)
+            $uri = "${uri}?`$filter=$encodedFilter"
+        }
 
-        [array]$getValue = $response.value
+        $getValue = @()
+        do
+        {
+            $response = Invoke-MgGraphRequest `
+                -Method GET `
+                -Uri $uri `
+                -ErrorAction Stop
+            if ($null -ne $response.value)
+            {
+                $getValue += @($response.value)
+            }
+            $uri = $response.'@odata.nextLink'
+        } while (-not [System.String]::IsNullOrWhiteSpace($uri))
 
         $i = 1
-        $dscContent = ''
+        $dscContent = [System.Text.StringBuilder]::new()
         if ($getValue.Length -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
@@ -489,17 +524,22 @@ function Export-TargetResource
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
+
         foreach ($config in $getValue)
         {
+            if ($null -ne $Global:M365DSCExportResourceInstancesCount)
+            {
+                $Global:M365DSCExportResourceInstancesCount++
+            }
+
             $displayedKey = $config.id
-            if (-not [String]::IsNullOrEmpty($config.governedTenantName))
+            if (-not [System.String]::IsNullOrWhiteSpace($config.governedTenantName))
             {
                 $displayedKey = "$($config.governedTenantName) ($($config.governedTenantId))"
             }
 
             Write-M365DSCHost -Message "    |---[$i/$($getValue.Count)] $displayedKey" -DeferWrite
             $params = @{
-                GovernedTenantId      = $config.governedTenantId
                 Id                    = $config.id
                 Ensure                = 'Present'
                 Credential            = $Credential
@@ -507,18 +547,52 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
+                CertificatePath       = $CertificatePath
+                CertificatePassword   = $CertificatePassword
                 ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
             $Script:exportedInstance = $config
             $Results = Get-TargetResource @Params
-
             if ($null -ne $Results.PolicySnapshot)
             {
+                $complexMapping = @(
+                    @{
+                        Name            = 'PolicySnapshot'
+                        CimInstanceName = 'AADTenantGovernanceRelationshipPolicySnapshot'
+                        IsRequired      = $false
+                    }
+                    @{
+                        Name            = 'DelegatedAdministrationRoleAssignments'
+                        CimInstanceName = 'AADTenantGovernanceRelationshipDelegatedAdminRoleAssignmentSnapshot'
+                        IsRequired      = $false
+                    }
+                    @{
+                        Name            = 'RoleTemplates'
+                        CimInstanceName = 'AADTenantGovernanceRelationshipRoleTemplate'
+                        IsRequired      = $false
+                    }
+                    @{
+                        Name            = 'MultiTenantApplicationsToProvision'
+                        CimInstanceName = 'AADTenantGovernanceRelationshipMultiTenantApplication'
+                        IsRequired      = $false
+                    }
+                    @{
+                        Name            = 'RequiredResourceAccesses'
+                        CimInstanceName = 'AADTenantGovernanceRelationshipRequiredResourceAccess'
+                        IsRequired      = $false
+                    }
+                    @{
+                        Name            = 'Permissions'
+                        CimInstanceName = 'AADTenantGovernanceRelationshipResourcePermission'
+                        IsRequired      = $false
+                    }
+                )
                 $Results.PolicySnapshot = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.PolicySnapshot `
-                    -CIMInstanceName 'MSFT_AADTenantGovernanceRelationshipPolicySnapshot'
+                    -CIMInstanceName 'AADTenantGovernanceRelationshipPolicySnapshot' `
+                    -ComplexTypeMapping $complexMapping
             }
             else
             {
@@ -529,25 +603,19 @@ function Export-TargetResource
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
                 -Results $Results `
-                -Credential $Credential
-
-            if ($null -ne $Results.PolicySnapshot)
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock `
-                    -ParameterName 'PolicySnapshot'
-            }
-
-            $dscContent += $currentDSCBlock
+                -Credential $Credential `
+                -NoEscape @('PolicySnapshot')
+            [void]$dscContent.Append($currentDSCBlock)
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
             $i++
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
-        return $dscContent
+        return $dscContent.ToString()
     }
     catch
     {
-        New-M365DSCLogEntry -Message 'Error during Export:' `
+        New-M365DSCLogEntry -Message 'Error exporting Microsoft Entra tenant governance relationships:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `

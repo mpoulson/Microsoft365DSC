@@ -2,165 +2,228 @@
 param(
 )
 $M365DSCTestFolder = Join-Path -Path $PSScriptRoot `
-                        -ChildPath '..\..\Unit' `
-                        -Resolve
-$CmdletModule = (Join-Path -Path $M365DSCTestFolder `
-            -ChildPath '\Stubs\Microsoft365.psm1' `
-            -Resolve)
-$GenericStubPath = (Join-Path -Path $M365DSCTestFolder `
+    -ChildPath '..\..\Unit' `
+    -Resolve
+$CmdletModule = Join-Path -Path $M365DSCTestFolder `
+    -ChildPath '\Stubs\Microsoft365.psm1' `
+    -Resolve
+$GenericStubPath = Join-Path -Path $M365DSCTestFolder `
     -ChildPath '\Stubs\Generic.psm1' `
-    -Resolve)
+    -Resolve
 Import-Module -Name (Join-Path -Path $M365DSCTestFolder `
         -ChildPath '\UnitTestHelper.psm1' `
         -Resolve)
 
+$CurrentScriptPath = $PSCommandPath.Split('\')
+$CurrentScriptName = $CurrentScriptPath[$CurrentScriptPath.Length - 1]
+$ResourceName = $CurrentScriptName.Split('.')[1]
 $Global:DscHelper = New-M365DscUnitTestHelper -StubModule $CmdletModule `
-    -DscResource "AADTenantGovernanceRelationship" -GenericStubModule $GenericStubPath
+    -DscResource $ResourceName `
+    -GenericStubModule $GenericStubPath
+
 Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
     InModuleScope -ModuleName $Global:DscHelper.ModuleName -ScriptBlock {
         Invoke-Command -ScriptBlock $Global:DscHelper.InitializeScript -NoNewScope
+
         BeforeAll {
-
-            $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
-            $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
-
-            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
-            }
-
-            Mock -CommandName Get-PSSession -MockWith {
-            }
-
-            Mock -CommandName Remove-PSSession -MockWith {
-            }
-
-            Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                return @{
-                    id                  = "FakeRelationshipId"
-                    governedTenantId    = "00000000-0000-0000-0000-000000000001"
-                    governedTenantName  = "Governed Tenant"
-                    governingTenantId   = "00000000-0000-0000-0000-000000000002"
-                    governingTenantName = "Governing Tenant"
-                    status              = "active"
-                    createdType         = "approvedByAdmin"
-                    policySnapshot      = @{
-                        policyId                               = "default"
-                        governedTenantCanTerminate              = $false
-                        delegatedAdministrationRoleAssignments = @()
-                    }
+            $securePassword = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
+            $Credential = New-Object System.Management.Automation.PSCredential (
+                'tenantadmin@contoso.com',
+                $securePassword
+            )
+            $relationshipId = 'aaaaaaaa-0000-1111-2222-bbbbbbbbbbbb'
+            $relationship = @{
+                id                  = $relationshipId
+                governedTenantId    = 'bbbbcccc-1111-dddd-2222-eeee3333ffff'
+                governedTenantName  = 'Fabrikam'
+                governingTenantId   = 'aaaabbbb-0000-cccc-1111-dddd2222eeee'
+                governingTenantName = 'Contoso'
+                creationDateTime    = '2026-01-01T00:00:00Z'
+                status              = 'active'
+                createdType         = 'approvedByAdmin'
+                policySnapshot      = @{
+                    policyId                               = 'default'
+                    governedTenantCanTerminate              = $false
+                    delegatedAdministrationRoleAssignments = @(
+                        @{
+                            groupDisplayName = 'Tenant administrators'
+                            groupId          = 'cccccccc-2222-3333-4444-dddddddddddd'
+                            roleTemplates    = @(
+                                @{
+                                    id   = 'f2ef992c-3afb-46b9-b7cf-a126ee74c451'
+                                    name = 'Global Reader'
+                                }
+                            )
+                        }
+                    )
+                    multiTenantApplicationsToProvision     = @(
+                        @{
+                            appId                    = '66667777-aaaa-8888-bbbb-9999cccc0000'
+                            objectId                 = 'dddddddd-3333-4444-5555-eeeeeeeeeeee'
+                            displayName              = 'Monitoring application'
+                            requiredResourceAccesses = @(
+                                @{
+                                    resourceAppId = '00000003-0000-0000-c000-000000000000'
+                                    permissions   = @(
+                                        @{
+                                            id   = 'e1fe6dd8-ba31-4d61-89e7-88639da4683d'
+                                            name = 'User.Read'
+                                            type = 'scope'
+                                        }
+                                    )
+                                }
+                            )
+                        }
+                    )
                 }
             }
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies
             Mock -CommandName New-M365DSCConnection -MockWith {
-                return "Credentials"
+                return 'Credentials'
             }
-
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
                 return @{
-                    ResourceUrl = "https://graph.microsoft.com"
+                    ResourceUrl = 'https://graph.microsoft.com/'
                 }
             }
-
-            # Mock Write-M365DSCHost to hide output during the tests
-            Mock -CommandName Write-M365DSCHost -MockWith {
+            Mock -CommandName Get-M365DSCDRGComplexTypeToHashtable -MockWith {
+                return $ComplexObject
             }
-            $Script:exportedInstances =$null
+            Mock -CommandName Write-M365DSCHost
+            Mock -CommandName Invoke-MgGraphRequest -MockWith {
+                return @{
+                    value = @($relationship)
+                }
+            } -ParameterFilter {
+                $Method -eq 'GET'
+            }
+            Mock -CommandName Invoke-MgGraphRequest -ParameterFilter {
+                $Method -eq 'PATCH'
+            }
+            $Script:exportedInstance = $null
             $Script:ExportMode = $false
         }
-        # Test contexts
-        Context -Name "The AADTenantGovernanceRelationship exists and values are already in the desired state" -Fixture {
+
+        Context -Name 'When the relationship exists in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    GovernedTenantId = "00000000-0000-0000-0000-000000000001"
-                    Id               = "FakeRelationshipId"
-                    Status           = "active"
-                    Ensure           = "Present"
-                    Credential       = $Credential;
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        id                  = "FakeRelationshipId"
-                        governedTenantId    = "00000000-0000-0000-0000-000000000001"
-                        governedTenantName  = "Governed Tenant"
-                        governingTenantId   = "00000000-0000-0000-0000-000000000002"
-                        governingTenantName = "Governing Tenant"
-                        status              = "active"
-                        createdType         = "approvedByAdmin"
-                        policySnapshot      = @{
-                            policyId                               = "default"
-                            governedTenantCanTerminate              = $false
-                            delegatedAdministrationRoleAssignments = @()
-                        }
-                    }
+                    Id         = $relationshipId
+                    Status     = 'active'
+                    Ensure     = 'Present'
+                    Credential = $Credential
                 }
             }
 
-            It 'Should return Values from the Get method' {
-                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
+            It 'Returns the relationship and complete policy snapshot' {
+                $result = Get-TargetResource @testParams
+
+                $result.Ensure | Should -Be 'Present'
+                $result.Id | Should -Be $relationshipId
+                $result.CreationDateTime | Should -Be '2026-01-01T00:00:00Z'
+                $result.PolicySnapshot.MultiTenantApplicationsToProvision[0].DisplayName |
+                    Should -Be 'Monitoring application'
             }
 
-            It 'Should return true from the Test method' {
-                Test-TargetResource @testParams | Should -Be $true
+            It 'Uses the current Microsoft Graph tenant governance endpoint' {
+                Get-TargetResource @testParams | Out-Null
+
+                Should -Invoke -CommandName Invoke-MgGraphRequest -Exactly 1 -ParameterFilter {
+                    $Method -eq 'GET' -and
+                    $Uri -like 'https://graph.microsoft.com/beta/directory/tenantGovernance/governanceRelationships*'
+                }
+            }
+
+            It 'Returns true from Test-TargetResource' {
+                Test-TargetResource @testParams | Should -BeTrue
             }
         }
 
-        Context -Name "The AADTenantGovernanceRelationship exists and status needs to change" -Fixture {
+        Context -Name 'When the relationship status must change' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    GovernedTenantId = "00000000-0000-0000-0000-000000000001"
-                    Id               = "FakeRelationshipId"
-                    Status           = "terminationRequestedByGoverningTenant"
-                    Ensure           = "Present"
-                    Credential       = $Credential;
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        id                  = "FakeRelationshipId"
-                        governedTenantId    = "00000000-0000-0000-0000-000000000001"
-                        governedTenantName  = "Governed Tenant"
-                        governingTenantId   = "00000000-0000-0000-0000-000000000002"
-                        governingTenantName = "Governing Tenant"
-                        status              = "active"
-                        createdType         = "approvedByAdmin"
-                        policySnapshot      = @{
-                            policyId                               = "default"
-                            governedTenantCanTerminate              = $false
-                            delegatedAdministrationRoleAssignments = @()
-                        }
-                    }
+                    Id         = $relationshipId
+                    Status     = 'terminationRequestedByGoverningTenant'
+                    Ensure     = 'Present'
+                    Credential = $Credential
                 }
             }
 
-            It 'Should return Values from the Get method' {
-                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
+            It 'Returns false from Test-TargetResource' {
+                Test-TargetResource @testParams | Should -BeFalse
             }
 
-            It 'Should return false from the Test method' {
-                Test-TargetResource @testParams | Should -Be $false
-            }
-
-            It 'Should update the status from the Set method' {
+            It 'Updates the status through the supported endpoint' {
                 Set-TargetResource @testParams
-                Should -Invoke -CommandName Invoke-MgGraphRequest -ParameterFilter { $Method -eq 'PATCH' } -Exactly 1
+
+                Should -Invoke -CommandName Invoke-MgGraphRequest -Exactly 1 -ParameterFilter {
+                    $Method -eq 'PATCH' -and
+                    $Uri -eq "https://graph.microsoft.com/beta/directory/tenantGovernance/governanceRelationships/$relationshipId" -and
+                    $Body -match 'terminationRequestedByGoverningTenant'
+                }
             }
         }
 
-        Context -Name "The AADTenantGovernanceRelationship does not exist" -Fixture {
+        Context -Name 'When the relationship does not exist' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    GovernedTenantId = "00000000-0000-0000-0000-000000000099"
-                    Ensure           = "Present"
-                    Credential       = $Credential;
+                    Id         = 'ffffffff-5555-6666-7777-aaaaaaaaaaaa'
+                    Ensure     = 'Present'
+                    Credential = $Credential
                 }
 
                 Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return $null
+                    return @{
+                        value = @()
+                    }
+                } -ParameterFilter {
+                    $Method -eq 'GET'
                 }
             }
 
-            It 'Should return Absent from the Get method' {
-                (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
+            It 'Returns the key and Absent from Get-TargetResource' {
+                $result = Get-TargetResource @testParams
+
+                $result.Id | Should -Be $testParams.Id
+                $result.Ensure | Should -Be 'Absent'
+            }
+
+            It 'Rejects direct relationship creation' {
+                { Set-TargetResource @testParams } |
+                    Should -Throw '*cannot create a tenant governance relationship*'
+            }
+        }
+
+        Context -Name 'When deletion is requested' -Fixture {
+            It 'Rejects direct relationship deletion' {
+                {
+                    Set-TargetResource -Id $relationshipId `
+                        -Ensure 'Absent' `
+                        -Credential $Credential
+                } | Should -Throw '*cannot delete a tenant governance relationship*'
+            }
+        }
+
+        Context -Name 'When an unsupported status transition is requested' -Fixture {
+            BeforeAll {
+                $terminatedRelationship = $relationship.Clone()
+                $terminatedRelationship.status = 'terminated'
+                Mock -CommandName Invoke-MgGraphRequest -MockWith {
+                    return @{
+                        value = @($terminatedRelationship)
+                    }
+                } -ParameterFilter {
+                    $Method -eq 'GET'
+                }
+            }
+
+            It 'Rejects an attempt to reactivate the relationship' {
+                {
+                    Set-TargetResource -Id $relationshipId `
+                        -Status 'active' `
+                        -Ensure 'Present' `
+                        -Credential $Credential
+                } | Should -Throw "*cannot change the status to 'active'*"
             }
         }
 
@@ -168,34 +231,35 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
-                $testParams = @{
-                    Credential = $Credential
-                }
+                $secondRelationship = $relationship.Clone()
+                $secondRelationship.id = 'eeeeeeee-4444-5555-6666-ffffffffffff'
 
                 Mock -CommandName Invoke-MgGraphRequest -MockWith {
                     return @{
-                        value = @(
-                            @{
-                                id                  = "FakeRelationshipId"
-                                governedTenantId    = "00000000-0000-0000-0000-000000000001"
-                                governedTenantName  = "Governed Tenant"
-                                governingTenantId   = "00000000-0000-0000-0000-000000000002"
-                                governingTenantName = "Governing Tenant"
-                                status              = "active"
-                                createdType         = "approvedByAdmin"
-                                policySnapshot      = @{
-                                    policyId                               = "default"
-                                    governedTenantCanTerminate              = $false
-                                    delegatedAdministrationRoleAssignments = @()
-                                }
-                            }
-                        )
+                        value             = @($relationship)
+                        '@odata.nextLink' = 'https://graph.microsoft.com/beta/nextPage'
                     }
+                } -ParameterFilter {
+                    $Method -eq 'GET' -and $Uri -like '*%27active%27'
+                }
+                Mock -CommandName Invoke-MgGraphRequest -MockWith {
+                    return @{
+                        value = @($secondRelationship)
+                    }
+                } -ParameterFilter {
+                    $Method -eq 'GET' -and $Uri -eq 'https://graph.microsoft.com/beta/nextPage'
                 }
             }
-            It 'Should Reverse Engineer resource from the Export method' {
-                $result = Export-TargetResource @testParams
+
+            It 'Honours the filter and exports every page' {
+                $result = Export-TargetResource `
+                    -Filter "status eq 'active'" `
+                    -Credential $Credential
+
                 $result | Should -Not -BeNullOrEmpty
+                Should -Invoke -CommandName Invoke-MgGraphRequest -Exactly 2 -ParameterFilter {
+                    $Method -eq 'GET'
+                }
             }
         }
     }

@@ -27,7 +27,7 @@ Configuration Example
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint
-            GovernedTenantId      = "00000000-0000-0000-0000-000000000001"
+            Id                    = "00000000-0000-0000-0000-000000000001"
             Status                = "terminationRequestedByGoverningTenant"
             Ensure                = "Present"
         }

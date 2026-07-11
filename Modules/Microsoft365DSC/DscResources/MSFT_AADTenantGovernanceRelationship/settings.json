@@ -1,0 +1,56 @@
+{
+  "resourceName": "AADTenantGovernanceRelationship",
+  "description": "This resource monitors and manages Microsoft Entra tenant governance relationships between governing and governed tenants.",
+  "roles": {
+    "read": [
+      "Global Reader",
+      "Tenant Governance Administrator",
+      "Tenant Governance Reader",
+      "Tenant Governance Relationship Administrator",
+      "Tenant Governance Relationship Reader"
+    ],
+    "update": [
+      "Tenant Governance Administrator",
+      "Tenant Governance Relationship Administrator"
+    ]
+  },
+  "permissions": {
+    "graph": {
+      "delegated": {
+        "read": [
+          {
+            "name": "TenantGovernance-Relationship.Read.All"
+          }
+        ],
+        "update": [
+          {
+            "name": "TenantGovernance-Relationship.ReadWrite.All"
+          }
+        ]
+      },
+      "application": {
+        "read": [
+          {
+            "name": "TenantGovernance-Relationship.Read.All"
+          }
+        ],
+        "update": []
+      }
+    }
+  },
+  "requiredModules": [
+    "Microsoft.Graph.Authentication"
+  ],
+  "supportedEnvironments": [
+    "Global"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Authentication",
+      "cmdlets": [
+        "Invoke-MgGraphRequest"
+      ]
+    }
+  ]
+}
