@@ -90,6 +90,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Get-M365DSCDRGComplexTypeToHashtable -MockWith {
                 return $ComplexObject
             }
+            Mock -CommandName Get-M365DSCDRGComplexTypeToString -MockWith {
+                return 'PolicySnapshotValue'
+            }
+            Mock -CommandName Get-M365DSCExportContentForResource -MockWith {
+                return "AADTenantGovernanceRelationship '$($Results.Id)'"
+            }
+            Mock -CommandName Save-M365DSCPartialExport
             Mock -CommandName Write-M365DSCHost
             Mock -CommandName Invoke-MgGraphRequest -MockWith {
                 return @{
@@ -259,6 +266,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $result | Should -Not -BeNullOrEmpty
                 Should -Invoke -CommandName Invoke-MgGraphRequest -Exactly 2 -ParameterFilter {
                     $Method -eq 'GET'
+                }
+                Should -Invoke -CommandName Get-M365DSCDRGComplexTypeToString -Exactly 2 -ParameterFilter {
+                    $ComplexTypeMapping.Count -eq 6
                 }
             }
         }
