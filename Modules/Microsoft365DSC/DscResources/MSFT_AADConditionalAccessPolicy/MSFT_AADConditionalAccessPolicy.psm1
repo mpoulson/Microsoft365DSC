@@ -322,9 +322,15 @@ function Get-TargetResource
                 catch
                 {
                     Write-Verbose -Message "Couldn't find existing policy by ID {$Id}"
-                    $Policy = Get-MgBetaIdentityConditionalAccessPolicy -Filter "DisplayName eq '$($DisplayName -replace "'", "''")'"
+                    ## The conditionalAccess/policies collection does not reliably honor a
+                    ## server-side $filter on DisplayName and returns paged results, so retrieve
+                    ## all pages with -All and match client-side. Filtering server-side without
+                    ## -All can miss a policy that lives beyond the first page, causing
+                    ## Get-TargetResource to report Absent and Set-TargetResource to create a duplicate.
+                    $Policy = Get-MgBetaIdentityConditionalAccessPolicy -All -ErrorAction Stop |
+                        Where-Object -FilterScript { $_.DisplayName -eq $DisplayName }
 
-                    if ($Policy.Length -gt 1)
+                    if (@($Policy).Count -gt 1)
                     {
                         throw "Duplicate CA Policies named $DisplayName exist in tenant"
                     }
@@ -333,10 +339,16 @@ function Get-TargetResource
             else
             {
                 Write-Verbose -Message 'Id was NOT specified'
-                ## Can retreive multiple CA Policies since displayname is not unique
-                $Policy = Get-MgBetaIdentityConditionalAccessPolicy -Filter "DisplayName eq '$($DisplayName -replace "'", "''")'"
+                ## Can retrieve multiple CA Policies since displayname is not unique.
+                ## The conditionalAccess/policies collection does not reliably honor a
+                ## server-side $filter on DisplayName and returns paged results, so retrieve
+                ## all pages with -All and match client-side. Filtering server-side without
+                ## -All can miss a policy that lives beyond the first page, causing
+                ## Get-TargetResource to report Absent and Set-TargetResource to create a duplicate.
+                $Policy = Get-MgBetaIdentityConditionalAccessPolicy -All -ErrorAction Stop |
+                    Where-Object -FilterScript { $_.DisplayName -eq $DisplayName }
 
-                if ($Policy.Length -gt 1)
+                if (@($Policy).Count -gt 1)
                 {
                     throw "Duplicate CA Policies named $DisplayName exist in tenant"
                 }
