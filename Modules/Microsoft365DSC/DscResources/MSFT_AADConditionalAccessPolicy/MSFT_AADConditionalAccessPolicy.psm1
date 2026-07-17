@@ -322,11 +322,10 @@ function Get-TargetResource
                 catch
                 {
                     Write-Verbose -Message "Couldn't find existing policy by ID {$Id}"
-                    ## The conditionalAccess/policies collection does not reliably honor a
-                    ## server-side $filter on DisplayName and returns paged results, so retrieve
-                    ## all pages with -All and match client-side. Filtering server-side without
-                    ## -All can miss a policy that lives beyond the first page, causing
-                    ## Get-TargetResource to report Absent and Set-TargetResource to create a duplicate.
+                    ## ponytail: Retrieve all pages and filter client-side because this endpoint's
+                    ## server-side DisplayName filtering is unreliable across pages.
+                    ## Ceiling: O(n) scan over policies; upgrade path is primary ID lookups and
+                    ## using reliable server-side filtering when available.
                     $Policy = Get-MgBetaIdentityConditionalAccessPolicy -All -ErrorAction Stop |
                         Where-Object -FilterScript { $_.DisplayName -eq $DisplayName }
 
@@ -340,11 +339,7 @@ function Get-TargetResource
             {
                 Write-Verbose -Message 'Id was NOT specified'
                 ## Can retrieve multiple CA Policies since displayname is not unique.
-                ## The conditionalAccess/policies collection does not reliably honor a
-                ## server-side $filter on DisplayName and returns paged results, so retrieve
-                ## all pages with -All and match client-side. Filtering server-side without
-                ## -All can miss a policy that lives beyond the first page, causing
-                ## Get-TargetResource to report Absent and Set-TargetResource to create a duplicate.
+                ## Retrieve all pages and filter client-side to avoid paging misses.
                 $Policy = Get-MgBetaIdentityConditionalAccessPolicy -All -ErrorAction Stop |
                     Where-Object -FilterScript { $_.DisplayName -eq $DisplayName }
 
