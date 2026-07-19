@@ -412,7 +412,7 @@ function Export-TargetResource
 
     try
     {
-        [array] $exportedInstances = Get-MgBetaExternalConnection -ErrorAction Stop
+        [array] $exportedInstances = Get-MgBetaExternalConnection -All -ErrorAction Stop
 
         $i = 1
         $dscContent = [System.Text.StringBuilder]::new()

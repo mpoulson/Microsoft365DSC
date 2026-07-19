@@ -435,7 +435,7 @@ function Set-TargetResource
         #endregion
         #region new Intune assignment management
         $currentAssignments = @()
-        $currentAssignments += Get-MgBetaDeviceManagementWindowsAutopilotDeploymentProfileAssignment -WindowsAutopilotDeploymentProfileId $currentInstance.id
+        $currentAssignments += Get-MgBetaDeviceManagementWindowsAutopilotDeploymentProfileAssignment -WindowsAutopilotDeploymentProfileId $currentInstance.id -All
         $intuneAssignments = @()
         if ($null -ne $Assignments -and $Assignments.Count -gt 0)
         {

@@ -97,7 +97,7 @@ function Get-TargetResource
 
                 if (-not [System.String]::IsNullOrEmpty($Name))
                 {
-                    $getValue = Get-MgBetaNetworkAccessForwardingProfile -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $Name }
+                    $getValue = Get-MgBetaNetworkAccessForwardingProfile -All -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $Name }
                 }
             }
         }
@@ -116,7 +116,7 @@ function Get-TargetResource
 
         Write-Verbose -Message "An Azure AD Network Access Forwarding Profile with  {$Id} and  {$Name} was found"
 
-        $forwardingProfilePolicies = Get-MgBetaNetworkAccessForwardingProfilePolicy -ForwardingProfileId $getValue.Id -ErrorAction SilentlyContinue
+        $forwardingProfilePolicies = Get-MgBetaNetworkAccessForwardingProfilePolicy -ForwardingProfileId $getValue.Id -All -ErrorAction SilentlyContinue
 
         if ($null -ne $forwardingProfilePolicies)
         {

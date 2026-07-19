@@ -523,7 +523,7 @@ function Get-TargetResource
             Write-Verbose -Message 'Get-TargetResource: Location condition defined, processing'
             #build Location translation table
             $Locationlookup = @{}
-            foreach ($Location in Get-MgBetaIdentityConditionalAccessNamedLocation)
+            foreach ($Location in Get-MgBetaIdentityConditionalAccessNamedLocation -All)
             {
                 $Locationlookup[$Location.Id] = $Location.DisplayName
             }
@@ -613,7 +613,7 @@ function Get-TargetResource
         $termOfUseName = $null
         if ($Policy.GrantControls.TermsOfUse)
         {
-            $termofUse = Get-MgBetaAgreement | Where-Object -FilterScript { $_.Id -eq $Policy.GrantControls.TermsOfUse }
+            $termofUse = Get-MgBetaAgreement -All | Where-Object -FilterScript { $_.Id -eq $Policy.GrantControls.TermsOfUse }
             if ($termOfUse)
             {
                 $termOfUseName = $termOfUse.DisplayName
@@ -1256,7 +1256,7 @@ function Set-TargetResource
             }
             # Retrieve the class reference based on display name.
             $AuthenticationContextsValues = @()
-            $classReferences = Get-MgBetaIdentityConditionalAccessAuthenticationContextClassReference -ErrorAction SilentlyContinue
+            $classReferences = Get-MgBetaIdentityConditionalAccessAuthenticationContextClassReference -All -ErrorAction SilentlyContinue
             foreach ($authContext in $AuthenticationContexts)
             {
                 $currentClassId = $classReferences | Where-Object -FilterScript { $_.DisplayName -eq $authContext }
@@ -1635,7 +1635,7 @@ function Set-TargetResource
                 Write-Verbose -Message 'Set-Targetresource: locations specified'
                 #create and provision Location condition object if used, translate Location names to guid
                 $LocationLookup = @{}
-                foreach ($Location in Get-MgBetaIdentityConditionalAccessNamedLocation)
+                foreach ($Location in Get-MgBetaIdentityConditionalAccessNamedLocation -All)
                 {
                     $LocationLookup[$Location.displayName] = $Location.Id
                 }
@@ -1825,7 +1825,7 @@ function Set-TargetResource
             }
             if ($currentParameters.ContainsKey('AuthenticationStrength'))
             {
-                $strengthPolicy = Get-MgBetaPolicyAuthenticationStrengthPolicy | Where-Object -FilterScript { $_.DisplayName -eq $AuthenticationStrength } -ErrorAction SilentlyContinue
+                $strengthPolicy = Get-MgBetaPolicyAuthenticationStrengthPolicy -All | Where-Object -FilterScript { $_.DisplayName -eq $AuthenticationStrength } -ErrorAction SilentlyContinue
                 if ($null -eq $strengthPolicy)
                 {
                     Write-Warning -Message "Authentication Strength Policy '$AuthenticationStrength' not found for Conditional Access Policy '$DisplayName'."
@@ -1842,7 +1842,7 @@ function Set-TargetResource
             if ($currentParameters.ContainsKey('TermsOfUse'))
             {
                 Write-Verbose -Message "Getting Terms of Use {$TermsOfUse}"
-                $TermsOfUseObj = Get-MgBetaAgreement | Where-Object -FilterScript { $_.DisplayName -eq $TermsOfUse }
+                $TermsOfUseObj = Get-MgBetaAgreement -All | Where-Object -FilterScript { $_.DisplayName -eq $TermsOfUse }
                 $GrantControls.Add('termsOfUse', @($TermsOfUseObj.Id))
             }
 

@@ -109,7 +109,7 @@ function Get-TargetResource
 
         $nullReturn = $PSBoundParameters
         $nullReturn.Ensure = 'Absent'
-        $Policy = Get-MgBetaDirectorySetting | Where-Object -FilterScript { $_.DisplayName -eq 'Group.Unified' }
+        $Policy = Get-MgBetaDirectorySetting -All | Where-Object -FilterScript { $_.DisplayName -eq 'Group.Unified' }
 
         if ($null -eq $Policy)
         {

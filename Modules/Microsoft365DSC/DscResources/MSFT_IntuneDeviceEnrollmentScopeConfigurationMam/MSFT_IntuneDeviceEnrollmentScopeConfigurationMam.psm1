@@ -364,7 +364,7 @@ function Export-TargetResource
     try
     {
         #region resource generator code
-        [array]$getValue = Get-MgBetaPolicyMobileAppManagementPolicy -ExpandProperty IncludedGroups -ErrorAction Stop
+        [array]$getValue = Get-MgBetaPolicyMobileAppManagementPolicy -ExpandProperty IncludedGroups -All -ErrorAction Stop
         #endregion
 
         $i = 1

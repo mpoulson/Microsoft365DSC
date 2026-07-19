@@ -252,7 +252,7 @@ function Get-TargetResource
         }
         $results.Add('AssignmentTarget', $assignmentResult)
 
-        $assignmentsValues = Get-MgBetaDeviceManagementConfigurationPolicyAssignment -DeviceManagementConfigurationPolicyId $Id
+        $assignmentsValues = Get-MgBetaDeviceManagementConfigurationPolicyAssignment -DeviceManagementConfigurationPolicyId $Id -All
         $assignmentResult = @()
         if ($assignmentsValues.Count -gt 0)
         {

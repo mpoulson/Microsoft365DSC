@@ -157,7 +157,7 @@ function Get-TargetResource
 
             # Get the Channel ID
             Write-Verbose -Message "Getting Channels for Team {$TeamName} with ID {$($teamInstance.Id)}"
-            $channelInstance = Get-MgBetaTeamChannel -TeamId $teamInstance.Id | Where-Object -FilterScript { $_.DisplayName -eq $ChannelName }
+            $channelInstance = Get-MgBetaTeamChannel -TeamId $teamInstance.Id -All | Where-Object -FilterScript { $_.DisplayName -eq $ChannelName }
 
             if ($null -eq $channelInstance)
             {
@@ -556,7 +556,7 @@ function Export-TargetResource
             $channels = $null
             try
             {
-                [array]$channels = Get-MgBetaTeamChannel -TeamId $team.Id -ErrorAction Stop
+                [array]$channels = Get-MgBetaTeamChannel -TeamId $team.Id -All -ErrorAction Stop
             }
             catch
             {
@@ -576,7 +576,7 @@ function Export-TargetResource
                 try
                 {
                     [array]$tabs = Get-MgBetaTeamChannelTab -TeamId $team.Id `
-                        -ChannelId $channel.Id -ErrorAction Stop
+                        -ChannelId $channel.Id -All -ErrorAction Stop
                 }
                 catch
                 {

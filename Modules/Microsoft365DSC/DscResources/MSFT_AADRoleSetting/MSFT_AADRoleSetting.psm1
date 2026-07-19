@@ -308,7 +308,7 @@ function Get-TargetResource
     if ($null -eq $Script:Policies)
     {
         $Script:Policies = [System.Collections.Generic.Dictionary[string, object]]::new()
-        $allPolicies = Get-MgBetaPolicyRoleManagementPolicy -Filter "scopeId eq '/' and scopeType eq 'DirectoryRole'" -ExpandProperty 'rules' -Property 'Id,rules'
+        $allPolicies = Get-MgBetaPolicyRoleManagementPolicy -Filter "scopeId eq '/' and scopeType eq 'DirectoryRole'" -ExpandProperty 'rules' -Property 'Id,rules' -All
         foreach ($policy in $allPolicies)
         {
             $Script:Policies[$policy.Id] = $policy
@@ -707,6 +707,7 @@ function Set-TargetResource
     }
     #get Policyrule
     $roles = Get-MgBetaPolicyRoleManagementPolicyRule -UnifiedRoleManagementPolicyId $Policy.PolicyId `
+        -All `
         -ErrorAction SilentlyContinue
 
     foreach ($role in $roles)
@@ -1510,7 +1511,7 @@ function Export-TargetResource
     }
     try
     {
-        [array] $exportedInstances = Get-MgBetaRoleManagementDirectoryRoleDefinition -Filter $Filter -Sort DisplayName -ErrorAction Stop
+        [array] $exportedInstances = Get-MgBetaRoleManagementDirectoryRoleDefinition -Filter $Filter -Sort DisplayName -All -ErrorAction Stop
         $i = 1
         $dscContent = [System.Text.StringBuilder]::new()
         Write-M365DSCHost -Message "`r`n" -DeferWrite

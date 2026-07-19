@@ -367,7 +367,7 @@ function Export-TargetResource
 
     try
     {
-        [array] $getValue = Get-MgBetaDeviceAppManagementMobileAppCategory -Filter $Filter -ErrorAction Stop
+        [array] $getValue = Get-MgBetaDeviceAppManagementMobileAppCategory -Filter $Filter -All -ErrorAction Stop
 
         $i = 1
         $dscContent = [System.Text.StringBuilder]::new()

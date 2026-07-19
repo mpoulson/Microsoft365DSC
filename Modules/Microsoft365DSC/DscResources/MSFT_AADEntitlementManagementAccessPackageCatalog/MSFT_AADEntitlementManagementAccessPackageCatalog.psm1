@@ -114,6 +114,7 @@ function Get-TargetResource
                 if (-not [string]::IsNullOrEmpty($DisplayName))
                 {
                     $getValue = Get-MgBetaEntitlementManagementAccessPackageCatalog `
+                        -All `
                         -ErrorAction Stop | Where-Object `
                         -FilterScript {
                             $_.DisplayName -eq $DisplayName

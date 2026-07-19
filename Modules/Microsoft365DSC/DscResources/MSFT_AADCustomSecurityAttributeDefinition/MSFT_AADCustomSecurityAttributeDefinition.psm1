@@ -514,6 +514,7 @@ function Export-TargetResource
     try
     {
         [array] $exportedInstances = Get-MgBetaDirectoryCustomSecurityAttributeDefinition `
+            -All `
             -ExpandProperty 'allowedValues' `
             -ErrorAction Stop
 

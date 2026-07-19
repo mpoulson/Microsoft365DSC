@@ -150,7 +150,7 @@ function Get-TargetResource
             AccessTokens           = $AccessTokens
         }
 
-        $assignmentsValues = Get-MgBetaDeviceManagementDeviceConfigurationAssignment -DeviceConfigurationId $Results.Id
+        $assignmentsValues = Get-MgBetaDeviceManagementDeviceConfigurationAssignment -DeviceConfigurationId $Results.Id -All
         $assignmentResult = @()
         if ($assignmentsValues.Count -gt 0)
         {

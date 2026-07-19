@@ -105,7 +105,7 @@ function Get-TargetResource
 
                 if (-not [System.String]::IsNullOrEmpty($Name))
                 {
-                    $getValue = Get-MgBetaNetworkAccessConnectivityRemoteNetwork -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $Name }
+                    $getValue = Get-MgBetaNetworkAccessConnectivityRemoteNetwork -All -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $Name }
                 }
             }
         }
@@ -249,7 +249,7 @@ function Set-TargetResource
     $deviceLinksHashtable = Rename-M365DSCCimInstanceParameter -Properties $BoundParameters.DeviceLinks
 
     #creating the forwarding policies list by getting the ids
-    $allForwardingProfiles = Get-MgBetaNetworkAccessForwardingProfile
+    $allForwardingProfiles = Get-MgBetaNetworkAccessForwardingProfile -All
     $forwardingProfilesList = @()
     foreach ($profileName in $BoundParameters.ForwardingProfiles)
     {

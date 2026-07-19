@@ -772,14 +772,14 @@ function Export-TargetResource
             Write-M365DSCHost -Message "    |---[$i/$($groups.Length)] $($group.DisplayName) - {$($group.Id)}"
             try
             {
-                [Array]$plans = Get-MgGroupPlannerPlan -GroupId $group.Id -ErrorAction 'SilentlyContinue'
+                [Array]$plans = Get-MgGroupPlannerPlan -GroupId $group.Id -All -ErrorAction 'SilentlyContinue'
 
                 $j = 1
                 foreach ($plan in $plans)
                 {
                     Write-M365DSCHost -Message "        |---[$j/$($plans.Length)] $($plan.Title)"
 
-                    [Array]$tasks = Get-MgGroupPlannerPlanTask -GroupId $group.Id -PlannerPlanId $plan.Id -ErrorAction 'SilentlyContinue'
+                    [Array]$tasks = Get-MgGroupPlannerPlanTask -GroupId $group.Id -PlannerPlanId $plan.Id -All -ErrorAction 'SilentlyContinue'
                     $Script:AppliedCategories = (Get-MgPlannerPlanDetail -PlannerPlanId $plan.Id).CategoryDescriptions
 
                     $k = 1

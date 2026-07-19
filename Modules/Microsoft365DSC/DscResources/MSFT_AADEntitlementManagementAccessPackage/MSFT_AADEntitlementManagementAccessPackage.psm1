@@ -177,21 +177,21 @@ function Get-TargetResource
         $catalog = Get-MgBetaEntitlementManagementAccessPackageCatalog -AccessPackageCatalog $getValue.CatalogId
 
         $getIncompatibleAccessPackages = @()
-        [Array]$query = Get-MgBetaEntitlementManagementAccessPackageIncompatibleAccessPackage -AccessPackageId $getValue.id
+        [Array]$query = Get-MgBetaEntitlementManagementAccessPackageIncompatibleAccessPackage -AccessPackageId $getValue.id -All
         if ($query.Count -gt 0)
         {
             $getIncompatibleAccessPackages += $query.id
         }
 
         $getAccessPackagesIncompatibleWith = @()
-        [Array]$query = Get-MgBetaEntitlementManagementAccessPackageIncompatibleWith -AccessPackageId $getValue.id
+        [Array]$query = Get-MgBetaEntitlementManagementAccessPackageIncompatibleWith -AccessPackageId $getValue.id -All
         if ($query.Count -gt 0)
         {
             $getAccessPackagesIncompatibleWith += $query.id
         }
 
         $getIncompatibleGroups = @()
-        [Array]$query = Get-MgBetaEntitlementManagementAccessPackageIncompatibleGroup -AccessPackageId $getValue.id
+        [Array]$query = Get-MgBetaEntitlementManagementAccessPackageIncompatibleGroup -AccessPackageId $getValue.id -All
         if ($query.Count -gt 0)
         {
             $getIncompatibleGroups += $query.id

@@ -543,7 +543,7 @@ function Set-TargetResource
             {
                 $licenses = @{addLicenses = @(); removeLicenses = @(); }
 
-                $SubscribedSku = Get-MgBetaSubscribedSku
+                $SubscribedSku = Get-MgBetaSubscribedSku -All
                 foreach ($licenseSkuPart in $LicenseAssignment)
                 {
                     Write-Verbose -Message "Adding License {$licenseSkuPart} to the Queue"

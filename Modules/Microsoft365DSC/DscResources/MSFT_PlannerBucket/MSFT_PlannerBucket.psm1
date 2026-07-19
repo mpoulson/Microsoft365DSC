@@ -84,11 +84,11 @@ function Get-TargetResource
 
         if (-not [System.String]::IsNullOrEmpty($BucketId))
         {
-            [Array]$bucket = Get-MgPlannerPlanBucket -PlannerPlanId $PlanId | Where-Object -FilterScript { $_.Id -eq $BucketId }
+            [Array]$bucket = Get-MgPlannerPlanBucket -PlannerPlanId $PlanId -All | Where-Object -FilterScript { $_.Id -eq $BucketId }
         }
         else
         {
-            [Array]$bucket = Get-MgPlannerPlanBucket -PlannerPlanId $PlanId | Where-Object -FilterScript { $_.Name -eq $Name }
+            [Array]$bucket = Get-MgPlannerPlanBucket -PlannerPlanId $PlanId -All | Where-Object -FilterScript { $_.Name -eq $Name }
 
             if ($bucket.Length -gt 1)
             {
@@ -374,13 +374,13 @@ function Export-TargetResource
             Write-M365DSCHost -Message "    [$i/$($groups.Length)] $($group.DisplayName) - {$($group.Id)}"
             try
             {
-                [Array]$plans = Get-MgGroupPlannerPlan -GroupId $group.Id -ErrorAction 'SilentlyContinue'
+                [Array]$plans = Get-MgGroupPlannerPlan -GroupId $group.Id -All -ErrorAction 'SilentlyContinue'
 
                 $j = 1
                 foreach ($plan in $plans)
                 {
                     Write-M365DSCHost -Message "        |---[$j/$($plans.Length)] $($plan.Title)"
-                    $buckets = Get-MgPlannerPlanBucket -PlannerPlanId $plan.Id
+                    $buckets = Get-MgPlannerPlanBucket -PlannerPlanId $plan.Id -All
                     $k = 1
                     foreach ($bucket in $buckets)
                     {

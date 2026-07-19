@@ -166,7 +166,7 @@ function Get-TargetResource
             #endregion
         }
 
-        $assignmentsValues = Get-MgBetaDeviceManagementWindowsQualityUpdateProfileAssignment -WindowsQualityUpdateProfileId $Id
+        $assignmentsValues = Get-MgBetaDeviceManagementWindowsQualityUpdateProfileAssignment -WindowsQualityUpdateProfileId $Id -All
         $assignmentResult = @()
         if ($assignmentsValues.Count -gt 0)
         {

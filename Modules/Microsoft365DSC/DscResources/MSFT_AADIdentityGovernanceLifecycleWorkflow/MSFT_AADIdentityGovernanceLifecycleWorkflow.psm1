@@ -685,7 +685,7 @@ function Get-M365DSCIdentityGovernanceTasks
     )
 
     # Get the tasks from the specified workflow
-    $tasks = Get-MgBetaIdentityGovernanceLifecycleWorkflowTask -WorkflowId $WorkflowId
+    $tasks = Get-MgBetaIdentityGovernanceLifecycleWorkflowTask -WorkflowId $WorkflowId -All
 
     # Initialize an array to hold the hashtables
     $taskList = @()

@@ -136,7 +136,7 @@ function Get-TargetResource
         }
 
         Write-Verbose -Message "Entitlement Management Connected Organization with id {$($getValue.id)} and displayName {$($getValue.DisplayName)} was found."
-        [Array]$getExternalSponsors = Get-MgBetaEntitlementManagementConnectedOrganizationExternalSponsor -ConnectedOrganizationId $getValue.id
+        [Array]$getExternalSponsors = Get-MgBetaEntitlementManagementConnectedOrganizationExternalSponsor -ConnectedOrganizationId $getValue.id -All
 
         $ExternalSponsorsValues = @()
         if ($null -ne $getExternalSponsors -and $getExternalSponsors.Count -gt 0)
@@ -154,7 +154,7 @@ function Get-TargetResource
             }
         }
 
-        [Array]$getInternalSponsors = Get-MgBetaEntitlementManagementConnectedOrganizationInternalSponsor -ConnectedOrganizationId $getValue.id
+        [Array]$getInternalSponsors = Get-MgBetaEntitlementManagementConnectedOrganizationInternalSponsor -ConnectedOrganizationId $getValue.id -All
 
         $InternalSponsorsValues = @()
         if ($null -ne $getInternalSponsors -and $getInternalSponsors.Count -gt 0)

@@ -184,7 +184,7 @@ function Get-TargetResource
             #endregion
         }
 
-        $assignmentsValues = Get-MgBetaDeviceManagementWindowsFeatureUpdateProfileAssignment -WindowsFeatureUpdateProfileId $Id
+        $assignmentsValues = Get-MgBetaDeviceManagementWindowsFeatureUpdateProfileAssignment -WindowsFeatureUpdateProfileId $Id -All
         $assignmentResult = @()
         if ($assignmentsValues.Count -gt 0)
         {

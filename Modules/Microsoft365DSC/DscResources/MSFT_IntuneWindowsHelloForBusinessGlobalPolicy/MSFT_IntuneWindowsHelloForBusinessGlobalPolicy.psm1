@@ -135,6 +135,7 @@ function Get-TargetResource
 
             #region resource generator code
             $getValue = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration `
+                -All `
                 -ErrorAction SilentlyContinue | Where-Object `
                 -FilterScript {
                 $_.'@odata.type' -eq '#microsoft.graph.deviceEnrollmentWindowsHelloForBusinessConfiguration'
@@ -361,7 +362,7 @@ function Set-TargetResource
 
     #region resource generator code
     $updateParameters.Add('@odata.type', '#microsoft.graph.deviceEnrollmentWindowsHelloForBusinessConfiguration')
-    $policy = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration | Where-Object -FilterScript {
+    $policy = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -All | Where-Object -FilterScript {
         $_.'@odata.type' -eq '#microsoft.graph.deviceEnrollmentWindowsHelloForBusinessConfiguration'
     }
     Update-MgBetaDeviceManagementDeviceEnrollmentConfiguration `
