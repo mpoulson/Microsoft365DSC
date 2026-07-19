@@ -23579,6 +23579,10 @@ function Get-MgBetaDeviceManagementWindowsQualityUpdateProfileAssignment
         $ExpandProperty,
 
         [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $All,
+
+        [Parameter()]
         [PSObject]
         $HttpPipelineAppend
     )
