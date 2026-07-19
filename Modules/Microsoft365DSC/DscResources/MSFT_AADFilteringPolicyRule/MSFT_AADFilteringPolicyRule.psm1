@@ -90,7 +90,7 @@ function Get-TargetResource
         $nullResult = $PSBoundParameters
         $nullResult.Ensure = 'Absent'
 
-        $policyInstance = Get-MgBetaNetworkAccessFilteringPolicy | Where-Object -Filter { $_.Name -eq $Policy }
+        $policyInstance = Get-MgBetaNetworkAccessFilteringPolicy -All | Where-Object -Filter { $_.Name -eq $Policy }
         if ($null -ne $policyInstance)
         {
             Write-Verbose -Message "Found existing Policy {$Policy}"
@@ -105,7 +105,7 @@ function Get-TargetResource
             if ($null -eq $instance)
             {
                 Write-Verbose -Message "Retrieving Filtering Policy Rule by Name {$Name}"
-                $instance = Get-MgBetaNetworkAccessFilteringPolicyRule -FilteringPolicyId $policyInstance.Id | Where-Object -FilterScript { $_.Name -eq $Name }
+                $instance = Get-MgBetaNetworkAccessFilteringPolicyRule -FilteringPolicyId $policyInstance.Id -All | Where-Object -FilterScript { $_.Name -eq $Name }
             }
         }
         if ($null -eq $instance)
@@ -243,7 +243,7 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-    $policyInstance = Get-MgBetaNetworkAccessFilteringPolicy | Where-Object -Filter { $_.Name -eq $Policy }
+    $policyInstance = Get-MgBetaNetworkAccessFilteringPolicy -All | Where-Object -Filter { $_.Name -eq $Policy }
 
     if ($RuleType -eq 'webCategory')
     {
@@ -468,6 +468,7 @@ function Export-TargetResource
             $displayedKey = $policy.Name
             Write-M365DSCHost -Message "    |---[$i/$($policies.Count)] $displayedKey" -DeferWrite
             [array]$rules = Get-MgBetaNetworkAccessFilteringPolicyRule -FilteringPolicyId $policy.Id `
+                -All `
                 -ErrorAction SilentlyContinue
             if ($rules.Length -eq 0)
             {

@@ -117,6 +117,7 @@ function Get-TargetResource
             Write-Verbose -Message "GET: Fetching trusted certificate authorities for $($instance.Id)"
             $certificateAuthorities = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
                 -CertificateBasedApplicationConfigurationId $instance.Id `
+                -All `
                 -ErrorAction SilentlyContinue
 
             foreach ($ca in $certificateAuthorities)
@@ -361,6 +362,7 @@ function Set-TargetResource
                 {
                     $currentCertAuthorities = Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfigurationTrustedCertificateAuthority `
                         -CertificateBasedApplicationConfigurationId $currentInstance.Id `
+                        -All `
                         -ErrorAction SilentlyContinue
 
                     if ($null -ne $currentCertAuthorities)

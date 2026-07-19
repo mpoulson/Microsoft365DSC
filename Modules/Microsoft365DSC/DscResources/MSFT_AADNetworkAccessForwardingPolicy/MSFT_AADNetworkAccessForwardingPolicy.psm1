@@ -72,7 +72,7 @@ function Get-TargetResource
             Add-M365DSCTelemetryEvent -Data $data
             #endregion
 
-            $instance = Get-MgBetaNetworkAccessForwardingPolicy -Expand * -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $Name }
+            $instance = Get-MgBetaNetworkAccessForwardingPolicy -All -Expand * -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $Name }
         }
         else
         {
@@ -182,7 +182,7 @@ function Set-TargetResource
 
     $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
-    $currentPolicy = Get-MgBetaNetworkAccessForwardingPolicy -Expand * -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $setParameters.Name }
+    $currentPolicy = Get-MgBetaNetworkAccessForwardingPolicy -All -Expand * -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $setParameters.Name }
     if ($Name -eq 'Custom Bypass')
     {
         foreach ($rule in $currentPolicy.PolicyRules)

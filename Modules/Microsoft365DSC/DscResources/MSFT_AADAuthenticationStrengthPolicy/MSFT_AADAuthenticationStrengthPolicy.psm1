@@ -98,7 +98,7 @@ function Get-TargetResource
 
             if ($null -eq $getValue)
             {
-                $getValue = Get-MgBetaPolicyAuthenticationStrengthPolicy | Where-Object -FilterScript { $_.DisplayName -eq $DisplayName } -ErrorAction SilentlyContinue
+                $getValue = Get-MgBetaPolicyAuthenticationStrengthPolicy -All | Where-Object -FilterScript { $_.DisplayName -eq $DisplayName } -ErrorAction SilentlyContinue
             }
 
             if ($null -eq $getValue)

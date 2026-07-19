@@ -220,6 +220,7 @@ function Get-TargetResource
         [array]$settings = Get-MgBetaDeviceManagementConfigurationPolicySetting `
             -DeviceManagementConfigurationPolicyId $Identity `
             -ExpandProperty 'settingDefinitions' `
+            -All `
             -ErrorAction Stop
 
         $returnHashtable = @{}
@@ -240,7 +241,7 @@ function Get-TargetResource
             $returnHashtable.AdPasswordEncryptionEnabled = [bool]::Parse($returnHashtable.AdPasswordEncryptionEnabled)
         }
 
-        $assignmentsValues = Get-MgBetaDeviceManagementConfigurationPolicyAssignment -DeviceManagementConfigurationPolicyId $policy.Id
+        $assignmentsValues = Get-MgBetaDeviceManagementConfigurationPolicyAssignment -DeviceManagementConfigurationPolicyId $policy.Id -All
         $assignmentResult = @()
         if ($assignmentsValues.Count -gt 0)
         {

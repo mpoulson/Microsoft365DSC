@@ -121,9 +121,9 @@ function Get-TargetResource
 
         try
         {
-            $membersList = Get-MgGroupMember -GroupId $ADGroup.Id
+            $membersList = Get-MgGroupMember -GroupId $ADGroup.Id -All
             Write-Verbose -Message "Found Members for Group {$($ADGroup.DisplayName)}"
-            $owners = Get-MgGroupOwner -GroupId $ADGroup.Id
+            $owners = Get-MgGroupOwner -GroupId $ADGroup.Id -All
             Write-Verbose -Message "Found Owners for Group {$($ADGroup.DisplayName)}"
             $ownersUPN = @()
             if ($null -ne $owners)
@@ -321,7 +321,7 @@ function Set-TargetResource
         Write-Verbose -Message "Found Existing Instance of Group {$($ADGroup.DisplayName)}"
 
         #region Members
-        $membersList = Get-MgGroupMember -GroupId $ADGroup[0].Id
+        $membersList = Get-MgGroupMember -GroupId $ADGroup[0].Id -All
 
         $curMembers = @()
         foreach ($member in $membersList)
@@ -380,7 +380,7 @@ function Set-TargetResource
         #endregion
 
         #region Owners
-        $ownersList = Get-MgGroupOwner -GroupId $ADGroup[0].Id
+        $ownersList = Get-MgGroupOwner -GroupId $ADGroup[0].Id -All
 
         $curOwners = @()
         foreach ($owner in $ownersList)

@@ -116,7 +116,7 @@ function Get-TargetResource
             {
                 try
                 {
-                    $NamedLocation = Get-MgBetaIdentityConditionalAccessNamedLocation -ErrorAction Stop | Where-Object -FilterScript { $_.DisplayName -eq $DisplayName }
+                    $NamedLocation = Get-MgBetaIdentityConditionalAccessNamedLocation -All -ErrorAction Stop | Where-Object -FilterScript { $_.DisplayName -eq $DisplayName }
                     if ($NamedLocation.Length -gt 1)
                     {
                         throw "More than one instance of a Named Location Policy with name {$DisplayName} was found. Please provide the ID parameter."
@@ -285,7 +285,7 @@ function Set-TargetResource
     }
     if ($null -eq $NamedLocation)
     {
-        $NamedLocation = Get-MgBetaIdentityConditionalAccessNamedLocation -ErrorAction SilentlyContinue | Where-Object -FilterScript { $_.DisplayName -eq $DisplayName }
+        $NamedLocation = Get-MgBetaIdentityConditionalAccessNamedLocation -All -ErrorAction SilentlyContinue | Where-Object -FilterScript { $_.DisplayName -eq $DisplayName }
         if ($NamedLocation.Length -gt 1)
         {
             throw "More than one instance of a Named Location Policy with name {$DisplayName} was found. Please provide the ID parameter."

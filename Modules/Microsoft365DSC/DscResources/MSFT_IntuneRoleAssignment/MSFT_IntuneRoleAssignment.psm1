@@ -143,10 +143,10 @@ function Get-TargetResource
         Write-Verbose -Message "An Intune Role Assignment with Id {$Id} and DisplayName {$DisplayName} was found"
 
         # Get Roledefinition first, loop through all roledefinitions and find the assignment that matches the Id
-        $tempRoleDefinitions = Get-MgDeviceManagementRoleDefinition
+        $tempRoleDefinitions = Get-MgDeviceManagementRoleDefinition -All
         foreach ($tempRoleDefinition in $tempRoleDefinitions)
         {
-            $item = Get-MgDeviceManagementRoleDefinitionRoleAssignment -RoleDefinitionId $tempRoleDefinition.Id | Where-Object { $_.Id -eq $getValue.Id }
+            $item = Get-MgDeviceManagementRoleDefinitionRoleAssignment -RoleDefinitionId $tempRoleDefinition.Id -All | Where-Object { $_.Id -eq $getValue.Id }
             if ($null -ne $item)
             {
                 $RoleDefinition = $tempRoleDefinition.Id
@@ -630,6 +630,7 @@ function Export-TargetResource
         if (-not $getValue)
         {
             [array]$getValue = Get-MgBetaDeviceManagementRoleAssignment `
+                -All `
                 -ErrorAction Stop
         }
 

@@ -595,7 +595,7 @@ function Export-TargetResource
 
     try
     {
-        [array] $getValue = Get-MgBetaDeviceManagementMobileThreatDefenseConnector -Filter $Filter -ErrorAction Stop
+        [array] $getValue = Get-MgBetaDeviceManagementMobileThreatDefenseConnector -Filter $Filter -All -ErrorAction Stop
 
         $i = 1
         $dscContent = [System.Text.StringBuilder]::new()

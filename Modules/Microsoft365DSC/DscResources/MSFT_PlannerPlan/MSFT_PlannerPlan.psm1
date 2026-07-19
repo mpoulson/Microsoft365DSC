@@ -84,7 +84,7 @@ function Get-TargetResource
         {
             Write-Verbose -Message "Could not get Azure AD Group {$OwnerGroup} by ID. `
                 Trying by Name."
-            [Array]$AllGroups = Get-MgGroup -Search $OwnerGroup
+            [Array]$AllGroups = Get-MgGroup -Search $OwnerGroup -All
         }
         else
         {
@@ -107,7 +107,7 @@ function Get-TargetResource
             try
             {
                 Write-Verbose -Message "Scanning Group {$($group.DisplayName)} for plan {$Title}"
-                $plan = Get-MgGroupPlannerPlan -GroupId $group.Id | Where-Object -FilterScript { $_.Title -eq $Title }
+                $plan = Get-MgGroupPlannerPlan -GroupId $group.Id -All | Where-Object -FilterScript { $_.Title -eq $Title }
                 if ($null -ne $plan)
                 {
                     Write-Verbose -Message 'Found Plan.'
@@ -257,9 +257,9 @@ function Set-TargetResource
         Write-Verbose -Message $AllGroups[0]
         if ($null -eq $AllGroups)
         {
-            [Array]$AllGroups = Get-MgGroup -Search $OwnerGroup
+            [Array]$AllGroups = Get-MgGroup -Search $OwnerGroup -All
         }
-        $plan = Get-MgGroupPlannerPlan -GroupId $AllGroups[0].Id | Where-Object -FilterScript { $_.Title -eq $Title }
+        $plan = Get-MgGroupPlannerPlan -GroupId $AllGroups[0].Id -All | Where-Object -FilterScript { $_.Title -eq $Title }
         $SetParams.Add('Owner', $AllGroups[0].Id)
         $SetParams.Remove('OwnerGroup') | Out-Null
         Update-MgPlannerPlan -PlannerPlanId $plan.Id -BodyParameter $SetParams

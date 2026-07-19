@@ -1432,7 +1432,7 @@ function Set-TargetResource
             $policyToAdd = $null
         }
 
-        $allTokenLifetimePolicies = Get-MgBetaPolicyTokenLifetimePolicy
+        $allTokenLifetimePolicies = Get-MgBetaPolicyTokenLifetimePolicy -All
         if ($null -ne $policyToRemove)
         {
             Write-Verbose -Message "Removing Token Lifetime Policy with DisplayName [$policyToRemove] from Application [$($currentAADApp.DisplayName)]"

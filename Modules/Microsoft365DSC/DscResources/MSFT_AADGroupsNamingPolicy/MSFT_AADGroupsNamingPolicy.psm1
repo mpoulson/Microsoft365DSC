@@ -83,7 +83,7 @@ function Get-TargetResource
         $nullReturn = $PSBoundParameters
         $nullReturn.Ensure = 'Absent'
 
-        $Policy = Get-MgBetaDirectorySetting | Where-Object -FilterScript { $_.DisplayName -eq 'Group.Unified' }
+        $Policy = Get-MgBetaDirectorySetting -All | Where-Object -FilterScript { $_.DisplayName -eq 'Group.Unified' }
 
         if ($null -eq $Policy)
         {
@@ -218,7 +218,7 @@ function Set-TargetResource
 
     if ($null -eq $Policy)
     {
-        $Policy = Get-MgBetaDirectorySetting | Where-Object -FilterScript { $_.DisplayName -eq 'Group.Unified' }
+        $Policy = Get-MgBetaDirectorySetting -All | Where-Object -FilterScript { $_.DisplayName -eq 'Group.Unified' }
     }
 
     if (($Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Present') -or $needToUpdate)
@@ -246,7 +246,7 @@ function Set-TargetResource
     elseif ($Ensure -eq 'Absent' -and $currentPolicy.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Removing existing Groups Naming Policy {$($policy.Id)}"
-        $Policy = Get-MgBetaDirectorySetting | Where-Object -FilterScript { $_.DisplayName -eq 'Group.Unified' }
+        $Policy = Get-MgBetaDirectorySetting -All | Where-Object -FilterScript { $_.DisplayName -eq 'Group.Unified' }
         Remove-MgBetaDirectorySetting -DirectorySettingId $policy.Id | Out-Null
     }
 }

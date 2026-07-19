@@ -173,6 +173,7 @@ function Get-TargetResource
         #Retrieve policy specific settings
         [array]$settings = Get-MgBetaDeviceManagementIntentSetting `
             -DeviceManagementIntentId $getValue.Id `
+            -All `
             -ErrorAction Stop
 
         $results = @{

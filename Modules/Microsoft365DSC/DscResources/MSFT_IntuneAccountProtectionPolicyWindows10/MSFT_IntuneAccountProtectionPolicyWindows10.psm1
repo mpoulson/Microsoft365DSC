@@ -281,7 +281,7 @@ function Get-TargetResource
         }
         $results += $policySettings
 
-        $assignmentsValues = Get-MgBetaDeviceManagementConfigurationPolicyAssignment -DeviceManagementConfigurationPolicyId $Id
+        $assignmentsValues = Get-MgBetaDeviceManagementConfigurationPolicyAssignment -DeviceManagementConfigurationPolicyId $Id -All
         $assignmentResult = @()
         if ($assignmentsValues.Count -gt 0)
         {

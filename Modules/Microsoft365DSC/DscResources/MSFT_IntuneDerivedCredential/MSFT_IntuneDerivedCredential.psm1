@@ -426,7 +426,7 @@ function Export-TargetResource
 
     try
     {
-        [array] $getValue = Get-MgBetaDeviceManagementDerivedCredential -Filter $Filter -ErrorAction Stop
+        [array] $getValue = Get-MgBetaDeviceManagementDerivedCredential -Filter $Filter -All -ErrorAction Stop
 
         $i = 1
         $dscContent = [System.Text.StringBuilder]::new()

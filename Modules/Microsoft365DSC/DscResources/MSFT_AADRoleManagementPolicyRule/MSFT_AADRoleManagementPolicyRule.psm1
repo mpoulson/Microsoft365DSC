@@ -109,7 +109,7 @@ function Get-TargetResource
 
             if ($null -eq $Script:allPolicyAssignments)
             {
-                $Script:allPolicyAssignments = Get-MgBetaPolicyRoleManagementPolicyAssignment -Filter "scopeId eq '/' and scopeType eq 'DirectoryRole'"
+                $Script:allPolicyAssignments = Get-MgBetaPolicyRoleManagementPolicyAssignment -Filter "scopeId eq '/' and scopeType eq 'DirectoryRole'" -All
             }
 
             $getValue = $null
@@ -569,7 +569,7 @@ function Export-TargetResource
     try
     {
         [array] $roles = Get-MgBetaRoleManagementDirectoryRoleDefinition -Filter $Filter -All
-        [array]$Script:allPolicyAssignments = Get-MgBetaPolicyRoleManagementPolicyAssignment -Filter "scopeId eq '/' and scopeType eq 'DirectoryRole'"
+        [array]$Script:allPolicyAssignments = Get-MgBetaPolicyRoleManagementPolicyAssignment -Filter "scopeId eq '/' and scopeType eq 'DirectoryRole'" -All
 
         $j = 1
         foreach ($role in $roles)
@@ -577,7 +577,8 @@ function Export-TargetResource
             $assignment = $Script:allPolicyAssignments | Where-Object { $_.RoleDefinitionId -eq $role.Id }
             $policyId = $assignment.PolicyId
             $rules = Get-MgBetaPolicyRoleManagementPolicyRule `
-                -UnifiedRoleManagementPolicyId $policyId
+                -UnifiedRoleManagementPolicyId $policyId `
+                -All
 
             Write-M365DSCHost -Message "    |---[$j/$($roles.Count)] $($role.displayName)"
             $i = 1

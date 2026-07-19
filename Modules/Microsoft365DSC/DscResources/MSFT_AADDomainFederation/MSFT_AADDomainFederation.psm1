@@ -141,7 +141,7 @@ function Get-TargetResource
             }
 
             # Get federation configuration for the domain
-            $instance = Get-MgBetaDomainFederationConfiguration -DomainId $DomainId -ErrorAction SilentlyContinue
+            $instance = Get-MgBetaDomainFederationConfiguration -DomainId $DomainId -All -ErrorAction SilentlyContinue
 
             if ($null -eq $instance -or $instance.Count -eq 0)
             {
@@ -616,7 +616,7 @@ function Export-TargetResource
 
     try
     {
-        [array] $domains = Get-MgBetaDomain -ErrorAction Stop |
+        [array] $domains = Get-MgBetaDomain -All -ErrorAction Stop |
             Where-Object { $_.AuthenticationType -eq 'Federated' }
         [array] $exportedInstances = @()
 
@@ -625,7 +625,7 @@ function Export-TargetResource
         {
             try
             {
-                $federationConfigs = Get-MgBetaDomainFederationConfiguration -DomainId $domain.Id -ErrorAction SilentlyContinue
+                $federationConfigs = Get-MgBetaDomainFederationConfiguration -DomainId $domain.Id -All -ErrorAction SilentlyContinue
                 if ($null -ne $federationConfigs)
                 {
                     if ($federationConfigs -is [System.Array])
