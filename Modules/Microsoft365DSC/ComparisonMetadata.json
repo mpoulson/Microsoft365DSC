@@ -91,6 +91,18 @@
       "HasCustomComparison": true,
       "Description": "Excludes properties: SubscriptionId"
     },
+     "AzureDataCollectionEndpoint": {
+      "HasCustomComparison": true,
+      "Description": "Excludes properties: SubscriptionId"
+    },
+    "AzureDataCollectionRule": {
+      "HasCustomComparison": true,
+      "Description": "Excludes properties: SubscriptionId"
+    },
+    "AzureDataCollectionRuleAssociation": {
+      "HasCustomComparison": true,
+      "Description": "Excludes properties: SubscriptionId"
+    },
     "AzureDiagnosticSettings": {
       "HasCustomComparison": true,
       "Description": "Excludes properties: SubscriptionId"

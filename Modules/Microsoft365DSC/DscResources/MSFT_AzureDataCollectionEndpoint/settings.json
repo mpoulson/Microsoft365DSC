@@ -1,0 +1,58 @@
+{
+  "resourceName": "AzureDataCollectionEndpoint",
+  "description": "Configures Data Collection Endpoints in Azure Monitor, used by the Azure Monitor Agent (AMA) for private-link and custom ingestion scenarios.",
+  "roles": {
+    "read": [],
+    "update": []
+  },
+  "permissions": {
+    "Azure Service Management": {
+      "delegated": {
+        "read": [
+          {
+            "name": "user_impersonation"
+          }
+        ],
+        "update": [
+          {
+            "name": "user_impersonation"
+          }
+        ]
+      },
+      "application": {
+        "read": [],
+        "update": []
+      }
+    }
+  },
+  "requiredModules": [
+    "Az.Accounts",
+    "Az.Monitor",
+    "MSCloudLoginAssistant"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Az.Accounts",
+      "cmdlets": [
+        "Connect-AzAccount",
+        "Register-AzModule"
+      ]
+    },
+    {
+      "module": "Az.Monitor",
+      "cmdlets": [
+        "Get-AzDataCollectionEndpoint",
+        "New-AzDataCollectionEndpoint",
+        "Update-AzDataCollectionEndpoint",
+        "Remove-AzDataCollectionEndpoint"
+      ]
+    },
+    {
+      "module": "MSCloudLoginAssistant",
+      "cmdlets": [
+        "Get-MSCloudLoginConnectionProfile"
+      ]
+    }
+  ]
+}

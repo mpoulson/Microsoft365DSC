@@ -1,0 +1,62 @@
+{
+  "resourceName": "AzureDataCollectionRule",
+  "description": "Configures Data Collection Rules in Azure Monitor, used by the Azure Monitor Agent (AMA) to collect Windows Event Logs and other telemetry.",
+  "roles": {
+    "read": [],
+    "update": []
+  },
+  "permissions": {
+    "Azure Service Management": {
+      "delegated": {
+        "read": [
+          {
+            "name": "user_impersonation"
+          }
+        ],
+        "update": [
+          {
+            "name": "user_impersonation"
+          }
+        ]
+      },
+      "application": {
+        "read": [],
+        "update": []
+      }
+    }
+  },
+  "requiredModules": [
+    "Az.Accounts",
+    "Az.Monitor",
+    "MSCloudLoginAssistant"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Az.Accounts",
+      "cmdlets": [
+        "Connect-AzAccount",
+        "Register-AzModule"
+      ]
+    },
+    {
+      "module": "Az.Monitor",
+      "cmdlets": [
+        "Get-AzDataCollectionRule",
+        "New-AzDataCollectionRule",
+        "Update-AzDataCollectionRule",
+        "Remove-AzDataCollectionRule",
+        "New-AzWindowsEventLogDataSourceObject",
+        "New-AzWindowsFirewallLogsDataSourceObject",
+        "New-AzLogAnalyticsDestinationObject",
+        "New-AzDataFlowObject"
+      ]
+    },
+    {
+      "module": "MSCloudLoginAssistant",
+      "cmdlets": [
+        "Get-MSCloudLoginConnectionProfile"
+      ]
+    }
+  ]
+}

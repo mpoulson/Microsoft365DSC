@@ -1,0 +1,19 @@
+[ClassVersion("1.0.0.0"), FriendlyName("AzureDataCollectionRuleAssociation")]
+class MSFT_AzureDataCollectionRuleAssociation : OMI_BaseResource
+{
+    [Key, Description("The name of the association.")] String AssociationName;
+    [Key, Description("The resource uri of the resource that the data collection rule is associated with. This can be a virtual machine, an Arc-enabled server, or a tenant-level monitored object.")] String ResourceUri;
+    [Write, Description("The resource id of the data collection rule that is associated with this resource.")] String DataCollectionRuleId;
+    [Write, Description("The resource id of the data collection endpoint that is associated with this resource.")] String DataCollectionEndpointId;
+    [Write, Description("Description of the association.")] String Description;
+    [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Absent","Present"}, Values{"Absent","Present"}] string Ensure;
+    [Write, Description("The Azure subscription to connect to if the access is restricted on subscription level.")] String SubscriptionId;
+    [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword"), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
+    [Write, Description("Path to certificate used in service principal usually a PFX file.")] String CertificatePath;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};

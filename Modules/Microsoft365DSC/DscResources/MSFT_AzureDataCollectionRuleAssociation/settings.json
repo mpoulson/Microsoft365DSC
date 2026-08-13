@@ -1,0 +1,58 @@
+{
+  "resourceName": "AzureDataCollectionRuleAssociation",
+  "description": "Associates an Azure Monitor Data Collection Rule (or Endpoint) with a target resource such as a virtual machine, an Arc-enabled server, or a tenant-level monitored object.",
+  "roles": {
+    "read": [],
+    "update": []
+  },
+  "permissions": {
+    "Azure Service Management": {
+      "delegated": {
+        "read": [
+          {
+            "name": "user_impersonation"
+          }
+        ],
+        "update": [
+          {
+            "name": "user_impersonation"
+          }
+        ]
+      },
+      "application": {
+        "read": [],
+        "update": []
+      }
+    }
+  },
+  "requiredModules": [
+    "Az.Accounts",
+    "Az.Monitor",
+    "MSCloudLoginAssistant"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Az.Accounts",
+      "cmdlets": [
+        "Connect-AzAccount",
+        "Register-AzModule"
+      ]
+    },
+    {
+      "module": "Az.Monitor",
+      "cmdlets": [
+        "Get-AzDataCollectionRule",
+        "Get-AzDataCollectionRuleAssociation",
+        "New-AzDataCollectionRuleAssociation",
+        "Remove-AzDataCollectionRuleAssociation"
+      ]
+    },
+    {
+      "module": "MSCloudLoginAssistant",
+      "cmdlets": [
+        "Get-MSCloudLoginConnectionProfile"
+      ]
+    }
+  ]
+}

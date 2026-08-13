@@ -1,0 +1,56 @@
+[ClassVersion("1.0.0.0")]
+class MSFT_AzureDataCollectionRuleWindowsEventLog
+{
+    [Write, Description("A friendly name for the data source. This name should be unique across all data sources (regardless of type) within the data collection rule.")] String Name;
+    [Write, Description("List of streams that this data source will be sent to. A stream indicates what schema will be used for this data and usually what table in Log Analytics the data will be sent to.")] String Streams[];
+    [Write, Description("A list of Windows Event Log XPath queries specifying the events to collect.")] String XPathQueries[];
+};
+
+[ClassVersion("1.0.0.0")]
+class MSFT_AzureDataCollectionRuleWindowsFirewallLog
+{
+    [Write, Description("A friendly name for the data source. This name should be unique across all data sources (regardless of type) within the data collection rule.")] String Name;
+    [Write, Description("List of streams that this data source will be sent to. A stream indicates what schema will be used for this data and usually what table in Log Analytics the data will be sent to.")] String Streams[];
+};
+
+[ClassVersion("1.0.0.0")]
+class MSFT_AzureDataCollectionRuleLogAnalyticsDestination
+{
+    [Write, Description("A friendly name for the destination. This name should be unique across all destinations (regardless of type) within the data collection rule.")] String Name;
+    [Write, Description("The resource id of the Log Analytics workspace.")] String WorkspaceResourceId;
+};
+
+[ClassVersion("1.0.0.0")]
+class MSFT_AzureDataCollectionRuleDataFlow
+{
+    [Write, Description("List of streams for this data flow.")] String Streams[];
+    [Write, Description("List of destination friendly names (matching a destination Name) for this data flow.")] String Destinations[];
+    [Write, Description("The output stream of the transform. Only required if the transform changes data to a different stream.")] String OutputStream;
+    [Write, Description("The KQL query to transform stream data.")] String TransformKql;
+    [Write, Description("The builtIn transform to transform stream data.")] String BuiltInTransform;
+};
+
+[ClassVersion("1.0.0.0"), FriendlyName("AzureDataCollectionRule")]
+class MSFT_AzureDataCollectionRule : OMI_BaseResource
+{
+    [Key, Description("The name of the data collection rule.")] String Name;
+    [Key, Description("The name of the resource group that contains the data collection rule.")] String ResourceGroupName;
+    [Write, Description("The geo-location where the data collection rule resides.")] String Location;
+    [Write, Description("Description of the data collection rule.")] String Description;
+    [Write, Description("The kind of the data collection rule.")] String Kind;
+    [Write, Description("The resource id of the data collection endpoint that this rule can be used with.")] String DataCollectionEndpointId;
+    [Write, Description("The list of Windows Event Log data sources."), EmbeddedInstance("MSFT_AzureDataCollectionRuleWindowsEventLog")] String WindowsEventLogs[];
+    [Write, Description("The list of Windows Firewall Log data sources."), EmbeddedInstance("MSFT_AzureDataCollectionRuleWindowsFirewallLog")] String WindowsFirewallLogs[];
+    [Write, Description("The list of Log Analytics destinations."), EmbeddedInstance("MSFT_AzureDataCollectionRuleLogAnalyticsDestination")] String LogAnalyticsDestinations[];
+    [Write, Description("The specification of data flows."), EmbeddedInstance("MSFT_AzureDataCollectionRuleDataFlow")] String DataFlows[];
+    [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Absent","Present"}, Values{"Absent","Present"}] string Ensure;
+    [Write, Description("The Azure subscription to connect to if the access is restricted on subscription level.")] String SubscriptionId;
+    [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword"), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
+    [Write, Description("Path to certificate used in service principal usually a PFX file.")] String CertificatePath;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};
