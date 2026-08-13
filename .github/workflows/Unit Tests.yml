@@ -1,5 +1,7 @@
 name: Unit Tests
-on: pull_request
+on:
+  push:
+  pull_request:
 
 jobs:
   quality-test:
@@ -9,7 +11,7 @@ jobs:
     permissions: write-all
 
     # Only when run from the main repo
-    if: github.repository == 'Microsoft365DSC/Microsoft365DSC'
+    if: github.repository == 'mpoulson/Microsoft365DSC'
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -67,7 +69,7 @@ jobs:
     permissions: write-all
 
     # Only when run from the main repo
-    if: github.repository == 'Microsoft365DSC/Microsoft365DSC'
+    if: github.repository == 'mpoulson/Microsoft365DSC'
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
