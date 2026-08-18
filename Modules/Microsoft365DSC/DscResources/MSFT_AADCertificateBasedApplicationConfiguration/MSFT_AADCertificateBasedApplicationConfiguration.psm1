@@ -282,8 +282,7 @@ function Set-TargetResource
             }
             ### Using Invoke-MgGraphRequest because Powershell fails to pass trustedCertificateAuthorities on POST
             ### New-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfiguration -BodyParameter $params
-            $graphBaseUri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl
-            $uri = "$graphBaseUri/beta/directory/certificateAuthorities/certificateBasedApplicationConfigurations"
+            $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/directory/certificateAuthorities/certificateBasedApplicationConfigurations"
 
             Write-Verbose -Message "URI: $uri"
             $bodyJson = $params | ConvertTo-Json -Depth 10
