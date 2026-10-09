@@ -177,11 +177,15 @@ function Enable-ATPProtectionPolicyRule
 }
 function Enable-AzSubscription
 {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param(
         [Parameter()]
         [System.String]
-        $Id
+        $Id,
+
+        [Parameter()]
+        [Switch]
+        $PassThru
     )
 }
 function Disable-ATPProtectionPolicyRule
@@ -195,11 +199,15 @@ function Disable-ATPProtectionPolicyRule
 }
 function Disable-AzSubscription
 {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param(
         [Parameter()]
         [System.String]
-        $Id
+        $Id,
+
+        [Parameter()]
+        [Switch]
+        $PassThru
     )
 }
 function Invoke-AzRestMethod
@@ -217,6 +225,45 @@ function Invoke-AzRestMethod
         [Parameter()]
         [System.String]
         $Method
+    )
+}
+function Get-AzResourceProvider
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $ProviderNamespace,
+
+        [Parameter()]
+        [System.String]
+        $Location,
+
+        [Parameter()]
+        [Switch]
+        $ListAvailable
+    )
+}
+function Register-AzResourceProvider
+{
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+        [Parameter()]
+        [System.String]
+        $ProviderNamespace,
+
+        [Parameter()]
+        [System.String]
+        $ConsentToPermissions
+    )
+}
+function Unregister-AzResourceProvider
+{
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+        [Parameter()]
+        [System.String]
+        $ProviderNamespace
     )
 }
 #endregion

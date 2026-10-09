@@ -1,0 +1,16 @@
+[ClassVersion("1.0.0.0"), FriendlyName("AzureResourceProvider")]
+class MSFT_AzureResourceProvider : OMI_BaseResource
+{
+    [Key, Description("Namespace of the Azure resource provider, such as Microsoft.Compute.")] String ProviderNamespace;
+    [Key, Description("Identifier of the subscription the resource provider is registered in. Registration is a per subscription setting.")] String SubscriptionId;
+    [Write, Description("Registration state reported by Azure. This value is reported for information only and is not compared when evaluating drift, because it passes through Registering and Unregistering while a change settles.")] String RegistrationState;
+    [Write, Description("Present registers the resource provider in the subscription, absent unregisters it."), ValueMap{"Absent","Present"}, Values{"Absent","Present"}] string Ensure;
+    [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword"), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
+    [Write, Description("Path to certificate used in service principal usually a PFX file.")] String CertificatePath;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};

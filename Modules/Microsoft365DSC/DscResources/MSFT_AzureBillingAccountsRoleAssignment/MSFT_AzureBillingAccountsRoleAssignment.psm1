@@ -96,19 +96,37 @@ function Get-TargetResource
         $accounts = Get-M365DSCAzureBillingAccount
         $currentAccount = $accounts.value | Where-Object -FilterScript { $_.properties.displayName -eq $BillingAccount }
 
+        $instance = $null
+        $RoleDefinitionValue = $null
         if ($null -ne $currentAccount)
         {
             $instances = Get-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $currentAccount.Name -ErrorAction Stop
             $PrincipalIdValue = Get-M365DSCPrincipalIdFromName -PrincipalName $PrincipalName `
                 -PrincipalType $PrincipalType
-            $instance = $instances.value | Where-Object -FilterScript { $_.properties.principalId -eq $PrincipalIdValue }
 
-            if ($null -ne $instance)
+            # Legacy Enterprise Agreement assignments carry no principalId, identifying their principal only
+            # by principalPuid and the email address the enrollment was invited with, so match on that as
+            # well. Without the fallback such an assignment is always reported as Absent and every run tries
+            # to create it a second time.
+            $candidates = @($instances.value | Where-Object -FilterScript {
+                    (-not [System.String]::IsNullOrEmpty($PrincipalIdValue) -and $_.properties.principalId -eq $PrincipalIdValue) -or
+                    (-not [System.String]::IsNullOrEmpty($_.properties.userEmailAddress) -and $_.properties.userEmailAddress -eq $PrincipalName)
+                })
+
+            # A principal can hold more than one role on the same billing account, and RoleDefinition is a
+            # key of this resource, so pick the assignment carrying the requested role. The export passes the
+            # 'AnyRole' sentinel to mean whichever role the assignment happens to carry.
+            foreach ($candidate in $candidates)
             {
-                $roleDefinitionId = $instance.properties.roleDefinitionId.Split('/')
-                $roleDefinitionId = $roleDefinitionId[$roleDefinitionId.Length - 1]
-                $RoleDefinitionValue = Get-M365DSCAzureBillingAccountsRoleDefinition -BillingAccountId $currentAccount.Name `
-                    -RoleDefinitionId $roleDefinitionId
+                $candidateRole = Get-M365DSCAzureBillingRoleName -BillingAccountId $currentAccount.Name `
+                    -RoleDefinitionResourceId $candidate.properties.roleDefinitionId
+
+                if ($RoleDefinition -eq 'AnyRole' -or $RoleDefinition -eq $candidateRole)
+                {
+                    $instance = $candidate
+                    $RoleDefinitionValue = $candidateRole
+                    break
+                }
             }
         }
         if ($null -eq $instance)
@@ -116,12 +134,18 @@ function Get-TargetResource
             return $nullResult
         }
 
+        $PrincipalTenantIdValue = $instance.properties.principalTenantId
+        if ([System.String]::IsNullOrEmpty($PrincipalTenantIdValue))
+        {
+            $PrincipalTenantIdValue = $PrincipalTenantId
+        }
+
         $results = @{
             BillingAccount        = $BillingAccount
             PrincipalName         = $PrincipalName
             PrincipalType         = $PrincipalType
-            PrincipalTenantId     = $instance.properties.principalTenantId
-            RoleDefinition        = $RoleDefinitionValue.properties.roleName
+            PrincipalTenantId     = $PrincipalTenantIdValue
+            RoleDefinition        = $RoleDefinitionValue
             Ensure                = 'Present'
             SubscriptionId        = $SubscriptionId
             Credential            = $Credential
@@ -235,10 +259,16 @@ function Set-TargetResource
     $PrincipalIdValue = Get-M365DSCPrincipalIdFromName -PrincipalName $PrincipalName `
         -PrincipalType $PrincipalType
     $RoleDefinitionValues = Get-M365DSCAzureBillingAccountsRoleDefinition -BillingAccountId $account.Name
-    $roleDefinitionInstance = $RoleDefinitionValues.value | Where-Object -FilterScript { $_.properties.roleName -eq $currentInstance.RoleDefinition }
+
+    # Match the requested role, not the one already assigned, otherwise a change of role re-applies the
+    # existing one. Enterprise Agreement returns some role definitions with no friendly roleName, so also
+    # accept the role definition identifier.
+    $roleDefinitionInstance = $RoleDefinitionValues.value | Where-Object -FilterScript {
+        $_.properties.roleName -eq $RoleDefinition -or $_.name -eq $RoleDefinition
+    }
     $instanceParams = @{
         principalId       = $PrincipalIdValue
-        principalTenantId = $currentInstance.PrincipalTenantId
+        principalTenantId = $PrincipalTenantId
         roleDefinitionId  = $roleDefinitionInstance.id
     }
     # CREATE
@@ -259,9 +289,12 @@ function Set-TargetResource
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
         $instances = Get-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name -ErrorAction Stop
-        $instance = $instances.value | Where-Object -FilterScript { $_.properties.principalId -eq $PrincipalIdValue }
+        $instance = @($instances.value | Where-Object -FilterScript {
+                (-not [System.String]::IsNullOrEmpty($PrincipalIdValue) -and $_.properties.principalId -eq $PrincipalIdValue) -or
+                (-not [System.String]::IsNullOrEmpty($_.properties.userEmailAddress) -and $_.properties.userEmailAddress -eq $PrincipalName)
+            })[0]
         $AssignmentId = $instance.Id.Split('/')
-        $AssignmentId = $AssignmentId[$roleDefinitionId.Length - 1]
+        $AssignmentId = $AssignmentId[$AssignmentId.Length - 1]
         Write-Verbose -Message "Removing role assignment for user {$PrincipalName} for role {$RoleDefinition}"
         Remove-M365DSCAzureBillingAccountsRoleAssignment -BillingAccountId $account.Name `
             -AssignmentId $AssignmentId
@@ -442,22 +475,32 @@ function Export-TargetResource
             $j = 1
             foreach ($assignment in $assignments.value)
             {
+                # Enterprise Agreement enrollments never populate principalType, and legacy enrollment
+                # administrator entries created through the EA portal identify their principal only by
+                # principalPuid and userEmailAddress, leaving principalId and principalTenantId empty. Every
+                # one of those maps to a mandatory parameter of this resource, so passing the empty string
+                # through aborted the whole export instead of skipping the single assignment.
+                $principal = Get-M365DSCAzureBillingPrincipal -Assignment $assignment `
+                    -TenantId $TenantId
+
+                if ($null -eq $principal)
+                {
+                    Write-Verbose -Message "Skipping billing role assignment {$($assignment.name)} on billing account {$displayedKey}: its principal could not be identified from principalId {$($assignment.properties.principalId)}, userEmailAddress or principalDisplayName."
+                    $j++
+                    continue
+                }
+
                 if ($null -ne $Global:M365DSCExportResourceInstancesCount)
                 {
                     $Global:M365DSCExportResourceInstancesCount++
                 }
 
-                $PrincipalNameValue = Get-M365DSCPrincipalNameFromId -PrincipalId $assignment.properties.principalId `
-                    -PrincipalType $assignment.properties.principalType
-                $roleDefinitionId = $assignment.properties.roleDefinitionId.Split('/')
-                $roleDefinitionId = $roleDefinitionId[$roleDefinitionId.Length - 1]
-
-                Write-M365DSCHost -Message "        |---[$j/$($assignments.value.Length)] $($assignment.properties.principalId)" -DeferWrite
+                Write-M365DSCHost -Message "        |---[$j/$($assignments.value.Length)] $($principal.Name)" -DeferWrite
                 $params = @{
                     BillingAccount        = $config.properties.displayName
-                    PrincipalName         = $PrincipalNameValue
-                    PrincipalType         = $assignment.properties.principalType
-                    PrincipalTenantId     = $assignment.properties.principalTenantId
+                    PrincipalName         = $principal.Name
+                    PrincipalType         = $principal.Type
+                    PrincipalTenantId     = $principal.TenantId
                     RoleDefinition        = 'AnyRole'
                     SubscriptionId        = $SubscriptionId
                     Credential            = $Credential
@@ -495,6 +538,137 @@ function Export-TargetResource
 
         throw
     }
+}
+
+function Get-M365DSCAzureBillingPrincipal
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Object]
+        $Assignment,
+
+        [Parameter()]
+        [System.String]
+        $TenantId
+    )
+
+    $principalId = $Assignment.properties.principalId
+    $principalType = $Assignment.properties.principalType
+    $principalTenantId = $Assignment.properties.principalTenantId
+    $principalName = $null
+
+    if (-not [System.String]::IsNullOrEmpty($principalId))
+    {
+        # Enterprise Agreement omits principalType, so probe the directory by identifier to establish both
+        # the type and the name that the Get method has to resolve back into that same identifier.
+        $candidateTypes = @($principalType)
+        if ([System.String]::IsNullOrEmpty($principalType))
+        {
+            $candidateTypes = @('User', 'ServicePrincipal', 'Group')
+        }
+
+        foreach ($candidateType in $candidateTypes)
+        {
+            try
+            {
+                $principalName = Get-M365DSCPrincipalNameFromId -PrincipalId $principalId `
+                    -PrincipalType $candidateType
+            }
+            catch
+            {
+                $principalName = $null
+            }
+
+            if (-not [System.String]::IsNullOrEmpty($principalName))
+            {
+                $principalType = $candidateType
+                break
+            }
+        }
+    }
+
+    # Legacy Enterprise Agreement entries carry no identifier at all. They are always users, invited by
+    # email address, and that address is what the Get method matches them on.
+    if ([System.String]::IsNullOrEmpty($principalName) -and
+        -not [System.String]::IsNullOrEmpty($Assignment.properties.userEmailAddress))
+    {
+        $principalName = $Assignment.properties.userEmailAddress
+        $principalType = 'User'
+    }
+
+    if ([System.String]::IsNullOrEmpty($principalName))
+    {
+        $principalName = $Assignment.properties.principalDisplayName
+    }
+
+    if ([System.String]::IsNullOrEmpty($principalName) -or [System.String]::IsNullOrEmpty($principalType))
+    {
+        return $null
+    }
+
+    # A principal resolved through the directory currently connected to belongs to that tenant, so use the
+    # tenant identifier the caller was already given when the billing plane does not report one.
+    if ([System.String]::IsNullOrEmpty($principalTenantId))
+    {
+        $principalTenantId = $TenantId
+    }
+
+    if ([System.String]::IsNullOrEmpty($principalTenantId))
+    {
+        return $null
+    }
+
+    return @{
+        Name     = $principalName
+        Type     = $principalType
+        TenantId = $principalTenantId
+    }
+}
+
+function Get-M365DSCAzureBillingRoleName
+{
+    [CmdletBinding()]
+    [OutputType([System.String])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $BillingAccountId,
+
+        [Parameter()]
+        [System.String]
+        $RoleDefinitionResourceId
+    )
+
+    if ([System.String]::IsNullOrEmpty($RoleDefinitionResourceId))
+    {
+        return $null
+    }
+
+    $segments = $RoleDefinitionResourceId.Split('/')
+    $roleDefinitionId = $segments[$segments.Length - 1]
+
+    if ([System.String]::IsNullOrEmpty($roleDefinitionId))
+    {
+        return $null
+    }
+
+    $roleDefinition = Get-M365DSCAzureBillingAccountsRoleDefinition -BillingAccountId $BillingAccountId `
+        -RoleDefinitionId $roleDefinitionId
+
+    # Enterprise Agreement returns some role definitions with no friendly roleName, reporting them as
+    # EaRoleId_<guid>. RoleDefinition is a key of this resource, so it can never be left empty.
+    $result = $roleDefinition.properties.roleName
+    if ([System.String]::IsNullOrEmpty($result))
+    {
+        $result = $roleDefinition.name
+    }
+    if ([System.String]::IsNullOrEmpty($result))
+    {
+        $result = $roleDefinitionId
+    }
+    return $result
 }
 
 function Get-M365DSCPrincipalNameFromId

@@ -1,0 +1,61 @@
+{
+  "resourceName": "AzureRoleAssignmentScheduleRequestSettings",
+  "description": "Configures the Azure PIM (Privileged Identity Management) active assignment settings of a role at a Management Group, Subscription, or Resource Group scope.",
+  "roles": {
+    "read": [
+      "User Access Administrator",
+      "Owner"
+    ],
+    "update": [
+      "User Access Administrator",
+      "Owner"
+    ]
+  },
+  "permissions": {
+    "Azure Service Management": {
+      "delegated": {
+        "read": [
+          {
+            "name": "user_impersonation"
+          }
+        ],
+        "update": [
+          {
+            "name": "user_impersonation"
+          }
+        ]
+      },
+      "application": {
+        "read": [
+          "User Access Administrator",
+          "Owner"
+        ],
+        "update": [
+          "User Access Administrator",
+          "Owner"
+        ]
+      }
+    }
+  },
+  "requiredModules": [
+    "Az.Accounts",
+    "MSCloudLoginAssistant"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Az.Accounts",
+      "cmdlets": [
+        "Connect-AzAccount",
+        "Invoke-AzRestMethod",
+        "Register-AzModule"
+      ]
+    },
+    {
+      "module": "MSCloudLoginAssistant",
+      "cmdlets": [
+        "Get-MSCloudLoginConnectionProfile"
+      ]
+    }
+  ]
+}

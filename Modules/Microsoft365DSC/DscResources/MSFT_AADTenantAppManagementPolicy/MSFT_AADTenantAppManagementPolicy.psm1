@@ -369,6 +369,26 @@ function Set-TargetResource
     $setParameters.servicePrincipalRestrictions = $spnRestrictionsValue
     $setParameters.Remove('IsSingleInstance') | Out-Null
 
+    #merge in unmanaged settings
+    try
+    {
+        $currentPolicy = Invoke-MgGraphRequest -Method GET `
+            -Uri '/beta/policies/defaultAppManagementPolicy' `
+            -OutputType Hashtable `
+            -ErrorAction Stop
+
+        $setParameters.applicationRestrictions = Merge-M365DSCAADTenantAppManagementPolicyUnmanagedSetting `
+            -DesiredRestrictions $setParameters.applicationRestrictions `
+            -CurrentRestrictions $currentPolicy.applicationRestrictions
+        $setParameters.servicePrincipalRestrictions = Merge-M365DSCAADTenantAppManagementPolicyUnmanagedSetting `
+            -DesiredRestrictions $setParameters.servicePrincipalRestrictions `
+            -CurrentRestrictions $currentPolicy.servicePrincipalRestrictions
+    }
+    catch
+    {
+        Write-Verbose -Message "Could not retrieve the current Default App Management Policy to preserve unmanaged settings. Proceeding without merge. Error: $_"
+    }
+
     Write-Verbose -Message 'Updating the Default App Management Policy'
     Update-MgBetaPolicyDefaultAppManagementPolicy -BodyParameter $setParameters
 }
@@ -638,6 +658,54 @@ function Export-TargetResource
 
         throw
     }
+}
+
+function Merge-M365DSCAADTenantAppManagementPolicyUnmanagedSetting
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.Collections.Hashtable]
+        $DesiredRestrictions,
+
+        [Parameter()]
+        [System.Collections.Hashtable]
+        $CurrentRestrictions
+    )
+
+    if ($null -eq $CurrentRestrictions)
+    {
+        return $DesiredRestrictions
+    }
+
+    # Re-attach excludeActors (matched by restrictionType) onto each credential DSC is sending.
+    foreach ($credentialType in @('passwordCredentials', 'keyCredentials'))
+    {
+        foreach ($desiredCredential in $DesiredRestrictions.$credentialType)
+        {
+            $currentCredential = $CurrentRestrictions.$credentialType |
+                Where-Object -FilterScript { $_.restrictionType -eq $desiredCredential.restrictionType } |
+                Select-Object -First 1
+            if ($null -ne $currentCredential -and $null -ne $currentCredential.excludeActors)
+            {
+                $desiredCredential.excludeActors = $currentCredential.excludeActors
+            }
+        }
+    }
+
+    # Carry forward any restriction-level sub-objects this resource does not model
+    # (e.g. identifierUris, audiences, federatedIdentityCredentials, trustedSubjectNameAndIssuers).
+    foreach ($settingName in $CurrentRestrictions.Keys)
+    {
+        if (-not $DesiredRestrictions.ContainsKey($settingName))
+        {
+            $DesiredRestrictions[$settingName] = $CurrentRestrictions[$settingName]
+        }
+    }
+
+    return $DesiredRestrictions
 }
 
 function Get-CompareParameters

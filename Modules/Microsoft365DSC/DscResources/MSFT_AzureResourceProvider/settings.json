@@ -1,0 +1,65 @@
+{
+  "resourceName": "AzureResourceProvider",
+  "description": "Configures the registration of an Azure resource provider in a subscription.",
+  "roles": {
+    "read": [],
+    "update": []
+  },
+  "permissions": {
+    "Azure Service Management": {
+      "delegated": {
+        "read": [
+          {
+            "name": "user_impersonation"
+          }
+        ],
+        "update": [
+          {
+            "name": "user_impersonation"
+          }
+        ]
+      },
+      "application": {
+        "read": [],
+        "update": []
+      }
+    },
+    "azure": {
+      "requiredRoles": [
+        "Contributor"
+      ]
+    }
+  },
+  "requiredModules": [
+    "Az.Accounts",
+    "Az.Resources",
+    "MSCloudLoginAssistant"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Az.Accounts",
+      "cmdlets": [
+        "Connect-AzAccount",
+        "Get-AzContext",
+        "Get-AzSubscription",
+        "Register-AzModule",
+        "Set-AzContext"
+      ]
+    },
+    {
+      "module": "Az.Resources",
+      "cmdlets": [
+        "Get-AzResourceProvider",
+        "Register-AzResourceProvider",
+        "Unregister-AzResourceProvider"
+      ]
+    },
+    {
+      "module": "MSCloudLoginAssistant",
+      "cmdlets": [
+        "Get-MSCloudLoginConnectionProfile"
+      ]
+    }
+  ]
+}

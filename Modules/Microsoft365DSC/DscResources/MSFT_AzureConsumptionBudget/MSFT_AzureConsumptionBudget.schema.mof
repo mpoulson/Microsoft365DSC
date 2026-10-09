@@ -1,0 +1,54 @@
+[ClassVersion("1.0.0.0")]
+class MSFT_AzureConsumptionBudgetNotification
+{
+    [Required, Description("Name of the notification. This is the key the Consumption Budgets api stores the notification under and it must be unique within the budget.")] String Name;
+    [Write, Description("Represents whether or not the notification is enabled.")] Boolean Enabled;
+    [Write, Description("Comparison operator used to evaluate the threshold."), ValueMap{"EqualTo","GreaterThan","GreaterThanOrEqualTo"}, Values{"EqualTo","GreaterThan","GreaterThanOrEqualTo"}] String Operator;
+    [Write, Description("Threshold value associated with the notification. For a percentage based threshold this is a value between 0 and 1000.")] Real64 Threshold;
+    [Write, Description("Whether the threshold is compared against actual or forecasted cost."), ValueMap{"Actual","Forecasted"}, Values{"Actual","Forecasted"}] String ThresholdType;
+    [Write, Description("Email addresses to send the budget notification to.")] String ContactEmails[];
+    [Write, Description("Contact roles to send the budget notification to.")] String ContactRoles[];
+    [Write, Description("Action group resource ids to send the budget notification to.")] String ContactGroups[];
+    [Write, Description("Language in which the notification email is sent.")] String Locale;
+};
+
+[ClassVersion("1.0.0.0")]
+class MSFT_AzureConsumptionBudgetFilterDimension
+{
+    [Required, Description("Name of the dimension to filter on, for example ResourceId or ResourceGroupName.")] String Name;
+    [Write, Description("Comparison operator used to evaluate the dimension values."), ValueMap{"In"}, Values{"In"}] String Operator;
+    [Write, Description("Values the dimension is compared against.")] String Values[];
+};
+
+[ClassVersion("1.0.0.0")]
+class MSFT_AzureConsumptionBudgetFilterTag
+{
+    [Required, Description("Name of the resource tag to filter on.")] String Name;
+    [Write, Description("Comparison operator used to evaluate the tag values."), ValueMap{"In"}, Values{"In"}] String Operator;
+    [Write, Description("Values the tag is compared against.")] String Values[];
+};
+
+[ClassVersion("1.0.0.0"), FriendlyName("AzureConsumptionBudget")]
+class MSFT_AzureConsumptionBudget : OMI_BaseResource
+{
+    [Key, Description("Name of the budget.")] String Name;
+    [Key, Description("Azure Resource Manager scope the budget applies to, for example providers/Microsoft.Billing/billingAccounts/{id}, providers/Microsoft.Billing/billingAccounts/{id}/enrollmentAccounts/{id}, providers/Microsoft.Management/managementGroups/{id}, subscriptions/{id} or subscriptions/{id}/resourceGroups/{name}.")] String Scope;
+    [Write, Description("Category the budget tracks. Only Cost is accepted by the current api."), ValueMap{"Cost"}, Values{"Cost"}] String Category;
+    [Write, Description("Total amount of cost to track with the budget.")] Real64 Amount;
+    [Write, Description("Time window the budget resets over."), ValueMap{"Annually","BillingAnnual","BillingMonth","BillingQuarter","Monthly","Quarterly"}, Values{"Annually","BillingAnnual","BillingMonth","BillingQuarter","Monthly","Quarterly"}] String TimeGrain;
+    [Write, Description("UTC date the budget starts tracking from. Must be the first of a month for a monthly time grain.")] String StartDate;
+    [Write, Description("UTC date the budget stops tracking at. Defaults to ten years after the start date when omitted.")] String EndDate;
+    [Write, Description("Notifications raised as the budget is consumed."), EmbeddedInstance("MSFT_AzureConsumptionBudgetNotification")] String Notifications[];
+    [Write, Description("Dimension criteria the budget is narrowed by. All dimension and tag criteria are combined with a logical and."), EmbeddedInstance("MSFT_AzureConsumptionBudgetFilterDimension")] String FilterDimensions[];
+    [Write, Description("Resource tag criteria the budget is narrowed by. All dimension and tag criteria are combined with a logical and."), EmbeddedInstance("MSFT_AzureConsumptionBudgetFilterTag")] String FilterTags[];
+    [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Absent","Present"}, Values{"Absent","Present"}] string Ensure;
+    [Write, Description("The Azure subscription to connect to if the access is restricted on subscription level.")] String SubscriptionId;
+    [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword"), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
+    [Write, Description("Path to certificate used in service principal usually a PFX file.")] String CertificatePath;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};

@@ -1,0 +1,55 @@
+{
+  "resourceName": "AzureConsumptionBudget",
+  "description": "Configures an Azure consumption budget at any Azure Resource Manager scope.",
+  "roles": {
+    "read": [],
+    "update": []
+  },
+  "permissions": {
+    "Azure Service Management": {
+      "delegated": {
+        "read": [
+          {
+            "name": "user_impersonation"
+          }
+        ],
+        "update": [
+          {
+            "name": "user_impersonation"
+          }
+        ]
+      },
+      "application": {
+        "read": [],
+        "update": []
+      }
+    },
+    "azure": {
+      "requiredRoles": [
+        "Cost Management Contributor"
+      ]
+    }
+  },
+  "requiredModules": [
+    "Az.Accounts",
+    "MSCloudLoginAssistant"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Az.Accounts",
+      "cmdlets": [
+        "Connect-AzAccount",
+        "Get-AzSubscription",
+        "Invoke-AzRestMethod",
+        "Register-AzModule"
+      ]
+    },
+    {
+      "module": "MSCloudLoginAssistant",
+      "cmdlets": [
+        "Get-MSCloudLoginConnectionProfile"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+[ClassVersion("1.0.0.0"), FriendlyName("AzureManagementGroup")]
+class MSFT_AzureManagementGroup : OMI_BaseResource
+{
+    [Key, Description("Name of the management group. This is the immutable identifier Azure keys the group by and it cannot be changed after creation.")] String GroupId;
+    [Write, Description("Friendly name of the management group. Defaults to the group id when omitted at creation.")] String DisplayName;
+    [Write, Description("Name of the parent management group. Defaults to the tenant root group when omitted at creation.")] String ParentGroupId;
+    [Write, Description("Identifiers of the subscriptions assigned to the management group. A subscription removed from this list is moved back under the tenant root group.")] String Subscriptions[];
+    [Write, Description("Present ensures the instance exists, absent ensures it is removed."), ValueMap{"Absent","Present"}, Values{"Absent","Present"}] string Ensure;
+    [Write, Description("The Azure subscription to connect to if the access is restricted on subscription level.")] String SubscriptionId;
+    [Write, Description("Credentials of the workload's Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Username can be made up to anything but password will be used for CertificatePassword"), EmbeddedInstance("MSFT_Credential")] String CertificatePassword;
+    [Write, Description("Path to certificate used in service principal usually a PFX file.")] String CertificatePath;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};
