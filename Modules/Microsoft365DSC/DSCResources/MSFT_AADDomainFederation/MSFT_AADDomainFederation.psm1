@@ -67,7 +67,7 @@ function Get-TargetResource
         $IsSignedAuthenticationRequestRequired,
 
         [Parameter()]
-        [ValidateSet('Ios', 'Android', 'Macos')]
+        [ValidateSet('', 'Ios', 'Android', 'Macos')]
         [System.String[]]
         $SystemBrowserEnabledOn,
 
@@ -307,7 +307,7 @@ function Set-TargetResource
         $IsSignedAuthenticationRequestRequired,
 
         [Parameter()]
-        [ValidateSet('Ios', 'Android', 'Macos')]
+        [ValidateSet('', 'Ios', 'Android', 'Macos')]
         [System.String[]]
         $SystemBrowserEnabledOn,
 
@@ -539,7 +539,7 @@ function Test-TargetResource
         $IsSignedAuthenticationRequestRequired,
 
         [Parameter()]
-        [ValidateSet('Ios', 'Android', 'Macos')]
+        [ValidateSet('', 'Ios', 'Android', 'Macos')]
         [System.String[]]
         $SystemBrowserEnabledOn,
 
